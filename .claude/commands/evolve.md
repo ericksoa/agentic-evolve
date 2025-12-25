@@ -23,9 +23,40 @@ Examples:
 
 ## Execution
 
+### Step 0-pre: Benchmark Discovery
+
+Before generating synthetic benchmarks, check if a known benchmark exists:
+
+1. **Search Registry**: Run the discovery script:
+   ```bash
+   python3 .evolve/discover_benchmark.py "<problem description>" --json
+   ```
+
+2. **If Match Found** (score >= 0.3):
+   - Show user the matching benchmarks and sources
+   - Ask: "Found existing benchmark: {name}. Use this instead of generating synthetic? [Y/n]"
+
+3. **If User Accepts**:
+   - Clone the benchmark repo to `.evolve/<problem>/external/`
+   - Analyze the benchmark to understand:
+     - Function signature expected
+     - Test data format
+     - How results are measured
+   - Generate `evolved.rs` implementing that benchmark's interface
+   - Modify `evaluator.py` to run their benchmark
+   - Skip to Step 1 (Establish Baseline)
+
+4. **If No Match or User Declines**: Proceed to Step 0 (generate synthetic benchmark)
+
+**Registry Location**: `.evolve/benchmarks.toml`
+- Contains known benchmarks for: integer parsing, string search, sorting, hashing, compression, JSON, regex, base64, UTF-8 validation, datetime, UUID
+- Supports Rust benchmarks natively, C/C++ via FFI
+
+---
+
 ### Step 0: Generate Benchmark Infrastructure
 
-Before evolution can begin, create a complete Rust benchmark harness in `.evolve/<problem-name>/`:
+If no external benchmark is used, create a complete Rust benchmark harness in `.evolve/<problem-name>/`:
 
 #### 0a. Analyze the Problem
 

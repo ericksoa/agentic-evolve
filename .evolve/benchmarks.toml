@@ -1,0 +1,218 @@
+# Benchmark Registry for /evolve
+# Maps problem types to known benchmark implementations
+#
+# Format:
+# [problem-id]
+# description = "What this benchmark measures"
+# keywords = ["keyword1", "keyword2"]  # For matching user queries
+# sources = [{ name, repo, bench_dir?, language? }]
+# trait_signature = "Rust function signature"  # Optional
+
+# Remote registry URL (optional, for updates)
+# Uncomment to enable syncing from remote
+# [_meta]
+# remote_url = "https://raw.githubusercontent.com/example/evolve-benchmarks/main/benchmarks.toml"
+# cache_hours = 24
+
+[integer-parsing]
+description = "Parse decimal strings to integers"
+keywords = ["int", "integer", "parse", "parsing", "atoi", "strtol", "strtoi", "from_str", "number"]
+trait_signature = "fn parse(input: &[u8]) -> Result<i64, ()>"
+
+[[integer-parsing.sources]]
+name = "lexical"
+repo = "https://github.com/Alexhuszagh/rust-lexical"
+bench_dir = "lexical-benchmark"
+language = "rust"
+notes = "Comprehensive integer/float parsing benchmarks"
+
+[[integer-parsing.sources]]
+name = "parse_int_bench"
+repo = "https://github.com/pkolaczk/parse_int_bench"
+language = "rust"
+notes = "Focused integer parsing comparison"
+
+[string-search]
+description = "Substring/pattern search in text"
+keywords = ["search", "searching", "find", "contains", "boyer", "moore", "kmp", "substring", "needle", "haystack", "pattern", "string"]
+trait_signature = "fn find(haystack: &[u8], needle: &[u8]) -> Option<usize>"
+
+[[string-search.sources]]
+name = "memchr"
+repo = "https://github.com/BurntSushi/memchr"
+bench_dir = "bench"
+language = "rust"
+notes = "SIMD-optimized byte searching, industry standard"
+
+[[string-search.sources]]
+name = "sliceslice"
+repo = "https://github.com/cloudflare/sliceslice-rs"
+language = "rust"
+notes = "Cloudflare's SIMD substring search"
+
+[[string-search.sources]]
+name = "aho-corasick"
+repo = "https://github.com/BurntSushi/aho-corasick"
+bench_dir = "bench"
+language = "rust"
+notes = "Multi-pattern search"
+
+[sorting]
+description = "Array/slice sorting algorithms"
+keywords = ["sort", "sorting", "quicksort", "mergesort", "timsort", "heapsort", "radix", "order", "ascending", "descending", "array", "arrays"]
+trait_signature = "fn sort<T: Ord>(slice: &mut [T])"
+
+[[sorting.sources]]
+name = "glidesort"
+repo = "https://github.com/orlp/glidesort"
+bench_dir = "benches"
+language = "rust"
+notes = "State-of-art adaptive sorting"
+
+[[sorting.sources]]
+name = "dmsort"
+repo = "https://github.com/emilk/drop-merge-sort"
+language = "rust"
+notes = "Optimized for nearly-sorted data"
+
+[[sorting.sources]]
+name = "sort-research"
+repo = "https://github.com/Voultapher/sort-research-rs"
+language = "rust"
+notes = "Comprehensive sorting research with benchmarks"
+
+[hashing]
+description = "Hash function implementations"
+keywords = ["hash", "hashing", "xxhash", "fnv", "siphash", "murmur", "collision", "digest", "checksum", "function"]
+trait_signature = "fn hash(data: &[u8]) -> u64"
+
+[[hashing.sources]]
+name = "twox-hash"
+repo = "https://github.com/shepmaster/twox-hash"
+bench_dir = "benches"
+language = "rust"
+notes = "xxHash implementation in Rust"
+
+[[hashing.sources]]
+name = "smhasher"
+repo = "https://github.com/rurban/smhasher"
+language = "c"
+notes = "Comprehensive hash function test suite (C/C++)"
+ffi_required = true
+
+[[hashing.sources]]
+name = "ahash"
+repo = "https://github.com/tkaitchuck/aHash"
+bench_dir = "tests"
+language = "rust"
+notes = "Fast hash for HashMaps, AES-NI accelerated"
+
+[compression]
+description = "Data compression algorithms"
+keywords = ["compress", "decompress", "lz4", "zstd", "gzip", "deflate", "snappy", "lz77"]
+trait_signature = "fn compress(input: &[u8], output: &mut Vec<u8>) -> usize"
+
+[[compression.sources]]
+name = "lz4_flex"
+repo = "https://github.com/PSeitz/lz4_flex"
+bench_dir = "benches"
+language = "rust"
+notes = "Pure Rust LZ4"
+
+[[compression.sources]]
+name = "zstd"
+repo = "https://github.com/gyscos/zstd-rs"
+language = "rust"
+notes = "Rust bindings for zstd"
+
+[json-parsing]
+description = "JSON parsing and serialization"
+keywords = ["json", "parse", "parsing", "serialize", "deserialize", "serde"]
+trait_signature = "fn parse(input: &str) -> Result<Value, ()>"
+
+[[json-parsing.sources]]
+name = "simdjson-rs"
+repo = "https://github.com/simd-lite/simd-json"
+bench_dir = "benches"
+language = "rust"
+notes = "SIMD-accelerated JSON parsing"
+
+[[json-parsing.sources]]
+name = "serde_json"
+repo = "https://github.com/serde-rs/json"
+bench_dir = "benches"
+language = "rust"
+notes = "Standard Rust JSON library"
+
+[regex]
+description = "Regular expression matching"
+keywords = ["regex", "regexp", "pattern", "match", "pcre", "grep"]
+trait_signature = "fn is_match(pattern: &str, text: &str) -> bool"
+
+[[regex.sources]]
+name = "regex"
+repo = "https://github.com/rust-lang/regex"
+bench_dir = "bench"
+language = "rust"
+notes = "Rust's standard regex library"
+
+[[regex.sources]]
+name = "hyperscan"
+repo = "https://github.com/intel/hyperscan"
+language = "c"
+notes = "Intel's high-performance regex (C)"
+ffi_required = true
+
+[base64]
+description = "Base64 encoding/decoding"
+keywords = ["base64", "encode", "decode", "binary", "text"]
+trait_signature = "fn encode(input: &[u8]) -> String"
+
+[[base64.sources]]
+name = "base64"
+repo = "https://github.com/marshallpierce/rust-base64"
+bench_dir = "benches"
+language = "rust"
+notes = "Standard Rust base64"
+
+[[base64.sources]]
+name = "base64-simd"
+repo = "https://github.com/Nugine/simd"
+language = "rust"
+notes = "SIMD-accelerated base64"
+
+[utf8-validation]
+description = "UTF-8 string validation"
+keywords = ["utf8", "utf-8", "unicode", "validate", "string"]
+trait_signature = "fn is_valid_utf8(input: &[u8]) -> bool"
+
+[[utf8-validation.sources]]
+name = "simdutf8"
+repo = "https://github.com/rusticstuff/simdutf8"
+bench_dir = "benches"
+language = "rust"
+notes = "SIMD-accelerated UTF-8 validation"
+
+[datetime]
+description = "Date/time parsing and formatting"
+keywords = ["date", "time", "datetime", "parse", "format", "iso8601", "rfc3339"]
+trait_signature = "fn parse(input: &str) -> Result<DateTime, ()>"
+
+[[datetime.sources]]
+name = "speedate"
+repo = "https://github.com/pydantic/speedate"
+bench_dir = "benches"
+language = "rust"
+notes = "Fast datetime parsing"
+
+[uuid]
+description = "UUID generation and parsing"
+keywords = ["uuid", "guid", "unique", "identifier"]
+trait_signature = "fn parse(input: &str) -> Result<Uuid, ()>"
+
+[[uuid.sources]]
+name = "uuid"
+repo = "https://github.com/uuid-rs/uuid"
+bench_dir = "benches"
+language = "rust"
+notes = "Standard Rust UUID library"
