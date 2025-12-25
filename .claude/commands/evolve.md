@@ -1,6 +1,6 @@
 ---
 description: Evolve novel algorithms through LLM-driven mutation and selection
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Task, TodoWrite
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Task, TodoWrite, WebSearch, WebFetch
 argument-hint: <problem description>
 ---
 
@@ -23,34 +23,55 @@ Examples:
 
 ## Execution
 
-### Step 0-pre: Benchmark Discovery
+### Step 0-pre: Benchmark Discovery (Web Search)
 
-Before generating synthetic benchmarks, check if a known benchmark exists:
+Before generating synthetic benchmarks, search the web for existing high-quality benchmarks:
 
-1. **Search Registry**: Run the discovery script:
-   ```bash
-   python3 .evolve/discover_benchmark.py "<problem description>" --json
+1. **Web Search for Benchmarks**:
+   Use WebSearch to find relevant benchmarks. Construct queries like:
+   - `"<algorithm> benchmark rust github"`
+   - `"<algorithm> performance comparison rust"`
+   - `"<algorithm> crate benchmark rust"`
+
+   Look for:
+   - GitHub repos with benchmark suites
+   - Crates.io packages with `bench` directories
+   - Published performance comparisons
+   - Academic papers with reference implementations
+
+2. **Evaluate Search Results**:
+   For each promising result, assess:
+   - Repository activity (recent commits, stars)
+   - Benchmark quality (realistic test data, multiple implementations)
+   - API compatibility (can we implement their trait?)
+   - Documentation quality
+
+   Use WebFetch to examine promising repos if needed.
+
+3. **Present Options to User**:
+   ```
+   Found benchmark options for {problem}:
+
+   1. {repo1} - {description} ({stars} stars, last updated {date})
+   2. {repo2} - {description} ({stars} stars, last updated {date})
+
+   Use one of these, or generate synthetic benchmark? [1/2/synthetic]
    ```
 
-2. **If Match Found** (score >= 0.3):
-   - Show user the matching benchmarks and sources
-   - Ask: "Found existing benchmark: {name}. Use this instead of generating synthetic? [Y/n]"
-
-3. **If User Accepts**:
-   - Clone the benchmark repo to `.evolve/<problem>/external/`
-   - Analyze the benchmark to understand:
-     - Function signature expected
-     - Test data format
-     - How results are measured
-   - Generate `evolved.rs` implementing that benchmark's interface
-   - Modify `evaluator.py` to run their benchmark
+4. **If User Selects External**:
+   - Clone to `.evolve/<problem>/external/`
+   - Analyze the benchmark interface
+   - Generate compatible `evolved.rs`
+   - Adapt `evaluator.py` to run their benchmark
    - Skip to Step 1 (Establish Baseline)
 
-4. **If No Match or User Declines**: Proceed to Step 0 (generate synthetic benchmark)
+5. **If Synthetic or No Good Results**: Proceed to Step 0 (generate synthetic benchmark)
 
-**Registry Location**: `.evolve/benchmarks.toml`
-- Contains known benchmarks for: integer parsing, string search, sorting, hashing, compression, JSON, regex, base64, UTF-8 validation, datetime, UUID
-- Supports Rust benchmarks natively, C/C++ via FFI
+**Example Searches by Problem Type**:
+- Integer parsing: `"integer parsing benchmark rust" site:github.com`
+- String search: `"substring search memmem benchmark rust"`
+- Sorting: `"sorting algorithm benchmark comparison rust"`
+- Hashing: `"hash function benchmark rust xxhash fnv"`
 
 ---
 
