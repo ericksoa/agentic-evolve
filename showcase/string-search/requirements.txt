@@ -1,0 +1,2 @@
+# Python dependencies for string search evolution
+openevolve>=0.1.0

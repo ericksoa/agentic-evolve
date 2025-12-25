@@ -1,0 +1,21 @@
+# Rust build artifacts
+target/
+**/*.rs.bak
+
+# Node
+node_modules/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
