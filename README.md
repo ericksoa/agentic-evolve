@@ -4,30 +4,33 @@ Evolutionary algorithm discovery for Claude Code. Evolves novel solutions to har
 
 ## How It Works
 
-The `/evolve` skill implements a **true genetic algorithm** with semantic crossover:
+The `/evolve` skill uses **parallel Claude Code agents** for true genetic algorithm evolution:
+
+### Agent-Based Architecture
+- **8 parallel agents per generation**: Each explores a different mutation strategy
+- **Semantic crossover**: Agents combine innovations from parent solutions
+- **Adaptive stopping**: Runs until plateau (3 gens without >0.5% improvement)
+- **Budget control**: `--budget 10k|50k|100k|unlimited`
 
 ### Generation 1: Divergent Exploration
-- Spawn 8 parallel mutation agents with different strategies
+- Spawn 8 mutation agents in parallel (tweak, unroll, specialize, vectorize, memoize, restructure, hybrid, alien)
 - Extract **innovations** from each solution (what makes it fast?)
-- Select top 4 with **diversity pressure** (can't all be the same algorithm family)
+- Select top 4 with **diversity pressure** (max 2 from same algorithm family)
 
 ### Generation 2+: Crossover + Mutation
 - **4 crossover agents**: Combine innovations from parent pairs
 - **4 mutation agents**: Refine top performers
-- Selection with elitism (never lose the champion)
+- Elitism: Never lose the champion
+- Checkpoint state to `evolution.json` for resume
 
 ### Why Crossover Matters
 ```
 Gen 1: Discovers radix sort (fast distribution) + quicksort (fast partition)
 Gen 2: Crossover → radix+quick hybrid (uses both techniques)
 Gen 3: Adds insertion sort base case from shellsort lineage
-Gen 4: Incorporates heapsort as depth-limit fallback
-Gen 5: Final hybrid has traits from 4 original algorithm families
 ```
 
 Each generation **combines innovations** rather than just refining one approach.
-
-Claude Code itself acts as the LLM ensemble—no external dependencies required.
 
 ## Quick Start
 
@@ -48,15 +51,15 @@ curl -o ~/.claude/commands/evolve.md \
 ```bash
 claude
 > /evolve sorting algorithm for integers
-> /evolve string search - beat Boyer-Moore
-> /evolve integer parsing - beat std library
+> /evolve fibonacci - beat naive recursion --budget 10k
+> /evolve string search --budget 50k
+> /evolve --resume   # Continue previous evolution
 ```
 
-That's it! The skill will:
-- Check for Rust toolchain and offer to install via rustup
-- Search the web for relevant benchmarks
+The skill will:
+- Check for Rust toolchain (offers to install via rustup)
 - Generate Rust benchmark infrastructure
-- Run 3-5 generations of evolution
+- Run evolution with adaptive stopping (or until budget exhausted)
 - Report the champion algorithm
 
 ## Architecture
@@ -105,7 +108,7 @@ That's it! The skill will:
 │           [Extract innovations]                                  │
 │           [Select top 4 + elitism]                              │
 │                                                                  │
-│  Repeat for 3-5 generations...                                  │
+│  Repeat until plateau or budget exhausted...                    │
 └─────────────────────────────────┬───────────────────────────────┘
                                   │
                                   ▼
@@ -154,6 +157,7 @@ See [`showcase/sort-demo/`](showcase/sort-demo/) for the full benchmark.
 
 | Problem | Champion | Improvement |
 |---------|----------|-------------|
+| **Fibonacci** | Unsafe lookup table | **834M ops/sec** (30x vs iterative) |
 | **Sorting** | Radix sort | **71x** faster than bubble sort |
 | Integer parsing | Custom parser | +51% vs std |
 | String search | Rarebyte+memchr | +27% vs Boyer-Moore (scalar) |
@@ -195,6 +199,7 @@ if not correctness:
 │       ├── evolved.rs       # Champion code
 │       └── benchmark.rs     # Performance measurement
 ├── evaluator.py             # Fitness evaluation
+├── evolution.json           # Checkpoint for resume
 └── mutations/               # All tested mutations
 ```
 
