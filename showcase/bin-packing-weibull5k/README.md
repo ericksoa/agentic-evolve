@@ -53,71 +53,53 @@ Improving on FunSearch's result demonstrates that:
 
 ## The Evolution Journey
 
-### Generation 1: Exploring the Landscape (10 mutations)
+### Prior Attempt: 8 Generations Without Success
 
-The first generation explored diverse strategies to understand what works:
+Before the winning run, we ran 8 generations of evolution that explored many approaches but **failed to beat FunSearch**. Understanding these failures was crucial:
 
-| Mutation | Excess % | Approach | Why It Failed/Succeeded |
-|----------|----------|----------|------------------------|
-| `gen1_funsearch_inspired` | 3.99% | Tried to approximate FunSearch | Missing key terms |
-| `gen1_perfect_fit` | 3.98% | Heavy bonus for exact fits | Over-prioritized rare perfect fits |
-| `gen1_waste_min` | 89.6% | Simple waste minimization | **Failed badly** - too greedy, created fragmentation |
-| `gen1_polynomial` | 3.98% | Various polynomial terms | Couldn't match FunSearch's specific formula |
-| `gen1_threshold_cascade` | 3.98% | Cascading thresholds | Too complex, no clear signal |
-| `gen1_ratio` | 3.98% | Item-to-bin ratios | Missed position-based terms |
+| Generation | Best Result | Approaches Tried | Why They Failed |
+|------------|-------------|------------------|-----------------|
+| Gen 1 | 3.98% | waste_min, perfect_fit, polynomial, ratio | `waste_min` catastrophically failed at 89.6%! Too greedy. |
+| Gen 2 | 0.68% | funsearch_poly, cubic, gap_penalty | Finally matched FunSearch by copying it exactly |
+| Gen 3-5 | 0.68% | sigmoid, logarithmic, power_law, harmonic | Early log attempts (4.93%) used wrong formulation |
+| Gen 6 | 0.75% | lookup table, death_gap, tight_fit | Lookup table got close but was brittle |
+| Gen 7-8 | 1.50% | adaptive_threshold, second_order, ensemble | Overcomplicated, lost FunSearch's elegance |
 
-**Key Learning**: Simple approaches like waste minimization (89.6% excess!) catastrophically fail. The problem requires sophisticated balancing of multiple objectives.
+**Key Failures:**
+- **`gen1_waste_min` (89.6%)**: Simple "minimize waste" is catastrophically wrong—it creates tiny unusable gaps
+- **`gen5_logarithmic` (4.93%)**: Applied logs to raw values instead of ratios
+- **`gen6_lookup` (0.75%)**: Hardcoded Weibull distribution knowledge; brittle and not generalizable
 
-### Generation 2: Discovering FunSearch's Secret (8 mutations)
+**Key Insight**: After 8 generations and 54 mutations, nothing beat FunSearch. The polynomial terms `bin²/item²` seemed essential.
 
-Generation 2 focused on understanding what made FunSearch work:
+### The Winning Run: Fresh Approach with Parallel Exploration
 
-| Mutation | Excess % | Approach | Why It Failed/Succeeded |
-|----------|----------|----------|------------------------|
-| `gen2_funsearch_poly` | **0.68%** | Exact FunSearch replication | **Matched baseline!** Validated our understanding |
-| `gen2_cubic` | 89.6% | Higher-order polynomials | Overfit, created instabilities |
-| `gen2_item_aware` | 89.6% | Item-size adaptive | Lost the position-based scoring |
-| `gen2_gap_penalty` | 5.69% | Penalize gaps explicitly | Penalty too aggressive |
+For the successful run, we took a different approach: **8 parallel agents exploring diverse strategies simultaneously**, all starting from a correct FunSearch implementation:
 
-**Key Learning**: The FunSearch formula has three critical components:
-1. `(bin - max_cap)² / item` — Position-based preference for bins near max capacity
-2. `bin² / item²` + `bin² / item³` — Polynomial utilization terms
-3. Sign flip when `bin > item` + adjacent difference — Creates non-linear dynamics
+| Agent | Strategy | Result | Analysis |
+|-------|----------|--------|----------|
+| `tweak` | Small parameter adjustments | ~0.9% | Minor improvements only |
+| `waste-minimizer` | Aggressive waste penalties | ~3.5% | Same mistake as gen1 |
+| `sigmoid` | Smooth transition functions | ~1.6% | Better than before, not enough |
+| `fragmentation` | Penalize unusable gaps | ~2.1% | Good idea, wrong weights |
+| **`log-transform`** | **Replace polynomials with logs** | **0.6339%** | **WINNER** |
+| `ratio-based` | Item/bin ratio scoring | ~1.8% | Missing position term |
+| `position-bias` | Prefer fuller bins | ~1.4% | Too aggressive |
+| `alien` | Completely novel approach | ~4.2% | Too different from what works |
 
-### Generation 3-5: Exploring Alternatives (24 mutations)
+**Why `log-transform` Won:**
 
-With FunSearch understood, we explored whether different mathematical formulations could do better:
+The key insight was recognizing that FunSearch's polynomial terms could be replaced:
 
-| Mutation | Excess % | Approach | Insight |
-|----------|----------|----------|---------|
-| `gen3_exact_funsearch` | 0.68% | Exact copy | Confirmed baseline |
-| `gen3_sigmoid` | 3.14% | Sigmoid transitions | Smoother but less precise |
-| `gen5_logarithmic` | 4.93% | Early log attempts | **Promising direction** but wrong formulation |
-| `gen4_deep_sigmoid` | 2.74% | Complex sigmoid network | Better than simple, not enough |
+```
+FunSearch:     bin²/item² + bin²/item³
+Log-transform: ln(waste+1)/ln(item+1) + ln(bin/item)/ln(item+1)
+```
 
-**Key Learning**: Logarithmic functions showed promise for capturing non-linear relationships, but early attempts used them incorrectly (on raw values instead of ratios).
-
-### Generation 6-7: Closing the Gap (14 mutations)
-
-These generations refined the most promising approaches:
-
-| Mutation | Excess % | Approach | Insight |
-|----------|----------|----------|---------|
-| `gen6_lookup` | **0.75%** | Precomputed waste scores | Close! But brittle to distribution changes |
-| `gen6_funsearch_exact` | 0.68% | FunSearch baseline | Anchor point |
-| `gen7_negation` | 1.64% | Modified sign flip rules | Interesting but not better |
-| `gen7_adj_diff` | 2.72% | Alternative differencing | Different isn't always better |
-
-**Key Learning**: The lookup table approach (0.75%) showed that modeling the Weibull distribution directly could help, but hardcoded tables lack generality.
-
-### Generation 8: The Breakthrough (4 mutations)
-
-The final generation combined insights from all previous attempts:
-
-| Mutation | Excess % | Approach | Insight |
-|----------|----------|----------|---------|
-| `gen8_adaptive_threshold` | 1.50% | Item-size adaptive thresholds | Good idea, imperfect execution |
-| `gen8_second_order` | 1.57% | Second-order differences | Added complexity without benefit |
+Both capture "waste relative to item size," but logarithms:
+1. Compress the range, giving uniform sensitivity across all item sizes
+2. Handle the ratio `waste/item` more naturally
+3. Don't explode for large values like polynomials do
 
 ### The Winning Mutation: Log-Transform Champion
 
