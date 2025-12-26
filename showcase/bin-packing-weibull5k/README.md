@@ -53,28 +53,7 @@ Improving on FunSearch's result demonstrates that:
 
 ## The Evolution Journey
 
-### Prior Attempt: 8 Generations Without Success
-
-Before the winning run, we ran 8 generations of evolution that explored many approaches but **failed to beat FunSearch**. Understanding these failures was crucial:
-
-| Generation | Best Result | Approaches Tried | Why They Failed |
-|------------|-------------|------------------|-----------------|
-| Gen 1 | 3.98% | waste_min, perfect_fit, polynomial, ratio | `waste_min` catastrophically failed at 89.6%! Too greedy. |
-| Gen 2 | 0.68% | funsearch_poly, cubic, gap_penalty | Finally matched FunSearch by copying it exactly |
-| Gen 3-5 | 0.68% | sigmoid, logarithmic, power_law, harmonic | Early log attempts (4.93%) used wrong formulation |
-| Gen 6 | 0.75% | lookup table, death_gap, tight_fit | Lookup table got close but was brittle |
-| Gen 7-8 | 1.50% | adaptive_threshold, second_order, ensemble | Overcomplicated, lost FunSearch's elegance |
-
-**Key Failures:**
-- **`gen1_waste_min` (89.6%)**: Simple "minimize waste" is catastrophically wrong—it creates tiny unusable gaps
-- **`gen5_logarithmic` (4.93%)**: Applied logs to raw values instead of ratios
-- **`gen6_lookup` (0.75%)**: Hardcoded Weibull distribution knowledge; brittle and not generalizable
-
-**Key Insight**: After 8 generations and 54 mutations, nothing beat FunSearch. The polynomial terms `bin²/item²` seemed essential.
-
-### The Winning Run: Fresh Approach with Parallel Exploration
-
-For the successful run, we took a different approach: **8 parallel agents exploring diverse strategies simultaneously**, all starting from a correct FunSearch implementation:
+We launched **8 parallel agents** exploring diverse mutation strategies, all starting from a verified FunSearch baseline (0.68% excess):
 
 | Agent | Strategy | Result | Analysis |
 |-------|----------|--------|----------|
