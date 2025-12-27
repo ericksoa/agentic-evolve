@@ -624,10 +624,10 @@ Log exact commands to reproduce any state:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Step -1: Bootstrap (first run only)                        │
-│  Step 0-pre: Search for existing benchmarks                 │
-│  Step 0: Generate benchmark infrastructure                  │
-│  Step 1: Establish baseline                                 │
+│  Step 0: Bootstrap (first run only)                         │
+│  Step 1: Discover baselines                                 │
+│  Step 2: Generate benchmark infrastructure                  │
+│  Step 3: Establish baseline                                 │
 │                                                             │
 │  ┌───────────────────────────────────────────────────────┐  │
 │  │  EVOLUTION LOOP (adaptive)                            │  │
@@ -648,7 +648,7 @@ Log exact commands to reproduce any state:
 
 ---
 
-## Step -1: Bootstrap (First Run Only)
+## Step 0: Bootstrap (First Run Only)
 
 Skip if `.evolve/.bootstrapped` exists.
 
@@ -671,11 +671,11 @@ Skip if `.evolve/.bootstrapped` exists.
 
 ---
 
-## Step 0-pre: Benchmark & Baseline Discovery (MANDATORY)
+## Step 1: Benchmark & Baseline Discovery (MANDATORY)
 
 Before generating benchmarks, search for existing published results to establish state-of-the-art baselines.
 
-### Step 0-pre-a: Search for Published Baselines
+### Step 1a: Search for Published Baselines
 
 Run these searches to find authoritative baselines:
 
@@ -691,14 +691,14 @@ search_queries = [
 
 Use WebSearch for each query, then WebFetch to extract specific results.
 
-### Step 0-pre-b: Baseline Sources (Priority Order)
+### Step 1b: Baseline Sources (Priority Order)
 
 1. **Academic papers**: Nature, Science, arXiv, JMLR (cite DOI)
 2. **Industry benchmarks**: Google, Meta, Microsoft research blogs
 3. **Competition results**: Kaggle, competitive programming archives
 4. **GitHub repositories**: Well-starred, actively maintained benchmarks
 
-### Step 0-pre-c: Required Baseline Information
+### Step 1c: Required Baseline Information
 
 For each discovered baseline, record:
 
@@ -723,7 +723,7 @@ For each discovered baseline, record:
 ]
 ```
 
-### Step 0-pre-d: Baseline Verification
+### Step 1d: Baseline Verification
 
 **CRITICAL**: Verify discovered baselines by implementing and running them:
 
@@ -742,7 +742,7 @@ Baseline Verification Report:
 | First Fit | ~4% | 4.23% | ✓ | As expected |
 ```
 
-### Step 0-pre-e: No Baseline Found
+### Step 1e: No Baseline Found
 
 If no published baselines exist:
 
@@ -753,7 +753,7 @@ If no published baselines exist:
 
 ---
 
-## Step 0: Generate Benchmark Infrastructure
+## Step 2: Generate Benchmark Infrastructure
 
 Create in `.evolve/<problem-name>/`:
 
@@ -889,7 +889,7 @@ This file enables resumption and tracks all evolution state:
 
 ---
 
-## Step 1: Establish Baseline & Analyze Problem
+## Step 3: Establish Baseline & Analyze Problem
 
 1. Run evaluator on naive implementation
 2. Report baseline speeds
@@ -988,7 +988,7 @@ Store analysis and agent counts in `evolution.json`.
 
 ---
 
-## Step 2: Evolution Loop (Adaptive)
+## Step 4: Evolution Loop (Adaptive)
 
 ### Token Estimation & Display (MANDATORY)
 
@@ -1237,7 +1237,7 @@ If improvement after plateau:
 
 ---
 
-## Step 3: Checkpointing & Resume
+## Step 5: Checkpointing & Resume
 
 ### After Each Generation
 
@@ -1275,7 +1275,7 @@ Continue evolution?
 
 ---
 
-## Step 4: Finalize
+## Step 6: Finalize
 
 When evolution stops (any reason):
 
