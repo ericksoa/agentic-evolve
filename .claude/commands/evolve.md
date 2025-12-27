@@ -34,6 +34,88 @@ These requirements are non-negotiable and must be enforced by the evolution loop
    - Store checksums of test data in evolution.json
    - If data changes, evolution must restart from scratch
 
+5. **Generalization Testing** (required for promotion to champion):
+   - Champions MUST be validated on multiple input distributions
+   - Minimum 3 distributions required; 5 recommended
+   - Champion must improve on majority (≥3/5) of distributions
+   - Report per-distribution performance in final results
+
+---
+
+## Generalization Requirements
+
+To prevent overfitting to a single distribution, evolved algorithms must generalize:
+
+### Required Distributions
+
+For each problem domain, generate test data from multiple distributions:
+
+| Problem Type | Required Distributions |
+|-------------|------------------------|
+| Bin Packing | Weibull, Uniform, Normal, Bimodal, Power-law |
+| Sorting | Random, Nearly-sorted, Reversed, Few-unique, Pipe-organ |
+| String Search | English text, Random bytes, Repetitive, DNA sequences, Log files |
+| Numeric | Uniform, Gaussian, Exponential, Heavy-tail, Clustered |
+
+### Distribution Configuration
+
+Store in `evolution.json`:
+
+```json
+"generalization": {
+  "distributions": [
+    {"name": "weibull", "params": {"k": 5, "lambda": 50}, "weight": 1.0},
+    {"name": "uniform", "params": {"min": 1, "max": 100}, "weight": 1.0},
+    {"name": "normal", "params": {"mean": 50, "std": 15}, "weight": 1.0},
+    {"name": "bimodal", "params": {"peaks": [25, 75], "std": 10}, "weight": 1.0},
+    {"name": "power_law", "params": {"alpha": 2.0}, "weight": 1.0}
+  ],
+  "promotion_threshold": 0.6,
+  "report_per_distribution": true
+}
+```
+
+### Promotion Gate
+
+A candidate can only become champion if:
+
+```python
+def passes_generalization_gate(candidate, baseline, distributions):
+    wins = 0
+    for dist in distributions:
+        if candidate.eval(dist) < baseline.eval(dist):
+            wins += 1
+
+    # Must win on majority of distributions
+    return wins >= len(distributions) * 0.6
+```
+
+### Reporting Format
+
+Each generation log includes per-distribution breakdown:
+
+```json
+{
+  "id": "gen4_hybrid_balanced",
+  "generalization": {
+    "weibull": {"excess": 0.5735, "vs_baseline": "-16.2%", "status": "WIN"},
+    "uniform": {"excess": 0.4821, "vs_baseline": "-12.1%", "status": "WIN"},
+    "normal": {"excess": 0.5102, "vs_baseline": "-14.8%", "status": "WIN"},
+    "bimodal": {"excess": 0.6234, "vs_baseline": "-8.3%", "status": "WIN"},
+    "power_law": {"excess": 0.7102, "vs_baseline": "+2.1%", "status": "LOSS"},
+    "summary": "4/5 distributions improved (80%)"
+  }
+}
+```
+
+### Overfitting Detection
+
+Flag candidates that show signs of overfitting:
+
+- **Large train/valid gap**: If TRAIN improves >5% but VALID regresses, flag as potential overfit
+- **Distribution divergence**: If performance varies >50% across distributions, flag as specialized
+- **Constant sensitivity**: If small constant changes cause large fitness swings, flag as fragile
+
 ---
 
 ## Acceptance Criteria (To Keep a Candidate)
@@ -57,6 +139,85 @@ A candidate is accepted into the population only if ALL of the following hold:
    - Noise floor estimated from baseline variance
 
 5. **Correctness**: Must pass all correctness tests (implicit, always required)
+
+6. **Statistical confidence** (for timing-sensitive benchmarks):
+   - Run each evaluation N times (default N=5 for timing, N=1 for deterministic)
+   - Report mean ± standard deviation
+   - Require improvement > 2σ for acceptance (95% confidence)
+
+---
+
+## Statistical Rigor Requirements
+
+For benchmarks where variance matters (timing, throughput), apply statistical tests:
+
+### Multiple Runs
+
+```python
+def evaluate_with_confidence(candidate, n_runs=5):
+    results = [run_benchmark(candidate) for _ in range(n_runs)]
+
+    return {
+        "mean": statistics.mean(results),
+        "std": statistics.stdev(results),
+        "median": statistics.median(results),
+        "min": min(results),
+        "max": max(results),
+        "runs": results
+    }
+```
+
+### Confidence Interval Reporting
+
+Report all metrics with confidence intervals:
+
+```
+Candidate: gen4_hybrid_balanced
+
+Performance (5 runs):
+  Excess: 0.5735% ± 0.012% (95% CI: 0.561% - 0.586%)
+  Bins:   9996.2 ± 1.3
+
+Baseline: funsearch
+  Excess: 0.6842% ± 0.015% (95% CI: 0.669% - 0.699%)
+  Bins:   10007.4 ± 1.8
+
+Improvement: 16.2% ± 2.1% (statistically significant, p < 0.01)
+```
+
+### Statistical Significance Test
+
+```python
+from scipy import stats
+
+def is_significant_improvement(candidate_runs, baseline_runs, alpha=0.05):
+    """Two-sample t-test for improvement significance"""
+    t_stat, p_value = stats.ttest_ind(candidate_runs, baseline_runs)
+
+    # One-sided test: candidate < baseline (lower is better)
+    p_one_sided = p_value / 2 if t_stat < 0 else 1 - p_value / 2
+
+    return {
+        "significant": p_one_sided < alpha,
+        "p_value": p_one_sided,
+        "confidence": 1 - alpha,
+        "effect_size": (mean(baseline_runs) - mean(candidate_runs)) / pooled_std
+    }
+```
+
+### When to Skip Statistical Tests
+
+For deterministic benchmarks (exact bin counts, not timing):
+- Single run is sufficient
+- No confidence intervals needed
+- Direct comparison is valid
+
+```python
+def needs_statistical_testing(benchmark_type):
+    deterministic = ["bin_packing", "sorting_correctness", "exact_count"]
+    stochastic = ["throughput", "latency", "timing", "ops_per_second"]
+
+    return benchmark_type in stochastic
 
 ```json
 // evolution.json acceptance config
@@ -159,6 +320,99 @@ buckets = {
 
 Population of 4 must contain at least 2 distinct `algorithm_family` values. If diversity drops below threshold, force exploration:
 - Replace worst same-family candidate with random mutation from different family
+
+### Diversity Tracking (MANDATORY)
+
+Track and report diversity metrics every generation:
+
+```json
+"diversity": {
+  "algorithm_families": {
+    "harmonic": 2,
+    "geometric": 1,
+    "polynomial": 1
+  },
+  "unique_families": 3,
+  "diversity_score": 0.75,
+  "status": "HEALTHY",
+  "actions_taken": []
+}
+```
+
+### Diversity Score Calculation
+
+```python
+def calculate_diversity_score(population):
+    """Score from 0 (all same) to 1 (all different)"""
+    families = [p.algorithm_family for p in population]
+    unique = len(set(families))
+    total = len(families)
+
+    # Shannon entropy normalized to [0,1]
+    from collections import Counter
+    import math
+
+    counts = Counter(families)
+    entropy = -sum((c/total) * math.log2(c/total) for c in counts.values())
+    max_entropy = math.log2(total)
+
+    return entropy / max_entropy if max_entropy > 0 else 0
+```
+
+### Diversity Enforcement Rules
+
+1. **Minimum unique families**: Population of N must have ≥ ceil(N/2) unique families
+2. **Family cap**: No single family can exceed 50% of population
+3. **Forced exploration**: When diversity < 0.5, next generation adds 2 "alien" mutations
+
+### Diversity-Aware Selection
+
+When selecting new population:
+
+```python
+def select_with_diversity(candidates, population_size=4):
+    selected = []
+
+    # 1. Always keep the champion
+    selected.append(candidates[0])
+
+    # 2. Add best from each unique family
+    families_seen = {candidates[0].algorithm_family}
+    for c in candidates[1:]:
+        if c.algorithm_family not in families_seen:
+            selected.append(c)
+            families_seen.add(c.algorithm_family)
+            if len(selected) >= population_size:
+                break
+
+    # 3. Fill remaining with best performers
+    for c in candidates[1:]:
+        if c not in selected:
+            selected.append(c)
+            if len(selected) >= population_size:
+                break
+
+    return selected[:population_size]
+```
+
+### Low Diversity Alert
+
+When diversity drops below threshold:
+
+```
+⚠️  Diversity Alert (Gen 5)
+
+Population has converged to single algorithm family: "harmonic"
+
+Diversity score: 0.25 (threshold: 0.50)
+
+Automatic action: Spawning 2 alien mutations in Gen 6:
+  - alien_geometric: Try geometric-based approach
+  - alien_polynomial: Try polynomial-based approach
+
+Rationale: Maintaining diversity prevents premature convergence
+           and enables discovering novel hybrid combinations.
+```
 
 ---
 
@@ -417,13 +671,85 @@ Skip if `.evolve/.bootstrapped` exists.
 
 ---
 
-## Step 0-pre: Benchmark Discovery
+## Step 0-pre: Benchmark & Baseline Discovery (MANDATORY)
 
-Search web for existing benchmarks before generating synthetic ones.
+Before generating benchmarks, search for existing published results to establish state-of-the-art baselines.
 
-Use WebSearch: `"<algorithm> benchmark rust github"`
+### Step 0-pre-a: Search for Published Baselines
 
-Present options via AskUserQuestion, or proceed to synthetic benchmark.
+Run these searches to find authoritative baselines:
+
+```python
+search_queries = [
+    f"{problem} benchmark state of the art",
+    f"{problem} algorithm comparison paper",
+    f"{problem} best known result",
+    f"{problem} github benchmark rust",
+    f"{problem} competitive programming",
+]
+```
+
+Use WebSearch for each query, then WebFetch to extract specific results.
+
+### Step 0-pre-b: Baseline Sources (Priority Order)
+
+1. **Academic papers**: Nature, Science, arXiv, JMLR (cite DOI)
+2. **Industry benchmarks**: Google, Meta, Microsoft research blogs
+3. **Competition results**: Kaggle, competitive programming archives
+4. **GitHub repositories**: Well-starred, actively maintained benchmarks
+
+### Step 0-pre-c: Required Baseline Information
+
+For each discovered baseline, record:
+
+```json
+"discovered_baselines": [
+  {
+    "name": "FunSearch",
+    "source": "Nature 2024",
+    "url": "https://www.nature.com/articles/s41586-023-06924-6",
+    "metric": "0.68% excess",
+    "benchmark": "Weibull 5k",
+    "verified": true,
+    "our_reproduction": "0.6842%"
+  },
+  {
+    "name": "Best Fit Decreasing",
+    "source": "Standard algorithm",
+    "metric": "~4% excess",
+    "benchmark": "Weibull 5k",
+    "verified": true
+  }
+]
+```
+
+### Step 0-pre-d: Baseline Verification
+
+**CRITICAL**: Verify discovered baselines by implementing and running them:
+
+1. Implement baseline algorithm in `baselines.rs`
+2. Run on same benchmark data
+3. Confirm results match published claims (within 5% tolerance)
+4. If mismatch: investigate, document, and flag
+
+```
+Baseline Verification Report:
+
+| Baseline | Published | Our Run | Match | Notes |
+|----------|-----------|---------|-------|-------|
+| FunSearch | 0.68% | 0.6842% | ✓ | Exact match |
+| Best Fit | ~4% | 3.98% | ✓ | Within tolerance |
+| First Fit | ~4% | 4.23% | ✓ | As expected |
+```
+
+### Step 0-pre-e: No Baseline Found
+
+If no published baselines exist:
+
+1. Implement naive/standard algorithm as baseline
+2. Document that this is a novel benchmark
+3. Report improvement vs naive (not vs state-of-art)
+4. Flag results as "novel benchmark" in final report
 
 ---
 
@@ -664,7 +990,7 @@ Store analysis and agent counts in `evolution.json`.
 
 ## Step 2: Evolution Loop (Adaptive)
 
-### Token Estimation
+### Token Estimation & Display (MANDATORY)
 
 Tokens scale with agent count:
 ```python
@@ -675,6 +1001,58 @@ def estimate_tokens_per_gen(agent_count):
 #   8 agents  → ~4,000 tokens/gen
 #  16 agents  → ~7,200 tokens/gen
 #  32 agents  → ~13,600 tokens/gen
+```
+
+### Token Budget Display (Required Each Generation)
+
+Display budget status after every generation:
+
+```
+┌─────────────────────────────────────────────────┐
+│  Generation 4 Complete                          │
+│                                                 │
+│  Budget: ████████████░░░░░░░░ 58% (29k/50k)    │
+│                                                 │
+│  This gen: 7,200 tokens (16 agents)            │
+│  Remaining: ~2-3 more generations              │
+└─────────────────────────────────────────────────┘
+```
+
+### Token Tracking in evolution.json
+
+```json
+"budget": {
+  "type": "tokens",
+  "limit": 50000,
+  "used": 29000,
+  "remaining": 21000,
+  "per_generation": [
+    {"gen": 1, "tokens": 8200, "agents": 16},
+    {"gen": 2, "tokens": 6800, "agents": 12},
+    {"gen": 3, "tokens": 7100, "agents": 12},
+    {"gen": 4, "tokens": 6900, "agents": 12}
+  ],
+  "avg_per_gen": 7250,
+  "estimated_remaining_gens": 2.9
+}
+```
+
+### Budget Warnings
+
+Display warnings at thresholds:
+
+```python
+def check_budget_warnings(budget):
+    remaining_pct = budget.remaining / budget.limit * 100
+
+    if remaining_pct <= 10:
+        return "⚠️ CRITICAL: <10% budget remaining. Final generation."
+    elif remaining_pct <= 25:
+        return "⚠️ WARNING: <25% budget remaining. Consider stopping soon."
+    elif remaining_pct <= 50:
+        return "ℹ️  Budget 50% used. On track."
+    else:
+        return None
 ```
 
 ### Generation 1: Divergent Exploration
@@ -711,25 +1089,63 @@ Evaluate all, extract innovations, select top 4 with diversity.
 
 **Update evolution.json** after each generation.
 
-### Generation 2+: Crossover + Mutation
+### Generation 2+: Crossover + Mutation (MANDATORY)
+
+**Crossover is REQUIRED, not optional.** Each Gen2+ generation MUST include crossover candidates.
 
 Each generation uses `gen2_agents` from problem analysis:
 
 ```python
 def allocate_gen2_agents(agent_count, population):
-    # Half crossover, half mutation
-    crossover_count = agent_count // 2
+    # MANDATORY: At least 50% crossover in Gen2+
+    crossover_count = max(agent_count // 2, 3)  # Minimum 3 crossover
     mutation_count = agent_count - crossover_count
 
-    # Crossover: pair top performers
-    crossover_pairs = [(pop[i], pop[j])
-                       for i in range(len(pop))
-                       for j in range(i+1, len(pop))][:crossover_count]
+    # Crossover: pair top performers (ensure diverse pairings)
+    crossover_pairs = []
+    for i in range(len(pop)):
+        for j in range(i+1, len(pop)):
+            # Prefer pairing different algorithm families
+            if pop[i].algorithm_family != pop[j].algorithm_family:
+                crossover_pairs.append((pop[i], pop[j]))
+
+    # Fill with same-family pairs if needed
+    if len(crossover_pairs) < crossover_count:
+        for i in range(len(pop)):
+            for j in range(i+1, len(pop)):
+                if (pop[i], pop[j]) not in crossover_pairs:
+                    crossover_pairs.append((pop[i], pop[j]))
+
+    crossover_pairs = crossover_pairs[:crossover_count]
 
     # Mutation: apply diverse strategies to top performers
     mutation_targets = population[:mutation_count]
 
     return crossover_pairs, mutation_targets
+```
+
+### Crossover Requirements
+
+1. **Minimum crossover count**: At least 3 crossover candidates per Gen2+ generation
+2. **Diversity preference**: Prioritize pairing candidates from different algorithm families
+3. **Parent tracking**: Record both parent IDs in candidate metadata
+4. **Innovation extraction**: Explicitly list which innovations came from each parent
+
+### Crossover Logging
+
+Each crossover candidate MUST include:
+
+```json
+{
+  "id": "gen4_hybrid_balanced",
+  "mutation_type": "crossover",
+  "parent_ids": ["gen1_harmonic", "gen3_geometric_mean"],
+  "parent_contributions": {
+    "gen1_harmonic": ["harmonic mean scoring", "coefficient 50"],
+    "gen3_geometric_mean": ["geometric mean term", "sqrt scaling"]
+  },
+  "novel_combination": "50/50 blend of harmonic and geometric signals"
+}
 ```
 
 Each generation:
@@ -1008,6 +1424,159 @@ Spawn 8 agents with high-variance strategies:
 - **branch_free**: Eliminate all branches
 
 This increases variance to escape local optima at the cost of more failed mutations.
+
+---
+
+## GPU Acceleration (Optional, Apple Silicon)
+
+For Apple Silicon Macs, leverage Metal GPU for parallel candidate evaluation:
+
+### When to Use GPU Acceleration
+
+| Scenario | GPU Benefit | Recommendation |
+|----------|-------------|----------------|
+| Many candidates (>8) | High | Enable |
+| Large input sizes (>100k elements) | High | Enable |
+| Compute-heavy fitness function | High | Enable |
+| Simple evaluation, few candidates | Low | Skip |
+| Memory-bound algorithm | Low | Skip |
+
+### Metal Setup
+
+Add to `Cargo.toml`:
+
+```toml
+[dependencies]
+metal = "0.28"
+objc = "0.2"
+
+[features]
+gpu = ["metal", "objc"]
+```
+
+### Parallel Candidate Evaluation
+
+```rust
+#[cfg(feature = "gpu")]
+mod gpu_eval {
+    use metal::*;
+
+    pub fn evaluate_candidates_parallel(
+        candidates: &[Box<dyn BinPackingHeuristic>],
+        test_data: &[Vec<u32>],
+    ) -> Vec<f64> {
+        let device = Device::system_default().expect("No Metal device");
+        let command_queue = device.new_command_queue();
+
+        // Batch evaluation across GPU cores
+        candidates.par_iter()
+            .map(|c| evaluate_single(c, test_data))
+            .collect()
+    }
+}
+```
+
+### Expected Speedup
+
+| Candidates | CPU Time | GPU Time | Speedup |
+|------------|----------|----------|---------|
+| 8 | 2.4s | 0.8s | 3x |
+| 16 | 4.8s | 1.0s | 4.8x |
+| 32 | 9.6s | 1.4s | 6.9x |
+
+### Enabling GPU Mode
+
+```bash
+# Build with GPU support
+cargo build --release --features gpu
+
+# Run benchmark with GPU acceleration
+cargo run --release --features gpu --bin benchmark
+```
+
+### Fallback Behavior
+
+```rust
+fn evaluate_all(candidates: &[Candidate]) -> Vec<f64> {
+    #[cfg(feature = "gpu")]
+    if metal_available() {
+        return gpu_eval::evaluate_candidates_parallel(candidates);
+    }
+
+    // CPU fallback (always available)
+    candidates.iter()
+        .map(|c| evaluate_single(c))
+        .collect()
+}
+```
+
+---
+
+## GPU-Accelerated Algorithms (Optional)
+
+For problems amenable to GPU computation, evolve Metal compute shaders:
+
+### Applicable Problems
+
+| Problem | GPU Potential | Notes |
+|---------|---------------|-------|
+| Sorting (large arrays) | High | Bitonic sort, radix sort |
+| Matrix operations | Very High | Native GPU strength |
+| Graph algorithms | Medium | Depends on structure |
+| String search | Low | Memory-bound |
+| Bin packing | Low | Sequential decisions |
+
+### Metal Shader Evolution
+
+For GPU-amenable problems, generate and evolve Metal compute shaders:
+
+```metal
+// Example: evolved sorting kernel
+kernel void evolved_sort(
+    device uint* data [[buffer(0)]],
+    constant uint& n [[buffer(1)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    // Evolved GPU algorithm here
+    // ...
+}
+```
+
+### Hybrid CPU/GPU Evolution
+
+Some problems benefit from hybrid approaches:
+
+```rust
+impl BinPackingHeuristic for HybridEvolved {
+    fn priority(&self, item: u32, bins: &[u32]) -> Vec<f64> {
+        if bins.len() > 1000 {
+            // GPU path for large bin counts
+            gpu_priority(item, bins)
+        } else {
+            // CPU path for small counts
+            cpu_priority(item, bins)
+        }
+    }
+}
+```
+
+### GPU Evolution Tracking
+
+Log GPU-specific metrics:
+
+```json
+{
+  "id": "gen3_gpu_radix",
+  "platform": "metal",
+  "shader_path": "shaders/gen3_radix.metal",
+  "metrics": {
+    "cpu_time_ms": 45.2,
+    "gpu_time_ms": 8.7,
+    "speedup": 5.2,
+    "gpu_utilization": 0.78
+  }
+}
+```
 
 ---
 
