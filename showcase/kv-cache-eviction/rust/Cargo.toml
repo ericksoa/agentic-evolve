@@ -1,0 +1,38 @@
+[package]
+name = "kv-cache-eviction"
+version = "0.1.0"
+edition = "2021"
+description = "Evolving KV-cache eviction policies for LLM inference"
+
+[lib]
+name = "kv_cache"
+path = "src/lib.rs"
+
+[[bin]]
+name = "benchmark"
+path = "src/benchmark.rs"
+
+[[bin]]
+name = "generate_data"
+path = "src/generate_data.rs"
+
+[[bin]]
+name = "quick_bench"
+path = "src/quick_bench.rs"
+
+[[bin]]
+name = "sanity_check"
+path = "src/sanity_check.rs"
+
+[[bin]]
+name = "micro_bench"
+path = "src/micro_bench.rs"
+
+[dependencies]
+rand = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[profile.release]
+opt-level = 3
+lto = true
