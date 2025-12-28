@@ -583,6 +583,265 @@ Log exact commands to reproduce any state:
 
 ---
 
+## Sandboxing & Isolation (MANDATORY)
+
+Evolution runs involve executing untrusted, LLM-generated code. These requirements ensure mutations don't interfere with each other and minimize security risks.
+
+### Mutation Isolation (Prevent Result Stomping)
+
+**CRITICAL**: Each mutation MUST execute in complete isolation to prevent race conditions and result corruption.
+
+#### Directory Structure for Parallel Execution
+
+```
+.evolve/<problem>/
+├── workspace/                    # Ephemeral mutation workspaces
+│   ├── gen3_mut0_abc123/        # Unique per mutation (gen + index + hash)
+│   │   ├── rust/                # Complete copy of benchmark code
+│   │   ├── results.json         # This mutation's results only
+│   │   └── .lock                # Mutex file for this workspace
+│   ├── gen3_mut1_def456/
+│   └── ...
+├── rust/                         # Template/champion code (READ-ONLY during eval)
+├── mutations/                    # Archive of all tested mutations
+└── results/                      # Aggregated results (written AFTER all evals)
+    └── gen3_results.json
+```
+
+#### Isolation Rules
+
+1. **Unique workspace per mutation**:
+   ```python
+   def create_mutation_workspace(generation, mutation_index, code_hash):
+       workspace_id = f"gen{generation}_mut{mutation_index}_{code_hash[:6]}"
+       workspace_path = f".evolve/{problem}/workspace/{workspace_id}"
+
+       # Copy template, don't symlink
+       shutil.copytree(template_path, workspace_path)
+
+       return workspace_path
+   ```
+
+2. **No shared files during evaluation**:
+   - Each mutation writes ONLY to its own `workspace/gen_X_mutY_*/` directory
+   - Never write to `rust/src/evolved.rs` during parallel evaluation
+   - Aggregate results only AFTER all parallel evals complete
+
+3. **Atomic result collection**:
+   ```python
+   def collect_results(generation, workspaces):
+       results = []
+       for ws in workspaces:
+           # Read each mutation's isolated results
+           result_file = f"{ws}/results.json"
+           if os.path.exists(result_file):
+               with open(result_file) as f:
+                   results.append(json.load(f))
+
+       # Write aggregated results atomically
+       with atomic_write(f"results/gen{generation}_results.json") as f:
+           json.dump(results, f)
+
+       return results
+   ```
+
+4. **Cleanup after aggregation**:
+   ```python
+   def cleanup_workspaces(generation):
+       # Only clean up after results are safely aggregated
+       workspace_dir = f".evolve/{problem}/workspace"
+       for ws in glob.glob(f"{workspace_dir}/gen{generation}_*"):
+           shutil.rmtree(ws)
+   ```
+
+### Parallel Execution Safety
+
+When running mutations in parallel via Task agents:
+
+```python
+# CORRECT: Each agent gets unique workspace
+for i, mutation in enumerate(mutations):
+    workspace = create_mutation_workspace(gen, i, hash(mutation))
+    agent.run(
+        workspace=workspace,
+        evolved_rs=f"{workspace}/rust/src/evolved.rs",  # Isolated
+        results_out=f"{workspace}/results.json"          # Isolated
+    )
+
+# WRONG: Shared paths cause race conditions
+for mutation in mutations:
+    agent.run(
+        evolved_rs=".evolve/problem/rust/src/evolved.rs",  # COLLISION!
+        results_out=".evolve/problem/results.json"          # COLLISION!
+    )
+```
+
+### Autonomous Execution (No Human Intervention)
+
+Evolution must run unattended. Configure agents for autonomous operation:
+
+#### Agent Spawn Configuration
+
+When spawning mutation/evaluation agents via the Task tool:
+
+1. **Use dangerouslyDisableSandbox for Bash execution**:
+   - Mutation agents need to compile and run Rust code
+   - This requires shell access without permission prompts
+   - The isolation comes from workspace separation, not shell sandboxing
+
+2. **Constrain file access to workspace**:
+   ```python
+   mutation_agent_prompt = f"""
+   You are evaluating a mutation in an ISOLATED workspace.
+
+   WORKSPACE: {workspace_path}
+
+   CONSTRAINTS:
+   - ONLY read/write files within {workspace_path}
+   - Do NOT access parent directories
+   - Do NOT access network resources
+   - Do NOT modify system files
+
+   Your task: [mutation/evaluation task]
+   """
+   ```
+
+3. **Pre-approve expected operations**:
+   - `cargo build --release` in workspace
+   - `cargo run --release --bin benchmark` in workspace
+   - Reading/writing `.json` and `.rs` files in workspace
+
+#### Timeout Enforcement
+
+All mutation evaluations MUST have timeouts:
+
+```python
+evaluation_limits = {
+    "compile_timeout_ms": 120000,      # 2 minutes to compile
+    "benchmark_timeout_ms": 300000,    # 5 minutes to benchmark
+    "total_mutation_timeout_ms": 600000  # 10 minutes total per mutation
+}
+```
+
+If a mutation exceeds timeout:
+- Kill the process
+- Mark mutation as FAILED with reason "timeout"
+- Do NOT retry automatically (may indicate infinite loop)
+
+### Security Sandboxing
+
+Evolved code is untrusted. Minimize blast radius:
+
+#### Build-Time Protections
+
+1. **Deny unsafe by default** (unless explicitly required):
+   ```toml
+   # Cargo.toml for mutation workspaces
+   [profile.release]
+   # ... optimization settings ...
+
+   [lints.rust]
+   unsafe_code = "deny"  # Override only if mutation explicitly uses unsafe
+   ```
+
+2. **Limit dependencies**:
+   ```toml
+   # Only allow pre-approved dependencies
+   [dependencies]
+   # Core only - no network, no filesystem beyond std
+   ```
+
+3. **Static analysis before execution**:
+   ```python
+   def pre_execution_checks(evolved_rs_path):
+       code = open(evolved_rs_path).read()
+
+       # Block dangerous patterns
+       dangerous_patterns = [
+           r'std::process::Command',    # No shell execution
+           r'std::fs::(remove|write)',  # No filesystem modification outside workspace
+           r'std::net::',               # No network access
+           r'std::env::',               # No environment access
+           r'include_bytes!',           # No external file inclusion
+           r'extern\s+"C"',             # No FFI
+       ]
+
+       for pattern in dangerous_patterns:
+           if re.search(pattern, code):
+               return False, f"Blocked: {pattern}"
+
+       return True, "OK"
+   ```
+
+#### Runtime Protections
+
+1. **Resource limits** (if available on platform):
+   ```bash
+   # Example: limit memory and CPU time
+   ulimit -v 2097152  # 2GB virtual memory
+   ulimit -t 300      # 5 minute CPU time
+   ```
+
+2. **Working directory jail**:
+   ```python
+   # Run benchmark from within workspace, not project root
+   subprocess.run(
+       ["cargo", "run", "--release", "--bin", "benchmark"],
+       cwd=workspace_path,  # Jail to workspace
+       timeout=300
+   )
+   ```
+
+3. **Output sanitization**:
+   - Don't trust stdout/stderr from evolved code
+   - Parse only expected JSON result format
+   - Reject results with unexpected structure
+
+### Sandboxing Checklist (Per Generation)
+
+Before starting a generation, verify:
+
+```markdown
+- [ ] All mutation workspaces created with unique paths
+- [ ] Template code copied (not symlinked) to each workspace
+- [ ] No shared mutable state between mutations
+- [ ] Timeouts configured for all operations
+- [ ] Pre-execution security scan enabled
+- [ ] Results aggregation happens AFTER all evals complete
+```
+
+After generation completes:
+
+```markdown
+- [ ] All mutation results collected
+- [ ] Results aggregated atomically
+- [ ] Workspaces cleaned up
+- [ ] Champion promoted only from aggregated results
+- [ ] Workspace directory is empty (all cleaned up)
+```
+
+### Failure Recovery
+
+If a mutation agent crashes or times out:
+
+1. **Do NOT retry automatically** - may indicate malicious code
+2. **Log the failure** with full context:
+   ```json
+   {
+     "mutation_id": "gen3_mut5_abc123",
+     "status": "FAILED",
+     "reason": "timeout",
+     "workspace": "/path/to/workspace",
+     "preserved": true,
+     "investigation_needed": true
+   }
+   ```
+3. **Preserve workspace** for investigation (don't auto-cleanup failures)
+4. **Continue evolution** with remaining successful mutations
+5. **Alert if >50% mutations fail** - may indicate systemic issue
+
+---
+
 ## Core Features
 
 1. **Population-based**: Maintains top 4 diverse solutions, not just the winner

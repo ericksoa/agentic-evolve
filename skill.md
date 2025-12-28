@@ -2,6 +2,8 @@
 
 Evolutionary algorithm discovery for Claude Code. Evolves novel solutions to hard problems through parallel mutation and selection, with Rust benchmarks for precise performance measurement.
 
+**Sandboxed & Autonomous**: Mutations run in isolated workspaces with security protections, enabling unattended evolution without result stomping or security risks.
+
 ## Usage
 
 Invoke with `/evolve` followed by what you want to optimize:

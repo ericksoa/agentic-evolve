@@ -26,6 +26,14 @@ The `/evolve` skill uses **parallel Claude Code agents** for true genetic algori
 - Elitism: Never lose the champion
 - Checkpoint state to `evolution.json` for resume
 
+### Sandboxed & Autonomous
+
+Evolution runs unattended with full isolation:
+- **Isolated workspaces**: Each mutation runs in its own directory—no result stomping
+- **Security scanning**: Blocks dangerous patterns (shell exec, network, FFI) before execution
+- **Timeout enforcement**: Kills runaway mutations automatically
+- **Atomic results**: Aggregates results only after all parallel evals complete
+
 ### Why Genetic Algorithms?
 
 Unlike "make it faster" prompting, true genetic algorithms:
@@ -177,16 +185,22 @@ if not correctness:
 
 ```
 .evolve/<problem>/           # Created per evolution
-├── rust/
+├── rust/                    # Template/champion code (READ-ONLY during eval)
 │   ├── Cargo.toml
 │   └── src/
 │       ├── lib.rs           # Trait definition
 │       ├── baselines.rs     # Known algorithms to beat
 │       ├── evolved.rs       # Champion code
 │       └── benchmark.rs     # Performance measurement
+├── workspace/               # Ephemeral mutation workspaces (isolated)
+│   ├── gen3_mut0_abc123/   # Each mutation gets unique workspace
+│   ├── gen3_mut1_def456/
+│   └── ...
+├── results/                 # Aggregated results per generation
+│   └── gen3_results.json
 ├── evaluator.py             # Fitness evaluation
 ├── evolution.json           # Checkpoint for resume
-└── mutations/               # All tested mutations
+└── mutations/               # All tested mutations (archive)
 ```
 
 ## License
