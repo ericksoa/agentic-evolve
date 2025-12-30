@@ -1,22 +1,22 @@
-//! Evolved Packing Algorithm - Generation 28 HOT RESTARTS
+//! Evolved Packing Algorithm - Generation 27 PAIR MOVES
 //!
 //! This module contains the evolved packing heuristics.
 //! The code is designed to be mutated by LLM-guided evolution.
 //!
-//! MUTATION STRATEGY: HOT RESTARTS (Gen28)
-//! Periodically restart SA with high temperature from best known configuration.
+//! MUTATION STRATEGY: PAIR MOVES (Gen27)
+//! Move pairs of adjacent trees together during SA to escape local minima.
 //!
-//! Key insight: SA can get stuck in local minima. Instead of just continuing
-//! from where we are, occasionally restart from the best known solution
-//! with a high temperature to explore new regions.
+//! Key insight: Single-tree moves can get stuck because moving one tree
+//! creates an overlap, but moving two adjacent trees together might
+//! preserve their relationship while improving the overall packing.
 //!
 //! Changes from Gen10:
-//! - After every 5000 iterations without improvement, do a "hot restart"
-//! - Hot restart: restore best config, reset to high temperature
-//! - Track multiple "elite" configurations and restart from them
-//! - More aggressive exploration after restart
+//! - 20% of SA moves try to move a pair of adjacent trees together
+//! - Adjacent trees are identified by bounding box proximity
+//! - Pair moves translate both trees by the same amount
+//! - Also try swapping positions of adjacent trees
 //!
-//! Target: Escape local minima more effectively
+//! Target: Escape local minima with coordinated moves
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -49,10 +49,7 @@ pub struct EvolvedConfig {
     pub gap_penalty_weight: f64,
     pub local_density_radius: f64,
     pub fill_move_prob: f64,
-    // HOT RESTART parameters
-    pub hot_restart_interval: usize,
-    pub hot_restart_temp: f64,
-    pub elite_pool_size: usize,
+    pub pair_move_prob: f64,  // NEW: probability of pair moves
 }
 
 impl Default for EvolvedConfig {
@@ -60,7 +57,7 @@ impl Default for EvolvedConfig {
         Self {
             search_attempts: 200,
             direction_samples: 64,
-            sa_iterations: 28000,         // More iterations (will use restarts)
+            sa_iterations: 22000,
             sa_initial_temp: 0.45,
             sa_cooling_rate: 0.99993,
             sa_min_temp: 0.00001,
@@ -68,17 +65,14 @@ impl Default for EvolvedConfig {
             rotation_granularity: 45.0,
             center_pull_strength: 0.07,
             sa_passes: 2,
-            early_exit_threshold: 2500,   // Higher threshold (restart instead of exit)
+            early_exit_threshold: 1500,
             boundary_focus_prob: 0.85,
             num_strategies: 5,
             density_grid_resolution: 20,
             gap_penalty_weight: 0.15,
             local_density_radius: 0.5,
             fill_move_prob: 0.15,
-            // HOT RESTART parameters
-            hot_restart_interval: 800,    // Restart after 800 iters without improvement
-            hot_restart_temp: 0.35,       // Restart at 80% of initial temp
-            elite_pool_size: 3,           // Keep 3 elite configurations
+            pair_move_prob: 0.20,  // 20% pair moves
         }
     }
 }
@@ -515,7 +509,34 @@ impl EvolvedPacker {
         gaps
     }
 
-    /// Local search with HOT RESTARTS
+    /// Find adjacent tree pairs based on bounding box proximity
+    fn find_adjacent_pairs(&self, trees: &[PlacedTree]) -> Vec<(usize, usize)> {
+        let mut pairs = Vec::new();
+        let threshold = 0.6; // Proximity threshold
+
+        for i in 0..trees.len() {
+            let (ax1, ay1, ax2, ay2) = trees[i].bounds();
+            let a_cx = (ax1 + ax2) / 2.0;
+            let a_cy = (ay1 + ay2) / 2.0;
+
+            for j in (i + 1)..trees.len() {
+                let (bx1, by1, bx2, by2) = trees[j].bounds();
+                let b_cx = (bx1 + bx2) / 2.0;
+                let b_cy = (by1 + by2) / 2.0;
+
+                let dx = a_cx - b_cx;
+                let dy = a_cy - b_cy;
+                let dist = (dx * dx + dy * dy).sqrt();
+
+                if dist < threshold {
+                    pairs.push((i, j));
+                }
+            }
+        }
+
+        pairs
+    }
+
     fn local_search(
         &self,
         trees: &mut Vec<PlacedTree>,
@@ -532,9 +553,6 @@ impl EvolvedPacker {
         let mut best_side = current_side;
         let mut best_config: Vec<PlacedTree> = trees.clone();
 
-        // Elite pool for hot restarts
-        let mut elite_pool: Vec<(f64, Vec<PlacedTree>)> = vec![(current_side, trees.clone())];
-
         let temp_multiplier = match pass {
             0 => 1.0,
             _ => 0.35,
@@ -547,88 +565,106 @@ impl EvolvedPacker {
         };
 
         let mut iterations_without_improvement = 0;
-        let mut total_restarts = 0;
-        let max_restarts = 4;  // Limit restarts per pass
 
         let mut boundary_cache_iter = 0;
         let mut boundary_info: Vec<(usize, BoundaryEdge)> = Vec::new();
+        let mut adjacent_pairs: Vec<(usize, usize)> = Vec::new();
 
         for iter in 0..base_iterations {
-            // HOT RESTART: Check if we should restart
-            if iterations_without_improvement >= self.config.hot_restart_interval && total_restarts < max_restarts {
-                // Do a hot restart from elite pool
-                let elite_idx = rng.gen_range(0..elite_pool.len());
-                *trees = elite_pool[elite_idx].1.clone();
-                current_side = elite_pool[elite_idx].0;
-
-                // Reset to hot temperature
-                temp = self.config.hot_restart_temp;
-                iterations_without_improvement = 0;
-                total_restarts += 1;
-
-                // Clear boundary cache to force recalculation
-                boundary_cache_iter = 0;
-            }
-
-            // Early exit only after max restarts
-            if iterations_without_improvement >= self.config.early_exit_threshold && total_restarts >= max_restarts {
+            if iterations_without_improvement >= self.config.early_exit_threshold {
                 break;
             }
 
             if iter == 0 || iter - boundary_cache_iter >= 300 {
                 boundary_info = self.find_boundary_trees_with_edges(trees);
+                adjacent_pairs = self.find_adjacent_pairs(trees);
                 boundary_cache_iter = iter;
             }
 
-            let do_fill_move = rng.gen::<f64>() < self.config.fill_move_prob;
+            // PAIR MOVES: Try moving pairs of adjacent trees together
+            let do_pair_move = rng.gen::<f64>() < self.config.pair_move_prob && !adjacent_pairs.is_empty() && trees.len() > 2;
+            let do_fill_move = !do_pair_move && rng.gen::<f64>() < self.config.fill_move_prob;
 
-            let (idx, edge) = if do_fill_move {
-                let interior_trees: Vec<usize> = (0..trees.len())
-                    .filter(|&i| !boundary_info.iter().any(|(bi, _)| *bi == i))
-                    .collect();
+            if do_pair_move {
+                // Select a random adjacent pair
+                let pair_idx = rng.gen_range(0..adjacent_pairs.len());
+                let (idx1, idx2) = adjacent_pairs[pair_idx];
 
-                if !interior_trees.is_empty() && rng.gen::<f64>() < 0.5 {
-                    (interior_trees[rng.gen_range(0..interior_trees.len())], BoundaryEdge::None)
-                } else if !boundary_info.is_empty() {
+                let old_tree1 = trees[idx1].clone();
+                let old_tree2 = trees[idx2].clone();
+
+                let success = self.pair_move(trees, idx1, idx2, temp, rng);
+
+                if success {
+                    let new_side = compute_side_length(trees);
+                    let delta = new_side - current_side;
+
+                    if delta <= 0.0 || rng.gen::<f64>() < (-delta / temp).exp() {
+                        current_side = new_side;
+                        if current_side < best_side {
+                            best_side = current_side;
+                            best_config = trees.clone();
+                            iterations_without_improvement = 0;
+                        } else {
+                            iterations_without_improvement += 1;
+                        }
+                    } else {
+                        trees[idx1] = old_tree1;
+                        trees[idx2] = old_tree2;
+                        iterations_without_improvement += 1;
+                    }
+                } else {
+                    trees[idx1] = old_tree1;
+                    trees[idx2] = old_tree2;
+                    iterations_without_improvement += 1;
+                }
+            } else {
+                // Standard single-tree move
+                let (idx, edge) = if do_fill_move {
+                    let interior_trees: Vec<usize> = (0..trees.len())
+                        .filter(|&i| !boundary_info.iter().any(|(bi, _)| *bi == i))
+                        .collect();
+
+                    if !interior_trees.is_empty() && rng.gen::<f64>() < 0.5 {
+                        (interior_trees[rng.gen_range(0..interior_trees.len())], BoundaryEdge::None)
+                    } else if !boundary_info.is_empty() {
+                        let bi = &boundary_info[rng.gen_range(0..boundary_info.len())];
+                        (bi.0, bi.1)
+                    } else {
+                        (rng.gen_range(0..trees.len()), BoundaryEdge::None)
+                    }
+                } else if !boundary_info.is_empty() && rng.gen::<f64>() < self.config.boundary_focus_prob {
                     let bi = &boundary_info[rng.gen_range(0..boundary_info.len())];
                     (bi.0, bi.1)
                 } else {
                     (rng.gen_range(0..trees.len()), BoundaryEdge::None)
-                }
-            } else if !boundary_info.is_empty() && rng.gen::<f64>() < self.config.boundary_focus_prob {
-                let bi = &boundary_info[rng.gen_range(0..boundary_info.len())];
-                (bi.0, bi.1)
-            } else {
-                (rng.gen_range(0..trees.len()), BoundaryEdge::None)
-            };
+                };
 
-            let old_tree = trees[idx].clone();
+                let old_tree = trees[idx].clone();
 
-            let success = self.sa_move(trees, idx, temp, edge, do_fill_move, rng);
+                let success = self.sa_move(trees, idx, temp, edge, do_fill_move, rng);
 
-            if success {
-                let new_side = compute_side_length(trees);
-                let delta = new_side - current_side;
+                if success {
+                    let new_side = compute_side_length(trees);
+                    let delta = new_side - current_side;
 
-                if delta <= 0.0 || rng.gen::<f64>() < (-delta / temp).exp() {
-                    current_side = new_side;
-                    if current_side < best_side {
-                        best_side = current_side;
-                        best_config = trees.clone();
-                        iterations_without_improvement = 0;
-
-                        // Update elite pool
-                        self.update_elite_pool(&mut elite_pool, current_side, trees.clone());
+                    if delta <= 0.0 || rng.gen::<f64>() < (-delta / temp).exp() {
+                        current_side = new_side;
+                        if current_side < best_side {
+                            best_side = current_side;
+                            best_config = trees.clone();
+                            iterations_without_improvement = 0;
+                        } else {
+                            iterations_without_improvement += 1;
+                        }
                     } else {
+                        trees[idx] = old_tree;
                         iterations_without_improvement += 1;
                     }
                 } else {
                     trees[idx] = old_tree;
                     iterations_without_improvement += 1;
                 }
-            } else {
-                trees[idx] = old_tree;
-                iterations_without_improvement += 1;
             }
 
             temp = (temp * self.config.sa_cooling_rate).max(self.config.sa_min_temp);
@@ -639,26 +675,65 @@ impl EvolvedPacker {
         }
     }
 
-    /// Update the elite pool with a new configuration
-    fn update_elite_pool(&self, pool: &mut Vec<(f64, Vec<PlacedTree>)>, score: f64, config: Vec<PlacedTree>) {
-        // Check if this is better than any existing elite
-        let mut dominated = false;
-        for (elite_score, _) in pool.iter() {
-            if *elite_score <= score {
-                dominated = true;
-                break;
+    /// PAIR MOVE: Move two adjacent trees together
+    #[inline]
+    fn pair_move(
+        &self,
+        trees: &mut [PlacedTree],
+        idx1: usize,
+        idx2: usize,
+        temp: f64,
+        rng: &mut impl Rng,
+    ) -> bool {
+        // Copy values to avoid borrow issues
+        let (t1_x, t1_y, t1_angle) = (trees[idx1].x, trees[idx1].y, trees[idx1].angle_deg);
+        let (t2_x, t2_y, t2_angle) = (trees[idx2].x, trees[idx2].y, trees[idx2].angle_deg);
+
+        let scale = self.config.translation_scale * (0.3 + temp * 1.5);
+
+        let move_type = rng.gen_range(0..4);
+
+        match move_type {
+            0 => {
+                // Translate both trees by the same amount
+                let dx = rng.gen_range(-scale..scale);
+                let dy = rng.gen_range(-scale..scale);
+                trees[idx1] = PlacedTree::new(t1_x + dx, t1_y + dy, t1_angle);
+                trees[idx2] = PlacedTree::new(t2_x + dx, t2_y + dy, t2_angle);
+            }
+            1 => {
+                // Move both toward center
+                let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
+                let cx = (min_x + max_x) / 2.0;
+                let cy = (min_y + max_y) / 2.0;
+
+                let factor = 0.05 * (0.5 + temp);
+                let dx1 = (cx - t1_x) * factor;
+                let dy1 = (cy - t1_y) * factor;
+                let dx2 = (cx - t2_x) * factor;
+                let dy2 = (cy - t2_y) * factor;
+
+                trees[idx1] = PlacedTree::new(t1_x + dx1, t1_y + dy1, t1_angle);
+                trees[idx2] = PlacedTree::new(t2_x + dx2, t2_y + dy2, t2_angle);
+            }
+            2 => {
+                // Rotate both by the same angle
+                let angles = [45.0, 90.0, -45.0, -90.0];
+                let delta = angles[rng.gen_range(0..angles.len())];
+                let new_angle1 = (t1_angle + delta).rem_euclid(360.0);
+                let new_angle2 = (t2_angle + delta).rem_euclid(360.0);
+                trees[idx1] = PlacedTree::new(t1_x, t1_y, new_angle1);
+                trees[idx2] = PlacedTree::new(t2_x, t2_y, new_angle2);
+            }
+            _ => {
+                // Swap positions (keep angles)
+                trees[idx1] = PlacedTree::new(t2_x, t2_y, t1_angle);
+                trees[idx2] = PlacedTree::new(t1_x, t1_y, t2_angle);
             }
         }
 
-        if !dominated {
-            pool.push((score, config));
-            // Sort by score and keep only the best
-            pool.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-            pool.truncate(self.config.elite_pool_size);
-        } else if pool.len() < self.config.elite_pool_size {
-            // Add anyway if pool not full
-            pool.push((score, config));
-        }
+        // Check for overlaps
+        !has_overlap(trees, idx1) && !has_overlap(trees, idx2)
     }
 
     #[inline]

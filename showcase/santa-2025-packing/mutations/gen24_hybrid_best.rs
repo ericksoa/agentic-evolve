@@ -1,27 +1,46 @@
-//! Evolved Packing Algorithm - Generation 28 HOT RESTARTS
+//! Evolved Packing Algorithm - Generation 24 HYBRID BEST
 //!
 //! This module contains the evolved packing heuristics.
 //! The code is designed to be mutated by LLM-guided evolution.
 //!
-//! MUTATION STRATEGY: HOT RESTARTS (Gen28)
-//! Periodically restart SA with high temperature from best known configuration.
+//! Evolution targets:
+//! - placement_score(): How to score candidate placements
+//! - select_angles(): Which rotation angles to try
+//! - select_direction(): How to choose placement directions
+//! - sa_move(): Local search move operators
 //!
-//! Key insight: SA can get stuck in local minima. Instead of just continuing
-//! from where we are, occasionally restart from the best known solution
-//! with a high temperature to explore new regions.
+//! MUTATION STRATEGY: HYBRID BEST (Gen24)
+//! Combines the best elements from multiple generations:
 //!
-//! Changes from Gen10:
-//! - After every 5000 iterations without improvement, do a "hot restart"
-//! - Hot restart: restore best config, reset to high temperature
-//! - Track multiple "elite" configurations and restart from them
-//! - More aggressive exploration after restart
+//! From Gen10 (Champion - Diverse Starts):
+//! - 5 independent placement strategies running in parallel
+//! - Strategy propagation: spread good solutions across strategies
 //!
-//! Target: Escape local minima more effectively
+//! From Gen6 (Density Maximization):
+//! - Grid-based gap detection
+//! - Local density calculation
+//! - Fill-gap moves that compact interior
+//! - Density-aware placement scoring
+//!
+//! From Gen5 (Smart Moves):
+//! - Boundary-aware move operators
+//! - Edge-specific optimizations
+//!
+//! New enhancements in Gen24:
+//! - More aggressive boundary focus (95% instead of 85%)
+//! - Higher SA iterations for small n (where score impact is highest)
+//! - Tighter placement search (more directions, finer binary search)
+//! - Increased density grid resolution for better gap detection
+//! - More strategies (7 instead of 5)
+//! - Adaptive iteration scaling based on n
+//!
+//! Target: Squeeze maximum performance by combining proven techniques
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
 use std::f64::consts::PI;
 
+/// Strategy for initial placement direction
 #[derive(Clone, Copy, Debug)]
 pub enum PlacementStrategy {
     ClockwiseSpiral,
@@ -29,65 +48,91 @@ pub enum PlacementStrategy {
     Grid,
     Random,
     BoundaryFirst,
+    DensityFocused,    // New: prioritize filling gaps
+    BalancedAspect,    // New: prioritize balanced width/height
 }
 
+/// Evolved packing configuration
+/// These parameters are tuned through evolution
 pub struct EvolvedConfig {
+    // Search parameters
     pub search_attempts: usize,
     pub direction_samples: usize,
+
+    // Simulated annealing
     pub sa_iterations: usize,
     pub sa_initial_temp: f64,
     pub sa_cooling_rate: f64,
     pub sa_min_temp: f64,
+
+    // Move parameters
     pub translation_scale: f64,
     pub rotation_granularity: f64,
     pub center_pull_strength: f64,
+
+    // Multi-pass settings
     pub sa_passes: usize,
+
+    // Early exit threshold
     pub early_exit_threshold: usize,
+
+    // Boundary focus probability - MORE AGGRESSIVE (95%)
     pub boundary_focus_prob: f64,
+
+    // HYBRID: Number of independent strategies (7 instead of 5)
     pub num_strategies: usize,
+
+    // Density parameters (from Gen6, enhanced)
     pub density_grid_resolution: usize,
     pub gap_penalty_weight: f64,
     pub local_density_radius: f64,
     pub fill_move_prob: f64,
-    // HOT RESTART parameters
-    pub hot_restart_interval: usize,
-    pub hot_restart_temp: f64,
-    pub elite_pool_size: usize,
+
+    // Binary search precision (tighter for better placement)
+    pub binary_search_precision: f64,
 }
 
 impl Default for EvolvedConfig {
     fn default() -> Self {
+        // Gen24 HYBRID BEST: Combined optimal configuration
         Self {
-            search_attempts: 200,
-            direction_samples: 64,
-            sa_iterations: 28000,         // More iterations (will use restarts)
-            sa_initial_temp: 0.45,
-            sa_cooling_rate: 0.99993,
-            sa_min_temp: 0.00001,
-            translation_scale: 0.055,
-            rotation_granularity: 45.0,
-            center_pull_strength: 0.07,
-            sa_passes: 2,
-            early_exit_threshold: 2500,   // Higher threshold (restart instead of exit)
-            boundary_focus_prob: 0.85,
-            num_strategies: 5,
-            density_grid_resolution: 20,
-            gap_penalty_weight: 0.15,
-            local_density_radius: 0.5,
-            fill_move_prob: 0.15,
-            // HOT RESTART parameters
-            hot_restart_interval: 800,    // Restart after 800 iters without improvement
-            hot_restart_temp: 0.35,       // Restart at 80% of initial temp
-            elite_pool_size: 3,           // Keep 3 elite configurations
+            search_attempts: 320,             // More attempts for better coverage
+            direction_samples: 96,            // More directions for finer search
+            sa_iterations: 30000,             // Higher base iterations
+            sa_initial_temp: 0.48,            // Balanced temp
+            sa_cooling_rate: 0.99994,         // Slower cooling for better convergence
+            sa_min_temp: 0.000005,            // Lower minimum for fine-tuning
+            translation_scale: 0.052,         // Smaller moves for precision
+            rotation_granularity: 45.0,       // 8 angles
+            center_pull_strength: 0.075,      // Moderate pull toward center
+            sa_passes: 2,                     // Keep 2 passes
+            early_exit_threshold: 2000,       // More patience
+            boundary_focus_prob: 0.95,        // MORE AGGRESSIVE: 95% boundary focus
+            // HYBRID: 7 strategies for maximum diversity
+            num_strategies: 7,
+            // Enhanced density parameters
+            density_grid_resolution: 24,      // Higher resolution for better gap detection
+            gap_penalty_weight: 0.18,         // Slightly higher gap penalty
+            local_density_radius: 0.55,       // Slightly larger radius
+            fill_move_prob: 0.18,             // More fill moves
+            // Tighter binary search
+            binary_search_precision: 0.0005,  // Finer placement precision
         }
     }
 }
 
+/// Track which boundary a tree is blocking
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum BoundaryEdge {
-    Left, Right, Top, Bottom, Corner, None,
+    Left,
+    Right,
+    Top,
+    Bottom,
+    Corner,
+    None,
 }
 
+/// Main evolved packer
 pub struct EvolvedPacker {
     pub config: EvolvedConfig,
 }
@@ -99,42 +144,64 @@ impl Default for EvolvedPacker {
 }
 
 impl EvolvedPacker {
+    /// Pack all n from 1 to max_n using HYBRID strategy
     pub fn pack_all(&self, max_n: usize) -> Vec<Packing> {
         let mut rng = rand::thread_rng();
         let mut packings: Vec<Packing> = Vec::with_capacity(max_n);
 
+        // 7 diverse strategies for maximum exploration
         let strategies = [
             PlacementStrategy::ClockwiseSpiral,
             PlacementStrategy::CounterclockwiseSpiral,
             PlacementStrategy::Grid,
             PlacementStrategy::Random,
             PlacementStrategy::BoundaryFirst,
+            PlacementStrategy::DensityFocused,
+            PlacementStrategy::BalancedAspect,
         ];
 
+        // Maintain separate tree configurations for each strategy
         let mut strategy_trees: Vec<Vec<PlacedTree>> = vec![Vec::new(); strategies.len()];
 
         for n in 1..=max_n {
             let mut best_trees: Option<Vec<PlacedTree>> = None;
             let mut best_side = f64::INFINITY;
 
+            // Try each strategy independently
             for (s_idx, &strategy) in strategies.iter().enumerate() {
                 let mut trees = strategy_trees[s_idx].clone();
+
+                // Place new tree using strategy-specific heuristics
                 let new_tree = self.find_placement_with_strategy(&trees, n, max_n, strategy, &mut rng);
                 trees.push(new_tree);
 
+                // HYBRID: Adaptive SA iterations - more for small n
+                let iteration_multiplier = if n <= 20 {
+                    1.5  // 50% more iterations for small n (high score impact)
+                } else if n <= 50 {
+                    1.2  // 20% more for medium n
+                } else {
+                    1.0  // Normal for large n
+                };
+
+                // Run SA passes with enhanced iterations for small n
                 for pass in 0..self.config.sa_passes {
-                    self.local_search(&mut trees, n, pass, strategy, &mut rng);
+                    self.local_search(&mut trees, n, pass, strategy, iteration_multiplier, &mut rng);
                 }
 
                 let side = compute_side_length(&trees);
+
+                // Update strategy's best configuration
                 strategy_trees[s_idx] = trees.clone();
 
+                // Check if this is the best across all strategies
                 if side < best_side {
                     best_side = side;
                     best_trees = Some(trees);
                 }
             }
 
+            // Store the best result
             let best = best_trees.unwrap();
             let mut packing = Packing::new();
             for t in &best {
@@ -142,8 +209,10 @@ impl EvolvedPacker {
             }
             packings.push(packing);
 
+            // HYBRID: More aggressive strategy propagation
+            // Spread the best solution to struggling strategies
             for strat_trees in strategy_trees.iter_mut() {
-                if compute_side_length(strat_trees) > best_side * 1.02 {
+                if compute_side_length(strat_trees) > best_side * 1.015 {
                     *strat_trees = best.clone();
                 }
             }
@@ -152,6 +221,7 @@ impl EvolvedPacker {
         packings
     }
 
+    /// Find best placement for new tree using strategy-specific approach
     fn find_placement_with_strategy(
         &self,
         existing: &[PlacedTree],
@@ -161,12 +231,15 @@ impl EvolvedPacker {
         rng: &mut impl Rng,
     ) -> PlacedTree {
         if existing.is_empty() {
+            // Strategy-specific initial angle
             let initial_angle = match strategy {
                 PlacementStrategy::ClockwiseSpiral => 0.0,
                 PlacementStrategy::CounterclockwiseSpiral => 90.0,
                 PlacementStrategy::Grid => 45.0,
                 PlacementStrategy::Random => rng.gen_range(0..8) as f64 * 45.0,
                 PlacementStrategy::BoundaryFirst => 180.0,
+                PlacementStrategy::DensityFocused => 135.0,
+                PlacementStrategy::BalancedAspect => 270.0,
             };
             return PlacedTree::new(0.0, 0.0, initial_angle);
         }
@@ -175,14 +248,19 @@ impl EvolvedPacker {
         let mut best_score = f64::INFINITY;
 
         let angles = self.select_angles_for_strategy(n, strategy);
+
+        // Compute current bounds and density info
         let (min_x, min_y, max_x, max_y) = compute_bounds(existing);
         let current_width = max_x - min_x;
         let current_height = max_y - min_y;
 
+        // Find gaps for density-aware placement (enhanced grid resolution)
         let gaps = self.find_gaps(existing, min_x, min_y, max_x, max_y);
 
         for attempt in 0..self.config.search_attempts {
-            let dir = if !gaps.is_empty() && attempt % 5 == 0 {
+            // Strategy-specific direction selection with gap targeting
+            let dir = if !gaps.is_empty() && attempt % 4 == 0 {
+                // Target gaps directly more often
                 let gap = &gaps[attempt % gaps.len()];
                 let gap_cx = (gap.0 + gap.2) / 2.0;
                 let gap_cy = (gap.1 + gap.3) / 2.0;
@@ -195,10 +273,11 @@ impl EvolvedPacker {
             let vy = dir.sin();
 
             for &tree_angle in &angles {
+                // HYBRID: Tighter binary search for better placement precision
                 let mut low = 0.0;
                 let mut high = 12.0;
 
-                while high - low > 0.001 {
+                while high - low > self.config.binary_search_precision {
                     let mid = (low + high) / 2.0;
                     let candidate = PlacedTree::new(mid * vx, mid * vy, tree_angle);
 
@@ -211,7 +290,7 @@ impl EvolvedPacker {
 
                 let candidate = PlacedTree::new(high * vx, high * vy, tree_angle);
                 if is_valid(&candidate, existing) {
-                    let score = self.placement_score(&candidate, existing, n);
+                    let score = self.placement_score(&candidate, existing, n, strategy);
                     if score < best_score {
                         best_score = score;
                         best_tree = candidate;
@@ -223,6 +302,7 @@ impl EvolvedPacker {
         best_tree
     }
 
+    /// Select rotation angles based on strategy
     #[inline]
     fn select_angles_for_strategy(&self, n: usize, strategy: PlacementStrategy) -> Vec<f64> {
         match strategy {
@@ -246,9 +326,18 @@ impl EvolvedPacker {
             PlacementStrategy::BoundaryFirst => {
                 vec![45.0, 135.0, 225.0, 315.0, 0.0, 90.0, 180.0, 270.0]
             }
+            PlacementStrategy::DensityFocused => {
+                // Prioritize diagonal angles for gap filling
+                vec![45.0, 135.0, 225.0, 315.0, 22.5, 67.5, 112.5, 157.5]
+            }
+            PlacementStrategy::BalancedAspect => {
+                // Prioritize axis-aligned for balanced packing
+                vec![0.0, 90.0, 180.0, 270.0, 45.0, 135.0, 225.0, 315.0]
+            }
         }
     }
 
+    /// Select direction based on strategy
     #[inline]
     fn select_direction_for_strategy(
         &self,
@@ -273,33 +362,63 @@ impl EvolvedPacker {
                 (base - offset).rem_euclid(2.0 * PI)
             }
             PlacementStrategy::Grid => {
-                let num_dirs = 16;
+                let num_dirs = 24;  // More directions for grid
                 let base_idx = attempt % num_dirs;
                 let base = (base_idx as f64 / num_dirs as f64) * 2.0 * PI;
-                base + rng.gen_range(-0.03..0.03)
+                base + rng.gen_range(-0.02..0.02)
             }
             PlacementStrategy::Random => {
                 let mix = rng.gen::<f64>();
                 if mix < 0.5 {
                     rng.gen_range(0.0..2.0 * PI)
+                } else if width < height {
+                    let angle = if rng.gen() { 0.0 } else { PI };
+                    angle + rng.gen_range(-PI / 3.0..PI / 3.0)
                 } else {
-                    if width < height {
-                        let angle = if rng.gen() { 0.0 } else { PI };
-                        angle + rng.gen_range(-PI / 3.0..PI / 3.0)
-                    } else {
-                        let angle = if rng.gen() { PI / 2.0 } else { -PI / 2.0 };
-                        angle + rng.gen_range(-PI / 3.0..PI / 3.0)
-                    }
+                    let angle = if rng.gen() { PI / 2.0 } else { -PI / 2.0 };
+                    angle + rng.gen_range(-PI / 3.0..PI / 3.0)
                 }
             }
             PlacementStrategy::BoundaryFirst => {
                 let prob = rng.gen::<f64>();
-                if prob < 0.4 {
+                if prob < 0.5 {
                     let corners = [PI / 4.0, 3.0 * PI / 4.0, 5.0 * PI / 4.0, 7.0 * PI / 4.0];
-                    corners[attempt % 4] + rng.gen_range(-0.1..0.1)
-                } else if prob < 0.8 {
+                    corners[attempt % 4] + rng.gen_range(-0.08..0.08)
+                } else if prob < 0.85 {
                     let edges = [0.0, PI / 2.0, PI, 3.0 * PI / 2.0];
-                    edges[attempt % 4] + rng.gen_range(-0.2..0.2)
+                    edges[attempt % 4] + rng.gen_range(-0.15..0.15)
+                } else {
+                    rng.gen_range(0.0..2.0 * PI)
+                }
+            }
+            PlacementStrategy::DensityFocused => {
+                // Bias toward shorter dimension to fill gaps
+                let prob = rng.gen::<f64>();
+                if prob < 0.6 {
+                    if width < height {
+                        let angle = if rng.gen() { 0.0 } else { PI };
+                        angle + rng.gen_range(-PI / 4.0..PI / 4.0)
+                    } else {
+                        let angle = if rng.gen() { PI / 2.0 } else { -PI / 2.0 };
+                        angle + rng.gen_range(-PI / 4.0..PI / 4.0)
+                    }
+                } else {
+                    rng.gen_range(0.0..2.0 * PI)
+                }
+            }
+            PlacementStrategy::BalancedAspect => {
+                // Try to balance width and height
+                let aspect_diff = width - height;
+                if aspect_diff.abs() > 0.1 {
+                    if aspect_diff > 0.0 {
+                        // Width > height, bias toward vertical
+                        let angle = if rng.gen() { PI / 2.0 } else { -PI / 2.0 };
+                        angle + rng.gen_range(-PI / 6.0..PI / 6.0)
+                    } else {
+                        // Height > width, bias toward horizontal
+                        let angle = if rng.gen() { 0.0 } else { PI };
+                        angle + rng.gen_range(-PI / 6.0..PI / 6.0)
+                    }
                 } else {
                     rng.gen_range(0.0..2.0 * PI)
                 }
@@ -307,10 +426,12 @@ impl EvolvedPacker {
         }
     }
 
+    /// Score a placement (lower is better) - HYBRID scoring with strategy awareness
     #[inline]
-    fn placement_score(&self, tree: &PlacedTree, existing: &[PlacedTree], n: usize) -> f64 {
+    fn placement_score(&self, tree: &PlacedTree, existing: &[PlacedTree], n: usize, strategy: PlacementStrategy) -> f64 {
         let (tree_min_x, tree_min_y, tree_max_x, tree_max_y) = tree.bounds();
 
+        // Compute combined bounds
         let mut pack_min_x = tree_min_x;
         let mut pack_min_y = tree_min_y;
         let mut pack_max_x = tree_max_x;
@@ -328,14 +449,29 @@ impl EvolvedPacker {
         let height = pack_max_y - pack_min_y;
         let side = width.max(height);
 
+        // Primary: minimize side length
         let side_score = side;
-        let balance_penalty = (width - height).abs() * 0.10;
 
+        // Secondary: balance penalty (strategy-dependent weight)
+        let balance_weight = match strategy {
+            PlacementStrategy::BalancedAspect => 0.15,  // Higher weight for balanced strategy
+            _ => 0.10,
+        };
+        let balance_penalty = (width - height).abs() * balance_weight;
+
+        // Calculate local density around the new tree
         let tree_cx = (tree_min_x + tree_max_x) / 2.0;
         let tree_cy = (tree_min_y + tree_max_y) / 2.0;
         let local_density = self.calculate_local_density(tree_cx, tree_cy, existing);
-        let density_bonus = -self.config.gap_penalty_weight * local_density;
 
+        // Density bonus (strategy-dependent weight)
+        let density_weight = match strategy {
+            PlacementStrategy::DensityFocused => 0.22,  // Higher for density strategy
+            _ => self.config.gap_penalty_weight,
+        };
+        let density_bonus = -density_weight * local_density;
+
+        // Penalize placements that extend the bounding box
         let (old_min_x, old_min_y, old_max_x, old_max_y) = if !existing.is_empty() {
             compute_bounds(existing)
         } else {
@@ -344,19 +480,23 @@ impl EvolvedPacker {
 
         let x_extension = (pack_max_x - old_max_x).max(0.0) + (old_min_x - pack_min_x).max(0.0);
         let y_extension = (pack_max_y - old_max_y).max(0.0) + (old_min_y - pack_min_y).max(0.0);
-        let extension_penalty = (x_extension + y_extension) * 0.08;
+        let extension_penalty = (x_extension + y_extension) * 0.09;
 
+        // Penalize leaving unusable gaps
         let gap_penalty = self.estimate_unusable_gap(tree, existing) * self.config.gap_penalty_weight;
 
+        // Center penalty
         let center_x = (pack_min_x + pack_max_x) / 2.0;
         let center_y = (pack_min_y + pack_max_y) / 2.0;
-        let center_penalty = (center_x.abs() + center_y.abs()) * 0.005 / (n as f64).sqrt();
+        let center_penalty = (center_x.abs() + center_y.abs()) * 0.004 / (n as f64).sqrt();
 
+        // Neighbor proximity bonus
         let neighbor_bonus = self.neighbor_proximity_bonus(tree, existing);
 
         side_score + balance_penalty + extension_penalty + gap_penalty + center_penalty + density_bonus - neighbor_bonus
     }
 
+    /// Calculate local density around a point
     #[inline]
     fn calculate_local_density(&self, cx: f64, cy: f64, trees: &[PlacedTree]) -> f64 {
         let radius = self.config.local_density_radius;
@@ -380,6 +520,7 @@ impl EvolvedPacker {
         count
     }
 
+    /// Estimate if placement creates an unusable gap
     #[inline]
     fn estimate_unusable_gap(&self, tree: &PlacedTree, existing: &[PlacedTree]) -> f64 {
         if existing.is_empty() {
@@ -389,36 +530,38 @@ impl EvolvedPacker {
         let (tree_min_x, tree_min_y, tree_max_x, tree_max_y) = tree.bounds();
 
         let mut gap_penalty = 0.0;
-        let min_useful_gap = 0.15;
-        let max_wasteful_gap = 0.4;
+        let min_useful_gap = 0.12;  // Slightly tighter
+        let max_wasteful_gap = 0.35;
 
         for other in existing {
             let (ox1, oy1, ox2, oy2) = other.bounds();
 
+            // Horizontal gap
             if tree_min_y < oy2 && tree_max_y > oy1 {
                 if tree_min_x > ox2 {
                     let gap = tree_min_x - ox2;
                     if gap > min_useful_gap && gap < max_wasteful_gap {
-                        gap_penalty += (max_wasteful_gap - gap) / max_wasteful_gap * 0.1;
+                        gap_penalty += (max_wasteful_gap - gap) / max_wasteful_gap * 0.12;
                     }
                 } else if tree_max_x < ox1 {
                     let gap = ox1 - tree_max_x;
                     if gap > min_useful_gap && gap < max_wasteful_gap {
-                        gap_penalty += (max_wasteful_gap - gap) / max_wasteful_gap * 0.1;
+                        gap_penalty += (max_wasteful_gap - gap) / max_wasteful_gap * 0.12;
                     }
                 }
             }
 
+            // Vertical gap
             if tree_min_x < ox2 && tree_max_x > ox1 {
                 if tree_min_y > oy2 {
                     let gap = tree_min_y - oy2;
                     if gap > min_useful_gap && gap < max_wasteful_gap {
-                        gap_penalty += (max_wasteful_gap - gap) / max_wasteful_gap * 0.1;
+                        gap_penalty += (max_wasteful_gap - gap) / max_wasteful_gap * 0.12;
                     }
                 } else if tree_max_y < oy1 {
                     let gap = oy1 - tree_max_y;
                     if gap > min_useful_gap && gap < max_wasteful_gap {
-                        gap_penalty += (max_wasteful_gap - gap) / max_wasteful_gap * 0.1;
+                        gap_penalty += (max_wasteful_gap - gap) / max_wasteful_gap * 0.12;
                     }
                 }
             }
@@ -427,6 +570,7 @@ impl EvolvedPacker {
         gap_penalty
     }
 
+    /// Bonus for being close to existing trees
     #[inline]
     fn neighbor_proximity_bonus(&self, tree: &PlacedTree, existing: &[PlacedTree]) -> f64 {
         if existing.is_empty() {
@@ -450,17 +594,18 @@ impl EvolvedPacker {
             let dist = (dx * dx + dy * dy).sqrt();
 
             min_dist = min_dist.min(dist);
-            if dist < 0.8 {
+            if dist < 0.75 {  // Slightly tighter threshold
                 close_neighbors += 1;
             }
         }
 
-        let dist_bonus = if min_dist < 1.5 { 0.02 * (1.5 - min_dist) } else { 0.0 };
-        let neighbor_bonus = 0.005 * close_neighbors as f64;
+        let dist_bonus = if min_dist < 1.4 { 0.025 * (1.4 - min_dist) } else { 0.0 };
+        let neighbor_bonus = 0.006 * close_neighbors as f64;
 
         dist_bonus + neighbor_bonus
     }
 
+    /// Find gaps in the current packing (enhanced resolution)
     fn find_gaps(&self, trees: &[PlacedTree], min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> Vec<(f64, f64, f64, f64)> {
         if trees.is_empty() {
             return Vec::new();
@@ -475,6 +620,7 @@ impl EvolvedPacker {
             return Vec::new();
         }
 
+        // Create occupancy grid
         let mut occupied = vec![false; grid_res * grid_res];
 
         for tree in trees {
@@ -491,6 +637,7 @@ impl EvolvedPacker {
             }
         }
 
+        // Find empty cells surrounded by occupied cells
         for i in 1..grid_res - 1 {
             for j in 1..grid_res - 1 {
                 let idx = j * grid_res + i;
@@ -515,13 +662,14 @@ impl EvolvedPacker {
         gaps
     }
 
-    /// Local search with HOT RESTARTS
+    /// Local search with simulated annealing - HYBRID with adaptive iterations
     fn local_search(
         &self,
         trees: &mut Vec<PlacedTree>,
         n: usize,
         pass: usize,
         _strategy: PlacementStrategy,
+        iteration_multiplier: f64,
         rng: &mut impl Rng,
     ) {
         if trees.len() <= 1 {
@@ -532,54 +680,36 @@ impl EvolvedPacker {
         let mut best_side = current_side;
         let mut best_config: Vec<PlacedTree> = trees.clone();
 
-        // Elite pool for hot restarts
-        let mut elite_pool: Vec<(f64, Vec<PlacedTree>)> = vec![(current_side, trees.clone())];
-
         let temp_multiplier = match pass {
             0 => 1.0,
-            _ => 0.35,
+            _ => 0.32,  // Slightly lower for second pass
         };
         let mut temp = self.config.sa_initial_temp * temp_multiplier;
 
+        // HYBRID: Adaptive iterations based on n
         let base_iterations = match pass {
-            0 => self.config.sa_iterations + n * 100,
-            _ => self.config.sa_iterations / 2 + n * 50,
+            0 => ((self.config.sa_iterations as f64 + n as f64 * 120.0) * iteration_multiplier) as usize,
+            _ => ((self.config.sa_iterations as f64 / 2.0 + n as f64 * 60.0) * iteration_multiplier) as usize,
         };
 
         let mut iterations_without_improvement = 0;
-        let mut total_restarts = 0;
-        let max_restarts = 4;  // Limit restarts per pass
 
+        // Cache boundary info
         let mut boundary_cache_iter = 0;
         let mut boundary_info: Vec<(usize, BoundaryEdge)> = Vec::new();
 
         for iter in 0..base_iterations {
-            // HOT RESTART: Check if we should restart
-            if iterations_without_improvement >= self.config.hot_restart_interval && total_restarts < max_restarts {
-                // Do a hot restart from elite pool
-                let elite_idx = rng.gen_range(0..elite_pool.len());
-                *trees = elite_pool[elite_idx].1.clone();
-                current_side = elite_pool[elite_idx].0;
-
-                // Reset to hot temperature
-                temp = self.config.hot_restart_temp;
-                iterations_without_improvement = 0;
-                total_restarts += 1;
-
-                // Clear boundary cache to force recalculation
-                boundary_cache_iter = 0;
-            }
-
-            // Early exit only after max restarts
-            if iterations_without_improvement >= self.config.early_exit_threshold && total_restarts >= max_restarts {
+            if iterations_without_improvement >= self.config.early_exit_threshold {
                 break;
             }
 
-            if iter == 0 || iter - boundary_cache_iter >= 300 {
+            // Update boundary cache every 250 iterations (more frequent updates)
+            if iter == 0 || iter - boundary_cache_iter >= 250 {
                 boundary_info = self.find_boundary_trees_with_edges(trees);
                 boundary_cache_iter = iter;
             }
 
+            // Choose between boundary optimization and gap-filling
             let do_fill_move = rng.gen::<f64>() < self.config.fill_move_prob;
 
             let (idx, edge) = if do_fill_move {
@@ -587,7 +717,7 @@ impl EvolvedPacker {
                     .filter(|&i| !boundary_info.iter().any(|(bi, _)| *bi == i))
                     .collect();
 
-                if !interior_trees.is_empty() && rng.gen::<f64>() < 0.5 {
+                if !interior_trees.is_empty() && rng.gen::<f64>() < 0.55 {
                     (interior_trees[rng.gen_range(0..interior_trees.len())], BoundaryEdge::None)
                 } else if !boundary_info.is_empty() {
                     let bi = &boundary_info[rng.gen_range(0..boundary_info.len())];
@@ -604,7 +734,7 @@ impl EvolvedPacker {
 
             let old_tree = trees[idx].clone();
 
-            let success = self.sa_move(trees, idx, temp, edge, do_fill_move, rng);
+            let success = self.hybrid_move(trees, idx, temp, edge, do_fill_move, rng);
 
             if success {
                 let new_side = compute_side_length(trees);
@@ -616,9 +746,6 @@ impl EvolvedPacker {
                         best_side = current_side;
                         best_config = trees.clone();
                         iterations_without_improvement = 0;
-
-                        // Update elite pool
-                        self.update_elite_pool(&mut elite_pool, current_side, trees.clone());
                     } else {
                         iterations_without_improvement += 1;
                     }
@@ -639,28 +766,7 @@ impl EvolvedPacker {
         }
     }
 
-    /// Update the elite pool with a new configuration
-    fn update_elite_pool(&self, pool: &mut Vec<(f64, Vec<PlacedTree>)>, score: f64, config: Vec<PlacedTree>) {
-        // Check if this is better than any existing elite
-        let mut dominated = false;
-        for (elite_score, _) in pool.iter() {
-            if *elite_score <= score {
-                dominated = true;
-                break;
-            }
-        }
-
-        if !dominated {
-            pool.push((score, config));
-            // Sort by score and keep only the best
-            pool.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-            pool.truncate(self.config.elite_pool_size);
-        } else if pool.len() < self.config.elite_pool_size {
-            // Add anyway if pool not full
-            pool.push((score, config));
-        }
-    }
-
+    /// Find trees on the bounding box boundary
     #[inline]
     fn find_boundary_trees_with_edges(&self, trees: &[PlacedTree]) -> Vec<(usize, BoundaryEdge)> {
         if trees.is_empty() {
@@ -668,7 +774,7 @@ impl EvolvedPacker {
         }
 
         let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
-        let eps = 0.015;
+        let eps = 0.012;  // Slightly tighter epsilon
 
         let mut boundary_info: Vec<(usize, BoundaryEdge)> = Vec::new();
 
@@ -697,8 +803,9 @@ impl EvolvedPacker {
         boundary_info
     }
 
+    /// HYBRID move operator combining best elements
     #[inline]
-    fn sa_move(
+    fn hybrid_move(
         &self,
         trees: &mut [PlacedTree],
         idx: usize,
@@ -712,96 +819,115 @@ impl EvolvedPacker {
         let old_y = old.y;
         let old_angle = old.angle_deg;
 
-        let scale = self.config.translation_scale * (0.3 + temp * 1.5);
+        let scale = self.config.translation_scale * (0.25 + temp * 1.6);
 
         if is_fill_move {
             let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
             let bbox_cx = (min_x + max_x) / 2.0;
             let bbox_cy = (min_y + max_y) / 2.0;
 
-            let move_type = rng.gen_range(0..4);
+            let move_type = rng.gen_range(0..5);
             match move_type {
                 0 => {
-                    let dx = (bbox_cx - old_x) * 0.1 * (0.5 + temp);
-                    let dy = (bbox_cy - old_y) * 0.1 * (0.5 + temp);
+                    // Move toward center of bbox
+                    let dx = (bbox_cx - old_x) * 0.12 * (0.4 + temp);
+                    let dy = (bbox_cy - old_y) * 0.12 * (0.4 + temp);
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 1 => {
-                    let dx = rng.gen_range(-scale * 0.4..scale * 0.4);
-                    let dy = rng.gen_range(-scale * 0.4..scale * 0.4);
+                    // Small random move
+                    let dx = rng.gen_range(-scale * 0.35..scale * 0.35);
+                    let dy = rng.gen_range(-scale * 0.35..scale * 0.35);
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 2 => {
-                    let angles = [45.0, 90.0, -45.0, -90.0, 30.0, -30.0];
+                    // Rotate
+                    let angles = [45.0, 90.0, -45.0, -90.0, 30.0, -30.0, 15.0, -15.0];
                     let delta = angles[rng.gen_range(0..angles.len())];
                     let new_angle = (old_angle + delta).rem_euclid(360.0);
                     trees[idx] = PlacedTree::new(old_x, old_y, new_angle);
                 }
-                _ => {
+                3 => {
+                    // Move toward nearest gap
                     let gaps = self.find_gaps(trees, min_x, min_y, max_x, max_y);
                     if !gaps.is_empty() {
                         let gap = &gaps[rng.gen_range(0..gaps.len())];
                         let gap_cx = (gap.0 + gap.2) / 2.0;
                         let gap_cy = (gap.1 + gap.3) / 2.0;
-                        let dx = (gap_cx - old_x) * 0.05;
-                        let dy = (gap_cy - old_y) * 0.05;
+                        let dx = (gap_cx - old_x) * 0.06;
+                        let dy = (gap_cy - old_y) * 0.06;
                         trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                     } else {
                         return false;
                     }
                 }
+                _ => {
+                    // Compact move - combine translation and rotation
+                    let dx = (bbox_cx - old_x) * 0.05;
+                    let dy = (bbox_cy - old_y) * 0.05;
+                    let angles = [22.5, -22.5, 45.0, -45.0];
+                    let delta = angles[rng.gen_range(0..angles.len())];
+                    let new_angle = (old_angle + delta).rem_euclid(360.0);
+                    trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, new_angle);
+                }
             }
         } else {
+            // Enhanced boundary-aware moves
             let move_type = match edge {
                 BoundaryEdge::Left => {
-                    match rng.gen_range(0..10) {
-                        0..=4 => 0,
-                        5..=6 => 1,
-                        7..=8 => 2,
+                    match rng.gen_range(0..12) {
+                        0..=5 => 0,
+                        6..=7 => 1,
+                        8..=9 => 2,
+                        10 => 10,  // Fine-tune move
                         _ => 3,
                     }
                 }
                 BoundaryEdge::Right => {
-                    match rng.gen_range(0..10) {
-                        0..=4 => 4,
-                        5..=6 => 1,
-                        7..=8 => 2,
+                    match rng.gen_range(0..12) {
+                        0..=5 => 4,
+                        6..=7 => 1,
+                        8..=9 => 2,
+                        10 => 10,
                         _ => 3,
                     }
                 }
                 BoundaryEdge::Top => {
-                    match rng.gen_range(0..10) {
-                        0..=4 => 5,
-                        5..=6 => 6,
-                        7..=8 => 2,
+                    match rng.gen_range(0..12) {
+                        0..=5 => 5,
+                        6..=7 => 6,
+                        8..=9 => 2,
+                        10 => 10,
                         _ => 3,
                     }
                 }
                 BoundaryEdge::Bottom => {
-                    match rng.gen_range(0..10) {
-                        0..=4 => 7,
-                        5..=6 => 6,
-                        7..=8 => 2,
+                    match rng.gen_range(0..12) {
+                        0..=5 => 7,
+                        6..=7 => 6,
+                        8..=9 => 2,
+                        10 => 10,
                         _ => 3,
                     }
                 }
                 BoundaryEdge::Corner => {
-                    match rng.gen_range(0..10) {
-                        0..=4 => 8,
-                        5..=6 => 2,
-                        7..=8 => 9,
+                    match rng.gen_range(0..12) {
+                        0..=5 => 8,
+                        6..=7 => 2,
+                        8..=9 => 9,
+                        10 => 10,
                         _ => 3,
                     }
                 }
                 BoundaryEdge::None => {
-                    rng.gen_range(0..10)
+                    rng.gen_range(0..11)
                 }
             };
 
             match move_type {
                 0 => {
-                    let dx = rng.gen_range(scale * 0.3..scale);
-                    let dy = rng.gen_range(-scale * 0.2..scale * 0.2);
+                    let dx = rng.gen_range(scale * 0.25..scale);
+                    let dy = rng.gen_range(-scale * 0.15..scale * 0.15);
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 1 => {
@@ -809,24 +935,24 @@ impl EvolvedPacker {
                     trees[idx] = PlacedTree::new(old_x, old_y + dy, old_angle);
                 }
                 2 => {
-                    let angles = [45.0, 90.0, -45.0, -90.0];
+                    let angles = [45.0, 90.0, -45.0, -90.0, 22.5, -22.5];
                     let delta = angles[rng.gen_range(0..angles.len())];
                     let new_angle = (old_angle + delta).rem_euclid(360.0);
                     trees[idx] = PlacedTree::new(old_x, old_y, new_angle);
                 }
                 3 => {
-                    let dx = rng.gen_range(-scale * 0.5..scale * 0.5);
-                    let dy = rng.gen_range(-scale * 0.5..scale * 0.5);
+                    let dx = rng.gen_range(-scale * 0.45..scale * 0.45);
+                    let dy = rng.gen_range(-scale * 0.45..scale * 0.45);
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 4 => {
-                    let dx = rng.gen_range(-scale..-scale * 0.3);
-                    let dy = rng.gen_range(-scale * 0.2..scale * 0.2);
+                    let dx = rng.gen_range(-scale..-scale * 0.25);
+                    let dy = rng.gen_range(-scale * 0.15..scale * 0.15);
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 5 => {
-                    let dx = rng.gen_range(-scale * 0.2..scale * 0.2);
-                    let dy = rng.gen_range(-scale..-scale * 0.3);
+                    let dx = rng.gen_range(-scale * 0.15..scale * 0.15);
+                    let dy = rng.gen_range(-scale..-scale * 0.25);
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 6 => {
@@ -834,8 +960,8 @@ impl EvolvedPacker {
                     trees[idx] = PlacedTree::new(old_x + dx, old_y, old_angle);
                 }
                 7 => {
-                    let dx = rng.gen_range(-scale * 0.2..scale * 0.2);
-                    let dy = rng.gen_range(scale * 0.3..scale);
+                    let dx = rng.gen_range(-scale * 0.15..scale * 0.15);
+                    let dy = rng.gen_range(scale * 0.25..scale);
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 8 => {
@@ -843,8 +969,8 @@ impl EvolvedPacker {
                     let bbox_cx = (min_x + max_x) / 2.0;
                     let bbox_cy = (min_y + max_y) / 2.0;
 
-                    let dx = (bbox_cx - old_x) * self.config.center_pull_strength * (0.5 + temp);
-                    let dy = (bbox_cy - old_y) * self.config.center_pull_strength * (0.5 + temp);
+                    let dx = (bbox_cx - old_x) * self.config.center_pull_strength * (0.45 + temp);
+                    let dy = (bbox_cy - old_y) * self.config.center_pull_strength * (0.45 + temp);
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 9 => {
@@ -852,10 +978,20 @@ impl EvolvedPacker {
                     let sign = if rng.gen() { 1.0 } else { -1.0 };
                     trees[idx] = PlacedTree::new(old_x + diag, old_y + sign * diag, old_angle);
                 }
+                10 => {
+                    // Fine-tune move - very small adjustments
+                    let fine_scale = scale * 0.15;
+                    let dx = rng.gen_range(-fine_scale..fine_scale);
+                    let dy = rng.gen_range(-fine_scale..fine_scale);
+                    let angles = [5.0, -5.0, 10.0, -10.0];
+                    let delta = angles[rng.gen_range(0..angles.len())];
+                    let new_angle = (old_angle + delta).rem_euclid(360.0);
+                    trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, new_angle);
+                }
                 _ => {
                     let mag = (old_x * old_x + old_y * old_y).sqrt();
-                    if mag > 0.08 {
-                        let delta_r = rng.gen_range(-0.06..0.06) * (1.0 + temp);
+                    if mag > 0.06 {
+                        let delta_r = rng.gen_range(-0.05..0.05) * (1.0 + temp);
                         let new_mag = (mag + delta_r).max(0.0);
                         let scale_r = new_mag / mag;
                         trees[idx] = PlacedTree::new(old_x * scale_r, old_y * scale_r, old_angle);
@@ -870,6 +1006,7 @@ impl EvolvedPacker {
     }
 }
 
+// Helper functions
 fn is_valid(tree: &PlacedTree, existing: &[PlacedTree]) -> bool {
     for other in existing {
         if tree.overlaps(other) {
@@ -948,5 +1085,17 @@ mod tests {
         let packings = packer.pack_all(50);
         let score = calculate_score(&packings);
         println!("Evolved score for n=1..50: {:.4}", score);
+    }
+
+    #[test]
+    fn test_hybrid_strategies() {
+        // Test that different strategies produce valid packings
+        let packer = EvolvedPacker::default();
+        let packings = packer.pack_all(10);
+
+        for (i, p) in packings.iter().enumerate() {
+            assert_eq!(p.trees.len(), i + 1);
+            assert!(!p.has_overlaps());
+        }
     }
 }

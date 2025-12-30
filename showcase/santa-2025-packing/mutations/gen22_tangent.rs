@@ -1,27 +1,31 @@
-//! Evolved Packing Algorithm - Generation 28 HOT RESTARTS
+//! Evolved Packing Algorithm - Generation 22 TANGENT PLACEMENT
 //!
 //! This module contains the evolved packing heuristics.
 //! The code is designed to be mutated by LLM-guided evolution.
 //!
-//! MUTATION STRATEGY: HOT RESTARTS (Gen28)
-//! Periodically restart SA with high temperature from best known configuration.
+//! Evolution targets:
+//! - placement_score(): How to score candidate placements
+//! - select_angles(): Which rotation angles to try
+//! - select_direction(): How to choose placement directions
+//! - sa_move(): Local search move operators
 //!
-//! Key insight: SA can get stuck in local minima. Instead of just continuing
-//! from where we are, occasionally restart from the best known solution
-//! with a high temperature to explore new regions.
+//! MUTATION STRATEGY: TANGENT/TOUCHING PLACEMENT (Gen22)
+//! Find positions where new trees are tangent to existing trees:
 //!
-//! Changes from Gen10:
-//! - After every 5000 iterations without improvement, do a "hot restart"
-//! - Hot restart: restore best config, reset to high temperature
-//! - Track multiple "elite" configurations and restart from them
-//! - More aggressive exploration after restart
+//! Key improvements from Gen10:
+//! - Sample candidate positions along boundaries of existing trees
+//! - Use polygon vertices as reference points for tangent placement
+//! - Try positions that create tight contact with 1-2 existing trees
+//! - This creates denser packings than placing with gaps
+//! - Binary search from tangent positions toward center
 //!
-//! Target: Escape local minima more effectively
+//! Target: Beat Gen10's score with tighter tree-to-tree contact
 
-use crate::{Packing, PlacedTree};
+use crate::{Packing, PlacedTree, TREE_VERTICES};
 use rand::Rng;
 use std::f64::consts::PI;
 
+/// Strategy for initial placement direction
 #[derive(Clone, Copy, Debug)]
 pub enum PlacementStrategy {
     ClockwiseSpiral,
@@ -29,65 +33,94 @@ pub enum PlacementStrategy {
     Grid,
     Random,
     BoundaryFirst,
+    TangentFirst,  // New: prioritize tangent placements
 }
 
+/// Evolved packing configuration
+/// These parameters are tuned through evolution
 pub struct EvolvedConfig {
+    // Search parameters
     pub search_attempts: usize,
     pub direction_samples: usize,
+
+    // Simulated annealing
     pub sa_iterations: usize,
     pub sa_initial_temp: f64,
     pub sa_cooling_rate: f64,
     pub sa_min_temp: f64,
+
+    // Move parameters
     pub translation_scale: f64,
     pub rotation_granularity: f64,
     pub center_pull_strength: f64,
+
+    // Multi-pass settings
     pub sa_passes: usize,
+
+    // Early exit threshold
     pub early_exit_threshold: usize,
+
+    // Boundary focus probability
     pub boundary_focus_prob: f64,
+
+    // DIVERSE STARTS: Number of independent attempts
     pub num_strategies: usize,
+
+    // Density parameters (from Gen6)
     pub density_grid_resolution: usize,
     pub gap_penalty_weight: f64,
     pub local_density_radius: f64,
     pub fill_move_prob: f64,
-    // HOT RESTART parameters
-    pub hot_restart_interval: usize,
-    pub hot_restart_temp: f64,
-    pub elite_pool_size: usize,
+
+    // TANGENT PLACEMENT parameters (Gen22)
+    pub tangent_samples_per_tree: usize,
+    pub tangent_nudge_distance: f64,
+    pub tangent_bonus_weight: f64,
 }
 
 impl Default for EvolvedConfig {
     fn default() -> Self {
+        // Gen22 TANGENT PLACEMENT: Tight contact configuration
         Self {
-            search_attempts: 200,
-            direction_samples: 64,
-            sa_iterations: 28000,         // More iterations (will use restarts)
-            sa_initial_temp: 0.45,
-            sa_cooling_rate: 0.99993,
-            sa_min_temp: 0.00001,
-            translation_scale: 0.055,
-            rotation_granularity: 45.0,
-            center_pull_strength: 0.07,
-            sa_passes: 2,
-            early_exit_threshold: 2500,   // Higher threshold (restart instead of exit)
-            boundary_focus_prob: 0.85,
-            num_strategies: 5,
+            search_attempts: 180,             // Balanced with tangent sampling
+            direction_samples: 64,           // Good coverage per strategy
+            sa_iterations: 22000,            // Balanced for multiple attempts
+            sa_initial_temp: 0.45,           // From Gen6
+            sa_cooling_rate: 0.99993,        // Slightly faster for multi-attempt
+            sa_min_temp: 0.00001,            // From Gen6
+            translation_scale: 0.055,        // From Gen6
+            rotation_granularity: 45.0,      // 8 angles
+            center_pull_strength: 0.07,      // From Gen6
+            sa_passes: 2,                    // Keep 2 passes
+            early_exit_threshold: 1500,      // Slightly lower for efficiency
+            boundary_focus_prob: 0.85,       // From Gen6
+            // DIVERSE STARTS parameters
+            num_strategies: 6,               // 6 strategies including TangentFirst
+            // Density parameters from Gen6
             density_grid_resolution: 20,
             gap_penalty_weight: 0.15,
             local_density_radius: 0.5,
             fill_move_prob: 0.15,
-            // HOT RESTART parameters
-            hot_restart_interval: 800,    // Restart after 800 iters without improvement
-            hot_restart_temp: 0.35,       // Restart at 80% of initial temp
-            elite_pool_size: 3,           // Keep 3 elite configurations
+            // TANGENT PLACEMENT parameters (Gen22)
+            tangent_samples_per_tree: 12,    // Sample points per existing tree
+            tangent_nudge_distance: 0.002,   // Small offset to avoid exact touching
+            tangent_bonus_weight: 0.08,      // Reward for tangent placements
         }
     }
 }
 
+/// Track which boundary a tree is blocking
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum BoundaryEdge {
-    Left, Right, Top, Bottom, Corner, None,
+    Left,
+    Right,
+    Top,
+    Bottom,
+    Corner,
+    None,
 }
 
+/// Main evolved packer
 pub struct EvolvedPacker {
     pub config: EvolvedConfig,
 }
@@ -99,42 +132,54 @@ impl Default for EvolvedPacker {
 }
 
 impl EvolvedPacker {
+    /// Pack all n from 1 to max_n using TANGENT PLACEMENT strategy
     pub fn pack_all(&self, max_n: usize) -> Vec<Packing> {
         let mut rng = rand::thread_rng();
         let mut packings: Vec<Packing> = Vec::with_capacity(max_n);
 
+        // Track best configurations for each strategy
         let strategies = [
             PlacementStrategy::ClockwiseSpiral,
             PlacementStrategy::CounterclockwiseSpiral,
             PlacementStrategy::Grid,
             PlacementStrategy::Random,
             PlacementStrategy::BoundaryFirst,
+            PlacementStrategy::TangentFirst,
         ];
 
+        // Maintain separate tree configurations for each strategy
         let mut strategy_trees: Vec<Vec<PlacedTree>> = vec![Vec::new(); strategies.len()];
 
         for n in 1..=max_n {
             let mut best_trees: Option<Vec<PlacedTree>> = None;
             let mut best_side = f64::INFINITY;
 
+            // Try each strategy independently
             for (s_idx, &strategy) in strategies.iter().enumerate() {
                 let mut trees = strategy_trees[s_idx].clone();
+
+                // Place new tree using strategy-specific heuristics
                 let new_tree = self.find_placement_with_strategy(&trees, n, max_n, strategy, &mut rng);
                 trees.push(new_tree);
 
+                // Run SA passes
                 for pass in 0..self.config.sa_passes {
                     self.local_search(&mut trees, n, pass, strategy, &mut rng);
                 }
 
                 let side = compute_side_length(&trees);
+
+                // Update strategy's best configuration
                 strategy_trees[s_idx] = trees.clone();
 
+                // Check if this is the best across all strategies
                 if side < best_side {
                     best_side = side;
                     best_trees = Some(trees);
                 }
             }
 
+            // Store the best result
             let best = best_trees.unwrap();
             let mut packing = Packing::new();
             for t in &best {
@@ -142,6 +187,8 @@ impl EvolvedPacker {
             }
             packings.push(packing);
 
+            // Update all strategies to use the best configuration going forward
+            // This helps propagate good solutions across strategies
             for strat_trees in strategy_trees.iter_mut() {
                 if compute_side_length(strat_trees) > best_side * 1.02 {
                     *strat_trees = best.clone();
@@ -152,6 +199,89 @@ impl EvolvedPacker {
         packings
     }
 
+    /// Generate tangent candidate positions around existing trees
+    fn generate_tangent_candidates(
+        &self,
+        existing: &[PlacedTree],
+        tree_angle: f64,
+        _rng: &mut impl Rng,
+    ) -> Vec<(f64, f64)> {
+        let mut candidates = Vec::new();
+
+        if existing.is_empty() {
+            return candidates;
+        }
+
+        // Get the vertices of a tree at the candidate angle (for offset calculation)
+        let angle_rad = tree_angle * PI / 180.0;
+        let cos_a = angle_rad.cos();
+        let sin_a = angle_rad.sin();
+
+        // Compute rotated tree vertices for the new tree
+        let new_tree_verts: Vec<(f64, f64)> = TREE_VERTICES
+            .iter()
+            .map(|&(vx, vy)| {
+                let rx = vx * cos_a - vy * sin_a;
+                let ry = vx * sin_a + vy * cos_a;
+                (rx, ry)
+            })
+            .collect();
+
+        // For each existing tree, generate tangent positions
+        for existing_tree in existing {
+            let existing_verts = existing_tree.vertices();
+
+            // Sample points along the boundary of the existing tree
+            for i in 0..existing_verts.len() {
+                let (v1x, v1y) = existing_verts[i];
+                let (v2x, v2y) = existing_verts[(i + 1) % existing_verts.len()];
+
+                // Sample along edge
+                for t in &[0.0, 0.25, 0.5, 0.75, 1.0] {
+                    let px = v1x + t * (v2x - v1x);
+                    let py = v1y + t * (v2y - v1y);
+
+                    // Compute edge normal (pointing outward)
+                    let edge_dx = v2x - v1x;
+                    let edge_dy = v2y - v1y;
+                    let edge_len = (edge_dx * edge_dx + edge_dy * edge_dy).sqrt();
+                    if edge_len < 1e-10 {
+                        continue;
+                    }
+                    let nx = -edge_dy / edge_len;  // Normal perpendicular to edge
+                    let ny = edge_dx / edge_len;
+
+                    // For each vertex of the new tree, compute position that would
+                    // place that vertex tangent to this edge point
+                    for &(nvx, nvy) in &new_tree_verts {
+                        // Position the new tree so its vertex touches the boundary point
+                        // with a small nudge outward
+                        let nudge = self.config.tangent_nudge_distance;
+                        let candidate_x = px + nx * nudge - nvx;
+                        let candidate_y = py + ny * nudge - nvy;
+
+                        candidates.push((candidate_x, candidate_y));
+                    }
+                }
+            }
+
+            // Also try positions offset from each vertex of existing tree
+            for &(vx, vy) in existing_verts {
+                // Try multiple offset directions
+                for angle_offset in 0..8 {
+                    let offset_angle = (angle_offset as f64) * PI / 4.0;
+                    let offset_dist = 0.3; // Approximate tree radius
+                    let ox = vx + offset_dist * offset_angle.cos();
+                    let oy = vy + offset_dist * offset_angle.sin();
+                    candidates.push((ox, oy));
+                }
+            }
+        }
+
+        candidates
+    }
+
+    /// Find best placement for new tree using strategy-specific approach
     fn find_placement_with_strategy(
         &self,
         existing: &[PlacedTree],
@@ -161,12 +291,14 @@ impl EvolvedPacker {
         rng: &mut impl Rng,
     ) -> PlacedTree {
         if existing.is_empty() {
+            // Strategy-specific initial angle
             let initial_angle = match strategy {
                 PlacementStrategy::ClockwiseSpiral => 0.0,
                 PlacementStrategy::CounterclockwiseSpiral => 90.0,
                 PlacementStrategy::Grid => 45.0,
                 PlacementStrategy::Random => rng.gen_range(0..8) as f64 * 45.0,
                 PlacementStrategy::BoundaryFirst => 180.0,
+                PlacementStrategy::TangentFirst => 0.0,
             };
             return PlacedTree::new(0.0, 0.0, initial_angle);
         }
@@ -175,14 +307,81 @@ impl EvolvedPacker {
         let mut best_score = f64::INFINITY;
 
         let angles = self.select_angles_for_strategy(n, strategy);
+
+        // Compute current bounds and density info
         let (min_x, min_y, max_x, max_y) = compute_bounds(existing);
         let current_width = max_x - min_x;
         let current_height = max_y - min_y;
 
+        // Find gaps for density-aware placement
         let gaps = self.find_gaps(existing, min_x, min_y, max_x, max_y);
 
+        // TANGENT PLACEMENT: Try tangent positions first
+        if matches!(strategy, PlacementStrategy::TangentFirst) || rng.gen::<f64>() < 0.4 {
+            for &tree_angle in &angles {
+                let tangent_candidates = self.generate_tangent_candidates(existing, tree_angle, rng);
+
+                // Try a subset of tangent candidates
+                let max_tangent_tries = (tangent_candidates.len()).min(self.config.tangent_samples_per_tree * existing.len());
+                for (idx, &(cx, cy)) in tangent_candidates.iter().enumerate() {
+                    if idx >= max_tangent_tries {
+                        break;
+                    }
+
+                    let candidate = PlacedTree::new(cx, cy, tree_angle);
+                    if is_valid(&candidate, existing) {
+                        let mut score = self.placement_score(&candidate, existing, n);
+                        // Bonus for tangent placement (creates tighter packing)
+                        score -= self.config.tangent_bonus_weight * self.count_near_touches(&candidate, existing);
+                        if score < best_score {
+                            best_score = score;
+                            best_tree = candidate;
+                        }
+                    }
+
+                    // Also try binary search from this position toward center
+                    let center_x = (min_x + max_x) / 2.0;
+                    let center_y = (min_y + max_y) / 2.0;
+                    let dir_x = center_x - cx;
+                    let dir_y = center_y - cy;
+                    let dir_len = (dir_x * dir_x + dir_y * dir_y).sqrt();
+                    if dir_len > 0.01 {
+                        let vx = dir_x / dir_len;
+                        let vy = dir_y / dir_len;
+
+                        // Binary search toward center
+                        let mut low = 0.0;
+                        let mut high = dir_len.min(2.0);
+
+                        while high - low > 0.001 {
+                            let mid = (low + high) / 2.0;
+                            let test = PlacedTree::new(cx + mid * vx, cy + mid * vy, tree_angle);
+                            if is_valid(&test, existing) {
+                                low = mid;
+                            } else {
+                                high = mid;
+                            }
+                        }
+
+                        let candidate = PlacedTree::new(cx + low * vx, cy + low * vy, tree_angle);
+                        if is_valid(&candidate, existing) {
+                            let mut score = self.placement_score(&candidate, existing, n);
+                            score -= self.config.tangent_bonus_weight * self.count_near_touches(&candidate, existing);
+                            if score < best_score {
+                                best_score = score;
+                                best_tree = candidate;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Standard directional search
         for attempt in 0..self.config.search_attempts {
+            // Strategy-specific direction selection
             let dir = if !gaps.is_empty() && attempt % 5 == 0 {
+                // Sometimes target gaps directly
                 let gap = &gaps[attempt % gaps.len()];
                 let gap_cx = (gap.0 + gap.2) / 2.0;
                 let gap_cy = (gap.1 + gap.3) / 2.0;
@@ -195,6 +394,7 @@ impl EvolvedPacker {
             let vy = dir.sin();
 
             for &tree_angle in &angles {
+                // Binary search for closest valid position
                 let mut low = 0.0;
                 let mut high = 12.0;
 
@@ -211,7 +411,9 @@ impl EvolvedPacker {
 
                 let candidate = PlacedTree::new(high * vx, high * vy, tree_angle);
                 if is_valid(&candidate, existing) {
-                    let score = self.placement_score(&candidate, existing, n);
+                    let mut score = self.placement_score(&candidate, existing, n);
+                    // Bonus for near-tangent placements
+                    score -= self.config.tangent_bonus_weight * 0.5 * self.count_near_touches(&candidate, existing);
                     if score < best_score {
                         best_score = score;
                         best_tree = candidate;
@@ -223,19 +425,53 @@ impl EvolvedPacker {
         best_tree
     }
 
+    /// Count how many existing trees the candidate is nearly touching
+    #[inline]
+    fn count_near_touches(&self, tree: &PlacedTree, existing: &[PlacedTree]) -> f64 {
+        let mut touch_score = 0.0;
+        let (t_min_x, t_min_y, t_max_x, t_max_y) = tree.bounds();
+        let tree_cx = (t_min_x + t_max_x) / 2.0;
+        let tree_cy = (t_min_y + t_max_y) / 2.0;
+
+        for other in existing {
+            let (o_min_x, o_min_y, o_max_x, o_max_y) = other.bounds();
+            let other_cx = (o_min_x + o_max_x) / 2.0;
+            let other_cy = (o_min_y + o_max_y) / 2.0;
+
+            let dx = tree_cx - other_cx;
+            let dy = tree_cy - other_cy;
+            let dist = (dx * dx + dy * dy).sqrt();
+
+            // Approximate sum of radii
+            let approx_radii = 0.5;
+
+            if dist < approx_radii * 1.5 {
+                // Close proximity - likely touching or near-touching
+                touch_score += 1.0 - (dist / (approx_radii * 1.5));
+            }
+        }
+
+        touch_score
+    }
+
+    /// Select rotation angles based on strategy
     #[inline]
     fn select_angles_for_strategy(&self, n: usize, strategy: PlacementStrategy) -> Vec<f64> {
         match strategy {
             PlacementStrategy::ClockwiseSpiral => {
+                // Favor angles that work well for clockwise packing
                 vec![0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0]
             }
             PlacementStrategy::CounterclockwiseSpiral => {
+                // Reverse order for counterclockwise
                 vec![315.0, 270.0, 225.0, 180.0, 135.0, 90.0, 45.0, 0.0]
             }
             PlacementStrategy::Grid => {
+                // Prefer axis-aligned for grid packing
                 vec![0.0, 90.0, 180.0, 270.0, 45.0, 135.0, 225.0, 315.0]
             }
             PlacementStrategy::Random => {
+                // Vary based on n for diversity
                 match n % 4 {
                     0 => vec![0.0, 90.0, 180.0, 270.0, 45.0, 135.0, 225.0, 315.0],
                     1 => vec![90.0, 270.0, 0.0, 180.0, 135.0, 315.0, 45.0, 225.0],
@@ -244,11 +480,18 @@ impl EvolvedPacker {
                 }
             }
             PlacementStrategy::BoundaryFirst => {
+                // Angles that work well for boundary placement
                 vec![45.0, 135.0, 225.0, 315.0, 0.0, 90.0, 180.0, 270.0]
+            }
+            PlacementStrategy::TangentFirst => {
+                // Try more angles for tangent placement to find tight fits
+                vec![0.0, 30.0, 45.0, 60.0, 90.0, 120.0, 135.0, 150.0,
+                     180.0, 210.0, 225.0, 240.0, 270.0, 300.0, 315.0, 330.0]
             }
         }
     }
 
+    /// Select direction based on strategy
     #[inline]
     fn select_direction_for_strategy(
         &self,
@@ -261,28 +504,34 @@ impl EvolvedPacker {
     ) -> f64 {
         match strategy {
             PlacementStrategy::ClockwiseSpiral => {
+                // Clockwise spiral: start at top, go right, down, left, up...
                 let golden_angle = PI * (3.0 - (5.0_f64).sqrt());
                 let base = (n as f64 * golden_angle) % (2.0 * PI);
                 let offset = (attempt as f64 / self.config.search_attempts as f64) * 2.0 * PI;
                 (base + offset) % (2.0 * PI)
             }
             PlacementStrategy::CounterclockwiseSpiral => {
+                // Counterclockwise: opposite direction
                 let golden_angle = -PI * (3.0 - (5.0_f64).sqrt());
                 let base = (n as f64 * golden_angle).rem_euclid(2.0 * PI);
                 let offset = (attempt as f64 / self.config.search_attempts as f64) * 2.0 * PI;
                 (base - offset).rem_euclid(2.0 * PI)
             }
             PlacementStrategy::Grid => {
+                // Grid pattern: structured directions
                 let num_dirs = 16;
                 let base_idx = attempt % num_dirs;
                 let base = (base_idx as f64 / num_dirs as f64) * 2.0 * PI;
+                // Add slight jitter for variation
                 base + rng.gen_range(-0.03..0.03)
             }
             PlacementStrategy::Random => {
+                // Pure random with some structure
                 let mix = rng.gen::<f64>();
                 if mix < 0.5 {
                     rng.gen_range(0.0..2.0 * PI)
                 } else {
+                    // Bias toward shorter dimension
                     if width < height {
                         let angle = if rng.gen() { 0.0 } else { PI };
                         angle + rng.gen_range(-PI / 3.0..PI / 3.0)
@@ -293,24 +542,35 @@ impl EvolvedPacker {
                 }
             }
             PlacementStrategy::BoundaryFirst => {
+                // Prioritize corners and edges
                 let prob = rng.gen::<f64>();
                 if prob < 0.4 {
+                    // Corners
                     let corners = [PI / 4.0, 3.0 * PI / 4.0, 5.0 * PI / 4.0, 7.0 * PI / 4.0];
                     corners[attempt % 4] + rng.gen_range(-0.1..0.1)
                 } else if prob < 0.8 {
+                    // Edges
                     let edges = [0.0, PI / 2.0, PI, 3.0 * PI / 2.0];
                     edges[attempt % 4] + rng.gen_range(-0.2..0.2)
                 } else {
+                    // Random for coverage
                     rng.gen_range(0.0..2.0 * PI)
                 }
+            }
+            PlacementStrategy::TangentFirst => {
+                // Focus on directions toward existing tree centers
+                let base = (attempt as f64 / self.config.search_attempts as f64) * 2.0 * PI;
+                base + rng.gen_range(-0.1..0.1)
             }
         }
     }
 
+    /// Score a placement (lower is better) - with tangent awareness
     #[inline]
     fn placement_score(&self, tree: &PlacedTree, existing: &[PlacedTree], n: usize) -> f64 {
         let (tree_min_x, tree_min_y, tree_max_x, tree_max_y) = tree.bounds();
 
+        // Compute combined bounds
         let mut pack_min_x = tree_min_x;
         let mut pack_min_y = tree_min_y;
         let mut pack_max_x = tree_max_x;
@@ -328,14 +588,21 @@ impl EvolvedPacker {
         let height = pack_max_y - pack_min_y;
         let side = width.max(height);
 
+        // Primary: minimize side length
         let side_score = side;
+
+        // Secondary: balance penalty (prefer square-ish bounds)
         let balance_penalty = (width - height).abs() * 0.10;
 
+        // Calculate local density around the new tree
         let tree_cx = (tree_min_x + tree_max_x) / 2.0;
         let tree_cy = (tree_min_y + tree_max_y) / 2.0;
         let local_density = self.calculate_local_density(tree_cx, tree_cy, existing);
+
+        // Reward high local density (tree is filling a gap)
         let density_bonus = -self.config.gap_penalty_weight * local_density;
 
+        // Penalize placements that extend the bounding box
         let (old_min_x, old_min_y, old_max_x, old_max_y) = if !existing.is_empty() {
             compute_bounds(existing)
         } else {
@@ -346,17 +613,21 @@ impl EvolvedPacker {
         let y_extension = (pack_max_y - old_max_y).max(0.0) + (old_min_y - pack_min_y).max(0.0);
         let extension_penalty = (x_extension + y_extension) * 0.08;
 
+        // Penalize leaving unusable gaps
         let gap_penalty = self.estimate_unusable_gap(tree, existing) * self.config.gap_penalty_weight;
 
+        // Center penalty
         let center_x = (pack_min_x + pack_max_x) / 2.0;
         let center_y = (pack_min_y + pack_max_y) / 2.0;
         let center_penalty = (center_x.abs() + center_y.abs()) * 0.005 / (n as f64).sqrt();
 
+        // Neighbor proximity bonus
         let neighbor_bonus = self.neighbor_proximity_bonus(tree, existing);
 
         side_score + balance_penalty + extension_penalty + gap_penalty + center_penalty + density_bonus - neighbor_bonus
     }
 
+    /// Calculate local density around a point
     #[inline]
     fn calculate_local_density(&self, cx: f64, cy: f64, trees: &[PlacedTree]) -> f64 {
         let radius = self.config.local_density_radius;
@@ -380,6 +651,7 @@ impl EvolvedPacker {
         count
     }
 
+    /// Estimate if placement creates an unusable gap
     #[inline]
     fn estimate_unusable_gap(&self, tree: &PlacedTree, existing: &[PlacedTree]) -> f64 {
         if existing.is_empty() {
@@ -395,6 +667,7 @@ impl EvolvedPacker {
         for other in existing {
             let (ox1, oy1, ox2, oy2) = other.bounds();
 
+            // Horizontal gap
             if tree_min_y < oy2 && tree_max_y > oy1 {
                 if tree_min_x > ox2 {
                     let gap = tree_min_x - ox2;
@@ -409,6 +682,7 @@ impl EvolvedPacker {
                 }
             }
 
+            // Vertical gap
             if tree_min_x < ox2 && tree_max_x > ox1 {
                 if tree_min_y > oy2 {
                     let gap = tree_min_y - oy2;
@@ -427,6 +701,7 @@ impl EvolvedPacker {
         gap_penalty
     }
 
+    /// Bonus for being close to existing trees
     #[inline]
     fn neighbor_proximity_bonus(&self, tree: &PlacedTree, existing: &[PlacedTree]) -> f64 {
         if existing.is_empty() {
@@ -461,6 +736,7 @@ impl EvolvedPacker {
         dist_bonus + neighbor_bonus
     }
 
+    /// Find gaps in the current packing
     fn find_gaps(&self, trees: &[PlacedTree], min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> Vec<(f64, f64, f64, f64)> {
         if trees.is_empty() {
             return Vec::new();
@@ -475,6 +751,7 @@ impl EvolvedPacker {
             return Vec::new();
         }
 
+        // Create occupancy grid
         let mut occupied = vec![false; grid_res * grid_res];
 
         for tree in trees {
@@ -491,6 +768,7 @@ impl EvolvedPacker {
             }
         }
 
+        // Find empty cells surrounded by occupied cells
         for i in 1..grid_res - 1 {
             for j in 1..grid_res - 1 {
                 let idx = j * grid_res + i;
@@ -515,7 +793,7 @@ impl EvolvedPacker {
         gaps
     }
 
-    /// Local search with HOT RESTARTS
+    /// Local search with simulated annealing
     fn local_search(
         &self,
         trees: &mut Vec<PlacedTree>,
@@ -532,9 +810,6 @@ impl EvolvedPacker {
         let mut best_side = current_side;
         let mut best_config: Vec<PlacedTree> = trees.clone();
 
-        // Elite pool for hot restarts
-        let mut elite_pool: Vec<(f64, Vec<PlacedTree>)> = vec![(current_side, trees.clone())];
-
         let temp_multiplier = match pass {
             0 => 1.0,
             _ => 0.35,
@@ -547,39 +822,23 @@ impl EvolvedPacker {
         };
 
         let mut iterations_without_improvement = 0;
-        let mut total_restarts = 0;
-        let max_restarts = 4;  // Limit restarts per pass
 
+        // Cache boundary info
         let mut boundary_cache_iter = 0;
         let mut boundary_info: Vec<(usize, BoundaryEdge)> = Vec::new();
 
         for iter in 0..base_iterations {
-            // HOT RESTART: Check if we should restart
-            if iterations_without_improvement >= self.config.hot_restart_interval && total_restarts < max_restarts {
-                // Do a hot restart from elite pool
-                let elite_idx = rng.gen_range(0..elite_pool.len());
-                *trees = elite_pool[elite_idx].1.clone();
-                current_side = elite_pool[elite_idx].0;
-
-                // Reset to hot temperature
-                temp = self.config.hot_restart_temp;
-                iterations_without_improvement = 0;
-                total_restarts += 1;
-
-                // Clear boundary cache to force recalculation
-                boundary_cache_iter = 0;
-            }
-
-            // Early exit only after max restarts
-            if iterations_without_improvement >= self.config.early_exit_threshold && total_restarts >= max_restarts {
+            if iterations_without_improvement >= self.config.early_exit_threshold {
                 break;
             }
 
+            // Update boundary cache every 300 iterations
             if iter == 0 || iter - boundary_cache_iter >= 300 {
                 boundary_info = self.find_boundary_trees_with_edges(trees);
                 boundary_cache_iter = iter;
             }
 
+            // Choose between boundary optimization and gap-filling
             let do_fill_move = rng.gen::<f64>() < self.config.fill_move_prob;
 
             let (idx, edge) = if do_fill_move {
@@ -616,9 +875,6 @@ impl EvolvedPacker {
                         best_side = current_side;
                         best_config = trees.clone();
                         iterations_without_improvement = 0;
-
-                        // Update elite pool
-                        self.update_elite_pool(&mut elite_pool, current_side, trees.clone());
                     } else {
                         iterations_without_improvement += 1;
                     }
@@ -639,28 +895,7 @@ impl EvolvedPacker {
         }
     }
 
-    /// Update the elite pool with a new configuration
-    fn update_elite_pool(&self, pool: &mut Vec<(f64, Vec<PlacedTree>)>, score: f64, config: Vec<PlacedTree>) {
-        // Check if this is better than any existing elite
-        let mut dominated = false;
-        for (elite_score, _) in pool.iter() {
-            if *elite_score <= score {
-                dominated = true;
-                break;
-            }
-        }
-
-        if !dominated {
-            pool.push((score, config));
-            // Sort by score and keep only the best
-            pool.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-            pool.truncate(self.config.elite_pool_size);
-        } else if pool.len() < self.config.elite_pool_size {
-            // Add anyway if pool not full
-            pool.push((score, config));
-        }
-    }
-
+    /// Find trees on the bounding box boundary
     #[inline]
     fn find_boundary_trees_with_edges(&self, trees: &[PlacedTree]) -> Vec<(usize, BoundaryEdge)> {
         if trees.is_empty() {
@@ -697,6 +932,7 @@ impl EvolvedPacker {
         boundary_info
     }
 
+    /// SA move operator with gap-filling awareness
     #[inline]
     fn sa_move(
         &self,
@@ -722,22 +958,26 @@ impl EvolvedPacker {
             let move_type = rng.gen_range(0..4);
             match move_type {
                 0 => {
+                    // Move toward center of bbox
                     let dx = (bbox_cx - old_x) * 0.1 * (0.5 + temp);
                     let dy = (bbox_cy - old_y) * 0.1 * (0.5 + temp);
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 1 => {
+                    // Small random move
                     let dx = rng.gen_range(-scale * 0.4..scale * 0.4);
                     let dy = rng.gen_range(-scale * 0.4..scale * 0.4);
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 2 => {
+                    // Rotate
                     let angles = [45.0, 90.0, -45.0, -90.0, 30.0, -30.0];
                     let delta = angles[rng.gen_range(0..angles.len())];
                     let new_angle = (old_angle + delta).rem_euclid(360.0);
                     trees[idx] = PlacedTree::new(old_x, old_y, new_angle);
                 }
                 _ => {
+                    // Move toward nearest gap
                     let gaps = self.find_gaps(trees, min_x, min_y, max_x, max_y);
                     if !gaps.is_empty() {
                         let gap = &gaps[rng.gen_range(0..gaps.len())];
@@ -752,6 +992,7 @@ impl EvolvedPacker {
                 }
             }
         } else {
+            // Standard boundary-aware moves
             let move_type = match edge {
                 BoundaryEdge::Left => {
                     match rng.gen_range(0..10) {
@@ -870,6 +1111,7 @@ impl EvolvedPacker {
     }
 }
 
+// Helper functions
 fn is_valid(tree: &PlacedTree, existing: &[PlacedTree]) -> bool {
     for other in existing {
         if tree.overlaps(other) {
@@ -948,5 +1190,18 @@ mod tests {
         let packings = packer.pack_all(50);
         let score = calculate_score(&packings);
         println!("Evolved score for n=1..50: {:.4}", score);
+    }
+
+    #[test]
+    fn test_tangent_placement() {
+        // Test that tangent placement creates valid packings
+        let packer = EvolvedPacker::default();
+        let packings = packer.pack_all(10);
+
+        // Just verify it works and produces valid packings
+        for (i, p) in packings.iter().enumerate() {
+            assert_eq!(p.trees.len(), i + 1);
+            assert!(!p.has_overlaps());
+        }
     }
 }

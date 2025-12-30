@@ -1,27 +1,29 @@
-//! Evolved Packing Algorithm - Generation 28 HOT RESTARTS
+//! Evolved Packing Algorithm - Generation 25 SMALL-N HEAVY
 //!
 //! This module contains the evolved packing heuristics.
 //! The code is designed to be mutated by LLM-guided evolution.
 //!
-//! MUTATION STRATEGY: HOT RESTARTS (Gen28)
-//! Periodically restart SA with high temperature from best known configuration.
+//! MUTATION STRATEGY: SMALL-N HEAVY (Gen25)
+//! Allocate disproportionate compute to small n values where improvements matter most.
 //!
-//! Key insight: SA can get stuck in local minima. Instead of just continuing
-//! from where we are, occasionally restart from the best known solution
-//! with a high temperature to explore new regions.
+//! Key insight: The scoring function is SUM of side lengths for n=1..200.
+//! Improving the side length for n=10 contributes the same as improving n=200.
+//! But small n packings are much easier to optimize (fewer constraints).
 //!
 //! Changes from Gen10:
-//! - After every 5000 iterations without improvement, do a "hot restart"
-//! - Hot restart: restore best config, reset to high temperature
-//! - Track multiple "elite" configurations and restart from them
-//! - More aggressive exploration after restart
+//! - 4x SA iterations for n <= 30
+//! - 2x SA iterations for n <= 60
+//! - 3 SA passes for n <= 50 (instead of 2)
+//! - More search attempts for small n
+//! - Lower early exit threshold for large n (save time)
 //!
-//! Target: Escape local minima more effectively
+//! Target: Focus compute where it matters most
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
 use std::f64::consts::PI;
 
+/// Strategy for initial placement direction
 #[derive(Clone, Copy, Debug)]
 pub enum PlacementStrategy {
     ClockwiseSpiral,
@@ -31,6 +33,7 @@ pub enum PlacementStrategy {
     BoundaryFirst,
 }
 
+/// Evolved packing configuration
 pub struct EvolvedConfig {
     pub search_attempts: usize,
     pub direction_samples: usize,
@@ -49,10 +52,6 @@ pub struct EvolvedConfig {
     pub gap_penalty_weight: f64,
     pub local_density_radius: f64,
     pub fill_move_prob: f64,
-    // HOT RESTART parameters
-    pub hot_restart_interval: usize,
-    pub hot_restart_temp: f64,
-    pub elite_pool_size: usize,
 }
 
 impl Default for EvolvedConfig {
@@ -60,7 +59,7 @@ impl Default for EvolvedConfig {
         Self {
             search_attempts: 200,
             direction_samples: 64,
-            sa_iterations: 28000,         // More iterations (will use restarts)
+            sa_iterations: 22000,        // Base iterations
             sa_initial_temp: 0.45,
             sa_cooling_rate: 0.99993,
             sa_min_temp: 0.00001,
@@ -68,17 +67,13 @@ impl Default for EvolvedConfig {
             rotation_granularity: 45.0,
             center_pull_strength: 0.07,
             sa_passes: 2,
-            early_exit_threshold: 2500,   // Higher threshold (restart instead of exit)
+            early_exit_threshold: 1500,
             boundary_focus_prob: 0.85,
             num_strategies: 5,
             density_grid_resolution: 20,
             gap_penalty_weight: 0.15,
             local_density_radius: 0.5,
             fill_move_prob: 0.15,
-            // HOT RESTART parameters
-            hot_restart_interval: 800,    // Restart after 800 iters without improvement
-            hot_restart_temp: 0.35,       // Restart at 80% of initial temp
-            elite_pool_size: 3,           // Keep 3 elite configurations
         }
     }
 }
@@ -99,6 +94,58 @@ impl Default for EvolvedPacker {
 }
 
 impl EvolvedPacker {
+    /// Get SA iterations scaled by n - SMALL N GETS MORE COMPUTE
+    #[inline]
+    fn get_sa_iterations(&self, n: usize) -> usize {
+        if n <= 20 {
+            self.config.sa_iterations * 4  // 4x for very small n
+        } else if n <= 40 {
+            self.config.sa_iterations * 3  // 3x for small n
+        } else if n <= 70 {
+            self.config.sa_iterations * 2  // 2x for medium n
+        } else if n <= 120 {
+            self.config.sa_iterations      // Normal for large n
+        } else {
+            self.config.sa_iterations / 2  // Half for very large n
+        }
+    }
+
+    /// Get SA passes scaled by n
+    #[inline]
+    fn get_sa_passes(&self, n: usize) -> usize {
+        if n <= 30 {
+            4  // 4 passes for small n
+        } else if n <= 60 {
+            3  // 3 passes for medium-small
+        } else {
+            2  // 2 passes for large n
+        }
+    }
+
+    /// Get search attempts scaled by n
+    #[inline]
+    fn get_search_attempts(&self, n: usize) -> usize {
+        if n <= 30 {
+            self.config.search_attempts * 2
+        } else if n <= 60 {
+            (self.config.search_attempts * 3) / 2
+        } else {
+            self.config.search_attempts
+        }
+    }
+
+    /// Get early exit threshold scaled by n
+    #[inline]
+    fn get_early_exit(&self, n: usize) -> usize {
+        if n <= 50 {
+            self.config.early_exit_threshold * 2  // Be patient for small n
+        } else if n <= 100 {
+            self.config.early_exit_threshold
+        } else {
+            self.config.early_exit_threshold / 2  // Exit quickly for large n
+        }
+    }
+
     pub fn pack_all(&self, max_n: usize) -> Vec<Packing> {
         let mut rng = rand::thread_rng();
         let mut packings: Vec<Packing> = Vec::with_capacity(max_n);
@@ -122,7 +169,9 @@ impl EvolvedPacker {
                 let new_tree = self.find_placement_with_strategy(&trees, n, max_n, strategy, &mut rng);
                 trees.push(new_tree);
 
-                for pass in 0..self.config.sa_passes {
+                // N-SCALED SA PASSES
+                let passes = self.get_sa_passes(n);
+                for pass in 0..passes {
                     self.local_search(&mut trees, n, pass, strategy, &mut rng);
                 }
 
@@ -181,7 +230,10 @@ impl EvolvedPacker {
 
         let gaps = self.find_gaps(existing, min_x, min_y, max_x, max_y);
 
-        for attempt in 0..self.config.search_attempts {
+        // N-SCALED SEARCH ATTEMPTS
+        let search_attempts = self.get_search_attempts(n);
+
+        for attempt in 0..search_attempts {
             let dir = if !gaps.is_empty() && attempt % 5 == 0 {
                 let gap = &gaps[attempt % gaps.len()];
                 let gap_cx = (gap.0 + gap.2) / 2.0;
@@ -515,7 +567,6 @@ impl EvolvedPacker {
         gaps
     }
 
-    /// Local search with HOT RESTARTS
     fn local_search(
         &self,
         trees: &mut Vec<PlacedTree>,
@@ -532,46 +583,29 @@ impl EvolvedPacker {
         let mut best_side = current_side;
         let mut best_config: Vec<PlacedTree> = trees.clone();
 
-        // Elite pool for hot restarts
-        let mut elite_pool: Vec<(f64, Vec<PlacedTree>)> = vec![(current_side, trees.clone())];
-
         let temp_multiplier = match pass {
             0 => 1.0,
-            _ => 0.35,
+            1 => 0.5,
+            2 => 0.25,
+            _ => 0.15,
         };
         let mut temp = self.config.sa_initial_temp * temp_multiplier;
 
-        let base_iterations = match pass {
-            0 => self.config.sa_iterations + n * 100,
-            _ => self.config.sa_iterations / 2 + n * 50,
+        // N-SCALED ITERATIONS
+        let base_iterations = self.get_sa_iterations(n);
+        let iterations = match pass {
+            0 => base_iterations + n * 100,
+            _ => base_iterations / 2 + n * 50,
         };
 
         let mut iterations_without_improvement = 0;
-        let mut total_restarts = 0;
-        let max_restarts = 4;  // Limit restarts per pass
+        let early_exit = self.get_early_exit(n);
 
         let mut boundary_cache_iter = 0;
         let mut boundary_info: Vec<(usize, BoundaryEdge)> = Vec::new();
 
-        for iter in 0..base_iterations {
-            // HOT RESTART: Check if we should restart
-            if iterations_without_improvement >= self.config.hot_restart_interval && total_restarts < max_restarts {
-                // Do a hot restart from elite pool
-                let elite_idx = rng.gen_range(0..elite_pool.len());
-                *trees = elite_pool[elite_idx].1.clone();
-                current_side = elite_pool[elite_idx].0;
-
-                // Reset to hot temperature
-                temp = self.config.hot_restart_temp;
-                iterations_without_improvement = 0;
-                total_restarts += 1;
-
-                // Clear boundary cache to force recalculation
-                boundary_cache_iter = 0;
-            }
-
-            // Early exit only after max restarts
-            if iterations_without_improvement >= self.config.early_exit_threshold && total_restarts >= max_restarts {
+        for iter in 0..iterations {
+            if iterations_without_improvement >= early_exit {
                 break;
             }
 
@@ -616,9 +650,6 @@ impl EvolvedPacker {
                         best_side = current_side;
                         best_config = trees.clone();
                         iterations_without_improvement = 0;
-
-                        // Update elite pool
-                        self.update_elite_pool(&mut elite_pool, current_side, trees.clone());
                     } else {
                         iterations_without_improvement += 1;
                     }
@@ -636,28 +667,6 @@ impl EvolvedPacker {
 
         if best_side < compute_side_length(trees) {
             *trees = best_config;
-        }
-    }
-
-    /// Update the elite pool with a new configuration
-    fn update_elite_pool(&self, pool: &mut Vec<(f64, Vec<PlacedTree>)>, score: f64, config: Vec<PlacedTree>) {
-        // Check if this is better than any existing elite
-        let mut dominated = false;
-        for (elite_score, _) in pool.iter() {
-            if *elite_score <= score {
-                dominated = true;
-                break;
-            }
-        }
-
-        if !dominated {
-            pool.push((score, config));
-            // Sort by score and keep only the best
-            pool.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-            pool.truncate(self.config.elite_pool_size);
-        } else if pool.len() < self.config.elite_pool_size {
-            // Add anyway if pool not full
-            pool.push((score, config));
         }
     }
 

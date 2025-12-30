@@ -1,22 +1,20 @@
-//! Evolved Packing Algorithm - Generation 28 HOT RESTARTS
+//! Evolved Packing Algorithm - Generation 26 FINER ANGLES
 //!
 //! This module contains the evolved packing heuristics.
 //! The code is designed to be mutated by LLM-guided evolution.
 //!
-//! MUTATION STRATEGY: HOT RESTARTS (Gen28)
-//! Periodically restart SA with high temperature from best known configuration.
+//! MUTATION STRATEGY: FINER ANGLES (Gen26)
+//! Use 30° angle increments instead of 45° for more placement options.
 //!
-//! Key insight: SA can get stuck in local minima. Instead of just continuing
-//! from where we are, occasionally restart from the best known solution
-//! with a high temperature to explore new regions.
+//! Key insight: Christmas trees are irregular polygons - finer angle
+//! granularity may find better interlocking configurations.
 //!
 //! Changes from Gen10:
-//! - After every 5000 iterations without improvement, do a "hot restart"
-//! - Hot restart: restore best config, reset to high temperature
-//! - Track multiple "elite" configurations and restart from them
-//! - More aggressive exploration after restart
+//! - 12 angles (30° increments) instead of 8 (45° increments)
+//! - Also try axis-aligned (0, 90, 180, 270) with priority
+//! - SA moves include finer rotation options (15°, 30°)
 //!
-//! Target: Escape local minima more effectively
+//! Target: Find tighter fits with more angle options
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -49,36 +47,28 @@ pub struct EvolvedConfig {
     pub gap_penalty_weight: f64,
     pub local_density_radius: f64,
     pub fill_move_prob: f64,
-    // HOT RESTART parameters
-    pub hot_restart_interval: usize,
-    pub hot_restart_temp: f64,
-    pub elite_pool_size: usize,
 }
 
 impl Default for EvolvedConfig {
     fn default() -> Self {
         Self {
-            search_attempts: 200,
+            search_attempts: 180,           // Slightly fewer (more angles to try)
             direction_samples: 64,
-            sa_iterations: 28000,         // More iterations (will use restarts)
+            sa_iterations: 22000,
             sa_initial_temp: 0.45,
             sa_cooling_rate: 0.99993,
             sa_min_temp: 0.00001,
             translation_scale: 0.055,
-            rotation_granularity: 45.0,
+            rotation_granularity: 30.0,     // 12 angles instead of 8
             center_pull_strength: 0.07,
             sa_passes: 2,
-            early_exit_threshold: 2500,   // Higher threshold (restart instead of exit)
+            early_exit_threshold: 1500,
             boundary_focus_prob: 0.85,
             num_strategies: 5,
             density_grid_resolution: 20,
             gap_penalty_weight: 0.15,
             local_density_radius: 0.5,
             fill_move_prob: 0.15,
-            // HOT RESTART parameters
-            hot_restart_interval: 800,    // Restart after 800 iters without improvement
-            hot_restart_temp: 0.35,       // Restart at 80% of initial temp
-            elite_pool_size: 3,           // Keep 3 elite configurations
         }
     }
 }
@@ -164,8 +154,8 @@ impl EvolvedPacker {
             let initial_angle = match strategy {
                 PlacementStrategy::ClockwiseSpiral => 0.0,
                 PlacementStrategy::CounterclockwiseSpiral => 90.0,
-                PlacementStrategy::Grid => 45.0,
-                PlacementStrategy::Random => rng.gen_range(0..8) as f64 * 45.0,
+                PlacementStrategy::Grid => 0.0,  // Axis-aligned for grid
+                PlacementStrategy::Random => rng.gen_range(0..12) as f64 * 30.0,
                 PlacementStrategy::BoundaryFirst => 180.0,
             };
             return PlacedTree::new(0.0, 0.0, initial_angle);
@@ -174,7 +164,9 @@ impl EvolvedPacker {
         let mut best_tree = PlacedTree::new(0.0, 0.0, 90.0);
         let mut best_score = f64::INFINITY;
 
+        // FINER ANGLES: 12 angles at 30° increments
         let angles = self.select_angles_for_strategy(n, strategy);
+
         let (min_x, min_y, max_x, max_y) = compute_bounds(existing);
         let current_width = max_x - min_x;
         let current_height = max_y - min_y;
@@ -223,28 +215,33 @@ impl EvolvedPacker {
         best_tree
     }
 
+    /// FINER ANGLES: 30° increments with axis-aligned priority
     #[inline]
     fn select_angles_for_strategy(&self, n: usize, strategy: PlacementStrategy) -> Vec<f64> {
         match strategy {
             PlacementStrategy::ClockwiseSpiral => {
-                vec![0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0]
+                // Start with axis-aligned, then 30° offsets
+                vec![0.0, 90.0, 180.0, 270.0, 30.0, 60.0, 120.0, 150.0, 210.0, 240.0, 300.0, 330.0]
             }
             PlacementStrategy::CounterclockwiseSpiral => {
-                vec![315.0, 270.0, 225.0, 180.0, 135.0, 90.0, 45.0, 0.0]
+                // Reverse order
+                vec![330.0, 300.0, 270.0, 240.0, 210.0, 180.0, 150.0, 120.0, 90.0, 60.0, 30.0, 0.0]
             }
             PlacementStrategy::Grid => {
-                vec![0.0, 90.0, 180.0, 270.0, 45.0, 135.0, 225.0, 315.0]
+                // Only axis-aligned for grid strategy
+                vec![0.0, 90.0, 180.0, 270.0]
             }
             PlacementStrategy::Random => {
-                match n % 4 {
-                    0 => vec![0.0, 90.0, 180.0, 270.0, 45.0, 135.0, 225.0, 315.0],
-                    1 => vec![90.0, 270.0, 0.0, 180.0, 135.0, 315.0, 45.0, 225.0],
-                    2 => vec![180.0, 0.0, 270.0, 90.0, 225.0, 45.0, 315.0, 135.0],
-                    _ => vec![270.0, 90.0, 180.0, 0.0, 315.0, 135.0, 225.0, 45.0],
+                // Vary based on n
+                match n % 3 {
+                    0 => vec![0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0, 210.0, 240.0, 270.0, 300.0, 330.0],
+                    1 => vec![90.0, 120.0, 150.0, 180.0, 210.0, 240.0, 270.0, 300.0, 330.0, 0.0, 30.0, 60.0],
+                    _ => vec![180.0, 210.0, 240.0, 270.0, 300.0, 330.0, 0.0, 30.0, 60.0, 90.0, 120.0, 150.0],
                 }
             }
             PlacementStrategy::BoundaryFirst => {
-                vec![45.0, 135.0, 225.0, 315.0, 0.0, 90.0, 180.0, 270.0]
+                // Mix of all angles
+                vec![0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0, 30.0, 60.0, 120.0, 150.0]
             }
         }
     }
@@ -515,7 +512,6 @@ impl EvolvedPacker {
         gaps
     }
 
-    /// Local search with HOT RESTARTS
     fn local_search(
         &self,
         trees: &mut Vec<PlacedTree>,
@@ -532,9 +528,6 @@ impl EvolvedPacker {
         let mut best_side = current_side;
         let mut best_config: Vec<PlacedTree> = trees.clone();
 
-        // Elite pool for hot restarts
-        let mut elite_pool: Vec<(f64, Vec<PlacedTree>)> = vec![(current_side, trees.clone())];
-
         let temp_multiplier = match pass {
             0 => 1.0,
             _ => 0.35,
@@ -547,31 +540,12 @@ impl EvolvedPacker {
         };
 
         let mut iterations_without_improvement = 0;
-        let mut total_restarts = 0;
-        let max_restarts = 4;  // Limit restarts per pass
 
         let mut boundary_cache_iter = 0;
         let mut boundary_info: Vec<(usize, BoundaryEdge)> = Vec::new();
 
         for iter in 0..base_iterations {
-            // HOT RESTART: Check if we should restart
-            if iterations_without_improvement >= self.config.hot_restart_interval && total_restarts < max_restarts {
-                // Do a hot restart from elite pool
-                let elite_idx = rng.gen_range(0..elite_pool.len());
-                *trees = elite_pool[elite_idx].1.clone();
-                current_side = elite_pool[elite_idx].0;
-
-                // Reset to hot temperature
-                temp = self.config.hot_restart_temp;
-                iterations_without_improvement = 0;
-                total_restarts += 1;
-
-                // Clear boundary cache to force recalculation
-                boundary_cache_iter = 0;
-            }
-
-            // Early exit only after max restarts
-            if iterations_without_improvement >= self.config.early_exit_threshold && total_restarts >= max_restarts {
+            if iterations_without_improvement >= self.config.early_exit_threshold {
                 break;
             }
 
@@ -616,9 +590,6 @@ impl EvolvedPacker {
                         best_side = current_side;
                         best_config = trees.clone();
                         iterations_without_improvement = 0;
-
-                        // Update elite pool
-                        self.update_elite_pool(&mut elite_pool, current_side, trees.clone());
                     } else {
                         iterations_without_improvement += 1;
                     }
@@ -636,28 +607,6 @@ impl EvolvedPacker {
 
         if best_side < compute_side_length(trees) {
             *trees = best_config;
-        }
-    }
-
-    /// Update the elite pool with a new configuration
-    fn update_elite_pool(&self, pool: &mut Vec<(f64, Vec<PlacedTree>)>, score: f64, config: Vec<PlacedTree>) {
-        // Check if this is better than any existing elite
-        let mut dominated = false;
-        for (elite_score, _) in pool.iter() {
-            if *elite_score <= score {
-                dominated = true;
-                break;
-            }
-        }
-
-        if !dominated {
-            pool.push((score, config));
-            // Sort by score and keep only the best
-            pool.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-            pool.truncate(self.config.elite_pool_size);
-        } else if pool.len() < self.config.elite_pool_size {
-            // Add anyway if pool not full
-            pool.push((score, config));
         }
     }
 
@@ -697,6 +646,7 @@ impl EvolvedPacker {
         boundary_info
     }
 
+    /// SA move with FINER ROTATION OPTIONS
     #[inline]
     fn sa_move(
         &self,
@@ -732,7 +682,8 @@ impl EvolvedPacker {
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 2 => {
-                    let angles = [45.0, 90.0, -45.0, -90.0, 30.0, -30.0];
+                    // FINER ANGLES: include 15°, 30° rotations
+                    let angles = [15.0, 30.0, 45.0, 60.0, 90.0, -15.0, -30.0, -45.0, -60.0, -90.0];
                     let delta = angles[rng.gen_range(0..angles.len())];
                     let new_angle = (old_angle + delta).rem_euclid(360.0);
                     trees[idx] = PlacedTree::new(old_x, old_y, new_angle);
@@ -809,7 +760,8 @@ impl EvolvedPacker {
                     trees[idx] = PlacedTree::new(old_x, old_y + dy, old_angle);
                 }
                 2 => {
-                    let angles = [45.0, 90.0, -45.0, -90.0];
+                    // FINER ANGLES
+                    let angles = [15.0, 30.0, 45.0, 60.0, 90.0, -15.0, -30.0, -45.0, -60.0, -90.0];
                     let delta = angles[rng.gen_range(0..angles.len())];
                     let new_angle = (old_angle + delta).rem_euclid(360.0);
                     trees[idx] = PlacedTree::new(old_x, old_y, new_angle);

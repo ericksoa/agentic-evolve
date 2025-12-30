@@ -7,7 +7,7 @@ use std::io::{BufWriter, Write};
 use std::time::Instant;
 
 fn main() {
-    println!("Generating submission with EvolvedPacker (Gen28 Hot Restarts)...");
+    println!("Generating submission with EvolvedPacker...");
 
     let start = Instant::now();
     let packer = EvolvedPacker::default();
