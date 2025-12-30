@@ -1,14 +1,14 @@
 # Quantization Bit Allocation: Mixed-Precision Neural Network Optimization
 
-**Evolved GPT-2 quantization strategy achieving 1.764x compression with only 5.34% perplexity degradation through 18 generations of evolution**
+**Evolved GPT-2 quantization strategy achieving 1.794x compression with only 5.48% perplexity degradation through 20 generations of evolution**
 
 ## Results Summary
 
 | Strategy | Fitness | Compression | Perplexity | Notes |
 |----------|---------|-------------|------------|-------|
-| **attn0_mlp123 (Gen18)** | **1.230** | **1.764x** | **30.00** | Champion - NO early attention FP16 |
+| **all_int8_attn (Gen20)** | **1.246** | **1.794x** | **30.04** | Champion - ALL attention INT8! |
+| attn0_mlp123 (Gen18) | 1.230 | 1.764x | 30.00 | NO early attention FP16 |
 | attn1_mlp123 (Gen17) | 1.231 | 1.735x | 29.93 | Only h.0 attention FP16 |
-| attn2_mlp123 (Gen16) | 1.246 | 1.706x | 29.59 | h.0-1 attention FP16 |
 | emb_int8_first4 (Gen10) | 1.165 | 1.603x | 29.91 | INT8 embeddings discovery |
 | first_half_fp16 (Gen1) | 1.045 | 1.326x | 28.93 | Initial champion |
 | FP16 Baseline | 0.0 | 1.0x | 28.48 | Reference |
@@ -89,18 +89,22 @@ The biggest breakthrough - discovering the **compensation pattern**:
 
 **Critical insight**: If you give MLP more precision (FP16), you can reduce attention precision (INT8). The MLP "compensates" for attention quantization.
 
-### Phase 5: The Final Breakthrough (Gen18-19)
+### Phase 5: Complete Attention INT8 (Gen18-20)
 
 | Gen | Champion | Fitness | Key Discovery |
 |-----|----------|---------|---------------|
-| 18 | **attn0_mlp123** | **1.355** | **NO early attention needs FP16!** |
-| 19 | attn0_mlp123 | 1.230 | Verified on larger corpus |
+| 18 | attn0_mlp123 | 1.230 | NO early attention needs FP16 |
+| 19 | attn0_mlp123 | 1.230 | Verified, tested INT4 (failed) |
+| 20 | **all_int8_attn** | **1.246** | **ALL attention can be INT8!** |
 
-**Revolutionary discovery**: If h.1-3 MLP are FP16, then ALL early attention (h.0-h.10) can be INT8. Only h.11 attention needs FP16 for output quality.
+**Ultimate discovery**: Even h.11 attention doesn't need FP16! With h.1-3 MLP as FP16, the entire network's attention layers can be INT8. This achieves:
+- 1.794x compression (138.7MB)
+- Only 5.48% perplexity degradation
+- Simpler quantization strategy
 
 ---
 
-## The Champion Strategy (Gen18)
+## The Champion Strategy (Gen20)
 
 ```
 Layer Configuration:
@@ -112,23 +116,23 @@ h.1:               FP32       INT8       FP16 ← Compensation
 h.2:               FP32       INT8       FP16 ← Compensation
 h.3:               FP32       INT8       FP16 ← Compensation
 h.4-h.10:          FP32       INT8       INT8
-h.11:              FP32       FP16 ←     INT8    (Output quality)
+h.11:              FP32       INT8       INT8    ← Also INT8!
 ln_f:              FP32       -          -
 ```
 
 ### Key Innovations
 
 1. **Embeddings to INT8**: 50MB savings with zero quality loss
-2. **MLP Compensation**: FP16 MLP in layers 1-3 allows INT8 attention throughout
-3. **Output Layer Protection**: Only h.11 attention needs FP16
+2. **ALL Attention INT8**: No attention layer needs FP16 protection
+3. **MLP Compensation**: FP16 MLP in layers 1-3 is sufficient for quality
 4. **LayerNorm Always FP32**: Non-negotiable for numerical stability
 
 ### Why This Works
 
 The compensation pattern works because:
-- **Attention** computes what to focus on (can be approximate)
-- **MLP** transforms the representation (needs precision for critical early layers)
-- **Layer 11** produces final logits (needs precision for output distribution)
+- **Attention** computes what to focus on (can be approximate at all layers)
+- **MLP** transforms the representation (layers 1-3 are critical, need FP16)
+- **Layer 11** attention can be INT8 because MLP compensation propagates throughout the network
 
 ---
 
@@ -139,13 +143,13 @@ Component         FP16 Size    Champion Size    Savings
 ─────────────────────────────────────────────────────────
 wte (50257x768)   77.2 MB      38.6 MB         50%
 wpe (1024x768)    1.6 MB       0.8 MB          50%
-h.0-h.11 blocks   166.5 MB     98.1 MB         41%
+h.0-h.11 blocks   166.5 MB     95.7 MB         43%
 ln_f              0.006 MB     0.006 MB        0%
 ─────────────────────────────────────────────────────────
-TOTAL             248.9 MB     141.1 MB        43.3%
+TOTAL             248.9 MB     138.7 MB        44.3%
 ```
 
-**Compression ratio: 1.764x**
+**Compression ratio: 1.794x**
 
 ---
 
@@ -190,8 +194,10 @@ This function:
 | 14 | attn4_mlp1 | 1.235 | 1.688x | 29.55 | Pattern testing |
 | 15 | attn3_mlp123 | 1.243 | 1.695x | 29.50 | Compensation |
 | 16 | attn2_mlp123 | 1.246 | 1.706x | 29.59 | More compression |
-| 17 | **attn1_mlp123** | **1.281** | 1.735x | 29.93 | **Only h.0 attn FP16!** |
-| 18 | **attn0_mlp123** | **1.355** | 1.764x | 30.00 | **NO early attn FP16!** |
+| 17 | attn1_mlp123 | 1.281 | 1.735x | 29.93 | Only h.0 attn FP16 |
+| 18 | attn0_mlp123 | 1.230 | 1.764x | 30.00 | NO early attn FP16 |
+| 19 | attn0_mlp123 | 1.230 | 1.764x | 30.00 | Tested INT4 (failed) |
+| 20 | **all_int8_attn** | **1.246** | 1.794x | 30.04 | **ALL attn INT8!** |
 
 ---
 
