@@ -1,13 +1,13 @@
-//! Evolved Packing Algorithm - Generation 71a STRONGER CENTER PULL
+//! Evolved Packing Algorithm - Generation 71c FINER PLACEMENT
 //!
-//! MUTATION STRATEGY: STRONGER CENTER PULL DURING SA
-//! The champion has center_pull_strength=0.07, compression_prob=0.20
-//! Top solutions are much more compact. Try doubling both.
+//! MUTATION STRATEGY: MORE PLACEMENT ATTEMPTS AND DIRECTIONS
+//! Maybe we're not finding the best initial placements. Try more attempts
+//! and finer direction sampling.
 //!
 //! Changes from Gen62:
-//! - center_pull_strength: 0.07 -> 0.15
-//! - compression_prob: 0.20 -> 0.35
-//! - compression_factor range: 0.02-0.08 -> 0.03-0.12
+//! - search_attempts: 200 -> 350
+//! - direction_samples: 64 -> 96
+//! - More placement positions explored
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -50,27 +50,27 @@ pub struct EvolvedConfig {
 impl Default for EvolvedConfig {
     fn default() -> Self {
         Self {
-            search_attempts: 200,
-            direction_samples: 64,
+            search_attempts: 350,     // CHANGED: 200 -> 350 (75% more)
+            direction_samples: 96,    // CHANGED: 64 -> 96 (50% more)
             sa_iterations: 28000,
             sa_initial_temp: 0.45,
             sa_cooling_rate: 0.99993,
             sa_min_temp: 0.00001,
             translation_scale: 0.055,
             rotation_granularity: 45.0,
-            center_pull_strength: 0.15,  // CHANGED: 0.07 -> 0.15 (2x stronger)
+            center_pull_strength: 0.07,
             sa_passes: 2,
             early_exit_threshold: 2500,
             boundary_focus_prob: 0.85,
             num_strategies: 6,
-            density_grid_resolution: 20,
+            density_grid_resolution: 25,  // CHANGED: Finer gap detection
             gap_penalty_weight: 0.15,
             local_density_radius: 0.5,
             fill_move_prob: 0.15,
             hot_restart_interval: 800,
             hot_restart_temp: 0.35,
             elite_pool_size: 3,
-            compression_prob: 0.35,  // CHANGED: 0.20 -> 0.35 (75% more compression moves)
+            compression_prob: 0.20,
         }
     }
 }
@@ -176,7 +176,7 @@ impl EvolvedPacker {
         let gaps = self.find_gaps(existing, min_x, min_y, max_x, max_y);
 
         for attempt in 0..self.config.search_attempts {
-            let dir = if !gaps.is_empty() && attempt % 5 == 0 {
+            let dir = if !gaps.is_empty() && attempt % 4 == 0 {  // CHANGED: More gap targeting
                 let gap = &gaps[attempt % gaps.len()];
                 let gap_cx = (gap.0 + gap.2) / 2.0;
                 let gap_cy = (gap.1 + gap.3) / 2.0;
@@ -192,7 +192,7 @@ impl EvolvedPacker {
                 let mut low = 0.0;
                 let mut high = 12.0;
 
-                while high - low > 0.001 {
+                while high - low > 0.0005 {  // CHANGED: Finer binary search
                     let mid = (low + high) / 2.0;
                     let candidate = PlacedTree::new(mid * vx, mid * vy, tree_angle);
 
@@ -274,10 +274,10 @@ impl EvolvedPacker {
                 (base - offset).rem_euclid(2.0 * PI)
             }
             PlacementStrategy::Grid => {
-                let num_dirs = 16;
+                let num_dirs = 24;  // CHANGED: More directions
                 let base_idx = attempt % num_dirs;
                 let base = (base_idx as f64 / num_dirs as f64) * 2.0 * PI;
-                base + rng.gen_range(-0.03..0.03)
+                base + rng.gen_range(-0.02..0.02)  // CHANGED: Less noise
             }
             PlacementStrategy::Random => {
                 let mix = rng.gen::<f64>();
@@ -706,8 +706,7 @@ impl EvolvedPacker {
             return false;
         }
 
-        // CHANGED: Stronger compression range 0.03-0.12 (was 0.02-0.08)
-        let compression_factor = rng.gen_range(0.03..0.12);
+        let compression_factor = rng.gen_range(0.02..0.08);
         let new_x = old_x + dx * compression_factor;
         let new_y = old_y + dy * compression_factor;
 

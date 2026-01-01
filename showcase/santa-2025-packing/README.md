@@ -8,7 +8,7 @@ Pack 1-200 Christmas tree-shaped polygons into the smallest square box.
 
 **Scoring**: `score = Σ(side²/n)` for n=1 to 200 (lower is better)
 
-**Leaderboard**: Top scores ~69, our current best: **88.22** (Gen62)
+**Leaderboard**: Top scores ~69, our current best: **90.00** (Gen71a)
 
 ## Tree Shape
 
@@ -156,7 +156,7 @@ Analyzed a [70.1 score solution](https://github.com/berkaycamur/Santa-Competitio
 2. Dedicated compaction/squeeze passes
 3. Continuous angle optimization (careful - Gen54 showed pitfalls)
 
-## Current Best Algorithm (Gen62)
+## Current Best Algorithm (Gen71a)
 
 ```rust
 // 6 parallel placement strategies
@@ -174,7 +174,8 @@ for attempt in 0..200 {
 
 // SA optimization with:
 // - 85% boundary-focused moves
-// - 20% radius compression moves (NEW in Gen62)
+// - 35% radius compression moves (up from 20% in Gen62)
+// - 2x stronger center pull (0.15 vs 0.07)
 // - Hot restarts from elite pool
 // - 28,000 iterations per pass
 ```
@@ -182,11 +183,12 @@ for attempt in 0..200 {
 ## What Works
 
 1. **ConcentricRings placement** - Structured > chaotic
-2. **Radius compression** - Pull trees toward center based on distance
-3. **Hot restarts with elite pool** - Escape local optima
-4. **Boundary-focused SA** (85% probability) - Move trees that define bbox
-5. **Binary search for placement** - Fast, precise positioning
-6. **8 angles (45° steps)** - More or fewer is worse
+2. **Strong radius compression** - Pull trees toward center based on distance (2x strength helps!)
+3. **High compression probability** - 35% compression moves is better than 20%
+4. **Hot restarts with elite pool** - Escape local optima
+5. **Boundary-focused SA** (85% probability) - Move trees that define bbox
+6. **Binary search for placement** - Fast, precise positioning
+7. **8 angles (45° steps)** - More or fewer is worse
 
 ## What Doesn't Work
 
@@ -200,6 +202,29 @@ for attempt in 0..200 {
 8. **Global rotation during SA** (Gen67c) - Destabilizes search
 9. **NFP tangent placement** (Gen67b) - Misses good positions
 10. **Kitchen sink approach** (Gen67d) - More features ≠ better
+11. **Post-SA global rotation** (Gen70) - Doesn't help
+12. **Finer placement** (Gen71c) - More attempts doesn't improve
+
+### Phase 9: Surgical Improvements (Gen68-Gen71)
+**Goal**: Small, targeted parameter changes to break the plateau
+
+| Gen | Strategy | Score | Learning |
+|-----|----------|-------|----------|
+| 68a | N-adaptive SA params | 91.45 | Adapting params to n doesn't help |
+| 68b | Position swapping | 92.24 | Swapping positions hurts |
+| 68c | Aspect ratio balancing | 92.64 | Squarify moves hurt |
+| 68d | Stronger compression (30%) | 92.27 | Too much compression |
+| 69a | Per-tree rotation refinement | 92.49 | Local rotation doesn't help |
+| 69b | 3 independent SA runs | 94.30 | More runs = less per run |
+| 69c | Slide toward corner | 91.93 | Corner sliding doesn't help |
+| 69d | Crossover Gen62+Gen47 | 92.95 | Crossover doesn't help |
+| 70 | Post-SA global rotation | 91.83 | Global rotation as post-processing doesn't help |
+| **71a** | **Stronger center pull (2x)** | **90.00** | **NEW BEST!** 2x center pull + 35% compression |
+| 71b | More iterations (45k, 3 pass) | 90.88 | Slight improvement |
+| 71c | Finer placement (350 attempts) | 91.79 | More attempts doesn't help |
+| 71d | Larger elite pool (6) | 91.15 | More diversity helps slightly |
+
+**Key insight**: The champion was under-compressing. Stronger center pull (0.07→0.15) and higher compression probability (20%→35%) improved the score from ~91.3 to ~90.0.
 
 ## Running
 
@@ -226,9 +251,10 @@ santa-2025-packing/
 ├── README.md
 ├── data/
 │   └── sample_submission.csv
-├── mutations/           # All generation variants (Gen29-Gen63+)
-│   ├── gen47_concentric.rs     # First sub-90
-│   ├── gen62_radius_compress.rs # Current best (88.22)
+├── mutations/           # All generation variants (Gen29-Gen71+)
+│   ├── gen47_concentric.rs         # First sub-90
+│   ├── gen62_radius_compress.rs    # Former best (88.22)
+│   ├── gen71a_stronger_center_pull.rs  # Current best (90.00)
 │   └── ...
 └── rust/
     ├── Cargo.toml

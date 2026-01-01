@@ -1,13 +1,13 @@
-//! Evolved Packing Algorithm - Generation 71a STRONGER CENTER PULL
+//! Evolved Packing Algorithm - Generation 71b MORE ITERATIONS
 //!
-//! MUTATION STRATEGY: STRONGER CENTER PULL DURING SA
-//! The champion has center_pull_strength=0.07, compression_prob=0.20
-//! Top solutions are much more compact. Try doubling both.
+//! MUTATION STRATEGY: SIGNIFICANTLY MORE SA ITERATIONS
+//! Previous tests showed diminishing returns, but we may need even more
+//! for larger n values where the search space is huge.
 //!
 //! Changes from Gen62:
-//! - center_pull_strength: 0.07 -> 0.15
-//! - compression_prob: 0.20 -> 0.35
-//! - compression_factor range: 0.02-0.08 -> 0.03-0.12
+//! - sa_iterations: 28000 -> 45000
+//! - sa_passes: 2 -> 3
+//! - Keep everything else same
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -52,25 +52,25 @@ impl Default for EvolvedConfig {
         Self {
             search_attempts: 200,
             direction_samples: 64,
-            sa_iterations: 28000,
+            sa_iterations: 45000,  // CHANGED: 28000 -> 45000 (60% more)
             sa_initial_temp: 0.45,
-            sa_cooling_rate: 0.99993,
+            sa_cooling_rate: 0.99995,  // CHANGED: Slower cooling for more iterations
             sa_min_temp: 0.00001,
             translation_scale: 0.055,
             rotation_granularity: 45.0,
-            center_pull_strength: 0.15,  // CHANGED: 0.07 -> 0.15 (2x stronger)
-            sa_passes: 2,
-            early_exit_threshold: 2500,
+            center_pull_strength: 0.07,
+            sa_passes: 3,  // CHANGED: 2 -> 3 passes
+            early_exit_threshold: 3500,  // CHANGED: Allow more without improvement
             boundary_focus_prob: 0.85,
             num_strategies: 6,
             density_grid_resolution: 20,
             gap_penalty_weight: 0.15,
             local_density_radius: 0.5,
             fill_move_prob: 0.15,
-            hot_restart_interval: 800,
+            hot_restart_interval: 1000,  // CHANGED: More patience for restarts
             hot_restart_temp: 0.35,
             elite_pool_size: 3,
-            compression_prob: 0.35,  // CHANGED: 0.20 -> 0.35 (75% more compression moves)
+            compression_prob: 0.20,
         }
     }
 }
@@ -544,18 +544,20 @@ impl EvolvedPacker {
 
         let temp_multiplier = match pass {
             0 => 1.0,
-            _ => 0.35,
+            1 => 0.5,
+            _ => 0.25,
         };
         let mut temp = self.config.sa_initial_temp * temp_multiplier;
 
         let base_iterations = match pass {
             0 => self.config.sa_iterations + n * 100,
-            _ => self.config.sa_iterations / 2 + n * 50,
+            1 => self.config.sa_iterations / 2 + n * 75,
+            _ => self.config.sa_iterations / 3 + n * 50,
         };
 
         let mut iterations_without_improvement = 0;
         let mut total_restarts = 0;
-        let max_restarts = 4;
+        let max_restarts = 5;  // CHANGED: More restarts
 
         let mut boundary_cache_iter = 0;
         let mut boundary_info: Vec<(usize, BoundaryEdge)> = Vec::new();
@@ -706,8 +708,7 @@ impl EvolvedPacker {
             return false;
         }
 
-        // CHANGED: Stronger compression range 0.03-0.12 (was 0.02-0.08)
-        let compression_factor = rng.gen_range(0.03..0.12);
+        let compression_factor = rng.gen_range(0.02..0.08);
         let new_x = old_x + dx * compression_factor;
         let new_y = old_y + dy * compression_factor;
 

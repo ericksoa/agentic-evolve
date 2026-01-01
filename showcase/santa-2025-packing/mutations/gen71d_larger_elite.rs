@@ -1,13 +1,13 @@
-//! Evolved Packing Algorithm - Generation 71a STRONGER CENTER PULL
+//! Evolved Packing Algorithm - Generation 71d LARGER ELITE POOL
 //!
-//! MUTATION STRATEGY: STRONGER CENTER PULL DURING SA
-//! The champion has center_pull_strength=0.07, compression_prob=0.20
-//! Top solutions are much more compact. Try doubling both.
+//! MUTATION STRATEGY: LARGER ELITE POOL + MORE RESTARTS
+//! Maybe we're not exploring enough of the search space.
+//! Larger elite pool = more diversity in restarts.
 //!
 //! Changes from Gen62:
-//! - center_pull_strength: 0.07 -> 0.15
-//! - compression_prob: 0.20 -> 0.35
-//! - compression_factor range: 0.02-0.08 -> 0.03-0.12
+//! - elite_pool_size: 3 -> 6
+//! - max_restarts: 4 -> 8
+//! - More diverse exploration
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -58,7 +58,7 @@ impl Default for EvolvedConfig {
             sa_min_temp: 0.00001,
             translation_scale: 0.055,
             rotation_granularity: 45.0,
-            center_pull_strength: 0.15,  // CHANGED: 0.07 -> 0.15 (2x stronger)
+            center_pull_strength: 0.07,
             sa_passes: 2,
             early_exit_threshold: 2500,
             boundary_focus_prob: 0.85,
@@ -67,10 +67,10 @@ impl Default for EvolvedConfig {
             gap_penalty_weight: 0.15,
             local_density_radius: 0.5,
             fill_move_prob: 0.15,
-            hot_restart_interval: 800,
-            hot_restart_temp: 0.35,
-            elite_pool_size: 3,
-            compression_prob: 0.35,  // CHANGED: 0.20 -> 0.35 (75% more compression moves)
+            hot_restart_interval: 600,   // CHANGED: More frequent restarts
+            hot_restart_temp: 0.40,      // CHANGED: Slightly hotter restarts
+            elite_pool_size: 6,          // CHANGED: 3 -> 6 (more diversity)
+            compression_prob: 0.20,
         }
     }
 }
@@ -555,7 +555,7 @@ impl EvolvedPacker {
 
         let mut iterations_without_improvement = 0;
         let mut total_restarts = 0;
-        let max_restarts = 4;
+        let max_restarts = 8;  // CHANGED: 4 -> 8 (more exploration)
 
         let mut boundary_cache_iter = 0;
         let mut boundary_info: Vec<(usize, BoundaryEdge)> = Vec::new();
@@ -706,8 +706,7 @@ impl EvolvedPacker {
             return false;
         }
 
-        // CHANGED: Stronger compression range 0.03-0.12 (was 0.02-0.08)
-        let compression_factor = rng.gen_range(0.03..0.12);
+        let compression_factor = rng.gen_range(0.02..0.08);
         let new_x = old_x + dx * compression_factor;
         let new_y = old_y + dy * compression_factor;
 
@@ -717,13 +716,7 @@ impl EvolvedPacker {
     }
 
     fn update_elite_pool(&self, pool: &mut Vec<(f64, Vec<PlacedTree>)>, score: f64, config: Vec<PlacedTree>) {
-        let mut dominated = false;
-        for (elite_score, _) in pool.iter() {
-            if *elite_score <= score {
-                dominated = true;
-                break;
-            }
-        }
+        let dominated = pool.iter().any(|(elite_score, _)| *elite_score <= score);
 
         if !dominated {
             pool.push((score, config));
