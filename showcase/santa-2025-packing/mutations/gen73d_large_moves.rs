@@ -1,20 +1,15 @@
-//! Evolved Packing Algorithm - Generation 73c LATE-STAGE CONTINUOUS ANGLES
+//! Evolved Packing Algorithm - Generation 73d LARGE NEIGHBORHOOD MOVES
 //!
-//! MUTATION STRATEGY: ONLY USE CONTINUOUS ANGLES FOR LAST 20% OF TREES
-//! Based on observation that top solutions use continuous angles but our SA
-//! doesn't handle them well. Hypothesis: use discrete 45° angles for most trees
-//! to maintain SA stability, but for the final trees where small adjustments
-//! matter most, try continuous angle refinement.
-//!
-//! Key insight: The final trees (n >= 160) are trying to fit into an already
-//! established structure. Fine-grained angles might help them slot into
-//! remaining gaps better than discrete 45° steps.
+//! MUTATION STRATEGY: LARGER SA MOVES + SWAP OPERATIONS
+//! Current SA uses small translation steps. Hypothesis: occasionally making
+//! much larger moves (jumping to opposite side of packing) or swapping
+//! positions between two trees can help escape local optima.
 //!
 //! Changes from Gen72b:
-//! - For n >= 160 (last 20% of trees), use finer 15° angle steps
-//! - For n < 160, keep standard 45° angle steps
+//! - Add 10% probability of "jump" moves that teleport tree to opposite side
+//! - Add 5% probability of position swap between two trees
 //! - Keep wave compaction from Gen72b
-//! - Only apply fine angles in placement, not SA (to maintain SA stability)
+//! - Larger translation scale on high temperature
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -53,8 +48,8 @@ pub struct EvolvedConfig {
     pub elite_pool_size: usize,
     pub compression_prob: f64,
     pub wave_passes: usize,
-    pub late_stage_threshold: usize,  // NEW: when to start using fine angles
-    pub fine_angle_step: f64,         // NEW: angle step for late stage
+    pub jump_move_prob: f64,   // NEW: probability of large "jump" move
+    pub swap_move_prob: f64,   // NEW: probability of swap move
 }
 
 impl Default for EvolvedConfig {
@@ -82,8 +77,8 @@ impl Default for EvolvedConfig {
             elite_pool_size: 3,
             compression_prob: 0.20,
             wave_passes: 3,
-            late_stage_threshold: 160,  // NEW: last 20% of trees use fine angles
-            fine_angle_step: 15.0,      // NEW: 15° steps instead of 45°
+            jump_move_prob: 0.10,   // NEW: 10% chance of jump
+            swap_move_prob: 0.05,   // NEW: 5% chance of swap
         }
     }
 }
@@ -231,13 +226,7 @@ impl EvolvedPacker {
         let mut best_tree = PlacedTree::new(0.0, 0.0, 90.0);
         let mut best_score = f64::INFINITY;
 
-        // NEW: Use fine angles for late-stage trees
-        let angles = if n >= self.config.late_stage_threshold {
-            self.select_fine_angles_for_strategy(n, strategy)
-        } else {
-            self.select_angles_for_strategy(n, strategy)
-        };
-
+        let angles = self.select_angles_for_strategy(n, strategy);
         let (min_x, min_y, max_x, max_y) = compute_bounds(existing);
         let current_width = max_x - min_x;
         let current_height = max_y - min_y;
@@ -317,49 +306,6 @@ impl EvolvedPacker {
                 }
             }
         }
-    }
-
-    // NEW: Fine-grained angle selection for late-stage trees
-    #[inline]
-    fn select_fine_angles_for_strategy(&self, n: usize, strategy: PlacementStrategy) -> Vec<f64> {
-        // Use 15° steps (24 angles total) but limit to most promising ones
-        // Start with the same priority as regular strategy, then add intermediate angles
-        let base_angles = self.select_angles_for_strategy(n, strategy);
-
-        let mut fine_angles = Vec::with_capacity(24);
-
-        // First add all base angles
-        for &angle in &base_angles {
-            fine_angles.push(angle);
-        }
-
-        // Then add intermediate angles (15° offsets from base angles)
-        for &base in &base_angles {
-            let plus_15 = (base + 15.0).rem_euclid(360.0);
-            let minus_15 = (base - 15.0).rem_euclid(360.0);
-
-            if !fine_angles.contains(&plus_15) {
-                fine_angles.push(plus_15);
-            }
-            if !fine_angles.contains(&minus_15) {
-                fine_angles.push(minus_15);
-            }
-        }
-
-        // Add 30° offsets for even finer coverage
-        for &base in &base_angles {
-            let plus_30 = (base + 30.0).rem_euclid(360.0);
-            let minus_30 = (base - 30.0).rem_euclid(360.0);
-
-            if !fine_angles.contains(&plus_30) {
-                fine_angles.push(plus_30);
-            }
-            if !fine_angles.contains(&minus_30) {
-                fine_angles.push(minus_30);
-            }
-        }
-
-        fine_angles
     }
 
     #[inline]
@@ -692,9 +638,66 @@ impl EvolvedPacker {
                 boundary_cache_iter = iter;
             }
 
-            let do_compression = rng.gen::<f64>() < self.config.compression_prob;
+            let rand_val = rng.gen::<f64>();
 
-            if do_compression {
+            // NEW: Try swap move
+            if rand_val < self.config.swap_move_prob && trees.len() >= 2 {
+                let old_trees = trees.clone();
+                let success = self.swap_move(trees, rng);
+
+                if success {
+                    let new_side = compute_side_length(trees);
+                    let delta = new_side - current_side;
+
+                    if delta <= 0.0 || rng.gen::<f64>() < (-delta / temp).exp() {
+                        current_side = new_side;
+                        if current_side < best_side {
+                            best_side = current_side;
+                            best_config = trees.clone();
+                            iterations_without_improvement = 0;
+                            self.update_elite_pool(&mut elite_pool, current_side, trees.clone());
+                        } else {
+                            iterations_without_improvement += 1;
+                        }
+                    } else {
+                        *trees = old_trees;
+                        iterations_without_improvement += 1;
+                    }
+                } else {
+                    *trees = old_trees;
+                    iterations_without_improvement += 1;
+                }
+            }
+            // NEW: Try jump move
+            else if rand_val < self.config.swap_move_prob + self.config.jump_move_prob {
+                let old_trees = trees.clone();
+                let success = self.jump_move(trees, rng);
+
+                if success {
+                    let new_side = compute_side_length(trees);
+                    let delta = new_side - current_side;
+
+                    if delta <= 0.0 || rng.gen::<f64>() < (-delta / temp).exp() {
+                        current_side = new_side;
+                        if current_side < best_side {
+                            best_side = current_side;
+                            best_config = trees.clone();
+                            iterations_without_improvement = 0;
+                            self.update_elite_pool(&mut elite_pool, current_side, trees.clone());
+                        } else {
+                            iterations_without_improvement += 1;
+                        }
+                    } else {
+                        *trees = old_trees;
+                        iterations_without_improvement += 1;
+                    }
+                } else {
+                    *trees = old_trees;
+                    iterations_without_improvement += 1;
+                }
+            }
+            // Compression move
+            else if rand_val < self.config.swap_move_prob + self.config.jump_move_prob + self.config.compression_prob {
                 let old_trees = trees.clone();
                 let success = self.compression_move(trees, rng);
 
@@ -745,7 +748,6 @@ impl EvolvedPacker {
 
                 let old_tree = trees[idx].clone();
 
-                // NOTE: SA still uses 45° angles only - we don't want to destabilize it
                 let success = self.sa_move(trees, idx, temp, edge, do_fill_move, rng);
 
                 if success {
@@ -779,6 +781,107 @@ impl EvolvedPacker {
         if best_side < compute_side_length(trees) {
             *trees = best_config;
         }
+    }
+
+    // NEW: Jump move - teleport a boundary tree to the opposite side of packing
+    fn jump_move(&self, trees: &mut [PlacedTree], rng: &mut impl Rng) -> bool {
+        if trees.len() < 3 {
+            return false;
+        }
+
+        let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
+        let center_x = (min_x + max_x) / 2.0;
+        let center_y = (min_y + max_y) / 2.0;
+
+        // Pick a boundary tree
+        let boundary_info = self.find_boundary_trees_with_edges(trees);
+        if boundary_info.is_empty() {
+            return false;
+        }
+
+        let (idx, _edge) = boundary_info[rng.gen_range(0..boundary_info.len())];
+        let old_x = trees[idx].x;
+        let old_y = trees[idx].y;
+        let old_angle = trees[idx].angle_deg;
+
+        // Calculate vector from center to tree
+        let dx = old_x - center_x;
+        let dy = old_y - center_y;
+
+        // Try to place on the opposite side (mirror through center)
+        let target_x = center_x - dx;
+        let target_y = center_y - dy;
+
+        // Try a few positions near the target
+        for offset in [0.0, 0.1, 0.2, 0.3, 0.4, -0.1, -0.2] {
+            let try_x = target_x + offset * rng.gen_range(-1.0..1.0);
+            let try_y = target_y + offset * rng.gen_range(-1.0..1.0);
+
+            // Try different angles
+            for angle_offset in [0.0, 45.0, 90.0, 135.0, 180.0] {
+                let new_angle = (old_angle + angle_offset).rem_euclid(360.0);
+                trees[idx] = PlacedTree::new(try_x, try_y, new_angle);
+
+                if !has_overlap(trees, idx) {
+                    return true;
+                }
+            }
+        }
+
+        // Revert
+        trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
+        false
+    }
+
+    // NEW: Swap move - exchange positions of two trees
+    fn swap_move(&self, trees: &mut [PlacedTree], rng: &mut impl Rng) -> bool {
+        if trees.len() < 2 {
+            return false;
+        }
+
+        // Pick two different trees (prefer one boundary, one interior)
+        let boundary_info = self.find_boundary_trees_with_edges(trees);
+        let interior_trees: Vec<usize> = (0..trees.len())
+            .filter(|&i| !boundary_info.iter().any(|(bi, _)| *bi == i))
+            .collect();
+
+        let (idx1, idx2) = if !boundary_info.is_empty() && !interior_trees.is_empty() && rng.gen::<f64>() < 0.7 {
+            // Swap boundary with interior
+            let bi = boundary_info[rng.gen_range(0..boundary_info.len())].0;
+            let ii = interior_trees[rng.gen_range(0..interior_trees.len())];
+            (bi, ii)
+        } else {
+            // Random swap
+            let i1 = rng.gen_range(0..trees.len());
+            let mut i2 = rng.gen_range(0..trees.len());
+            while i2 == i1 {
+                i2 = rng.gen_range(0..trees.len());
+            }
+            (i1, i2)
+        };
+
+        let old1 = trees[idx1].clone();
+        let old2 = trees[idx2].clone();
+
+        // Swap positions but keep angles
+        trees[idx1] = PlacedTree::new(old2.x, old2.y, old1.angle_deg);
+        trees[idx2] = PlacedTree::new(old1.x, old1.y, old2.angle_deg);
+
+        // Check for overlaps
+        if has_overlap(trees, idx1) || has_overlap(trees, idx2) {
+            // Try with swapped angles too
+            trees[idx1] = PlacedTree::new(old2.x, old2.y, old2.angle_deg);
+            trees[idx2] = PlacedTree::new(old1.x, old1.y, old1.angle_deg);
+
+            if has_overlap(trees, idx1) || has_overlap(trees, idx2) {
+                // Revert
+                trees[idx1] = old1;
+                trees[idx2] = old2;
+                return false;
+            }
+        }
+
+        true
     }
 
     fn compression_move(&self, trees: &mut [PlacedTree], rng: &mut impl Rng) -> bool {
@@ -897,7 +1000,8 @@ impl EvolvedPacker {
         let old_y = old.y;
         let old_angle = old.angle_deg;
 
-        let scale = self.config.translation_scale * (0.3 + temp * 1.5);
+        // NEW: Larger scale at high temperatures for more exploration
+        let scale = self.config.translation_scale * (0.3 + temp * 2.0);
 
         if is_fill_move {
             let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
@@ -917,8 +1021,7 @@ impl EvolvedPacker {
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 2 => {
-                    // Keep 45° multiples even in fill move
-                    let angles = [45.0, 90.0, -45.0, -90.0];
+                    let angles = [45.0, 90.0, -45.0, -90.0, 30.0, -30.0];
                     let delta = angles[rng.gen_range(0..angles.len())];
                     let new_angle = (old_angle + delta).rem_euclid(360.0);
                     trees[idx] = PlacedTree::new(old_x, old_y, new_angle);

@@ -1,20 +1,17 @@
-//! Evolved Packing Algorithm - Generation 73c LATE-STAGE CONTINUOUS ANGLES
+//! Evolved Packing Algorithm - Generation 72b WAVE COMPACTION
 //!
-//! MUTATION STRATEGY: ONLY USE CONTINUOUS ANGLES FOR LAST 20% OF TREES
-//! Based on observation that top solutions use continuous angles but our SA
-//! doesn't handle them well. Hypothesis: use discrete 45° angles for most trees
-//! to maintain SA stability, but for the final trees where small adjustments
-//! matter most, try continuous angle refinement.
+//! MUTATION STRATEGY: WAVE-BASED COMPACTION PHASE
+//! After SA optimization, apply a deterministic "wave" compaction that
+//! moves all trees toward center in layers, starting from outermost.
 //!
-//! Key insight: The final trees (n >= 160) are trying to fit into an already
-//! established structure. Fine-grained angles might help them slot into
-//! remaining gaps better than discrete 45° steps.
+//! Hypothesis: A structured post-SA compaction phase can achieve tighter
+//! packing by systematically closing gaps, similar to how Tetris pieces
+//! fall and settle.
 //!
-//! Changes from Gen72b:
-//! - For n >= 160 (last 20% of trees), use finer 15° angle steps
-//! - For n < 160, keep standard 45° angle steps
-//! - Keep wave compaction from Gen72b
-//! - Only apply fine angles in placement, not SA (to maintain SA stability)
+//! Changes from Gen62:
+//! - Keep Gen62's proven compression parameters
+//! - Add wave_compaction phase after each SA pass
+//! - Compaction moves trees from outside-in in 3 waves
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -52,9 +49,7 @@ pub struct EvolvedConfig {
     pub hot_restart_temp: f64,
     pub elite_pool_size: usize,
     pub compression_prob: f64,
-    pub wave_passes: usize,
-    pub late_stage_threshold: usize,  // NEW: when to start using fine angles
-    pub fine_angle_step: f64,         // NEW: angle step for late stage
+    pub wave_passes: usize,  // NEW: number of wave compaction passes
 }
 
 impl Default for EvolvedConfig {
@@ -68,7 +63,7 @@ impl Default for EvolvedConfig {
             sa_min_temp: 0.00001,
             translation_scale: 0.055,
             rotation_granularity: 45.0,
-            center_pull_strength: 0.07,
+            center_pull_strength: 0.07,  // Gen62's value
             sa_passes: 2,
             early_exit_threshold: 2500,
             boundary_focus_prob: 0.85,
@@ -80,10 +75,8 @@ impl Default for EvolvedConfig {
             hot_restart_interval: 800,
             hot_restart_temp: 0.35,
             elite_pool_size: 3,
-            compression_prob: 0.20,
-            wave_passes: 3,
-            late_stage_threshold: 160,  // NEW: last 20% of trees use fine angles
-            fine_angle_step: 15.0,      // NEW: 15° steps instead of 45°
+            compression_prob: 0.20,  // Gen62's value
+            wave_passes: 3,  // NEW: 3 waves of compaction
         }
     }
 }
@@ -132,6 +125,7 @@ impl EvolvedPacker {
                     self.local_search(&mut trees, n, pass, strategy, &mut rng);
                 }
 
+                // NEW: Apply wave compaction after SA
                 self.wave_compaction(&mut trees);
 
                 let side = compute_side_length(&trees);
@@ -160,6 +154,7 @@ impl EvolvedPacker {
         packings
     }
 
+    // NEW: Wave compaction - move trees toward center in waves from outside-in
     fn wave_compaction(&self, trees: &mut Vec<PlacedTree>) {
         if trees.len() <= 1 {
             return;
@@ -170,6 +165,7 @@ impl EvolvedPacker {
             let center_x = (min_x + max_x) / 2.0;
             let center_y = (min_y + max_y) / 2.0;
 
+            // Sort trees by distance from center (farthest first)
             let mut tree_distances: Vec<(usize, f64)> = trees.iter().enumerate()
                 .map(|(i, t)| {
                     let dx = t.x - center_x;
@@ -179,6 +175,7 @@ impl EvolvedPacker {
                 .collect();
             tree_distances.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
+            // Try to move each tree toward center, starting from farthest
             for (idx, _dist) in tree_distances {
                 let old_x = trees[idx].x;
                 let old_y = trees[idx].y;
@@ -192,6 +189,7 @@ impl EvolvedPacker {
                     continue;
                 }
 
+                // Try progressively smaller steps toward center
                 for step in [0.10, 0.05, 0.02, 0.01] {
                     let new_x = old_x + dx * step;
                     let new_y = old_y + dy * step;
@@ -199,8 +197,10 @@ impl EvolvedPacker {
                     trees[idx] = PlacedTree::new(new_x, new_y, old_angle);
 
                     if has_overlap(trees, idx) {
+                        // Revert
                         trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
                     } else {
+                        // Keep the move
                         break;
                     }
                 }
@@ -231,13 +231,7 @@ impl EvolvedPacker {
         let mut best_tree = PlacedTree::new(0.0, 0.0, 90.0);
         let mut best_score = f64::INFINITY;
 
-        // NEW: Use fine angles for late-stage trees
-        let angles = if n >= self.config.late_stage_threshold {
-            self.select_fine_angles_for_strategy(n, strategy)
-        } else {
-            self.select_angles_for_strategy(n, strategy)
-        };
-
+        let angles = self.select_angles_for_strategy(n, strategy);
         let (min_x, min_y, max_x, max_y) = compute_bounds(existing);
         let current_width = max_x - min_x;
         let current_height = max_y - min_y;
@@ -317,49 +311,6 @@ impl EvolvedPacker {
                 }
             }
         }
-    }
-
-    // NEW: Fine-grained angle selection for late-stage trees
-    #[inline]
-    fn select_fine_angles_for_strategy(&self, n: usize, strategy: PlacementStrategy) -> Vec<f64> {
-        // Use 15° steps (24 angles total) but limit to most promising ones
-        // Start with the same priority as regular strategy, then add intermediate angles
-        let base_angles = self.select_angles_for_strategy(n, strategy);
-
-        let mut fine_angles = Vec::with_capacity(24);
-
-        // First add all base angles
-        for &angle in &base_angles {
-            fine_angles.push(angle);
-        }
-
-        // Then add intermediate angles (15° offsets from base angles)
-        for &base in &base_angles {
-            let plus_15 = (base + 15.0).rem_euclid(360.0);
-            let minus_15 = (base - 15.0).rem_euclid(360.0);
-
-            if !fine_angles.contains(&plus_15) {
-                fine_angles.push(plus_15);
-            }
-            if !fine_angles.contains(&minus_15) {
-                fine_angles.push(minus_15);
-            }
-        }
-
-        // Add 30° offsets for even finer coverage
-        for &base in &base_angles {
-            let plus_30 = (base + 30.0).rem_euclid(360.0);
-            let minus_30 = (base - 30.0).rem_euclid(360.0);
-
-            if !fine_angles.contains(&plus_30) {
-                fine_angles.push(plus_30);
-            }
-            if !fine_angles.contains(&minus_30) {
-                fine_angles.push(minus_30);
-            }
-        }
-
-        fine_angles
     }
 
     #[inline]
@@ -745,7 +696,6 @@ impl EvolvedPacker {
 
                 let old_tree = trees[idx].clone();
 
-                // NOTE: SA still uses 45° angles only - we don't want to destabilize it
                 let success = self.sa_move(trees, idx, temp, edge, do_fill_move, rng);
 
                 if success {
@@ -917,8 +867,7 @@ impl EvolvedPacker {
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 2 => {
-                    // Keep 45° multiples even in fill move
-                    let angles = [45.0, 90.0, -45.0, -90.0];
+                    let angles = [45.0, 90.0, -45.0, -90.0, 30.0, -30.0];
                     let delta = angles[rng.gen_range(0..angles.len())];
                     let new_angle = (old_angle + delta).rem_euclid(360.0);
                     trees[idx] = PlacedTree::new(old_x, old_y, new_angle);

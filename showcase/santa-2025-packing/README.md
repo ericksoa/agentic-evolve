@@ -8,7 +8,7 @@ Pack 1-200 Christmas tree-shaped polygons into the smallest square box.
 
 **Scoring**: `score = Σ(side²/n)` for n=1 to 200 (lower is better)
 
-**Leaderboard**: Top scores ~69, our current best: **90.00** (Gen71a)
+**Leaderboard**: Top scores ~69, our current best: **89.46** (Gen72b)
 
 ## Tree Shape
 
@@ -156,7 +156,7 @@ Analyzed a [70.1 score solution](https://github.com/berkaycamur/Santa-Competitio
 2. Dedicated compaction/squeeze passes
 3. Continuous angle optimization (careful - Gen54 showed pitfalls)
 
-## Current Best Algorithm (Gen71a)
+## Current Best Algorithm (Gen73c)
 
 ```rust
 // 6 parallel placement strategies
@@ -166,44 +166,68 @@ strategies = [ClockwiseSpiral, CounterclockwiseSpiral, Grid,
 // Placement: Binary search along direction vectors
 for attempt in 0..200 {
     let dir = select_direction_for_strategy(n, strategy, attempt);
-    for angle in [0, 45, 90, 135, 180, 225, 270, 315] {
+
+    // NEW in Gen73c: Use finer angles for late-stage trees
+    let angles = if n >= 160 {
+        // Last 20% of trees: 15° step angles (24 total)
+        [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165,
+         180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345]
+    } else {
+        // Early trees: standard 45° steps (8 total)
+        [0, 45, 90, 135, 180, 225, 270, 315]
+    };
+
+    for angle in angles {
         let pos = binary_search_placement(dir, angle);
         if better_score(pos) { best = pos; }
     }
 }
 
-// SA optimization with:
+// SA optimization with Gen62's proven parameters:
 // - 85% boundary-focused moves
-// - 35% radius compression moves (up from 20% in Gen62)
-// - 2x stronger center pull (0.15 vs 0.07)
+// - 20% radius compression moves
+// - center_pull_strength: 0.07
 // - Hot restarts from elite pool
 // - 28,000 iterations per pass
+// - NOTE: SA still uses 45° angles only (maintains stability)
+
+// Wave compaction post-processing (from Gen72b)
+for wave in 0..3 {
+    for tree in trees_sorted_by_distance_from_center.desc() {
+        try_move_toward_center(tree, [0.10, 0.05, 0.02, 0.01]);
+    }
+}
 ```
 
 ## What Works
 
 1. **ConcentricRings placement** - Structured > chaotic
-2. **Strong radius compression** - Pull trees toward center based on distance (2x strength helps!)
-3. **High compression probability** - 35% compression moves is better than 20%
+2. **Gentle radius compression** - Pull trees toward center (20% prob, 0.07 strength)
+3. **Wave compaction post-processing** - Outside-in structured compression after SA
 4. **Hot restarts with elite pool** - Escape local optima
 5. **Boundary-focused SA** (85% probability) - Move trees that define bbox
 6. **Binary search for placement** - Fast, precise positioning
-7. **8 angles (45° steps)** - More or fewer is worse
+7. **8 angles (45° steps) for most trees** - Maintains SA stability
+8. **Late-stage continuous angles** (Gen73c) - Use finer 15° angles for final 20% trees during placement only
 
 ## What Doesn't Work
 
 1. **More iterations alone** - Diminishing returns without new ideas
-2. **Finer angle granularity** (15° or 30°) - 4x slower, worse results
+2. **Finer angle granularity everywhere** (15° or 30°) - 4x slower, worse results
 3. **Too many strategies** (7+) - Overhead > benefit
-4. **Multi-seed approach** - 2x time, no improvement
+4. **Multi-seed approach** (Gen73b) - 3x time, worse results
 5. **Post-processing compaction** - Should be in SA
 6. **Greedy angle selection** - Need exhaustive 8-angle search
 7. **Continuous angles in SA** (Gen67a) - Hurts convergence badly
 8. **Global rotation during SA** (Gen67c) - Destabilizes search
 9. **NFP tangent placement** (Gen67b) - Misses good positions
 10. **Kitchen sink approach** (Gen67d) - More features ≠ better
-11. **Post-SA global rotation** (Gen70) - Doesn't help
+11. **Post-SA global rotation** (Gen70, Gen73a) - Doesn't help
 12. **Finer placement** (Gen71c) - More attempts doesn't improve
+13. **Chain moves** (Gen72a) - Propagating moves to neighbors hurts
+14. **Micro-rotations** (Gen72c) - ±5° angle refinement still destabilizes SA
+15. **Aggressive compression** (Gen71a) - 2x center pull was too much
+16. **Large neighborhood moves** (Gen73d) - Jump/swap moves destabilize SA
 
 ### Phase 9: Surgical Improvements (Gen68-Gen71)
 **Goal**: Small, targeted parameter changes to break the plateau
@@ -225,6 +249,44 @@ for attempt in 0..200 {
 | 71d | Larger elite pool (6) | 91.15 | More diversity helps slightly |
 
 **Key insight**: The champion was under-compressing. Stronger center pull (0.07→0.15) and higher compression probability (20%→35%) improved the score from ~91.3 to ~90.0.
+
+### Phase 10: Novel Move Types (Gen72)
+**Goal**: Try fundamentally different approaches after confirming Gen62/Gen71 variance
+
+| Gen | Strategy | Score | Learning |
+|-----|----------|-------|----------|
+| 72a | Chain reaction moves | 91.32 | Chain moves on neighbors after compression - hurts |
+| **72b** | **Wave compaction** | **89.46** | **NEW BEST!** Post-SA outside-in compaction waves |
+| 72c | Micro-rotation (±5°) | 93.31 | Non-45° angles still hurt SA convergence badly |
+| 72d | Revert to Gen62 params | 89.59 | Confirms Gen62 vs Gen71 difference was variance |
+
+**Key insights**:
+1. **Gen62's 88.22 was likely a lucky run** - reverting to exact Gen62 params gives ~89.6, not 88.2
+2. **Wave compaction helps marginally** - structured post-SA compression from outside-in
+3. **Micro-rotations still hurt** - any deviation from 45° multiples destabilizes SA
+4. **We're in a local optimum** - incremental SA improvements hit a wall around 89-90
+
+**Next directions**:
+- Need fundamentally different algorithm (constraint programming, different metaheuristic)
+- Current SA-based approach seems capped at ~89
+
+### Phase 11: Targeted Innovations (Gen73)
+**Goal**: Try focused improvements based on learnings
+
+| Gen | Strategy | Score | Learning |
+|-----|----------|-------|----------|
+| 73a | Two-phase global rotation | 91.08 | Separate post-SA rotation doesn't help |
+| 73b | Multi-seed tournament | 93.85 | Multiple seeds is slow + worse |
+| **73c** | **Late-stage continuous angles** | **88.90** | **NEW BEST!** Fine angles for last 20% trees |
+| 73d | Large neighborhood moves | 94.47 | Jump/swap moves destabilize SA badly |
+
+**Key insights**:
+1. **Late-stage continuous angles work!** Using 15° angles for n >= 160 while keeping 45° for earlier trees maintains SA stability but allows final trees to fit into gaps better
+2. **Global rotation as separate phase doesn't help** - the packing is already optimized for 45° multiples
+3. **Multi-seed is expensive and worse** - 3x runtime for worse results
+4. **Large moves hurt SA** - jump/swap moves disrupt the search too much
+
+**Gen73c innovation**: Only use fine angles (15° steps) during PLACEMENT of final 20% trees. SA still uses 45° multiples. This gives the best of both worlds: SA stability + fine placement for tight gaps.
 
 ## Running
 
@@ -251,10 +313,11 @@ santa-2025-packing/
 ├── README.md
 ├── data/
 │   └── sample_submission.csv
-├── mutations/           # All generation variants (Gen29-Gen71+)
+├── mutations/           # All generation variants (Gen29-Gen73+)
 │   ├── gen47_concentric.rs         # First sub-90
 │   ├── gen62_radius_compress.rs    # Former best (88.22)
-│   ├── gen71a_stronger_center_pull.rs  # Current best (90.00)
+│   ├── gen72b_wave_compaction.rs   # Former best (89.46)
+│   ├── gen73c_late_continuous.rs   # Current best (88.90)
 │   └── ...
 └── rust/
     ├── Cargo.toml
@@ -274,7 +337,9 @@ santa-2025-packing/
 | Multi-start | ~100 | +45% | Multiple restarts |
 | SA optimization | ~91 | +32% | Simulated annealing |
 | Gen47 ConcentricRings | 89.59 | +30% | Structured placement |
-| Gen62 RadiusCompress | **88.22** | +28% | Compression moves |
+| Gen62 RadiusCompress | 88.22 | +28% | Compression moves (lucky run) |
+| Gen72b WaveCompaction | 89.46 | +30% | Post-SA wave compaction |
+| **Gen73c LateContinuous** | **88.90** | **+29%** | **Fine angles for late-stage placement** |
 | *Target (top solution)* | *~69* | - | Continuous angles + global rotation |
 
 **Status**: Active evolution. Competition deadline: January 30, 2026.

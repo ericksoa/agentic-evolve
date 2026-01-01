@@ -1,20 +1,18 @@
-//! Evolved Packing Algorithm - Generation 73c LATE-STAGE CONTINUOUS ANGLES
+//! Evolved Packing Algorithm - Generation 72c MICRO ROTATION
 //!
-//! MUTATION STRATEGY: ONLY USE CONTINUOUS ANGLES FOR LAST 20% OF TREES
-//! Based on observation that top solutions use continuous angles but our SA
-//! doesn't handle them well. Hypothesis: use discrete 45° angles for most trees
-//! to maintain SA stability, but for the final trees where small adjustments
-//! matter most, try continuous angle refinement.
+//! MUTATION STRATEGY: MICRO ANGLE REFINEMENT
+//! Use the proven 45-degree angles for placement, but add micro-rotation
+//! moves (±5°, ±10°) during SA that allow fine-tuning without hurting
+//! convergence.
 //!
-//! Key insight: The final trees (n >= 160) are trying to fit into an already
-//! established structure. Fine-grained angles might help them slot into
-//! remaining gaps better than discrete 45° steps.
+//! Hypothesis: The problem with continuous angles (Gen67a) was using them
+//! during placement search. But small refinements DURING SA (after coarse
+//! placement) could help without destabilizing search.
 //!
-//! Changes from Gen72b:
-//! - For n >= 160 (last 20% of trees), use finer 15° angle steps
-//! - For n < 160, keep standard 45° angle steps
-//! - Keep wave compaction from Gen72b
-//! - Only apply fine angles in placement, not SA (to maintain SA stability)
+//! Changes from Gen62:
+//! - Keep Gen62's proven parameters
+//! - Add micro_rotation_move that tries ±5° and ±10° adjustments
+//! - micro_rotation_prob: 0.08 - 8% of moves are micro-rotations
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -52,9 +50,7 @@ pub struct EvolvedConfig {
     pub hot_restart_temp: f64,
     pub elite_pool_size: usize,
     pub compression_prob: f64,
-    pub wave_passes: usize,
-    pub late_stage_threshold: usize,  // NEW: when to start using fine angles
-    pub fine_angle_step: f64,         // NEW: angle step for late stage
+    pub micro_rotation_prob: f64,  // NEW: probability of micro-rotation
 }
 
 impl Default for EvolvedConfig {
@@ -68,7 +64,7 @@ impl Default for EvolvedConfig {
             sa_min_temp: 0.00001,
             translation_scale: 0.055,
             rotation_granularity: 45.0,
-            center_pull_strength: 0.07,
+            center_pull_strength: 0.07,  // Gen62's value
             sa_passes: 2,
             early_exit_threshold: 2500,
             boundary_focus_prob: 0.85,
@@ -80,10 +76,8 @@ impl Default for EvolvedConfig {
             hot_restart_interval: 800,
             hot_restart_temp: 0.35,
             elite_pool_size: 3,
-            compression_prob: 0.20,
-            wave_passes: 3,
-            late_stage_threshold: 160,  // NEW: last 20% of trees use fine angles
-            fine_angle_step: 15.0,      // NEW: 15° steps instead of 45°
+            compression_prob: 0.20,  // Gen62's value
+            micro_rotation_prob: 0.08,  // NEW: 8% micro-rotations
         }
     }
 }
@@ -132,8 +126,6 @@ impl EvolvedPacker {
                     self.local_search(&mut trees, n, pass, strategy, &mut rng);
                 }
 
-                self.wave_compaction(&mut trees);
-
                 let side = compute_side_length(&trees);
                 strategy_trees[s_idx] = trees.clone();
 
@@ -160,54 +152,6 @@ impl EvolvedPacker {
         packings
     }
 
-    fn wave_compaction(&self, trees: &mut Vec<PlacedTree>) {
-        if trees.len() <= 1 {
-            return;
-        }
-
-        for _wave in 0..self.config.wave_passes {
-            let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
-            let center_x = (min_x + max_x) / 2.0;
-            let center_y = (min_y + max_y) / 2.0;
-
-            let mut tree_distances: Vec<(usize, f64)> = trees.iter().enumerate()
-                .map(|(i, t)| {
-                    let dx = t.x - center_x;
-                    let dy = t.y - center_y;
-                    (i, (dx * dx + dy * dy).sqrt())
-                })
-                .collect();
-            tree_distances.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-
-            for (idx, _dist) in tree_distances {
-                let old_x = trees[idx].x;
-                let old_y = trees[idx].y;
-                let old_angle = trees[idx].angle_deg;
-
-                let dx = center_x - old_x;
-                let dy = center_y - old_y;
-                let dist = (dx * dx + dy * dy).sqrt();
-
-                if dist < 0.05 {
-                    continue;
-                }
-
-                for step in [0.10, 0.05, 0.02, 0.01] {
-                    let new_x = old_x + dx * step;
-                    let new_y = old_y + dy * step;
-
-                    trees[idx] = PlacedTree::new(new_x, new_y, old_angle);
-
-                    if has_overlap(trees, idx) {
-                        trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
     fn find_placement_with_strategy(
         &self,
         existing: &[PlacedTree],
@@ -231,13 +175,7 @@ impl EvolvedPacker {
         let mut best_tree = PlacedTree::new(0.0, 0.0, 90.0);
         let mut best_score = f64::INFINITY;
 
-        // NEW: Use fine angles for late-stage trees
-        let angles = if n >= self.config.late_stage_threshold {
-            self.select_fine_angles_for_strategy(n, strategy)
-        } else {
-            self.select_angles_for_strategy(n, strategy)
-        };
-
+        let angles = self.select_angles_for_strategy(n, strategy);
         let (min_x, min_y, max_x, max_y) = compute_bounds(existing);
         let current_width = max_x - min_x;
         let current_height = max_y - min_y;
@@ -317,49 +255,6 @@ impl EvolvedPacker {
                 }
             }
         }
-    }
-
-    // NEW: Fine-grained angle selection for late-stage trees
-    #[inline]
-    fn select_fine_angles_for_strategy(&self, n: usize, strategy: PlacementStrategy) -> Vec<f64> {
-        // Use 15° steps (24 angles total) but limit to most promising ones
-        // Start with the same priority as regular strategy, then add intermediate angles
-        let base_angles = self.select_angles_for_strategy(n, strategy);
-
-        let mut fine_angles = Vec::with_capacity(24);
-
-        // First add all base angles
-        for &angle in &base_angles {
-            fine_angles.push(angle);
-        }
-
-        // Then add intermediate angles (15° offsets from base angles)
-        for &base in &base_angles {
-            let plus_15 = (base + 15.0).rem_euclid(360.0);
-            let minus_15 = (base - 15.0).rem_euclid(360.0);
-
-            if !fine_angles.contains(&plus_15) {
-                fine_angles.push(plus_15);
-            }
-            if !fine_angles.contains(&minus_15) {
-                fine_angles.push(minus_15);
-            }
-        }
-
-        // Add 30° offsets for even finer coverage
-        for &base in &base_angles {
-            let plus_30 = (base + 30.0).rem_euclid(360.0);
-            let minus_30 = (base - 30.0).rem_euclid(360.0);
-
-            if !fine_angles.contains(&plus_30) {
-                fine_angles.push(plus_30);
-            }
-            if !fine_angles.contains(&minus_30) {
-                fine_angles.push(minus_30);
-            }
-        }
-
-        fine_angles
     }
 
     #[inline]
@@ -636,6 +531,36 @@ impl EvolvedPacker {
         gaps
     }
 
+    // NEW: Micro-rotation move - small angle adjustments
+    fn micro_rotation_move(&self, trees: &mut [PlacedTree], idx: usize, rng: &mut impl Rng) -> bool {
+        let old_x = trees[idx].x;
+        let old_y = trees[idx].y;
+        let old_angle = trees[idx].angle_deg;
+
+        // Try small angle adjustments
+        let micro_angles = [5.0, -5.0, 10.0, -10.0, 3.0, -3.0, 7.0, -7.0];
+        let delta = micro_angles[rng.gen_range(0..micro_angles.len())];
+        let new_angle = (old_angle + delta).rem_euclid(360.0);
+
+        trees[idx] = PlacedTree::new(old_x, old_y, new_angle);
+
+        if !has_overlap(trees, idx) {
+            true
+        } else {
+            // Try with a slight position adjustment too
+            let nudge = 0.01;
+            for (dx, dy) in [(nudge, 0.0), (-nudge, 0.0), (0.0, nudge), (0.0, -nudge)] {
+                trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, new_angle);
+                if !has_overlap(trees, idx) {
+                    return true;
+                }
+            }
+            // Revert
+            trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
+            false
+        }
+    }
+
     fn local_search(
         &self,
         trees: &mut Vec<PlacedTree>,
@@ -692,7 +617,10 @@ impl EvolvedPacker {
                 boundary_cache_iter = iter;
             }
 
-            let do_compression = rng.gen::<f64>() < self.config.compression_prob;
+            // Decide move type
+            let move_roll = rng.gen::<f64>();
+            let do_compression = move_roll < self.config.compression_prob;
+            let do_micro_rotation = !do_compression && move_roll < self.config.compression_prob + self.config.micro_rotation_prob;
 
             if do_compression {
                 let old_trees = trees.clone();
@@ -720,6 +648,33 @@ impl EvolvedPacker {
                     *trees = old_trees;
                     iterations_without_improvement += 1;
                 }
+            } else if do_micro_rotation {
+                // NEW: Try micro-rotation
+                let idx = rng.gen_range(0..trees.len());
+                let old_tree = trees[idx].clone();
+                let success = self.micro_rotation_move(trees, idx, rng);
+
+                if success {
+                    let new_side = compute_side_length(trees);
+                    let delta = new_side - current_side;
+
+                    if delta <= 0.0 || rng.gen::<f64>() < (-delta / temp).exp() {
+                        current_side = new_side;
+                        if current_side < best_side {
+                            best_side = current_side;
+                            best_config = trees.clone();
+                            iterations_without_improvement = 0;
+                            self.update_elite_pool(&mut elite_pool, current_side, trees.clone());
+                        } else {
+                            iterations_without_improvement += 1;
+                        }
+                    } else {
+                        trees[idx] = old_tree;
+                        iterations_without_improvement += 1;
+                    }
+                } else {
+                    iterations_without_improvement += 1;
+                }
             } else {
                 let do_fill_move = rng.gen::<f64>() < self.config.fill_move_prob;
 
@@ -745,7 +700,6 @@ impl EvolvedPacker {
 
                 let old_tree = trees[idx].clone();
 
-                // NOTE: SA still uses 45° angles only - we don't want to destabilize it
                 let success = self.sa_move(trees, idx, temp, edge, do_fill_move, rng);
 
                 if success {
@@ -917,8 +871,7 @@ impl EvolvedPacker {
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 2 => {
-                    // Keep 45° multiples even in fill move
-                    let angles = [45.0, 90.0, -45.0, -90.0];
+                    let angles = [45.0, 90.0, -45.0, -90.0, 30.0, -30.0];
                     let delta = angles[rng.gen_range(0..angles.len())];
                     let new_angle = (old_angle + delta).rem_euclid(360.0);
                     trees[idx] = PlacedTree::new(old_x, old_y, new_angle);

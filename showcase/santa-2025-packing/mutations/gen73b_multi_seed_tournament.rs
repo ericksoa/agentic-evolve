@@ -1,31 +1,28 @@
-//! Evolved Packing Algorithm - Generation 73c LATE-STAGE CONTINUOUS ANGLES
+//! Evolved Packing Algorithm - Generation 73b MULTI-SEED TOURNAMENT
 //!
-//! MUTATION STRATEGY: ONLY USE CONTINUOUS ANGLES FOR LAST 20% OF TREES
-//! Based on observation that top solutions use continuous angles but our SA
-//! doesn't handle them well. Hypothesis: use discrete 45° angles for most trees
-//! to maintain SA stability, but for the final trees where small adjustments
-//! matter most, try continuous angle refinement.
+//! MUTATION STRATEGY: GENETIC-STYLE TOURNAMENT SELECTION
+//! Instead of running 6 strategies and keeping best, run 3 independent SA
+//! processes with different random seeds, then do tournament selection
+//! to pick the winner.
 //!
-//! Key insight: The final trees (n >= 160) are trying to fit into an already
-//! established structure. Fine-grained angles might help them slot into
-//! remaining gaps better than discrete 45° steps.
+//! Hypothesis: Multiple independent optimization runs with different
+//! random seeds may find different local optima, and tournament
+//! selection can pick the best.
 //!
 //! Changes from Gen72b:
-//! - For n >= 160 (last 20% of trees), use finer 15° angle steps
-//! - For n < 160, keep standard 45° angle steps
+//! - Run 3 independent SA optimizations with different seeds
+//! - Tournament selection picks winner
 //! - Keep wave compaction from Gen72b
-//! - Only apply fine angles in placement, not SA (to maintain SA stability)
+//! - Reduce strategies to 3 (ClockwiseSpiral, ConcentricRings, BoundaryFirst)
 
 use crate::{Packing, PlacedTree};
-use rand::Rng;
+use rand::{Rng, SeedableRng};
+use rand::rngs::StdRng;
 use std::f64::consts::PI;
 
 #[derive(Clone, Copy, Debug)]
 pub enum PlacementStrategy {
     ClockwiseSpiral,
-    CounterclockwiseSpiral,
-    Grid,
-    Random,
     BoundaryFirst,
     ConcentricRings,
 }
@@ -53,8 +50,7 @@ pub struct EvolvedConfig {
     pub elite_pool_size: usize,
     pub compression_prob: f64,
     pub wave_passes: usize,
-    pub late_stage_threshold: usize,  // NEW: when to start using fine angles
-    pub fine_angle_step: f64,         // NEW: angle step for late stage
+    pub num_seeds: usize,  // NEW: number of independent SA runs
 }
 
 impl Default for EvolvedConfig {
@@ -62,7 +58,7 @@ impl Default for EvolvedConfig {
         Self {
             search_attempts: 200,
             direction_samples: 64,
-            sa_iterations: 28000,
+            sa_iterations: 25000,  // Reduced to compensate for 3x runs
             sa_initial_temp: 0.45,
             sa_cooling_rate: 0.99993,
             sa_min_temp: 0.00001,
@@ -72,7 +68,7 @@ impl Default for EvolvedConfig {
             sa_passes: 2,
             early_exit_threshold: 2500,
             boundary_focus_prob: 0.85,
-            num_strategies: 6,
+            num_strategies: 3,  // Reduced from 6
             density_grid_resolution: 20,
             gap_penalty_weight: 0.15,
             local_density_radius: 0.5,
@@ -82,8 +78,7 @@ impl Default for EvolvedConfig {
             elite_pool_size: 3,
             compression_prob: 0.20,
             wave_passes: 3,
-            late_stage_threshold: 160,  // NEW: last 20% of trees use fine angles
-            fine_angle_step: 15.0,      // NEW: 15° steps instead of 45°
+            num_seeds: 3,  // NEW: 3 independent runs
         }
     }
 }
@@ -110,13 +105,11 @@ impl EvolvedPacker {
 
         let strategies = [
             PlacementStrategy::ClockwiseSpiral,
-            PlacementStrategy::CounterclockwiseSpiral,
-            PlacementStrategy::Grid,
-            PlacementStrategy::Random,
             PlacementStrategy::BoundaryFirst,
             PlacementStrategy::ConcentricRings,
         ];
 
+        // Track best trees per strategy across all seeds
         let mut strategy_trees: Vec<Vec<PlacedTree>> = vec![Vec::new(); strategies.len()];
 
         for n in 1..=max_n {
@@ -124,22 +117,37 @@ impl EvolvedPacker {
             let mut best_side = f64::INFINITY;
 
             for (s_idx, &strategy) in strategies.iter().enumerate() {
-                let mut trees = strategy_trees[s_idx].clone();
-                let new_tree = self.find_placement_with_strategy(&trees, n, max_n, strategy, &mut rng);
-                trees.push(new_tree);
+                // Run multiple seeds for this strategy
+                let mut seed_results: Vec<(f64, Vec<PlacedTree>)> = Vec::new();
 
-                for pass in 0..self.config.sa_passes {
-                    self.local_search(&mut trees, n, pass, strategy, &mut rng);
+                for seed_offset in 0..self.config.num_seeds {
+                    // Create seeded RNG for reproducibility
+                    let seed = (n as u64 * 1000 + s_idx as u64 * 100 + seed_offset as u64) ^ 0xDEADBEEF;
+                    let mut seed_rng = StdRng::seed_from_u64(seed);
+
+                    let mut trees = strategy_trees[s_idx].clone();
+                    let new_tree = self.find_placement_with_strategy(&trees, n, max_n, strategy, &mut seed_rng);
+                    trees.push(new_tree);
+
+                    for pass in 0..self.config.sa_passes {
+                        self.local_search(&mut trees, n, pass, strategy, &mut seed_rng);
+                    }
+
+                    self.wave_compaction(&mut trees);
+
+                    let side = compute_side_length(&trees);
+                    seed_results.push((side, trees));
                 }
 
-                self.wave_compaction(&mut trees);
+                // Tournament selection: pick the best seed result
+                seed_results.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+                let (winner_side, winner_trees) = seed_results.remove(0);
 
-                let side = compute_side_length(&trees);
-                strategy_trees[s_idx] = trees.clone();
+                strategy_trees[s_idx] = winner_trees.clone();
 
-                if side < best_side {
-                    best_side = side;
-                    best_trees = Some(trees);
+                if winner_side < best_side {
+                    best_side = winner_side;
+                    best_trees = Some(winner_trees);
                 }
             }
 
@@ -219,9 +227,6 @@ impl EvolvedPacker {
         if existing.is_empty() {
             let initial_angle = match strategy {
                 PlacementStrategy::ClockwiseSpiral => 0.0,
-                PlacementStrategy::CounterclockwiseSpiral => 90.0,
-                PlacementStrategy::Grid => 45.0,
-                PlacementStrategy::Random => rng.gen_range(0..8) as f64 * 45.0,
                 PlacementStrategy::BoundaryFirst => 180.0,
                 PlacementStrategy::ConcentricRings => 45.0,
             };
@@ -231,13 +236,7 @@ impl EvolvedPacker {
         let mut best_tree = PlacedTree::new(0.0, 0.0, 90.0);
         let mut best_score = f64::INFINITY;
 
-        // NEW: Use fine angles for late-stage trees
-        let angles = if n >= self.config.late_stage_threshold {
-            self.select_fine_angles_for_strategy(n, strategy)
-        } else {
-            self.select_angles_for_strategy(n, strategy)
-        };
-
+        let angles = self.select_angles_for_strategy(n, strategy);
         let (min_x, min_y, max_x, max_y) = compute_bounds(existing);
         let current_width = max_x - min_x;
         let current_height = max_y - min_y;
@@ -292,20 +291,6 @@ impl EvolvedPacker {
             PlacementStrategy::ClockwiseSpiral => {
                 vec![0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0]
             }
-            PlacementStrategy::CounterclockwiseSpiral => {
-                vec![315.0, 270.0, 225.0, 180.0, 135.0, 90.0, 45.0, 0.0]
-            }
-            PlacementStrategy::Grid => {
-                vec![0.0, 90.0, 180.0, 270.0, 45.0, 135.0, 225.0, 315.0]
-            }
-            PlacementStrategy::Random => {
-                match n % 4 {
-                    0 => vec![0.0, 90.0, 180.0, 270.0, 45.0, 135.0, 225.0, 315.0],
-                    1 => vec![90.0, 270.0, 0.0, 180.0, 135.0, 315.0, 45.0, 225.0],
-                    2 => vec![180.0, 0.0, 270.0, 90.0, 225.0, 45.0, 315.0, 135.0],
-                    _ => vec![270.0, 90.0, 180.0, 0.0, 315.0, 135.0, 225.0, 45.0],
-                }
-            }
             PlacementStrategy::BoundaryFirst => {
                 vec![45.0, 135.0, 225.0, 315.0, 0.0, 90.0, 180.0, 270.0]
             }
@@ -319,55 +304,12 @@ impl EvolvedPacker {
         }
     }
 
-    // NEW: Fine-grained angle selection for late-stage trees
-    #[inline]
-    fn select_fine_angles_for_strategy(&self, n: usize, strategy: PlacementStrategy) -> Vec<f64> {
-        // Use 15° steps (24 angles total) but limit to most promising ones
-        // Start with the same priority as regular strategy, then add intermediate angles
-        let base_angles = self.select_angles_for_strategy(n, strategy);
-
-        let mut fine_angles = Vec::with_capacity(24);
-
-        // First add all base angles
-        for &angle in &base_angles {
-            fine_angles.push(angle);
-        }
-
-        // Then add intermediate angles (15° offsets from base angles)
-        for &base in &base_angles {
-            let plus_15 = (base + 15.0).rem_euclid(360.0);
-            let minus_15 = (base - 15.0).rem_euclid(360.0);
-
-            if !fine_angles.contains(&plus_15) {
-                fine_angles.push(plus_15);
-            }
-            if !fine_angles.contains(&minus_15) {
-                fine_angles.push(minus_15);
-            }
-        }
-
-        // Add 30° offsets for even finer coverage
-        for &base in &base_angles {
-            let plus_30 = (base + 30.0).rem_euclid(360.0);
-            let minus_30 = (base - 30.0).rem_euclid(360.0);
-
-            if !fine_angles.contains(&plus_30) {
-                fine_angles.push(plus_30);
-            }
-            if !fine_angles.contains(&minus_30) {
-                fine_angles.push(minus_30);
-            }
-        }
-
-        fine_angles
-    }
-
     #[inline]
     fn select_direction_for_strategy(
         &self,
         n: usize,
-        width: f64,
-        height: f64,
+        _width: f64,
+        _height: f64,
         strategy: PlacementStrategy,
         attempt: usize,
         rng: &mut impl Rng,
@@ -378,32 +320,6 @@ impl EvolvedPacker {
                 let base = (n as f64 * golden_angle) % (2.0 * PI);
                 let offset = (attempt as f64 / self.config.search_attempts as f64) * 2.0 * PI;
                 (base + offset) % (2.0 * PI)
-            }
-            PlacementStrategy::CounterclockwiseSpiral => {
-                let golden_angle = -PI * (3.0 - (5.0_f64).sqrt());
-                let base = (n as f64 * golden_angle).rem_euclid(2.0 * PI);
-                let offset = (attempt as f64 / self.config.search_attempts as f64) * 2.0 * PI;
-                (base - offset).rem_euclid(2.0 * PI)
-            }
-            PlacementStrategy::Grid => {
-                let num_dirs = 16;
-                let base_idx = attempt % num_dirs;
-                let base = (base_idx as f64 / num_dirs as f64) * 2.0 * PI;
-                base + rng.gen_range(-0.03..0.03)
-            }
-            PlacementStrategy::Random => {
-                let mix = rng.gen::<f64>();
-                if mix < 0.5 {
-                    rng.gen_range(0.0..2.0 * PI)
-                } else {
-                    if width < height {
-                        let angle = if rng.gen() { 0.0 } else { PI };
-                        angle + rng.gen_range(-PI / 3.0..PI / 3.0)
-                    } else {
-                        let angle = if rng.gen() { PI / 2.0 } else { -PI / 2.0 };
-                        angle + rng.gen_range(-PI / 3.0..PI / 3.0)
-                    }
-                }
             }
             PlacementStrategy::BoundaryFirst => {
                 let prob = rng.gen::<f64>();
@@ -745,7 +661,6 @@ impl EvolvedPacker {
 
                 let old_tree = trees[idx].clone();
 
-                // NOTE: SA still uses 45° angles only - we don't want to destabilize it
                 let success = self.sa_move(trees, idx, temp, edge, do_fill_move, rng);
 
                 if success {
@@ -917,8 +832,7 @@ impl EvolvedPacker {
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 2 => {
-                    // Keep 45° multiples even in fill move
-                    let angles = [45.0, 90.0, -45.0, -90.0];
+                    let angles = [45.0, 90.0, -45.0, -90.0, 30.0, -30.0];
                     let delta = angles[rng.gen_range(0..angles.len())];
                     let new_angle = (old_angle + delta).rem_euclid(360.0);
                     trees[idx] = PlacedTree::new(old_x, old_y, new_angle);

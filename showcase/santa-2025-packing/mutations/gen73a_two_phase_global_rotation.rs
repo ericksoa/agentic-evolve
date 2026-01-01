@@ -1,20 +1,19 @@
-//! Evolved Packing Algorithm - Generation 73c LATE-STAGE CONTINUOUS ANGLES
+//! Evolved Packing Algorithm - Generation 73a TWO-PHASE GLOBAL ROTATION
 //!
-//! MUTATION STRATEGY: ONLY USE CONTINUOUS ANGLES FOR LAST 20% OF TREES
-//! Based on observation that top solutions use continuous angles but our SA
-//! doesn't handle them well. Hypothesis: use discrete 45° angles for most trees
-//! to maintain SA stability, but for the final trees where small adjustments
-//! matter most, try continuous angle refinement.
+//! MUTATION STRATEGY: SEPARATE GLOBAL ROTATION OPTIMIZATION PHASE
+//! Top solutions use global rotation optimization. Previous attempts (Gen67c, Gen70)
+//! tried rotation DURING SA which destabilized search.
 //!
-//! Key insight: The final trees (n >= 160) are trying to fit into an already
-//! established structure. Fine-grained angles might help them slot into
-//! remaining gaps better than discrete 45° steps.
+//! New approach: Run SA normally, then do a SEPARATE global rotation phase
+//! that rotates the ENTIRE packing by small angles and keeps if it helps.
+//!
+//! Hypothesis: Separating global rotation from SA avoids destabilization
+//! while still finding better overall orientations.
 //!
 //! Changes from Gen72b:
-//! - For n >= 160 (last 20% of trees), use finer 15° angle steps
-//! - For n < 160, keep standard 45° angle steps
-//! - Keep wave compaction from Gen72b
-//! - Only apply fine angles in placement, not SA (to maintain SA stability)
+//! - Add global_rotation_optimization phase AFTER wave compaction
+//! - Try rotations in 1° increments from -15° to +15°
+//! - Keep rotation that minimizes bounding box
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -53,8 +52,8 @@ pub struct EvolvedConfig {
     pub elite_pool_size: usize,
     pub compression_prob: f64,
     pub wave_passes: usize,
-    pub late_stage_threshold: usize,  // NEW: when to start using fine angles
-    pub fine_angle_step: f64,         // NEW: angle step for late stage
+    pub global_rotation_range: f64,  // NEW: rotation range in degrees
+    pub global_rotation_step: f64,   // NEW: rotation step in degrees
 }
 
 impl Default for EvolvedConfig {
@@ -82,8 +81,8 @@ impl Default for EvolvedConfig {
             elite_pool_size: 3,
             compression_prob: 0.20,
             wave_passes: 3,
-            late_stage_threshold: 160,  // NEW: last 20% of trees use fine angles
-            fine_angle_step: 15.0,      // NEW: 15° steps instead of 45°
+            global_rotation_range: 15.0,  // NEW: try -15° to +15°
+            global_rotation_step: 1.0,    // NEW: 1° increments
         }
     }
 }
@@ -132,7 +131,13 @@ impl EvolvedPacker {
                     self.local_search(&mut trees, n, pass, strategy, &mut rng);
                 }
 
+                // Wave compaction
                 self.wave_compaction(&mut trees);
+
+                // NEW: Global rotation optimization (only for larger n where it matters)
+                if n >= 50 {
+                    self.global_rotation_optimization(&mut trees);
+                }
 
                 let side = compute_side_length(&trees);
                 strategy_trees[s_idx] = trees.clone();
@@ -158,6 +163,67 @@ impl EvolvedPacker {
         }
 
         packings
+    }
+
+    // NEW: Global rotation optimization
+    fn global_rotation_optimization(&self, trees: &mut Vec<PlacedTree>) {
+        if trees.len() <= 1 {
+            return;
+        }
+
+        let current_side = compute_side_length(trees);
+        let mut best_side = current_side;
+        let mut best_rotation = 0.0;
+
+        // Try rotations from -range to +range in step increments
+        let steps = (self.config.global_rotation_range / self.config.global_rotation_step) as i32;
+
+        for i in -steps..=steps {
+            let rotation_deg = i as f64 * self.config.global_rotation_step;
+            if rotation_deg == 0.0 {
+                continue;
+            }
+
+            // Rotate all trees around center
+            let rotated = self.rotate_packing(trees, rotation_deg);
+            let side = compute_side_length(&rotated);
+
+            if side < best_side {
+                best_side = side;
+                best_rotation = rotation_deg;
+            }
+        }
+
+        // Apply best rotation if it improved
+        if best_rotation != 0.0 && best_side < current_side {
+            *trees = self.rotate_packing(trees, best_rotation);
+        }
+    }
+
+    // Rotate entire packing around its center
+    fn rotate_packing(&self, trees: &[PlacedTree], angle_deg: f64) -> Vec<PlacedTree> {
+        let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
+        let center_x = (min_x + max_x) / 2.0;
+        let center_y = (min_y + max_y) / 2.0;
+
+        let angle_rad = angle_deg * PI / 180.0;
+        let cos_a = angle_rad.cos();
+        let sin_a = angle_rad.sin();
+
+        trees.iter().map(|tree| {
+            // Translate to origin
+            let dx = tree.x - center_x;
+            let dy = tree.y - center_y;
+
+            // Rotate
+            let new_x = dx * cos_a - dy * sin_a + center_x;
+            let new_y = dx * sin_a + dy * cos_a + center_y;
+
+            // Also rotate tree's own angle
+            let new_angle = (tree.angle_deg + angle_deg).rem_euclid(360.0);
+
+            PlacedTree::new(new_x, new_y, new_angle)
+        }).collect()
     }
 
     fn wave_compaction(&self, trees: &mut Vec<PlacedTree>) {
@@ -231,13 +297,7 @@ impl EvolvedPacker {
         let mut best_tree = PlacedTree::new(0.0, 0.0, 90.0);
         let mut best_score = f64::INFINITY;
 
-        // NEW: Use fine angles for late-stage trees
-        let angles = if n >= self.config.late_stage_threshold {
-            self.select_fine_angles_for_strategy(n, strategy)
-        } else {
-            self.select_angles_for_strategy(n, strategy)
-        };
-
+        let angles = self.select_angles_for_strategy(n, strategy);
         let (min_x, min_y, max_x, max_y) = compute_bounds(existing);
         let current_width = max_x - min_x;
         let current_height = max_y - min_y;
@@ -317,49 +377,6 @@ impl EvolvedPacker {
                 }
             }
         }
-    }
-
-    // NEW: Fine-grained angle selection for late-stage trees
-    #[inline]
-    fn select_fine_angles_for_strategy(&self, n: usize, strategy: PlacementStrategy) -> Vec<f64> {
-        // Use 15° steps (24 angles total) but limit to most promising ones
-        // Start with the same priority as regular strategy, then add intermediate angles
-        let base_angles = self.select_angles_for_strategy(n, strategy);
-
-        let mut fine_angles = Vec::with_capacity(24);
-
-        // First add all base angles
-        for &angle in &base_angles {
-            fine_angles.push(angle);
-        }
-
-        // Then add intermediate angles (15° offsets from base angles)
-        for &base in &base_angles {
-            let plus_15 = (base + 15.0).rem_euclid(360.0);
-            let minus_15 = (base - 15.0).rem_euclid(360.0);
-
-            if !fine_angles.contains(&plus_15) {
-                fine_angles.push(plus_15);
-            }
-            if !fine_angles.contains(&minus_15) {
-                fine_angles.push(minus_15);
-            }
-        }
-
-        // Add 30° offsets for even finer coverage
-        for &base in &base_angles {
-            let plus_30 = (base + 30.0).rem_euclid(360.0);
-            let minus_30 = (base - 30.0).rem_euclid(360.0);
-
-            if !fine_angles.contains(&plus_30) {
-                fine_angles.push(plus_30);
-            }
-            if !fine_angles.contains(&minus_30) {
-                fine_angles.push(minus_30);
-            }
-        }
-
-        fine_angles
     }
 
     #[inline]
@@ -745,7 +762,6 @@ impl EvolvedPacker {
 
                 let old_tree = trees[idx].clone();
 
-                // NOTE: SA still uses 45° angles only - we don't want to destabilize it
                 let success = self.sa_move(trees, idx, temp, edge, do_fill_move, rng);
 
                 if success {
@@ -917,8 +933,7 @@ impl EvolvedPacker {
                     trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, old_angle);
                 }
                 2 => {
-                    // Keep 45° multiples even in fill move
-                    let angles = [45.0, 90.0, -45.0, -90.0];
+                    let angles = [45.0, 90.0, -45.0, -90.0, 30.0, -30.0];
                     let delta = angles[rng.gen_range(0..angles.len())];
                     let new_angle = (old_angle + delta).rem_euclid(360.0);
                     trees[idx] = PlacedTree::new(old_x, old_y, new_angle);
