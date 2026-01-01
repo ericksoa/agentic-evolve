@@ -1,0 +1,1 @@
+solve=lambda g:[[c&x for c in a for x in b]for a in g for b in g]

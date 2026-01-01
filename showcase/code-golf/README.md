@@ -8,42 +8,43 @@
 
 | Metric | Value |
 |--------|-------|
-| **Solved** | 4 / 400 (1.0%) |
-| **Total Score** | 9,102 points |
-| **Projected Final** | ~910,000 points (at current avg) |
+| **Solved** | 7 / 400 (1.8%) |
+| **Total Score** | 16,261 points |
+| **Projected Final** | ~927,000 points ([details](./PROJECTION.md)) |
 
 ---
 
-## Solved Problems (4)
+## Solved Problems (7)
 
 | Task | Pattern | Bytes | Score | Solution |
 |------|---------|-------|-------|----------|
 | [`0520fde7`](./0520fde7/README.md) | Grid AND comparison | **57** | 2,443 | [solution.py](./0520fde7/solution.py) |
+| [`007bbfb7`](./007bbfb7/README.md) | Outer product grid | **65** | 2,435 | [solution.py](./007bbfb7/solution.py) |
+| [`1e0a9b12`](./1e0a9b12/README.md) | Gravity (drop cells) | **69** | 2,431 | [solution.py](./1e0a9b12/solution.py) |
 | [`017c7c7b`](./017c7c7b/README.md) | Extend pattern + double | **80** | 2,420 | [solution.py](./017c7c7b/solution.py) |
+| [`0ca9ddb6`](./0ca9ddb6/README.md) | Color spread from seeds | **207** | 2,293 | [solution.py](./0ca9ddb6/solution.py) |
 | [`00d62c1b`](./00d62c1b/README.md) | Fill enclosed regions | **238** | 2,262 | [solution.py](./00d62c1b/solution.py) |
 | [`a64e4611`](./a64e4611/README.md) | Largest rectangle + cross | **523** | 1,977 | [solution.py](./a64e4611/solution.py) |
 
 ---
 
-## Unsolved Problems (396)
+## Unsolved Problems (393)
 
 <details>
 <summary>Click to expand full list of unsolved tasks</summary>
 
 | Task ID | Task ID | Task ID | Task ID |
 |---------|---------|---------|---------|
-| `007bbfb7` | `025d127b` | `045e512c` | `05269061` |
-| `05f2a901` | `06df4c85` | `08ed6ac7` | `09629e4f` |
-| `0962bcdd` | `0a938d79` | `0b148d64` | `0ca9ddb6` |
-| `0d3d703e` | `0dfd9992` | `0e206a2e` | `10fcaaa3` |
+| `025d127b` | `045e512c` | `05269061` | `05f2a901` |
+| `06df4c85` | `08ed6ac7` | `09629e4f` | `0962bcdd` |
+| `0a938d79` | `0b148d64` | `0e206a2e` | `10fcaaa3` |
 | `11852cab` | `1190e5a7` | `137eaa0f` | `150deff5` |
 | `178fcbfb` | `1a07d186` | `1b2d62fb` | `1b60fb0c` |
 | `1bfc4729` | `1c786137` | `1caeab9d` | `1cf80156` |
-| `1e0a9b12` | `1e32b0e9` | `1f0c79e5` | `1f642eb9` |
-| `1f85a75f` | `1f876c06` | `1fad071e` | `2013d3e2` |
-| `2204b7a8` | `22168020` | `22233c11` | `2281f1f4` |
-| `228f6490` | `22eb0ac0` | `234bbc79` | `23581191` |
-| `239be575` | `23b5c85d` | `253bf280` | `25d487eb` |
+| `1e32b0e9` | `1f0c79e5` | `1f642eb9` | `1f85a75f` |
+| `1f876c06` | `1fad071e` | `2013d3e2` | `22168020` |
+| `22233c11` | `2281f1f4` | `228f6490` | `22eb0ac0` |
+| `234bbc79` | `23581191` | `253bf280` | `25d487eb` |
 | `25d8a9c8` | `25ff71a9` | `264363fd` | `272f95fa` |
 | `27a28665` | `28bf18c6` | `28e73c20` | `29623171` |
 | `29c11459` | `29ec7d0e` | `2bcee788` | `2bee17df` |
