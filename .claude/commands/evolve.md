@@ -8,7 +8,7 @@ argument-hint: <problem description>
 
 Evolve novel algorithms through LLM-driven mutation and selection with **true genetic recombination**. Runs adaptively—continuing while improvement is possible, stopping when plateaued.
 
-This is the **master skill** that auto-detects the appropriate mode and delegates to specialized subskills.
+This is the **master skill** that analyzes the request and delegates to specialized subskills.
 
 ---
 
@@ -30,164 +30,126 @@ This is the **master skill** that auto-detects the appropriate mode and delegate
 /evolve --resume
 ```
 
-The mode is **auto-detected** by default based on keywords and context. Use `--mode=` to override.
+---
 
-### Examples
+## Mode Detection Instructions
 
-```bash
-# Auto-detected as PERF mode
-/evolve faster sorting algorithm
-/evolve bin packing heuristic to beat FunSearch
-/evolve optimize throughput for this parser
+You are the master `/evolve` skill. Your job is to understand the user's intent and delegate to the appropriate subskill.
 
-# Auto-detected as SIZE mode
-/evolve shortest Python solution for ARC task 0520fde7
-/evolve minimize bytes in this function
-/evolve most concise git commit rules
+### Step 1: Check for Explicit Override
 
-# Explicit mode override
-/evolve --mode=size minimize this Rust code
-/evolve --mode=perf optimize this Python function
+If the request contains `--mode=perf`, `--mode=size`, or `--mode=ml`, use that mode directly. No further analysis needed.
 
-# Resume previous evolution
-/evolve --resume
+### Step 2: Check for Resume
+
+If the request is `--resume` or contains `--resume`:
+1. Search for the most recent `.evolve/*/evolution.json` file
+2. Read it to determine the mode from the `"mode"` field
+3. Delegate to that subskill with `--resume`
+
+### Step 3: Analyze the Request
+
+Read the user's request carefully and determine what they want to optimize:
+
+**Choose SIZE mode when the goal is to minimize length:**
+- Making code shorter, smaller, more concise
+- Code golf challenges
+- Minimizing byte count or character count
+- ARC-AGI tasks (these are code golf competitions)
+- Reducing file size, config size, prompt length
+- "Shortest", "smallest", "fewest bytes", "most concise"
+
+**Choose PERF mode when the goal is to maximize speed:**
+- Making code faster, quicker, more efficient
+- Improving throughput, reducing latency
+- Beating benchmarks, optimizing algorithms
+- Runtime performance, ops/sec, iterations/sec
+- "Faster", "optimize", "speed up", "high performance"
+
+**Choose ML mode when the goal is to improve model metrics:**
+- Improving accuracy, F1 score, precision, recall
+- Reducing loss, error rate
+- Model training, hyperparameter tuning
+- Neural network architecture optimization
+- Kaggle competitions, classification tasks
+
+### Step 4: Consider Context (Optional)
+
+If you're unsure, you may check the codebase for context clues:
+- Files in `code-golf/` or `tasks/*.json` suggest SIZE mode
+- Files like `benchmark.rs` or perf harnesses suggest PERF mode
+- Files like `.h5`, `.pt`, `.pkl`, `model.py` suggest ML mode
+
+### Step 5: Handle Ambiguity
+
+If after analysis you genuinely cannot determine the mode, use AskUserQuestion:
+
 ```
+Question: "What are we optimizing for?"
+Options:
+- "Fastest runtime (speed)" → perf
+- "Smallest code (bytes)" → size
+- "Best accuracy (ML)" → ml
+```
+
+### Step 6: Delegate
+
+Once you've determined the mode:
+
+1. Announce: `**Evolution mode: {mode}**` with brief reasoning
+2. Invoke the subskill using the Skill tool:
+   - `perf` → invoke `evolve-perf`
+   - `size` → invoke `evolve-size`
+   - `ml` → invoke `evolve-ml`
+3. Pass the original request (minus --mode= if present) as args
 
 ---
 
-## Auto-Detection Algorithm
+## Examples with Reasoning
 
-The master skill analyzes your request to determine the best mode:
-
-### Keyword Scoring
-
-| Mode | Keywords (weight) |
-|------|-------------------|
-| **size** | shortest (2), smallest (2), bytes (2), minimize code (2), ARC (2), code golf (3), byte count (2), code size (3), concise (2), minimal (2) |
-| **perf** | fastest (2), speed (2), performance (2), throughput (2), latency (2), ops/sec (3), benchmark (2), ops per second (3), faster (2) |
-| **ml** | accuracy (2), model (1), train (1), loss (2), predict (2), classify (2), neural (2), kaggle (2), F1 (2), epoch (2) |
-
-### Context Signals
-
-| Signal | Detected Mode |
-|--------|---------------|
-| Files in `code-golf/` directory | size |
-| Files named `tasks/*.json` (ARC format) | size |
-| Files with `.rs` + `benchmark` in path | perf |
-| Files with `.h5`, `.pt`, `.pkl` extensions | ml |
-| `evaluator.py` measuring bytes | size |
-| `benchmark.rs` or perf harness | perf |
-
-### Detection Flow
-
-```python
-def detect_mode(request: str, context: dict) -> str:
-    """Auto-detect evolution mode from request."""
-
-    # 1. Explicit override always wins
-    if "--mode=" in request:
-        return extract_mode(request)
-
-    # 2. Score keywords
-    scores = {"size": 0, "perf": 0, "ml": 0}
-
-    size_signals = [
-        ("shortest", 2), ("smallest", 2), ("bytes", 2),
-        ("minimize code", 2), ("ARC", 2), ("code golf", 3),
-        ("byte count", 2), ("code size", 3), ("concise", 2), ("minimal", 2)
-    ]
-    perf_signals = [
-        ("fastest", 2), ("speed", 2), ("performance", 2),
-        ("throughput", 2), ("latency", 2), ("ops/sec", 3),
-        ("benchmark", 2), ("ops per second", 3), ("faster", 2)
-    ]
-    ml_signals = [
-        ("accuracy", 2), ("model", 1), ("train", 1), ("loss", 2),
-        ("predict", 2), ("classify", 2), ("neural", 2), ("kaggle", 2)
-    ]
-
-    request_lower = request.lower()
-    for keyword, weight in size_signals:
-        if keyword.lower() in request_lower:
-            scores["size"] += weight
-    for keyword, weight in perf_signals:
-        if keyword.lower() in request_lower:
-            scores["perf"] += weight
-    for keyword, weight in ml_signals:
-        if keyword.lower() in request_lower:
-            scores["ml"] += weight
-
-    # 3. Context signals (files, directories)
-    if context.get("files"):
-        files = context["files"]
-        if any("tasks/" in f and f.endswith(".json") for f in files):
-            scores["size"] += 3  # ARC task files
-        if any("code-golf" in f for f in files):
-            scores["size"] += 3
-        if any("benchmark" in f and f.endswith(".rs") for f in files):
-            scores["perf"] += 3
-        if any(f.endswith((".h5", ".pkl", ".pt", ".onnx")) for f in files):
-            scores["ml"] += 3
-
-    # 4. Return highest scoring mode
-    max_score = max(scores.values())
-    if max_score == 0:
-        return "ambiguous"
-
-    # Check for close scores (ambiguous)
-    sorted_scores = sorted(scores.items(), key=lambda x: -x[1])
-    if sorted_scores[0][1] - sorted_scores[1][1] <= 2:
-        return "ambiguous"
-
-    return max(scores, key=scores.get)
+### Example 1: Clear SIZE intent
+```
+Request: "shortest Python solution for ARC task 0520fde7"
+Reasoning: "shortest" + "ARC task" = clearly minimizing code length
+Mode: size
+Action: Skill(evolve-size, "shortest Python solution for ARC task 0520fde7")
 ```
 
----
-
-## Handling Ambiguous Requests
-
-When the mode is unclear, ask the user:
-
-```python
-def handle_ambiguous(request):
-    return ask_user_question(
-        question="What are we optimizing for?",
-        header="Mode",
-        options=[
-            {"label": "Fastest runtime (speed)", "description": "Optimize for ops/sec, latency, throughput"},
-            {"label": "Smallest code (bytes)", "description": "Minimize byte count, code golf"},
-            {"label": "Best accuracy (ML)", "description": "Optimize model metrics (coming soon)"}
-        ]
-    )
+### Example 2: Clear PERF intent
+```
+Request: "faster sorting algorithm to beat std::sort"
+Reasoning: "faster" + "beat benchmark" = clearly optimizing speed
+Mode: perf
+Action: Skill(evolve-perf, "faster sorting algorithm to beat std::sort")
 ```
 
----
+### Example 3: Clear ML intent
+```
+Request: "improve accuracy on this classification task"
+Reasoning: "accuracy" + "classification" = clearly optimizing model metrics
+Mode: ml
+Action: Skill(evolve-ml, "improve accuracy on this classification task")
+```
 
-## Delegation to Subskills
+### Example 4: Explicit override
+```
+Request: "--mode=size optimize this function"
+Reasoning: Explicit --mode=size overrides any inference
+Mode: size
+Action: Skill(evolve-size, "optimize this function")
+```
 
-Once mode is determined, delegate to the appropriate subskill:
+### Example 5: Needs clarification
+```
+Request: "optimize this algorithm"
+Reasoning: "optimize" is ambiguous - could mean speed OR size
+Action: AskUserQuestion to clarify
+```
 
-```python
-def evolve(request: str):
-    # 1. Parse request
-    context = gather_context()
-
-    # 2. Detect mode
-    mode = detect_mode(request, context)
-
-    if mode == "ambiguous":
-        mode = handle_ambiguous(request)
-
-    # 3. Inform user
-    print(f"Evolution mode: {mode}")
-
-    # 4. Delegate to subskill
-    if mode == "perf":
-        return invoke_skill("evolve-perf", request)
-    elif mode == "size":
-        return invoke_skill("evolve-size", request)
-    elif mode == "ml":
-        return invoke_skill("evolve-ml", request)
+### Example 6: Resume
+```
+Request: "--resume"
+Action: Find .evolve/*/evolution.json, read mode, delegate with --resume
 ```
 
 ---
@@ -234,11 +196,11 @@ Run `/evolve --resume` to continue a previous evolution:
 │  /evolve <request>                                          │
 │                                                             │
 │  ┌───────────────────────────────────────────────────────┐  │
-│  │  Mode Detection                                       │  │
-│  │  • Parse keywords                                     │  │
-│  │  • Check file context                                 │  │
-│  │  • Score each mode                                    │  │
-│  │  • Ask user if ambiguous                              │  │
+│  │  Mode Detection (LLM-based)                           │  │
+│  │  • Check for explicit --mode= override                │  │
+│  │  • Analyze request intent                             │  │
+│  │  • Consider codebase context if needed                │  │
+│  │  • Ask user if genuinely ambiguous                    │  │
 │  └──────────────────┬────────────────────────────────────┘  │
 │                     │                                       │
 │         ┌───────────┼───────────┬───────────┐               │
@@ -294,46 +256,6 @@ All evolution modes use a consistent directory structure:
     ├── solutions/       # (size) Working solutions by size
     └── models/          # (ml) Trained models
 ```
-
----
-
-## Examples by Mode
-
-### Performance Mode
-```bash
-/evolve faster sorting algorithm for integers
-# Detected: perf (keyword: "faster")
-# Delegates to: /evolve-perf
-# Optimizes: ops/sec
-# Output: .evolve/sorting/rust/src/evolved.rs
-```
-
-### Size Mode
-```bash
-/evolve shortest Python solution for ARC task 0520fde7
-# Detected: size (keywords: "shortest", "ARC")
-# Delegates to: /evolve-size
-# Optimizes: byte count
-# Output: solutions/0520fde7.py (57 bytes)
-```
-
-### Explicit Override
-```bash
-/evolve --mode=size this Rust function
-# Mode: size (explicit)
-# Delegates to: /evolve-size
-# Optimizes: byte count (even though it's Rust)
-```
-
----
-
-## Backward Compatibility
-
-All changes are **additive**:
-- Default behavior unchanged (perf mode when ambiguous)
-- Existing `/evolve` commands work identically
-- Current evolution.json schemas still valid
-- No breaking changes for existing users
 
 ---
 
