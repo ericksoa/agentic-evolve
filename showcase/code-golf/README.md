@@ -10,10 +10,10 @@
 |------|---------|----------|---------|-------------|
 | `0520fde7` | Grid comparison | 80 bytes | **57 bytes** | -29% |
 | `00d62c1b` | Fill enclosed regions | 280 bytes | **238 bytes** | -15% |
-| `a64e4611` | Largest rectangle + cross | ~1200 bytes | **547 bytes** | -54% |
+| `a64e4611` | Largest rectangle + cross | ~1200 bytes | **541 bytes** | -55% |
 | `017c7c7b` | Simple transform | 54 bytes | **54 bytes** | baseline |
 
-**Total score improvement**: +718 points across evolved tasks
+**Total score improvement**: +724 points across evolved tasks
 
 ---
 
@@ -178,7 +178,10 @@ This task required significant reverse-engineering:
 | 105 | 578 | Merged extension check | Single `all()` with `I(i-(i>A),...)` range |
 | 110 | 571 | Tuple iteration | `for A,B,P,M,z in(row_tuple),(col_tuple):` |
 | 115 | 549 | Single list comp + `__setitem__` | Flatten extension into `[...for v in L]` |
-| **120** | **547** | **Tuple for neighbor range** | `(i,i-(i>a),i+(i<b))` vs `I(i-(i>a),...)` |
+| 120 | 547 | Tuple for neighbor range | `(i,i-(i>a),i+(i<b))` vs `I(i-(i>a),...)` |
+| 125 | 544 | **1D array** | `O=sum(G,[])` + `O[r*C+j]` indexing |
+| 130 | 542 | **~-any trick** | `~-any(...)` replaces `all(...<1)` |
+| **135** | **541** | **[0] fallback** | `or[0]` instead of `or[0,]` |
 
 ### Key Breakthrough: Algorithm Swap (Gen 85)
 
@@ -192,19 +195,19 @@ Despite being computationally slower, the brute-force approach is **70 bytes sho
 2. Single `max()` comprehension vs complex while loop
 3. All conditions inline in one expression
 
-### Champion Solution (547 bytes)
+### Champion Solution (541 bytes)
 
 ```python
 def solve(G):
- I=range;R,C=len(G),len(G[0]);O=[*map(list,G)]
- if(b:=max([-~(c-a)*-~(k-d),a,d,c,k]for a in I(R)for d in I(C)for c in I(a,R)for k in I(d,C)if all(O[r][j]<1for r in I(a,c+1)for j in I(d,k+1)))or[0,])[0]<1:return G
+ I=range;R,C=len(G),len(G[0]);O=sum(G,[])
+ if(b:=max([-~(c-a)*-~(k-d),a,d,c,k]for a in I(R)for d in I(C)for c in I(a,R)for k in I(d,C)if~-any(O[r*C+j]for r in I(a,c+1)for j in I(d,k+1)))or[0])[0]<1:return G
  _,e,f,g,j=b;H=j-f>g-e;e+=e>0;g-=H*(g<R-1);f+=1-H;j-=1-H
  for r in I(e,g+1):G[r][f:j+1]=[3]*(j-f+1)
- [G[(v,i)[z]].__setitem__((i,v)[z],3)for a,b,*P,z in((e,g,I(f),I(j+1,C),1),(f,j,I(e),I(g+1,R),0))for i in I(a,b+1)for L in P if L and all(O[(v,w)[z]][(w,v)[z]]<1for w in(i,i-(i>a),i+(i<b))for v in L)for v in L]
+ [G[(v,i)[z]].__setitem__((i,v)[z],3)for a,b,*P,z in((e,g,I(f),I(j+1,C),1),(f,j,I(e),I(g+1,R),0))for i in I(a,b+1)for L in P if L and~-any(O[C*(v,w)[z]+(w,v)[z]]for w in(i,i-(i>a),i+(i<b))for v in L)for v in L]
  return G
 ```
 
-**Improvement**: ~1200 → 547 bytes (**-54%**, +653 competition points)
+**Improvement**: ~1200 → 541 bytes (**-55%**, +659 competition points)
 
 ---
 
@@ -254,6 +257,9 @@ Tricks discovered during evolution, applicable to other tasks:
 | **Single list comp** | `[f()for...for v in L]` flattens nested loops | 22 bytes |
 | **Tuple vs range** | `(i,i-(i>a),i+(i<b))` vs `I(i-(i>a),...)` | 2 bytes |
 | `*P` unpacking | `for a,b,*P,z in...` captures middle elements | 2 bytes |
+| **1D array** | `O=sum(G,[])` + `O[r*C+j]` vs `O=[*map(list,G)]` + `O[r][j]` | 3 bytes |
+| **~-any trick** | `~-any(x for...)` vs `all(x<1for...)` | 1 byte |
+| **[0] fallback** | `or[0]` vs `or[0,]` for single-element fallback | 1 byte |
 
 ---
 
@@ -329,7 +335,7 @@ showcase/code-golf/
 ├── solutions/                   # Evolved Python solutions
 │   ├── 00d62c1b.py             # 238 bytes (champion)
 │   ├── 0520fde7.py             # 57 bytes (champion)
-│   ├── a64e4611.py             # 547 bytes (champion)
+│   ├── a64e4611.py             # 541 bytes (champion)
 │   └── 017c7c7b.py             # 54 bytes (baseline)
 └── mutations/                   # Evolution logs
     ├── arc_fill_enclosed_regions.md
