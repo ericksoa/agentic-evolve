@@ -8,7 +8,7 @@ Pack 1-200 Christmas tree-shaped polygons into the smallest square box.
 
 **Scoring**: `score = Σ(side²/n)` for n=1 to 200 (lower is better)
 
-**Leaderboard**: Top scores ~69, our current best: **89.46** (Gen72b)
+**Leaderboard**: Top scores ~69, our current best: **88.72** (Gen74a)
 
 ## Tree Shape
 
@@ -156,7 +156,7 @@ Analyzed a [70.1 score solution](https://github.com/berkaycamur/Santa-Competitio
 2. Dedicated compaction/squeeze passes
 3. Continuous angle optimization (careful - Gen54 showed pitfalls)
 
-## Current Best Algorithm (Gen73c)
+## Current Best Algorithm (Gen74a)
 
 ```rust
 // 6 parallel placement strategies
@@ -167,9 +167,9 @@ strategies = [ClockwiseSpiral, CounterclockwiseSpiral, Grid,
 for attempt in 0..200 {
     let dir = select_direction_for_strategy(n, strategy, attempt);
 
-    // NEW in Gen73c: Use finer angles for late-stage trees
-    let angles = if n >= 160 {
-        // Last 20% of trees: 15° step angles (24 total)
+    // Gen74a: Use finer angles for late-stage trees (last 30%)
+    let angles = if n >= 140 {  // Changed from 160 in Gen73c
+        // Last 30% of trees: 15° step angles (24 total)
         [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165,
          180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345]
     } else {
@@ -208,7 +208,7 @@ for wave in 0..3 {
 5. **Boundary-focused SA** (85% probability) - Move trees that define bbox
 6. **Binary search for placement** - Fast, precise positioning
 7. **8 angles (45° steps) for most trees** - Maintains SA stability
-8. **Late-stage continuous angles** (Gen73c) - Use finer 15° angles for final 20% trees during placement only
+8. **Late-stage continuous angles** (Gen74a) - Use finer 15° angles for final 30% trees (n >= 140) during placement only
 
 ## What Doesn't Work
 
@@ -228,6 +228,9 @@ for wave in 0..3 {
 14. **Micro-rotations** (Gen72c) - ±5° angle refinement still destabilizes SA
 15. **Aggressive compression** (Gen71a) - 2x center pull was too much
 16. **Large neighborhood moves** (Gen73d) - Jump/swap moves destabilize SA
+17. **Gradient angle refinement** (Gen74b) - Refining near best angle doesn't help
+18. **Adaptive density-based angles** (Gen74c) - Much worse and 40% slower
+19. **Angle changes during wave compaction** (Gen74d) - Completely breaks algorithm
 
 ### Phase 9: Surgical Improvements (Gen68-Gen71)
 **Goal**: Small, targeted parameter changes to break the plateau
@@ -288,6 +291,24 @@ for wave in 0..3 {
 
 **Gen73c innovation**: Only use fine angles (15° steps) during PLACEMENT of final 20% trees. SA still uses 45° multiples. This gives the best of both worlds: SA stability + fine placement for tight gaps.
 
+### Phase 12: Extending Late-Stage Angles (Gen74)
+**Goal**: Build on Gen73c's late-stage continuous angles success
+
+| Gen | Strategy | Score | Learning |
+|-----|----------|-------|----------|
+| **74a** | **Extended to n>=140 (last 30%)** | **88.72** | **NEW BEST!** More trees benefit from fine angles |
+| 74b | Gradient angle refinement | 89.36 | Refining near best angle doesn't help |
+| 74c | Adaptive density-based angles | 94.29 | Adaptive granularity hurts + slow |
+| 74d | Wave compaction + angle refinement | 107.37 | Changing angles during compaction very bad |
+
+**Key insights**:
+1. **Extending fine angles to last 30%** (n >= 140) slightly improves results (88.72 vs 88.90)
+2. **Gradient refinement around best angle** doesn't help - initial 45° search is sufficient
+3. **Adaptive granularity based on density** makes things much worse and slower
+4. **Changing angles during wave compaction** completely breaks the algorithm
+
+**Gen74a innovation**: Use 15° step angles for n >= 140 (last 30% of trees) instead of n >= 160 (last 20%). This allows more trees in the dense late-stage packing to find optimal orientations.
+
 ## Running
 
 ```bash
@@ -313,11 +334,12 @@ santa-2025-packing/
 ├── README.md
 ├── data/
 │   └── sample_submission.csv
-├── mutations/           # All generation variants (Gen29-Gen73+)
+├── mutations/           # All generation variants (Gen29-Gen74+)
 │   ├── gen47_concentric.rs         # First sub-90
 │   ├── gen62_radius_compress.rs    # Former best (88.22)
 │   ├── gen72b_wave_compaction.rs   # Former best (89.46)
-│   ├── gen73c_late_continuous.rs   # Current best (88.90)
+│   ├── gen73c_late_continuous.rs   # Former best (88.90)
+│   ├── gen74a_extended_late_continuous.rs  # Current best (88.72)
 │   └── ...
 └── rust/
     ├── Cargo.toml
@@ -339,7 +361,8 @@ santa-2025-packing/
 | Gen47 ConcentricRings | 89.59 | +30% | Structured placement |
 | Gen62 RadiusCompress | 88.22 | +28% | Compression moves (lucky run) |
 | Gen72b WaveCompaction | 89.46 | +30% | Post-SA wave compaction |
-| **Gen73c LateContinuous** | **88.90** | **+29%** | **Fine angles for late-stage placement** |
+| Gen73c LateContinuous | 88.90 | +29% | Fine angles for last 20% trees |
+| **Gen74a ExtendedLate** | **88.72** | **+29%** | **Fine angles for last 30% trees** |
 | *Target (top solution)* | *~69* | - | Continuous angles + global rotation |
 
 **Status**: Active evolution. Competition deadline: January 30, 2026.

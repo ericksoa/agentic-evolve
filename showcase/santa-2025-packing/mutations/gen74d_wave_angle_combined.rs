@@ -1,14 +1,17 @@
-//! Evolved Packing Algorithm - Generation 74a EXTENDED LATE-STAGE CONTINUOUS
+//! Evolved Packing Algorithm - Generation 74d WAVE COMPACTION + ANGLE REFINEMENT
 //!
-//! MUTATION STRATEGY: EXTEND FINE ANGLES TO LAST 30% OF TREES
-//! Gen73c showed that late-stage continuous angles help (88.90).
-//! Hypothesis: Extending fine angles to n >= 140 (last 30%) instead of
-//! n >= 160 (last 20%) might help more trees fit into gaps.
+//! MUTATION STRATEGY: COMBINE WAVE COMPACTION WITH ANGLE REFINEMENT
+//! Gen72b showed wave compaction helps (89.46), Gen73c showed late-stage angles help (88.90).
+//! Hypothesis: During wave compaction, also try rotating trees to find better fits.
+//! When pulling trees toward center, test multiple angles to find one that allows
+//! a larger compression step.
 //!
-//! Risk: More trees with fine angles = more computation + potential SA instability
+//! Risk: More computation during wave compaction, but focused on outer trees
 //!
 //! Changes from Gen73c:
-//! - Change late_stage_threshold from 160 to 140
+//! - Enhanced wave compaction that tries angles during compression
+//! - More wave passes (5 instead of 3)
+//! - Angle-aware compression: for each step, try all 8 base angles
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -49,6 +52,7 @@ pub struct EvolvedConfig {
     pub wave_passes: usize,
     pub late_stage_threshold: usize,
     pub fine_angle_step: f64,
+    pub wave_angle_refinement: bool,  // NEW: enable angle refinement in wave compaction
 }
 
 impl Default for EvolvedConfig {
@@ -75,9 +79,10 @@ impl Default for EvolvedConfig {
             hot_restart_temp: 0.35,
             elite_pool_size: 3,
             compression_prob: 0.20,
-            wave_passes: 3,
-            late_stage_threshold: 140,  // CHANGED: was 160, now 140 (last 30%)
+            wave_passes: 5,  // CHANGED: 5 passes instead of 3
+            late_stage_threshold: 160,
             fine_angle_step: 15.0,
+            wave_angle_refinement: true,  // NEW
         }
     }
 }
@@ -126,7 +131,7 @@ impl EvolvedPacker {
                     self.local_search(&mut trees, n, pass, strategy, &mut rng);
                 }
 
-                self.wave_compaction(&mut trees);
+                self.wave_compaction_with_angles(&mut trees);
 
                 let side = compute_side_length(&trees);
                 strategy_trees[s_idx] = trees.clone();
@@ -154,16 +159,21 @@ impl EvolvedPacker {
         packings
     }
 
-    fn wave_compaction(&self, trees: &mut Vec<PlacedTree>) {
+    // NEW: Enhanced wave compaction with angle refinement
+    fn wave_compaction_with_angles(&self, trees: &mut Vec<PlacedTree>) {
         if trees.len() <= 1 {
             return;
         }
+
+        let base_angles = [0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0];
+        let step_sizes = [0.10, 0.05, 0.02, 0.01];
 
         for _wave in 0..self.config.wave_passes {
             let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
             let center_x = (min_x + max_x) / 2.0;
             let center_y = (min_y + max_y) / 2.0;
 
+            // Sort trees by distance from center (farthest first)
             let mut tree_distances: Vec<(usize, f64)> = trees.iter().enumerate()
                 .map(|(i, t)| {
                     let dx = t.x - center_x;
@@ -186,17 +196,47 @@ impl EvolvedPacker {
                     continue;
                 }
 
-                for step in [0.10, 0.05, 0.02, 0.01] {
+                let mut best_move: Option<(f64, f64, f64)> = None;  // (x, y, angle)
+                let mut best_step = 0.0;
+
+                // Try each step size
+                for &step in &step_sizes {
                     let new_x = old_x + dx * step;
                     let new_y = old_y + dy * step;
 
+                    // First try with original angle
                     trees[idx] = PlacedTree::new(new_x, new_y, old_angle);
-
-                    if has_overlap(trees, idx) {
-                        trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
-                    } else {
-                        break;
+                    if !has_overlap(trees, idx) {
+                        if step > best_step {
+                            best_step = step;
+                            best_move = Some((new_x, new_y, old_angle));
+                        }
                     }
+
+                    // If angle refinement is enabled, try other angles
+                    if self.config.wave_angle_refinement {
+                        for &angle in &base_angles {
+                            if (angle - old_angle).abs() < 0.1 {
+                                continue; // Skip if same angle
+                            }
+
+                            trees[idx] = PlacedTree::new(new_x, new_y, angle);
+                            if !has_overlap(trees, idx) {
+                                // Check if this gives a better result (larger step)
+                                if step > best_step {
+                                    best_step = step;
+                                    best_move = Some((new_x, new_y, angle));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Apply the best move found, or restore original
+                if let Some((bx, by, bangle)) = best_move {
+                    trees[idx] = PlacedTree::new(bx, by, bangle);
+                } else {
+                    trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
                 }
             }
         }

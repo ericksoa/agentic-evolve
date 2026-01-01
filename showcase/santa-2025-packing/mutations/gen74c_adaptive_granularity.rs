@@ -1,14 +1,18 @@
-//! Evolved Packing Algorithm - Generation 74a EXTENDED LATE-STAGE CONTINUOUS
+//! Evolved Packing Algorithm - Generation 74c ADAPTIVE ANGLE GRANULARITY
 //!
-//! MUTATION STRATEGY: EXTEND FINE ANGLES TO LAST 30% OF TREES
-//! Gen73c showed that late-stage continuous angles help (88.90).
-//! Hypothesis: Extending fine angles to n >= 140 (last 30%) instead of
-//! n >= 160 (last 20%) might help more trees fit into gaps.
+//! MUTATION STRATEGY: VARY ANGLE GRANULARITY BASED ON LOCAL CONDITIONS
+//! Gen73c showed late-stage continuous angles help (88.90).
+//! Hypothesis: Use finer angles (15°) when local density is high (tight gaps),
+//! but keep coarser angles (45°) when there's more space. This reduces
+//! computation where it's not needed while focusing precision where it helps.
 //!
-//! Risk: More trees with fine angles = more computation + potential SA instability
+//! Risk: Density calculation overhead may not pay off
 //!
 //! Changes from Gen73c:
-//! - Change late_stage_threshold from 160 to 140
+//! - Compute local density before placement
+//! - High density (>0.6) -> use 15° angles
+//! - Medium density (0.3-0.6) -> use 30° angles
+//! - Low density (<0.3) -> use 45° angles
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -49,6 +53,8 @@ pub struct EvolvedConfig {
     pub wave_passes: usize,
     pub late_stage_threshold: usize,
     pub fine_angle_step: f64,
+    pub high_density_threshold: f64,   // NEW: threshold for fine angles
+    pub medium_density_threshold: f64, // NEW: threshold for medium angles
 }
 
 impl Default for EvolvedConfig {
@@ -76,8 +82,10 @@ impl Default for EvolvedConfig {
             elite_pool_size: 3,
             compression_prob: 0.20,
             wave_passes: 3,
-            late_stage_threshold: 140,  // CHANGED: was 160, now 140 (last 30%)
+            late_stage_threshold: 160,
             fine_angle_step: 15.0,
+            high_density_threshold: 0.6,   // NEW
+            medium_density_threshold: 0.3, // NEW
         }
     }
 }
@@ -202,6 +210,52 @@ impl EvolvedPacker {
         }
     }
 
+    // NEW: Calculate global packing density to determine angle granularity
+    fn calculate_packing_density(&self, existing: &[PlacedTree]) -> f64 {
+        if existing.is_empty() {
+            return 0.0;
+        }
+
+        let (min_x, min_y, max_x, max_y) = compute_bounds(existing);
+        let bbox_area = (max_x - min_x) * (max_y - min_y);
+
+        if bbox_area <= 0.0 {
+            return 0.0;
+        }
+
+        // Estimate tree area (rough approximation - tree is about 0.7 wide, 1.0 tall)
+        let tree_area_approx = 0.35; // ~half of bounding box
+        let total_tree_area = existing.len() as f64 * tree_area_approx;
+
+        (total_tree_area / bbox_area).min(1.0)
+    }
+
+    // NEW: Select angles based on current density
+    fn select_adaptive_angles(&self, n: usize, strategy: PlacementStrategy, density: f64) -> Vec<f64> {
+        let base_angles = self.select_angles_for_strategy(n, strategy);
+
+        if density >= self.config.high_density_threshold || n >= self.config.late_stage_threshold {
+            // High density or late stage: use 15° steps (24 angles total)
+            self.select_fine_angles_for_strategy(n, strategy)
+        } else if density >= self.config.medium_density_threshold {
+            // Medium density: use 30° steps (12 angles total)
+            let mut medium_angles = Vec::with_capacity(12);
+            for &angle in &base_angles {
+                medium_angles.push(angle);
+            }
+            for &base in &base_angles {
+                let plus_30 = (base + 30.0).rem_euclid(360.0);
+                if !medium_angles.contains(&plus_30) {
+                    medium_angles.push(plus_30);
+                }
+            }
+            medium_angles
+        } else {
+            // Low density: use standard 45° steps (8 angles)
+            base_angles
+        }
+    }
+
     fn find_placement_with_strategy(
         &self,
         existing: &[PlacedTree],
@@ -225,11 +279,9 @@ impl EvolvedPacker {
         let mut best_tree = PlacedTree::new(0.0, 0.0, 90.0);
         let mut best_score = f64::INFINITY;
 
-        let angles = if n >= self.config.late_stage_threshold {
-            self.select_fine_angles_for_strategy(n, strategy)
-        } else {
-            self.select_angles_for_strategy(n, strategy)
-        };
+        // NEW: Calculate density and select appropriate angles
+        let density = self.calculate_packing_density(existing);
+        let angles = self.select_adaptive_angles(n, strategy, density);
 
         let (min_x, min_y, max_x, max_y) = compute_bounds(existing);
         let current_width = max_x - min_x;

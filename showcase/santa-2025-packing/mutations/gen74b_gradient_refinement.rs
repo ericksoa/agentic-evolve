@@ -1,14 +1,15 @@
-//! Evolved Packing Algorithm - Generation 74a EXTENDED LATE-STAGE CONTINUOUS
+//! Evolved Packing Algorithm - Generation 74b GRADIENT ANGLE REFINEMENT
 //!
-//! MUTATION STRATEGY: EXTEND FINE ANGLES TO LAST 30% OF TREES
-//! Gen73c showed that late-stage continuous angles help (88.90).
-//! Hypothesis: Extending fine angles to n >= 140 (last 30%) instead of
-//! n >= 160 (last 20%) might help more trees fit into gaps.
+//! MUTATION STRATEGY: REFINE ANGLES NEAR THE BEST FOUND
+//! Gen73c showed late-stage continuous angles help (88.90).
+//! Hypothesis: After finding the best 45° angle, try nearby angles (±7.5°, ±15°, ±22.5°)
+//! to find a more precise fit. This is a "gradient descent" on angle space.
 //!
-//! Risk: More trees with fine angles = more computation + potential SA instability
+//! Risk: More angle evaluations = slower, but focused on promising regions
 //!
 //! Changes from Gen73c:
-//! - Change late_stage_threshold from 160 to 140
+//! - Add angle refinement pass after initial placement search
+//! - Use 7.5° step refinements around the best angle found
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -49,6 +50,7 @@ pub struct EvolvedConfig {
     pub wave_passes: usize,
     pub late_stage_threshold: usize,
     pub fine_angle_step: f64,
+    pub gradient_refinement_steps: Vec<f64>,  // NEW: angle refinement offsets
 }
 
 impl Default for EvolvedConfig {
@@ -76,8 +78,9 @@ impl Default for EvolvedConfig {
             elite_pool_size: 3,
             compression_prob: 0.20,
             wave_passes: 3,
-            late_stage_threshold: 140,  // CHANGED: was 160, now 140 (last 30%)
+            late_stage_threshold: 160,
             fine_angle_step: 15.0,
+            gradient_refinement_steps: vec![7.5, -7.5, 15.0, -15.0, 22.5, -22.5],  // NEW
         }
     }
 }
@@ -224,6 +227,8 @@ impl EvolvedPacker {
 
         let mut best_tree = PlacedTree::new(0.0, 0.0, 90.0);
         let mut best_score = f64::INFINITY;
+        let mut best_angle = 0.0;
+        let mut best_dir = (1.0, 0.0);
 
         let angles = if n >= self.config.late_stage_threshold {
             self.select_fine_angles_for_strategy(n, strategy)
@@ -237,6 +242,7 @@ impl EvolvedPacker {
 
         let gaps = self.find_gaps(existing, min_x, min_y, max_x, max_y);
 
+        // First pass: find best placement with coarse angles
         for attempt in 0..self.config.search_attempts {
             let dir = if !gaps.is_empty() && attempt % 5 == 0 {
                 let gap = &gaps[attempt % gaps.len()];
@@ -266,6 +272,40 @@ impl EvolvedPacker {
                 }
 
                 let candidate = PlacedTree::new(high * vx, high * vy, tree_angle);
+                if is_valid(&candidate, existing) {
+                    let score = self.placement_score(&candidate, existing, n);
+                    if score < best_score {
+                        best_score = score;
+                        best_tree = candidate;
+                        best_angle = tree_angle;
+                        best_dir = (vx, vy);
+                    }
+                }
+            }
+        }
+
+        // GRADIENT REFINEMENT: Try angles near the best found
+        // Only do this for late-stage trees where precision matters most
+        if n >= 100 {
+            for &offset in &self.config.gradient_refinement_steps {
+                let refined_angle = (best_angle + offset).rem_euclid(360.0);
+
+                // Binary search for this refined angle
+                let mut low = 0.0;
+                let mut high = 12.0;
+
+                while high - low > 0.001 {
+                    let mid = (low + high) / 2.0;
+                    let candidate = PlacedTree::new(mid * best_dir.0, mid * best_dir.1, refined_angle);
+
+                    if is_valid(&candidate, existing) {
+                        high = mid;
+                    } else {
+                        low = mid;
+                    }
+                }
+
+                let candidate = PlacedTree::new(high * best_dir.0, high * best_dir.1, refined_angle);
                 if is_valid(&candidate, existing) {
                     let score = self.placement_score(&candidate, existing, n);
                     if score < best_score {
