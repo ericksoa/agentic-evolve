@@ -10,9 +10,10 @@
 |------|---------|----------|---------|-------------|
 | `0520fde7` | Grid comparison | 80 bytes | **57 bytes** | -29% |
 | `00d62c1b` | Fill enclosed regions | 280 bytes | **238 bytes** | -15% |
+| `a64e4611` | Largest rectangle + cross | ~1200 bytes | **750 bytes** | -37.5% |
 | `017c7c7b` | Simple transform | 54 bytes | **54 bytes** | baseline |
 
-**Total score improvement**: +65 points across evolved tasks
+**Total score improvement**: +515 points across evolved tasks
 
 ---
 
@@ -135,6 +136,65 @@ def solve(G):
 
 ---
 
+## Evolution Journey: Largest Rectangle Cross (`a64e4611`)
+
+This hard-difficulty task demonstrates evolution on a complex algorithm with multiple phases.
+
+### The Task
+
+Find the largest rectangular region of zeros in a 30x30 grid, then fill with 3s using orientation-dependent shrinking and neighbor-conditional extensions to create a cross pattern.
+
+```
+Input (30x30):                Output (30x30):
+[mostly 8s with a            [same but largest zero
+ region of 0s]                region filled with 3s
+                              in a cross pattern]
+```
+
+### Algorithm Discovery
+
+This task required significant reverse-engineering:
+- **Initial hypothesis**: Simple maximal rectangle - WRONG (output is a cross, not rectangle)
+- **Second hypothesis**: Flood fill - WRONG (connected components don't match)
+- **Key insight**: Orientation-dependent shrinking + neighbor-conditional extensions
+
+### Evolution Progress
+
+| Gen | Bytes | Technique | Insight |
+|-----|-------|-----------|---------|
+| 0 | ~1200 | Verbose with helpers | Working baseline |
+| 20 | 858 | Unified E lambda, max() | Eliminate redundant functions |
+| 40 | 794 | Tuple indexing | `O[(v,i)[z]][(i,v)[z]]` for row/col swap |
+| 50 | 763 | Merged loops | Histogram + max rect in single pass |
+| 60 | 751 | Unified shrink formula | `H=j-f>g-e;e+=e>0;g-=H*(g<R-1);...` |
+| 65 | **750** | `[*map(list,G)]` | Shorter deep copy |
+
+### Champion Solution (750 bytes)
+
+```python
+def solve(G):
+ R,C=len(G),len(G[0]);O=[*map(list,G)];h=[];b=0,
+ for r in range(R):
+  h+=[(1+h[r-1][c]if r else 1)*(O[r][c]<1)for c in range(C)],;s=[]
+  for c in range(C+1):
+   t=h[r][c]if c<C else 0;x=c
+   while s and s[-1][1]>t:q,w=s.pop();b=max(b,(w*(c-q),r-w+1,q,r,c-1));x=q
+   s+=(x,t),
+ if b[0]<1:return G
+ _,e,f,g,j=b;H=j-f>g-e;e+=e>0;g-=H*(g<R-1);f+=1-H;j-=1-H
+ for r in range(e,g+1):G[r][f:j+1]=[3]*(j-f+1)
+ E=lambda i,L,z:all(O[(v,i)[z]][(i,v)[z]]<1for v in L)
+ for i,A,B,P,z in[(r,e,g,[(range(f),f),(range(j+1,C),j<C-1)],1)for r in range(e,g+1)]+[(c,f,j,[(range(e),e),(range(g+1,R),g<R-1)],0)for c in range(f,j+1)]:
+  for L,k in P:
+   if k*E(i,L,z)*(i==A or E(i-1,L,z))*(i==B or E(i+1,L,z)):
+    for v in L:G[(v,i)[z]][(i,v)[z]]=3
+ return G
+```
+
+**Improvement**: ~1200 → 750 bytes (**-37.5%**, +450 competition points)
+
+---
+
 ## Golf Tricks Library
 
 Tricks discovered during evolution, applicable to other tasks:
@@ -164,6 +224,10 @@ Tricks discovered during evolution, applicable to other tasks:
 | Smart marker values | Choose markers that simplify final lookup | 2-4 bytes |
 | Direct row iteration | `for r in g` vs `for i in range(len(g))` | 7+ bytes |
 | Tuple indices | `(0,1,2)` instead of `range(3)` | 2 bytes |
+| max() for best | `b=max(b,new)` vs `if new>b:b=new` | 5+ bytes |
+| Unified dimension swap | `O[(v,i)[z]][(i,v)[z]]` for row/col toggling | 10+ bytes |
+| Merged loops | Combine histogram + rect finding in one pass | 15+ bytes |
+| `[*map(list,G)]` | Shorter deep copy than `[r[:]for r in G]` | 2 bytes |
 
 ---
 
@@ -239,10 +303,12 @@ showcase/code-golf/
 ├── solutions/                   # Evolved Python solutions
 │   ├── 00d62c1b.py             # 238 bytes (champion)
 │   ├── 0520fde7.py             # 57 bytes (champion)
+│   ├── a64e4611.py             # 750 bytes (champion)
 │   └── 017c7c7b.py             # 54 bytes (baseline)
 └── mutations/                   # Evolution logs
     ├── arc_fill_enclosed_regions.md
-    └── 0520fde7_evolution.md
+    ├── 0520fde7_evolution.md
+    └── a64e4611_evolution.md
 ```
 
 ---
@@ -295,8 +361,8 @@ python evaluator.py <task_id> solutions/<task_id>.py
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| Tasks solved | 3 | 400 |
-| Total score | ~6,700 | ~960,000+ |
+| Tasks solved | 4 | 400 |
+| Total score | ~8,450 | ~960,000+ |
 | Competition status | Ended (Oct 2025) | - |
 
 This showcase demonstrates the `/evolve-size` capability. The techniques transfer to any code golf challenge.
