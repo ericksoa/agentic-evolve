@@ -100,12 +100,16 @@ impl PlacedTree {
 
 /// Check if two convex/concave polygons overlap
 /// Uses separating axis theorem for edge normals
+/// Added epsilon buffer to be conservative (Kaggle validation is strict)
 fn polygons_overlap(poly1: &[(f64, f64)], poly2: &[(f64, f64)]) -> bool {
-    // First check if bounding boxes overlap
+    const EPSILON: f64 = 1e-9;  // Small buffer for numerical precision
+
+    // First check if bounding boxes overlap (with epsilon)
     let (min1x, min1y, max1x, max1y) = polygon_bounds(poly1);
     let (min2x, min2y, max2x, max2y) = polygon_bounds(poly2);
 
-    if max1x < min2x || max2x < min1x || max1y < min2y || max2y < min1y {
+    if max1x + EPSILON < min2x || max2x + EPSILON < min1x ||
+       max1y + EPSILON < min2y || max2y + EPSILON < min1y {
         return false;
     }
 
@@ -161,20 +165,73 @@ fn polygon_bounds(poly: &[(f64, f64)]) -> (f64, f64, f64, f64) {
     (min_x, min_y, max_x, max_y)
 }
 
-/// Check if two segments properly intersect (cross each other, not just touch)
+/// Check if two segments intersect (including touching/collinear cases)
+/// More conservative than proper intersection to match Kaggle validation
 fn segments_intersect_proper(a1: (f64, f64), a2: (f64, f64), b1: (f64, f64), b2: (f64, f64)) -> bool {
+    const EPSILON: f64 = 1e-9;
+
     let d1 = cross_product_sign(b1, b2, a1);
     let d2 = cross_product_sign(b1, b2, a2);
     let d3 = cross_product_sign(a1, a2, b1);
     let d4 = cross_product_sign(a1, a2, b2);
 
     // Proper intersection: opposite signs
-    if ((d1 > 0.0 && d2 < 0.0) || (d1 < 0.0 && d2 > 0.0)) &&
-       ((d3 > 0.0 && d4 < 0.0) || (d3 < 0.0 && d4 > 0.0)) {
+    if ((d1 > EPSILON && d2 < -EPSILON) || (d1 < -EPSILON && d2 > EPSILON)) &&
+       ((d3 > EPSILON && d4 < -EPSILON) || (d3 < -EPSILON && d4 > EPSILON)) {
         return true;
     }
 
+    // Also check for collinear/touching cases (conservative)
+    // If signs are very close to zero, segments might be touching
+    if d1.abs() < EPSILON || d2.abs() < EPSILON || d3.abs() < EPSILON || d4.abs() < EPSILON {
+        // Check if segments actually overlap using parametric intersection
+        return segments_touch_or_overlap(a1, a2, b1, b2);
+    }
+
     false
+}
+
+/// Check if segments touch or overlap (for collinear/near-collinear cases)
+fn segments_touch_or_overlap(a1: (f64, f64), a2: (f64, f64), b1: (f64, f64), b2: (f64, f64)) -> bool {
+    const EPSILON: f64 = 1e-9;
+
+    // Check if any endpoint of one segment is very close to the other segment
+    if point_near_segment(a1, b1, b2, EPSILON) ||
+       point_near_segment(a2, b1, b2, EPSILON) ||
+       point_near_segment(b1, a1, a2, EPSILON) ||
+       point_near_segment(b2, a1, a2, EPSILON) {
+        return true;
+    }
+    false
+}
+
+/// Check if point p is within epsilon of segment (s1, s2)
+fn point_near_segment(p: (f64, f64), s1: (f64, f64), s2: (f64, f64), epsilon: f64) -> bool {
+    let dx = s2.0 - s1.0;
+    let dy = s2.1 - s1.1;
+    let len_sq = dx * dx + dy * dy;
+
+    if len_sq < epsilon * epsilon {
+        // Degenerate segment, check distance to point
+        let d = ((p.0 - s1.0).powi(2) + (p.1 - s1.1).powi(2)).sqrt();
+        return d < epsilon;
+    }
+
+    // Project p onto line, get parameter t
+    let t = ((p.0 - s1.0) * dx + (p.1 - s1.1) * dy) / len_sq;
+
+    // Check if projection is within segment
+    if t < -epsilon || t > 1.0 + epsilon {
+        return false;
+    }
+
+    // Calculate distance from p to closest point on segment
+    let t_clamped = t.clamp(0.0, 1.0);
+    let closest_x = s1.0 + t_clamped * dx;
+    let closest_y = s1.1 + t_clamped * dy;
+    let dist = ((p.0 - closest_x).powi(2) + (p.1 - closest_y).powi(2)).sqrt();
+
+    dist < epsilon
 }
 
 fn cross_product_sign(a: (f64, f64), b: (f64, f64), c: (f64, f64)) -> f64 {
