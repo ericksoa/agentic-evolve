@@ -10,10 +10,10 @@
 |------|---------|----------|---------|-------------|
 | `0520fde7` | Grid comparison | 80 bytes | **57 bytes** | -29% |
 | `00d62c1b` | Fill enclosed regions | 280 bytes | **238 bytes** | -15% |
-| `a64e4611` | Largest rectangle + cross | ~1200 bytes | **750 bytes** | -37.5% |
+| `a64e4611` | Largest rectangle + cross | ~1200 bytes | **712 bytes** | -41% |
 | `017c7c7b` | Simple transform | 54 bytes | **54 bytes** | baseline |
 
-**Total score improvement**: +515 points across evolved tasks
+**Total score improvement**: +553 points across evolved tasks
 
 ---
 
@@ -167,31 +167,34 @@ This task required significant reverse-engineering:
 | 40 | 794 | Tuple indexing | `O[(v,i)[z]][(i,v)[z]]` for row/col swap |
 | 50 | 763 | Merged loops | Histogram + max rect in single pass |
 | 60 | 751 | Unified shrink formula | `H=j-f>g-e;e+=e>0;g-=H*(g<R-1);...` |
-| 65 | **750** | `[*map(list,G)]` | Shorter deep copy |
+| 65 | 750 | `[*map(list,G)]` | Shorter deep copy |
+| 70 | 718 | `I=range` alias | range used 11 times, saves 32 bytes |
+| 75 | 717 | `r and X or Y` ternary | Shorter than `X if r else Y` |
+| 80 | **712** | `c<C and h[r][c]` | Shorter ternary for zero fallback |
 
-### Champion Solution (750 bytes)
+### Champion Solution (712 bytes)
 
 ```python
 def solve(G):
- R,C=len(G),len(G[0]);O=[*map(list,G)];h=[];b=0,
- for r in range(R):
-  h+=[(1+h[r-1][c]if r else 1)*(O[r][c]<1)for c in range(C)],;s=[]
-  for c in range(C+1):
-   t=h[r][c]if c<C else 0;x=c
+ I=range;R,C=len(G),len(G[0]);O=[*map(list,G)];h=[];b=0,
+ for r in I(R):
+  h+=[(r and 1+h[r-1][c]or 1)*(O[r][c]<1)for c in I(C)],;s=[]
+  for c in I(C+1):
+   t=c<C and h[r][c];x=c
    while s and s[-1][1]>t:q,w=s.pop();b=max(b,(w*(c-q),r-w+1,q,r,c-1));x=q
    s+=(x,t),
  if b[0]<1:return G
  _,e,f,g,j=b;H=j-f>g-e;e+=e>0;g-=H*(g<R-1);f+=1-H;j-=1-H
- for r in range(e,g+1):G[r][f:j+1]=[3]*(j-f+1)
- E=lambda i,L,z:all(O[(v,i)[z]][(i,v)[z]]<1for v in L)
- for i,A,B,P,z in[(r,e,g,[(range(f),f),(range(j+1,C),j<C-1)],1)for r in range(e,g+1)]+[(c,f,j,[(range(e),e),(range(g+1,R),g<R-1)],0)for c in range(f,j+1)]:
+ for r in I(e,g+1):G[r][f:j+1]=[3]*(j-f+1)
+ E=lambda i,L,z,d=0:d or all(O[(v,i)[z]][(i,v)[z]]<1for v in L)
+ for i,A,B,P,z in[(r,e,g,[(I(f),f),(I(j+1,C),j<C-1)],1)for r in I(e,g+1)]+[(c,f,j,[(I(e),e),(I(g+1,R),g<R-1)],0)for c in I(f,j+1)]:
   for L,k in P:
-   if k*E(i,L,z)*(i==A or E(i-1,L,z))*(i==B or E(i+1,L,z)):
+   if k*E(i,L,z)*E(i-1,L,z,i==A)*E(i+1,L,z,i==B):
     for v in L:G[(v,i)[z]][(i,v)[z]]=3
  return G
 ```
 
-**Improvement**: ~1200 → 750 bytes (**-37.5%**, +450 competition points)
+**Improvement**: ~1200 → 712 bytes (**-41%**, +488 competition points)
 
 ---
 
@@ -228,6 +231,9 @@ Tricks discovered during evolution, applicable to other tasks:
 | Unified dimension swap | `O[(v,i)[z]][(i,v)[z]]` for row/col toggling | 10+ bytes |
 | Merged loops | Combine histogram + rect finding in one pass | 15+ bytes |
 | `[*map(list,G)]` | Shorter deep copy than `[r[:]for r in G]` | 2 bytes |
+| `I=range` alias | When range used 5+ times, alias saves bytes | 3+ bytes/use |
+| `x and Y or Z` | Shorter than `Y if x else Z` for truthy Y | 2 bytes |
+| E with default | `E(i,L,z,d=0):d or F` for edge-case bypass | 2+ bytes |
 
 ---
 
@@ -303,7 +309,7 @@ showcase/code-golf/
 ├── solutions/                   # Evolved Python solutions
 │   ├── 00d62c1b.py             # 238 bytes (champion)
 │   ├── 0520fde7.py             # 57 bytes (champion)
-│   ├── a64e4611.py             # 750 bytes (champion)
+│   ├── a64e4611.py             # 712 bytes (champion)
 │   └── 017c7c7b.py             # 54 bytes (baseline)
 └── mutations/                   # Evolution logs
     ├── arc_fill_enclosed_regions.md
