@@ -37,16 +37,19 @@
 | `11852cab` | ~~333~~ **280** | ✅ DONE! README + AlphaEvolve (-16%, +53 pts) |
 | `178fcbfb` | ~~304~~ **217** | ✅ DONE! README + AlphaEvolve (-29%, +87 pts) |
 
-#### Medium (100-300 bytes) - Document + Quick Golf Check
-| Task | Bytes | Status |
-|------|-------|--------|
-| `1caeab9d` | 280 | Missing README |
-| `1e32b0e9` | 207 | Missing README (batch 4) |
-| `363442ee` | 205 | Missing README |
-| `1190e5a7` | 188 | Missing README (batch 4) |
-| `10fcaaa3` | 176 | Missing README (batch 4) |
-| `1b2d62fb` | 170 | Missing README |
-| `1cf80156` | 138 | Missing README (batch 4) |
+#### Medium (100-300 bytes) - Document + AlphaEvolve (REQUIRED)
+| Task | Bytes | Status | Target |
+|------|-------|--------|--------|
+| `1caeab9d` | 280 | Missing README | ~220 (+60 pts) |
+| `1e32b0e9` | 207 | Missing README | ~170 (+37 pts) |
+| `363442ee` | 205 | Missing README | ~170 (+35 pts) |
+| `1190e5a7` | 188 | Missing README | ~150 (+38 pts) |
+| `10fcaaa3` | 176 | Missing README | ~140 (+36 pts) |
+| `1b2d62fb` | 170 | Missing README | ~140 (+30 pts) |
+| `1cf80156` | 138 | Missing README | ~110 (+28 pts) |
+
+**All 7 require full AlphaEvolve treatment (5-10 gens, 3-4 mutations each)**
+**Estimated total gain: ~264 pts if targets met**
 
 ### README Template
 
@@ -120,17 +123,31 @@ Only after documentation is complete. Pick from Medium difficulty analyzed list.
 - README.md written
 - **+201 points gained!**
 
-### Session 4: Document batch (3-4 medium/hard tasks)
-- ~~`0a938d79`~~ ✅, ~~`1bfc4729`~~ ✅, ~~`11852cab`~~ ✅, `178fcbfb`
-- Quick golf attempt on each
-- Write READMEs
+### Session 4: Hard tier batch ✅ COMPLETE
+- ~~`0a938d79`~~ ✅, ~~`1bfc4729`~~ ✅, ~~`11852cab`~~ ✅, ~~`178fcbfb`~~ ✅
+- All 4 tasks re-golfed with AlphaEvolve
+- All READMEs written
+- **+740 pts gained in Session 4**
 
-### Session 4: Document batch (remaining 7 medium tasks)
-- All the 100-300 byte solutions
-- Quick golf check
-- Write READMEs
+### Session 5: Medium tier batch (7 tasks)
+**Each task requires:**
+1. Read task JSON + current solution
+2. Write README.md
+3. Run AlphaEvolve (5-10 gens, 3-4 mutations each)
+4. Update README with evolution summary
 
-### Session 5+: New tasks or continued re-golf
+**Batch A (larger, 2-3 per session):**
+- `1caeab9d` (280 bytes) - target ~220
+- `1e32b0e9` (207 bytes) - target ~170
+- `363442ee` (205 bytes) - target ~170
+
+**Batch B (smaller, 3-4 per session):**
+- `1190e5a7` (188 bytes) - target ~150
+- `10fcaaa3` (176 bytes) - target ~140
+- `1b2d62fb` (170 bytes) - target ~140
+- `1cf80156` (138 bytes) - target ~110
+
+### Session 6+: V.Hard re-golf or new tasks
 
 ---
 
@@ -138,10 +155,18 @@ Only after documentation is complete. Pick from Medium difficulty analyzed list.
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| READMEs Complete | 32/41 | 41/41 |
+| READMEs Complete | 34/41 | 41/41 |
 | Total Score | 90,752 | 92,000+ |
-| Avg Score/Task | 2,211 | 2,250+ |
+| Avg Score/Task | 2,214 | 2,250+ |
 | Points Gained | **+1,621** | +2,000+ |
+
+### Remaining Potential
+| Source | Tasks | Est. Gain |
+|--------|-------|-----------|
+| Medium batch (Session 5) | 7 | ~264 pts |
+| V.Hard re-golf | 2 | ~1,100 pts |
+| Hard re-golf | 2 | ~314 pts |
+| **Total remaining** | **11** | **~1,678 pts** |
 
 ### Points Breakdown
 - `2dd70a9a`: +490 pts (1163→673)
