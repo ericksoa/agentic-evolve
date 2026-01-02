@@ -8,14 +8,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **Solved** | 43 / 400 (10.8%) |
-| **Total Score** | 91,989 points |
-| **Avg Score/Task** | 2,139 points |
-| **Projected Final** | ~856,000 points ([details](./PROJECTION.md)) |
+| **Solved** | 41 / 400 (10.3%) |
+| **Total Score** | 90,314 points |
+| **Avg Score/Task** | 2,203 points |
+| **Projected Final** | ~881,000 points ([details](./PROJECTION.md)) |
 
 ---
 
-## Solved Problems (43)
+## Solved Problems (41)
 
 | Task | Pattern | Bytes | Score | Solution |
 |------|---------|-------|-------|----------|
@@ -32,8 +32,10 @@
 | [`08ed6ac7`](./08ed6ac7/README.md) | Column rank labeling | **142** | 2,358 | [solution.py](./08ed6ac7/solution.py) |
 | [`09629e4f`](./09629e4f/README.md) | Fill grid segments | **170** | 2,330 | [solution.py](./09629e4f/solution.py) |
 | [`239be575`](./239be575/README.md) | Small pattern movement | **170** | 2,330 | [solution.py](./239be575/solution.py) |
+| [`1b2d62fb`](./1b2d62fb/) | Conditional grid coloring | **170** | 2,330 | [solution.py](./1b2d62fb/solution.py) |
 | [`10fcaaa3`](./10fcaaa3/) | 2x2 tiling + diagonal 8s | **176** | 2,324 | [solution.py](./10fcaaa3/solution.py) |
 | [`1190e5a7`](./1190e5a7/) | Count cells by grid lines | **188** | 2,312 | [solution.py](./1190e5a7/solution.py) |
+| [`363442ee`](./363442ee/) | Fill bottom row pattern | **205** | 2,295 | [solution.py](./363442ee/solution.py) |
 | [`0ca9ddb6`](./0ca9ddb6/README.md) | Color spread from seeds | **207** | 2,293 | [solution.py](./0ca9ddb6/solution.py) |
 | [`1e32b0e9`](./1e32b0e9/) | Grid template completion | **207** | 2,293 | [solution.py](./1e32b0e9/solution.py) |
 | [`00d62c1b`](./00d62c1b/README.md) | Fill enclosed regions | **219** | 2,281 | [solution.py](./00d62c1b/solution.py) |
@@ -43,31 +45,30 @@
 | [`1c786137`](./1c786137/README.md) | Corner rectangle frames | **249** | 2,251 | [solution.py](./1c786137/solution.py) |
 | [`025d127b`](./025d127b/README.md) | Parallelogram to rect | **266** | 2,234 | [solution.py](./025d127b/solution.py) |
 | [`32597951`](./32597951/README.md) | Extract repeating tile | **274** | 2,226 | [solution.py](./32597951/solution.py) |
+| [`1caeab9d`](./1caeab9d/) | Line intersection marking | **280** | 2,220 | [solution.py](./1caeab9d/solution.py) |
+| [`178fcbfb`](./178fcbfb/) | Fill cross pattern gaps | **304** | 2,196 | [solution.py](./178fcbfb/solution.py) |
 | [`05f2a901`](./05f2a901/README.md) | Move shape to reference | **326** | 2,174 | [solution.py](./05f2a901/solution.py) |
 | [`11852cab`](./11852cab/) | 90° rotational symmetry | **333** | 2,167 | [solution.py](./11852cab/solution.py) |
 | [`06df4c85`](./06df4c85/README.md) | Grid line completion | **378** | 2,122 | [solution.py](./06df4c85/solution.py) |
+| [`1bfc4729`](./1bfc4729/) | Diagonal movement | **406** | 2,094 | [solution.py](./1bfc4729/solution.py) |
 | [`1a07d186`](./1a07d186/README.md) | Line projection | **434** | 2,066 | [solution.py](./1a07d186/solution.py) |
 | [`0b148d64`](./0b148d64/README.md) | Quadrant extraction | **454** | 2,046 | [solution.py](./0b148d64/solution.py) |
 | [`2bcee788`](./2bcee788/README.md) | Color replacement by marker | **465** | 2,035 | [solution.py](./2bcee788/solution.py) |
+| [`150deff5`](./150deff5/) | Grid extraction borders | **494** | 2,006 | [solution.py](./150deff5/solution.py) |
 | [`a64e4611`](./a64e4611/README.md) | Largest rectangle + cross | **523** | 1,977 | [solution.py](./a64e4611/solution.py) |
 | [`045e512c`](./045e512c/README.md) | Template matching | **591** | 1,909 | [solution.py](./045e512c/solution.py) |
 | [`2dd70a9a`](./2dd70a9a/README.md) | U-shape connector | **673** | 1,827 | [solution.py](./2dd70a9a/solution.py) |
+| [`1b60fb0c`](./1b60fb0c/) | Bounding box extraction | **933** | 1,567 | [solution.py](./1b60fb0c/solution.py) |
 | [`0e206a2e`](./0e206a2e/README.md) | Rotated template placement | **1384** | 1,116 | [solution.py](./0e206a2e/solution.py) |
 
 ---
 
 ## Unsolved Problems (369)
 
-### Analyzed Tasks (42)
+### Analyzed Tasks (35)
 
 | Task ID | Pattern | Est. Difficulty |
 |---------|---------|-----------------|
-| `150deff5` | Grid extraction borders | Hard |
-| `178fcbfb` | Fill cross pattern gaps | Medium |
-| `1b2d62fb` | Conditional grid coloring | Hard |
-| `1b60fb0c` | Bounding box extraction | Hard |
-| `1bfc4729` | Diagonal movement | Hard |
-| `1caeab9d` | Line intersection marking | Medium |
 | `1f0c79e5` | Colored region swap | Hard |
 | `1f642eb9` | Marker position projection | Hard |
 | `1f85a75f` | Extract rare color region | Hard |
@@ -103,7 +104,6 @@
 | `3428a4f5` | Replace one color | Medium |
 | `3618c87e` | Grid splitting with marker | Hard |
 | `3631a71a` | Remove colored block | Hard |
-| `363442ee` | Fill bottom row pattern | Easy |
 
 ### Remaining Tasks (324)
 

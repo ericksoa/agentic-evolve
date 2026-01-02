@@ -4,10 +4,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Tasks Solved | 43 / 400 |
-| Total Score | 91,989 |
-| Avg Score/Task | 2,139 |
-| Projected Final | ~856,000 (88.9% of winner) |
+| Tasks Solved | 41 / 400 |
+| Total Score | 90,314 |
+| Avg Score/Task | 2,203 |
+| Projected Final | ~881,000 (91.6% of winner) |
 
 ---
 
