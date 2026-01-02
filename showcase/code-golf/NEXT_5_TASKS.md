@@ -22,7 +22,13 @@
 
 For each task, follow this workflow:
 
-### 1. Understand (5 min)
+### 0. Read Requirements First
+```bash
+# ALWAYS read CONTRIBUTING.md first to understand standards
+cat CONTRIBUTING.md
+```
+
+### 1. Understand
 ```bash
 # Read task
 cat tasks/<task_id>.json | python3 -m json.tool
@@ -30,15 +36,15 @@ cat tasks/<task_id>.json | python3 -m json.tool
 # Analyze examples manually
 ```
 
-### 2. Solve (10-20 min)
+### 2. Solve
 - Write initial working solution
 - Test with evaluator
 ```bash
 python3 evaluator.py <task_id> <task_id>/solution.py
 ```
 
-### 3. Golf (10-20 min)
-- Apply known tricks
+### 3. Golf
+- Apply known tricks from CONTRIBUTING.md
 - Target: minimize bytes
 
 ### 4. Evolution (REQUIRED for 200+ bytes)
@@ -49,7 +55,7 @@ mkdir -p .evolve/<task_id>/mutations
 - Track all results
 - Stop after 3 generations with no improvement
 
-### 5. Document
+### 5. Document Task README
 Create `<task_id>/README.md` with:
 - Pattern description
 - Algorithm explanation
@@ -57,18 +63,33 @@ Create `<task_id>/README.md` with:
 - Byte history
 - Evolution summary (if applicable)
 
-### 6. Commit & Push
+### 6. Update Project Files (REQUIRED)
+**Update these files after each task:**
+
+#### a) README.md (Showcase README)
+Add new task to the "Solved Problems" table:
+```markdown
+| [`<task_id>`](./<task_id>/README.md) | <Pattern> | **<bytes>** | <score> | [solution.py](./<task_id>/solution.py) |
+```
+Update the Progress Summary metrics (solved count, total score, avg score).
+
+#### b) PROJECTION.md
+- Add task to appropriate difficulty tier table
+- Update tier averages
+- Update projected scores
+
+### 7. Commit & Push
 ```bash
-git add <task_id>/
+git add <task_id>/ README.md PROJECTION.md
 git commit -m "<task_id>: <pattern> (<bytes> bytes)"
 git push
 ```
 
-### 7. Provide Summary
+### 8. Provide Summary
 After completing each task, output:
 - Final byte count and score
 - Key tricks discovered
-- Prompt for next task
+- **Prompt for next task** (copy from this plan)
 
 ---
 
@@ -164,16 +185,25 @@ Solve ARC task 25d8a9c8.
 
 Pattern: 3×3 grid - for each row, output [5,5,5] if all values same, else [0,0,0].
 
+Read first:
+1. CONTRIBUTING.md - understand evolution workflow requirements
+2. tasks/25d8a9c8.json - understand the pattern
+
 Requirements:
-1. Read tasks/25d8a9c8.json
-2. Write working solution to 25d8a9c8/solution.py
-3. Run evolution if >200 bytes
-4. Document in 25d8a9c8/README.md
-5. Test: python3 evaluator.py 25d8a9c8 25d8a9c8/solution.py
-6. Commit and push
+1. Write working solution to 25d8a9c8/solution.py
+2. Run evolution if >200 bytes (create .evolve/25d8a9c8/mutations/)
+3. Document in 25d8a9c8/README.md (pattern, algorithm, tricks, byte history)
+4. Test: python3 evaluator.py 25d8a9c8 25d8a9c8/solution.py
+
+Update project files (REQUIRED):
+5. Update README.md - add to "Solved Problems" table, update Progress Summary metrics
+6. Update PROJECTION.md - add to appropriate tier, update averages
+7. Commit and push all changes
 
 Target: <100 bytes
 Working directory: /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-golf
+
+When done: Provide summary and prompt for next task (3c9b0459)
 ```
 
 ### For Task 2 (`3c9b0459`):
@@ -182,16 +212,25 @@ Solve ARC task 3c9b0459.
 
 Pattern: 3×3 grid - 180° rotation.
 
+Read first:
+1. CONTRIBUTING.md - understand evolution workflow requirements
+2. tasks/3c9b0459.json - understand the pattern
+
 Requirements:
-1. Read tasks/3c9b0459.json
-2. Write working solution to 3c9b0459/solution.py
-3. Run evolution if >200 bytes
-4. Document in 3c9b0459/README.md
-5. Test: python3 evaluator.py 3c9b0459 3c9b0459/solution.py
-6. Commit and push
+1. Write working solution to 3c9b0459/solution.py
+2. Run evolution if >200 bytes (create .evolve/3c9b0459/mutations/)
+3. Document in 3c9b0459/README.md (pattern, algorithm, tricks, byte history)
+4. Test: python3 evaluator.py 3c9b0459 3c9b0459/solution.py
+
+Update project files (REQUIRED):
+5. Update README.md - add to "Solved Problems" table, update Progress Summary metrics
+6. Update PROJECTION.md - add to appropriate tier, update averages
+7. Commit and push all changes
 
 Target: <80 bytes
 Working directory: /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-golf
+
+When done: Provide summary and prompt for next task (3aa6fb7a)
 ```
 
 ### For Task 3 (`3aa6fb7a`):
@@ -200,16 +239,25 @@ Solve ARC task 3aa6fb7a.
 
 Pattern: 7×7 grid - find L-shaped 8s, add 1 at the empty corner.
 
+Read first:
+1. CONTRIBUTING.md - understand evolution workflow requirements
+2. tasks/3aa6fb7a.json - understand the pattern
+
 Requirements:
-1. Read tasks/3aa6fb7a.json
-2. Write working solution to 3aa6fb7a/solution.py
-3. Run evolution if >200 bytes
-4. Document in 3aa6fb7a/README.md
-5. Test: python3 evaluator.py 3aa6fb7a 3aa6fb7a/solution.py
-6. Commit and push
+1. Write working solution to 3aa6fb7a/solution.py
+2. Run evolution if >200 bytes (create .evolve/3aa6fb7a/mutations/)
+3. Document in 3aa6fb7a/README.md (pattern, algorithm, tricks, byte history)
+4. Test: python3 evaluator.py 3aa6fb7a 3aa6fb7a/solution.py
+
+Update project files (REQUIRED):
+5. Update README.md - add to "Solved Problems" table, update Progress Summary metrics
+6. Update PROJECTION.md - add to appropriate tier, update averages
+7. Commit and push all changes
 
 Target: 100-150 bytes
 Working directory: /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-golf
+
+When done: Provide summary and prompt for next task (4258a5f9)
 ```
 
 ### For Task 4 (`4258a5f9`):
@@ -218,16 +266,25 @@ Solve ARC task 4258a5f9.
 
 Pattern: 9×9 grid - draw 3×3 box of 1s around each 5.
 
+Read first:
+1. CONTRIBUTING.md - understand evolution workflow requirements
+2. tasks/4258a5f9.json - understand the pattern
+
 Requirements:
-1. Read tasks/4258a5f9.json
-2. Write working solution to 4258a5f9/solution.py
-3. Run evolution if >200 bytes
-4. Document in 4258a5f9/README.md
-5. Test: python3 evaluator.py 4258a5f9 4258a5f9/solution.py
-6. Commit and push
+1. Write working solution to 4258a5f9/solution.py
+2. Run evolution if >200 bytes (create .evolve/4258a5f9/mutations/)
+3. Document in 4258a5f9/README.md (pattern, algorithm, tricks, byte history)
+4. Test: python3 evaluator.py 4258a5f9 4258a5f9/solution.py
+
+Update project files (REQUIRED):
+5. Update README.md - add to "Solved Problems" table, update Progress Summary metrics
+6. Update PROJECTION.md - add to appropriate tier, update averages
+7. Commit and push all changes
 
 Target: 100-180 bytes
 Working directory: /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-golf
+
+When done: Provide summary and prompt for next task (28e73c20)
 ```
 
 ### For Task 5 (`28e73c20`):
@@ -236,16 +293,25 @@ Solve ARC task 28e73c20.
 
 Pattern: Variable-size grid (all zeros) - generate spiral maze pattern with 3s.
 
+Read first:
+1. CONTRIBUTING.md - understand evolution workflow requirements
+2. tasks/28e73c20.json - understand the pattern
+
 Requirements:
-1. Read tasks/28e73c20.json
-2. Write working solution to 28e73c20/solution.py
-3. Run evolution (REQUIRED - likely >200 bytes)
-4. Document in 28e73c20/README.md
-5. Test: python3 evaluator.py 28e73c20 28e73c20/solution.py
-6. Commit and push
+1. Write working solution to 28e73c20/solution.py
+2. Run evolution (REQUIRED - likely >200 bytes, create .evolve/28e73c20/mutations/)
+3. Document in 28e73c20/README.md (pattern, algorithm, tricks, byte history, evolution summary)
+4. Test: python3 evaluator.py 28e73c20 28e73c20/solution.py
+
+Update project files (REQUIRED):
+5. Update README.md - add to "Solved Problems" table, update Progress Summary metrics
+6. Update PROJECTION.md - add to appropriate tier, update averages
+7. Commit and push all changes
 
 Target: 150-300 bytes
 Working directory: /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-golf
+
+When done: Provide final batch summary and suggest next 5 tasks
 ```
 
 ---
