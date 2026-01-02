@@ -33,7 +33,7 @@
 | Task | Bytes | Status |
 |------|-------|--------|
 | `0a938d79` | ~~539~~ **237** | ✅ DONE! README + re-golf (-56%, +302 pts) |
-| `1bfc4729` | 406 | Missing README |
+| `1bfc4729` | ~~406~~ **108** | ✅ DONE! README + re-golf (-73%, +298 pts) |
 | `11852cab` | 333 | Missing README (batch 4) |
 | `178fcbfb` | 304 | Missing README |
 
@@ -121,7 +121,7 @@ Only after documentation is complete. Pick from Medium difficulty analyzed list.
 - **+201 points gained!**
 
 ### Session 4: Document batch (3-4 medium/hard tasks)
-- ~~`0a938d79`~~ ✅, `1bfc4729`, `11852cab`, `178fcbfb`
+- ~~`0a938d79`~~ ✅, ~~`1bfc4729`~~ ✅, `11852cab`, `178fcbfb`
 - Quick golf attempt on each
 - Write READMEs
 
@@ -138,17 +138,18 @@ Only after documentation is complete. Pick from Medium difficulty analyzed list.
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| READMEs Complete | 30/41 | 41/41 |
-| Total Score | 90,314 | 92,000+ |
-| Avg Score/Task | 2,203 | 2,250+ |
-| Points Gained | **+1,183** | +1,500+ |
+| READMEs Complete | 31/41 | 41/41 |
+| Total Score | 90,612 | 92,000+ |
+| Avg Score/Task | 2,210 | 2,250+ |
+| Points Gained | **+1,481** | +1,500+ |
 
 ### Points Breakdown
 - `2dd70a9a`: +490 pts (1163→673)
 - `0a938d79`: +302 pts (539→237)
+- `1bfc4729`: +298 pts (406→108)
 - `1a07d186`: +201 pts (635→434)
 - `150deff5`: +190 pts (684→494)
-- **Total gained: +1,183 pts**
+- **Total gained: +1,481 pts**
 
 ---
 
