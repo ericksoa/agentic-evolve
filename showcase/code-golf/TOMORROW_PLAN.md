@@ -80,7 +80,7 @@ After documenting, these need major algorithm rework:
 
 | Task | Current | Target | Potential Gain | Notes |
 |------|---------|--------|----------------|-------|
-| `0e206a2e` | 1,384 | ~600 | +784 pts | Rotated template (has README) |
+| `0e206a2e` | ~~1,384~~ **1,135** | ✅ | **+249 pts** | ✅ DONE! 12 gens, 48 mutations |
 | `2dd70a9a` | ~~1,163~~ **673** | ✅ | **+490 pts** | ✅ DONE! |
 | `1b60fb0c` | 933 | ~600 | +333 pts | (needs README) |
 
@@ -200,7 +200,13 @@ Context availability directly correlates with evolution effectiveness.
 - Solution near plateau - bounding box extraction is already compact
 - **+8 points gained!**
 
-### Session 12+: V.Hard re-golf or new tasks
+### Session 12: Re-golf `0e206a2e` ✅ COMPLETE
+- ~~1384 bytes~~ → **1135 bytes** (-18%)
+- 12 generations, ~48 mutations tested
+- Key breakthroughs: `all()` for matching, inline transforms, DFS pop(), `_ in g`
+- **+249 points gained!**
+
+### Session 13+: Continue V.Hard re-golf or new tasks
 
 ---
 
@@ -209,20 +215,21 @@ Context availability directly correlates with evolution effectiveness.
 | Metric | Current | Target |
 |--------|---------|--------|
 | READMEs Complete | **41/41** | 41/41 ✅ |
-| Total Score | 91,078 | 92,000+ |
-| Avg Score/Task | 2,221 | 2,250+ |
-| Points Gained | **+1,947** | +2,000+ |
+| Total Score | 91,327 | 92,000+ |
+| Avg Score/Task | 2,227 | 2,250+ |
+| Points Gained | **+2,196** | +2,000+ ✅ |
 
 ### Remaining Potential (Phase 1+)
 | Source | Tasks | Est. Gain |
 |--------|-------|-----------|
-| V.Hard re-golf | 2 | ~1,100 pts |
+| V.Hard re-golf | 1 | ~333 pts |
 | Hard re-golf | 2 | ~314 pts |
-| **Total remaining** | **4** | **~1,414 pts** |
+| **Total remaining** | **3** | **~647 pts** |
 
 ### Points Breakdown
 - `2dd70a9a`: +490 pts (1163→673)
 - `0a938d79`: +302 pts (539→237)
+- `0e206a2e`: +249 pts (1384→1135) **12 gens, 48 mutations** (Phase 1)
 - `1bfc4729`: +298 pts (406→108)
 - `1a07d186`: +201 pts (635→434)
 - `150deff5`: +190 pts (684→494)
@@ -235,7 +242,9 @@ Context availability directly correlates with evolution effectiveness.
 - `1cf80156`: +8 pts (138→130) **10 gens, 40 mutations** (near plateau)
 - `1e32b0e9`: +6 pts (207→201) **10 gens, 40 mutations** (hit plateau)
 - `10fcaaa3`: +2 pts (176→174) **10 gens, 40 mutations** (near plateau)
-- **Total gained: +1,947 pts** ✅ PHASE 0 COMPLETE
+- **Phase 0 total: +1,947 pts** ✅ COMPLETE
+- **Phase 1 (0e206a2e): +249 pts** ✅ COMPLETE
+- **GRAND TOTAL: +2,196 pts** ✅ TARGET EXCEEDED!
 
 ---
 

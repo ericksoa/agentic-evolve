@@ -28,10 +28,10 @@
 | Metric | Value |
 |--------|-------|
 | Tasks Solved | 41 / 400 |
-| Total Score | 91,078 |
-| Avg Score/Task | 2,221 |
-| **% of Winner Avg** | 92.3% (2,221 ÷ 2,405) |
-| Projected Final (if all 400 solved) | ~888,400 (92.3% of winner) |
+| Total Score | 91,327 |
+| Avg Score/Task | 2,227 |
+| **% of Winner Avg** | 92.6% (2,227 ÷ 2,405) |
+| Projected Final (if all 400 solved) | ~890,800 (92.6% of winner) |
 
 ---
 
@@ -95,8 +95,8 @@
 |------|-------|-------|-------------|-------------|
 | 2dd70a9a | 673 | 1,827 | ~1,950 | 93.7% |
 | 1b60fb0c | 933 | 1,567 | ~1,800 | 87.1% |
-| 0e206a2e | 1,384 | 1,116 | ~1,400 | 79.7% |
-| **Avg** | **997** | **1,503** | **1,717** | **87.5%** |
+| 0e206a2e | 1,135 | 1,365 | ~1,500 | 91.0% |
+| **Avg** | **914** | **1,586** | **1,750** | **90.6%** |
 
 ---
 
@@ -109,12 +109,12 @@ Based on 41 solved tasks with tier distribution:
 | Easy | 8 | 2,435 | 180 | 438,300 | 441,000 |
 | Medium | 22 | 2,318 | 140 | 324,520 | 330,120 |
 | Hard | 8 | 2,042 | 60 | 122,520 | 128,580 |
-| V.Hard | 3 | 1,503 | 20 | 30,060 | 34,340 |
-| **Total** | **41** | **2,221** | **400** | **915,400** | **934,040** |
+| V.Hard | 3 | 1,586 | 20 | 31,720 | 35,000 |
+| **Total** | **41** | **2,227** | **400** | **917,060** | **934,700** |
 
-**Conservative estimate (current avg × 400)**: 2,221 × 400 = **888,400 points**
+**Conservative estimate (current avg × 400)**: 2,227 × 400 = **890,800 points**
 
-**Optimistic estimate (tier-weighted)**: **915,400 points** (if we maintain tier averages)
+**Optimistic estimate (tier-weighted)**: **917,060 points** (if we maintain tier averages)
 
 ---
 
@@ -124,23 +124,24 @@ Based on 41 solved tasks with tier distribution:
 
 Tasks with byte counts significantly above tier average:
 
-| Task | Current | Tier Avg | Gap | Potential Savings |
-|------|---------|----------|-----|-------------------|
-| 0e206a2e | 1,384 | 997 | +387 | High priority |
-| 1b60fb0c | 933 | 997 | -64 | ✓ Near average |
-| 045e512c | 591 | 430 | +161 | Medium priority |
-| a64e4611 | 523 | 430 | +93 | Medium priority |
+| Task | Current | Tier Avg | Gap | Status |
+|------|---------|----------|-----|--------|
+| 0e206a2e | ~~1,384~~ **1,135** | 914 | +221 | ✅ Re-golfed! (-249 bytes) |
+| 1b60fb0c | 933 | 914 | +19 | ✓ Near average |
+| 045e512c | 591 | 456 | +135 | Medium priority |
+| a64e4611 | 523 | 456 | +67 | Medium priority |
 
 ### Score Impact of Re-golfing
 
-If we could reduce:
-- `0e206a2e`: 1384→600 bytes = +784 points
-- `1b60fb0c`: 933→600 bytes = +333 points
+Remaining opportunities:
+- `1b60fb0c`: 933→600 bytes = +333 points (needs README first)
 - `045e512c`: 591→400 bytes = +191 points
+- `a64e4611`: 523→400 bytes = +123 points
 
-**Total potential gain: ~1,300+ points**
+**Total potential gain: ~647 points**
 
 ### Recent Re-golf Wins
+- `0e206a2e`: 1384→1135 bytes = **+249 points** (18% reduction) - 12 gens evolution
 - `1bfc4729`: 406→108 bytes = **+298 points** (73% reduction)
 - `0a938d79`: 539→237 bytes = **+302 points** (56% reduction)
 - `1a07d186`: 635→434 bytes = **+201 points** (32% reduction)
@@ -162,11 +163,11 @@ If we could reduce:
 1. **Easy tasks (7): 99.4%** - Nearly optimal, minimal room for improvement
 2. **Medium tasks (23): 97.8%** - Good performance, 2% gap
 3. **Hard tasks (8): 95.3%** - 5% gap, some byte savings possible
-4. **Very Hard tasks (3): 87.5%** - 12.5% gap, major rework needed for 0e206a2e
+4. **Very Hard tasks (3): 90.6%** - 9.4% gap, improved after 0e206a2e re-golf
 
 ## Recommendations
 
-1. **Re-golf very hard tasks** - 0e206a2e (1384 bytes) needs major algorithm rethink
-2. **Target 045e512c and a64e4611** - Both 100+ bytes above Hard tier average
-3. **Apply known tricks** - 645 bit mask, multiplication instead of ternary, etc.
+1. **Re-golf 1b60fb0c** - Last remaining V.Hard task (933 bytes, needs README)
+2. **Target 045e512c and a64e4611** - Both above Hard tier average
+3. **Apply known tricks** - all() for matching, inline transforms, DFS pop(), etc.
 4. **Focus on new Medium tasks** - Best effort/reward ratio for solving new tasks
