@@ -121,7 +121,7 @@ Only after documentation is complete. Pick from Medium difficulty analyzed list.
 - **+201 points gained!**
 
 ### Session 4: Document batch (3-4 medium/hard tasks)
-- ~~`0a938d79`~~ ✅, ~~`1bfc4729`~~ ✅, `11852cab`, `178fcbfb`
+- ~~`0a938d79`~~ ✅, ~~`1bfc4729`~~ ✅, ~~`11852cab`~~ ✅, `178fcbfb`
 - Quick golf attempt on each
 - Write READMEs
 

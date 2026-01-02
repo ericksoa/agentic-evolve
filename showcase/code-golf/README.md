@@ -9,8 +9,8 @@
 | Metric | Value |
 |--------|-------|
 | **Solved** | 41 / 400 (10.3%) |
-| **Total Score** | 90,612 points |
-| **Avg Score/Task** | 2,210 points |
+| **Total Score** | 90,665 points |
+| **Avg Score/Task** | 2,211 points |
 | **Projected Final** | ~884,000 points ([details](./PROJECTION.md)) |
 
 ---
@@ -49,7 +49,7 @@
 | [`1caeab9d`](./1caeab9d/) | Line intersection marking | **280** | 2,220 | [solution.py](./1caeab9d/solution.py) |
 | [`178fcbfb`](./178fcbfb/) | Fill cross pattern gaps | **304** | 2,196 | [solution.py](./178fcbfb/solution.py) |
 | [`05f2a901`](./05f2a901/README.md) | Move shape to reference | **326** | 2,174 | [solution.py](./05f2a901/solution.py) |
-| [`11852cab`](./11852cab/) | 90° rotational symmetry | **333** | 2,167 | [solution.py](./11852cab/solution.py) |
+| [`11852cab`](./11852cab/README.md) | 4-fold rotational symmetry | **280** | 2,220 | [solution.py](./11852cab/solution.py) |
 | [`06df4c85`](./06df4c85/README.md) | Grid line completion | **378** | 2,122 | [solution.py](./06df4c85/solution.py) |
 | [`1a07d186`](./1a07d186/README.md) | Line projection | **434** | 2,066 | [solution.py](./1a07d186/solution.py) |
 | [`0b148d64`](./0b148d64/README.md) | Quadrant extraction | **454** | 2,046 | [solution.py](./0b148d64/solution.py) |

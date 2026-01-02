@@ -5,8 +5,8 @@
 | Metric | Value |
 |--------|-------|
 | Tasks Solved | 41 / 400 |
-| Total Score | 90,612 |
-| Avg Score/Task | 2,210 |
+| Total Score | 90,665 |
+| Avg Score/Task | 2,211 |
 | Projected Final | ~884,000 (91.9% of winner) |
 
 ---
@@ -56,7 +56,7 @@
 |------|-------|-------|-------------|-------------|
 | 178fcbfb | 304 | 2,196 | ~2,280 | 96.3% |
 | 05f2a901 | 326 | 2,174 | ~2,260 | 96.2% |
-| 11852cab | 333 | 2,167 | ~2,250 | 96.3% |
+| 11852cab | 280 | 2,220 | ~2,250 | 98.7% |
 | 06df4c85 | 378 | 2,122 | ~2,220 | 95.6% |
 | 1a07d186 | 434 | 2,066 | ~2,150 | 96.1% |
 | 0b148d64 | 454 | 2,046 | ~2,150 | 95.2% |
@@ -121,6 +121,7 @@ If we could reduce:
 - `0a938d79`: 539→237 bytes = **+302 points** (56% reduction)
 - `1a07d186`: 635→434 bytes = **+201 points** (32% reduction)
 - `150deff5`: 684→494 bytes = **+190 points** (28% reduction)
+- `11852cab`: 333→280 bytes = **+53 points** (16% reduction) - AlphaEvolve 10 gens
 
 ---
 
