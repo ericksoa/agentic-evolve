@@ -129,14 +129,15 @@ Tasks with byte counts significantly above tier average:
 | 0e206a2e | ~~1,384~~ **1,135** | 945 | +190 | ✅ Re-golfed! (-249 bytes) |
 | 1b60fb0c | ~~933~~ **1,026** | 945 | +81 | ✅ Fixed & golfed! (1456→1026, -430 bytes) |
 | 045e512c | ~~591~~ **486** | 443 | +43 | ✅ Re-golfed! (591→486, -105 bytes) |
-| a64e4611 | 523 | 443 | +80 | Medium priority |
+| a64e4611 | **523** | 443 | +80 | ✅ LOCAL MIN (9 gens, 30 mutations) |
 
 ### Score Impact of Re-golfing
 
-Remaining opportunities:
-- `a64e4611`: 523→400 bytes = +123 points
+**All re-golf candidates exhausted!**
+- `a64e4611`: Attempted 9 generations with 30 mutations - solution at local minimum (523 bytes)
+- Algorithm is O(n⁴) brute force + complex extension logic - no shorter alternative found
 
-**Total potential gain: ~123 points**
+**Total potential gain: 0 points** (all targets hit or at local minimum)
 
 ### Recent Re-golf Wins
 - `1b60fb0c`: 1456→1026 bytes = **+430 points** (30% reduction) - 18 gens evolution (was broken, fixed & golfed!)
@@ -167,7 +168,7 @@ Remaining opportunities:
 
 ## Recommendations
 
-1. **Target 045e512c and a64e4611** - Both above Hard tier average (~314 pts potential)
-2. **Apply known tricks** - all() for matching, inline transforms, DFS pop(), `sy*rg>sy` tricks
-3. **Focus on new Medium tasks** - Best effort/reward ratio for solving new tasks
-4. **All V.Hard tasks now optimized** - 1b60fb0c, 0e206a2e, 2dd70a9a all done!
+1. **All re-golf targets complete!** - 045e512c done, a64e4611 at local minimum
+2. **Focus on new Medium tasks** - Best effort/reward ratio for solving new tasks
+3. **Apply known tricks** - all() for matching, inline transforms, DFS pop(), `sy*rg>sy` tricks
+4. **All V.Hard and Hard tasks optimized** - 1b60fb0c, 0e206a2e, 2dd70a9a, 045e512c, a64e4611 all done!

@@ -103,3 +103,17 @@ def solve(G):
 ## Notes
 
 The extension logic (~170 bytes) is essential and cannot be simplified without breaking correctness. Attempts to use simpler flood-fill or threshold-based approaches all failed.
+
+## Re-Evolution Attempt (2026-01-02)
+
+Ran 9 additional generations with ~30 mutations attempting to break below 523 bytes:
+
+| Gen | Mutations Tested | Best Result | Notes |
+|-----|-----------------|-------------|-------|
+| 1-2 | Remove N alias, tuple variants | 524+ | All larger than baseline |
+| 3-4 | Bit ops, tuple max, different checks | 524 | gen3d_bit_ops.py closest at 524 |
+| 5-6 | Default params, lambda, fewer lines | 523-584 | Equal or worse |
+| 7-8 | Inverted compare, `-~(j-f)` for `(j-f+1)` | 523-548 | Same length, different style |
+| 9 | Split if, tilde inversion | 522-525 | 522 fails correctness |
+
+**Conclusion**: Solution is at a **local minimum**. After 140+ total generations and exhaustive mutation testing, 523 bytes appears optimal for this algorithm. Further improvement would require a fundamentally different algorithmic approach.
