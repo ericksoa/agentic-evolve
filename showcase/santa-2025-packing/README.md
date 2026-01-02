@@ -34,6 +34,86 @@ The tree is a 15-vertex polygon:
 
 *Gen78b packing of 200 trees with side length 9.21. Green polygons are the tree shapes, blue box shows the bounding square.*
 
+## Current Best Algorithm (Gen78b)
+
+```rust
+// 6 parallel placement strategies
+strategies = [ClockwiseSpiral, CounterclockwiseSpiral, Grid,
+              Random, BoundaryFirst, ConcentricRings]
+
+// Placement: Binary search along direction vectors
+for attempt in 0..200 {
+    let dir = select_direction_for_strategy(n, strategy, attempt);
+
+    // Gen78b: Use finer angles for late-stage trees (last 30%)
+    let angles = if n >= 140 {
+        // Last 30% of trees: 15° step angles (24 total)
+        [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165,
+         180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345]
+    } else {
+        // Early trees: standard 45° steps (8 total)
+        [0, 45, 90, 135, 180, 225, 270, 315]
+    };
+
+    for angle in angles {
+        let pos = binary_search_placement(dir, angle);
+        if better_score(pos) { best = pos; }
+    }
+}
+
+// SA optimization parameters:
+// - 85% boundary-focused moves
+// - 20% compression probability
+// - center_pull_strength: 0.08
+// - Hot restarts from elite pool
+// - 28,000 iterations per pass
+// - NOTE: SA still uses 45° angles only (maintains stability)
+
+// Gen78b: Enhanced wave compaction (5 passes, finer steps)
+for wave in 0..5 {  // Increased from 3 to 5
+    for tree in trees_sorted_by_distance_from_center.desc() {
+        try_move_toward_center(tree, [0.10, 0.05, 0.02, 0.01, 0.005]);  // Added 0.005
+    }
+}
+```
+
+## What Works
+
+1. **ConcentricRings placement** - Structured > chaotic
+2. **Gentle radius compression** - Pull trees toward center (20% prob, 0.08 strength)
+3. **Enhanced wave compaction** (Gen78b) - 5 passes with finer steps [0.10, 0.05, 0.02, 0.01, 0.005]
+4. **Hot restarts with elite pool** - Escape local optima
+5. **Boundary-focused SA** (85% probability) - Move trees that define bbox
+6. **Binary search for placement** - Fast, precise positioning
+7. **8 angles (45° steps) for most trees** - Maintains SA stability
+8. **Late-stage continuous angles** (Gen74a) - Use finer 15° angles for final 30% trees (n >= 140) during placement only
+
+## What Doesn't Work
+
+1. **More iterations alone** - Diminishing returns without new ideas
+2. **Finer angle granularity everywhere** (15° or 30°) - 4x slower, worse results
+3. **Too many strategies** (7+) - Overhead > benefit
+4. **Multi-seed approach** (Gen73b) - 3x time, worse results
+5. **Post-processing compaction** - Should be in SA
+6. **Greedy angle selection** - Need exhaustive 8-angle search
+7. **Continuous angles in SA** (Gen67a) - Hurts convergence badly
+8. **Global rotation during SA** (Gen67c) - Destabilizes search
+9. **NFP tangent placement** (Gen67b) - Misses good positions
+10. **Kitchen sink approach** (Gen67d) - More features ≠ better
+11. **Post-SA global rotation** (Gen70, Gen73a) - Doesn't help
+12. **Finer placement** (Gen71c) - More attempts doesn't improve
+13. **Chain moves** (Gen72a) - Propagating moves to neighbors hurts
+14. **Micro-rotations** (Gen72c) - ±5° angle refinement still destabilizes SA
+15. **Aggressive compression** (Gen71a, Gen78a) - Too much center pull hurts
+16. **Large neighborhood moves** (Gen73d) - Jump/swap moves destabilize SA
+17. **Gradient angle refinement** (Gen74b) - Refining near best angle doesn't help
+18. **Adaptive density-based angles** (Gen74c) - Much worse and 40% slower
+19. **Angle changes during wave compaction** (Gen74d) - Completely breaks algorithm
+20. **Extending fine angles to 40%** (Gen75a) - More trees with fine angles doesn't help
+21. **Finer 10° steps** (Gen75b) - Marginal gain for 22% more runtime
+22. **Two-tier angle granularity** (Gen75c) - More complexity = worse
+23. **More wave passes alone** (Gen75d) - 5 waves without finer steps didn't help (but Gen78b's 5 waves + 0.005 step DID help)
+
 ## Evolution Journey
 
 This project uses the `/evolve` skill to discover novel packing algorithms through evolutionary optimization. Below is the complete journey with learnings from each generation.
@@ -172,86 +252,6 @@ Analyzed a [70.1 score solution](https://github.com/berkaycamur/Santa-Competitio
 1. Global rotation optimization (rotate entire packing)
 2. Dedicated compaction/squeeze passes
 3. Continuous angle optimization (careful - Gen54 showed pitfalls)
-
-## Current Best Algorithm (Gen78b)
-
-```rust
-// 6 parallel placement strategies
-strategies = [ClockwiseSpiral, CounterclockwiseSpiral, Grid,
-              Random, BoundaryFirst, ConcentricRings]
-
-// Placement: Binary search along direction vectors
-for attempt in 0..200 {
-    let dir = select_direction_for_strategy(n, strategy, attempt);
-
-    // Gen78b: Use finer angles for late-stage trees (last 30%)
-    let angles = if n >= 140 {
-        // Last 30% of trees: 15° step angles (24 total)
-        [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165,
-         180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345]
-    } else {
-        // Early trees: standard 45° steps (8 total)
-        [0, 45, 90, 135, 180, 225, 270, 315]
-    };
-
-    for angle in angles {
-        let pos = binary_search_placement(dir, angle);
-        if better_score(pos) { best = pos; }
-    }
-}
-
-// SA optimization parameters:
-// - 85% boundary-focused moves
-// - 20% compression probability
-// - center_pull_strength: 0.08
-// - Hot restarts from elite pool
-// - 28,000 iterations per pass
-// - NOTE: SA still uses 45° angles only (maintains stability)
-
-// Gen78b: Enhanced wave compaction (5 passes, finer steps)
-for wave in 0..5 {  // Increased from 3 to 5
-    for tree in trees_sorted_by_distance_from_center.desc() {
-        try_move_toward_center(tree, [0.10, 0.05, 0.02, 0.01, 0.005]);  // Added 0.005
-    }
-}
-```
-
-## What Works
-
-1. **ConcentricRings placement** - Structured > chaotic
-2. **Gentle radius compression** - Pull trees toward center (20% prob, 0.08 strength)
-3. **Enhanced wave compaction** (Gen78b) - 5 passes with finer steps [0.10, 0.05, 0.02, 0.01, 0.005]
-4. **Hot restarts with elite pool** - Escape local optima
-5. **Boundary-focused SA** (85% probability) - Move trees that define bbox
-6. **Binary search for placement** - Fast, precise positioning
-7. **8 angles (45° steps) for most trees** - Maintains SA stability
-8. **Late-stage continuous angles** (Gen74a) - Use finer 15° angles for final 30% trees (n >= 140) during placement only
-
-## What Doesn't Work
-
-1. **More iterations alone** - Diminishing returns without new ideas
-2. **Finer angle granularity everywhere** (15° or 30°) - 4x slower, worse results
-3. **Too many strategies** (7+) - Overhead > benefit
-4. **Multi-seed approach** (Gen73b) - 3x time, worse results
-5. **Post-processing compaction** - Should be in SA
-6. **Greedy angle selection** - Need exhaustive 8-angle search
-7. **Continuous angles in SA** (Gen67a) - Hurts convergence badly
-8. **Global rotation during SA** (Gen67c) - Destabilizes search
-9. **NFP tangent placement** (Gen67b) - Misses good positions
-10. **Kitchen sink approach** (Gen67d) - More features ≠ better
-11. **Post-SA global rotation** (Gen70, Gen73a) - Doesn't help
-12. **Finer placement** (Gen71c) - More attempts doesn't improve
-13. **Chain moves** (Gen72a) - Propagating moves to neighbors hurts
-14. **Micro-rotations** (Gen72c) - ±5° angle refinement still destabilizes SA
-15. **Aggressive compression** (Gen71a) - 2x center pull was too much
-16. **Large neighborhood moves** (Gen73d) - Jump/swap moves destabilize SA
-17. **Gradient angle refinement** (Gen74b) - Refining near best angle doesn't help
-18. **Adaptive density-based angles** (Gen74c) - Much worse and 40% slower
-19. **Angle changes during wave compaction** (Gen74d) - Completely breaks algorithm
-20. **Extending fine angles to 40%** (Gen75a) - More trees with fine angles doesn't help
-21. **Finer 10° steps** (Gen75b) - Marginal gain for 22% more runtime
-22. **Two-tier angle granularity** (Gen75c) - More complexity = worse
-23. **More wave passes alone** (Gen75d) - 5 waves without finer steps didn't help (but Gen78b's 5 waves + 0.005 step DID help)
 
 ### Phase 9: Surgical Improvements (Gen68-Gen71)
 **Goal**: Small, targeted parameter changes to break the plateau
