@@ -8,13 +8,13 @@
 
 | Metric | Value |
 |--------|-------|
-| **Solved** | 26 / 400 (6.5%) |
-| **Total Score** | 57,992 points |
-| **Projected Final** | ~892,000 points ([details](./PROJECTION.md)) |
+| **Solved** | 31 / 400 (7.8%) |
+| **Total Score** | 69,450 points |
+| **Projected Final** | ~896,000 points ([details](./PROJECTION.md)) |
 
 ---
 
-## Solved Problems (26)
+## Solved Problems (31)
 
 | Task | Pattern | Bytes | Score | Solution |
 |------|---------|-------|-------|----------|
@@ -27,10 +27,14 @@
 | [`017c7c7b`](./017c7c7b/README.md) | Extend pattern + double | **80** | 2,420 | [solution.py](./017c7c7b/solution.py) |
 | [`05269061`](./05269061/README.md) | Diagonal color cycle | **113** | 2,387 | [solution.py](./05269061/solution.py) |
 | [`137eaa0f`](./137eaa0f/README.md) | Symmetry reflection | **130** | 2,370 | [solution.py](./137eaa0f/solution.py) |
+| [`1cf80156`](./1cf80156/) | Bounding box extraction | **138** | 2,362 | [solution.py](./1cf80156/solution.py) |
 | [`08ed6ac7`](./08ed6ac7/README.md) | Column rank labeling | **142** | 2,358 | [solution.py](./08ed6ac7/solution.py) |
 | [`09629e4f`](./09629e4f/README.md) | Fill grid segments | **170** | 2,330 | [solution.py](./09629e4f/solution.py) |
 | [`239be575`](./239be575/README.md) | Small pattern movement | **170** | 2,330 | [solution.py](./239be575/solution.py) |
+| [`10fcaaa3`](./10fcaaa3/) | 2x2 tiling + diagonal 8s | **176** | 2,324 | [solution.py](./10fcaaa3/solution.py) |
+| [`1190e5a7`](./1190e5a7/) | Count cells by grid lines | **188** | 2,312 | [solution.py](./1190e5a7/solution.py) |
 | [`0ca9ddb6`](./0ca9ddb6/README.md) | Color spread from seeds | **207** | 2,293 | [solution.py](./0ca9ddb6/solution.py) |
+| [`1e32b0e9`](./1e32b0e9/) | Grid template completion | **207** | 2,293 | [solution.py](./1e32b0e9/solution.py) |
 | [`00d62c1b`](./00d62c1b/README.md) | Fill enclosed regions | **219** | 2,281 | [solution.py](./00d62c1b/solution.py) |
 | [`0dfd9992`](./0dfd9992/README.md) | Color substitution pairs | **239** | 2,261 | [solution.py](./0dfd9992/solution.py) |
 | [`0962bcdd`](./0962bcdd/README.md) | T-junction detection | **241** | 2,259 | [solution.py](./0962bcdd/solution.py) |
@@ -38,6 +42,7 @@
 | [`025d127b`](./025d127b/README.md) | Parallelogram to rect | **266** | 2,234 | [solution.py](./025d127b/solution.py) |
 | [`32597951`](./32597951/README.md) | Extract repeating tile | **274** | 2,226 | [solution.py](./32597951/solution.py) |
 | [`05f2a901`](./05f2a901/README.md) | Move shape to reference | **326** | 2,174 | [solution.py](./05f2a901/solution.py) |
+| [`11852cab`](./11852cab/) | 90° rotational symmetry | **333** | 2,167 | [solution.py](./11852cab/solution.py) |
 | [`06df4c85`](./06df4c85/README.md) | Grid line completion | **378** | 2,122 | [solution.py](./06df4c85/solution.py) |
 | [`0b148d64`](./0b148d64/README.md) | Quadrant extraction | **454** | 2,046 | [solution.py](./0b148d64/solution.py) |
 | [`2bcee788`](./2bcee788/README.md) | Color replacement by marker | **465** | 2,035 | [solution.py](./2bcee788/solution.py) |
@@ -47,16 +52,13 @@
 
 ---
 
-## Unsolved Problems (374)
+## Unsolved Problems (369)
 
-### Analyzed Tasks (50)
+### Analyzed Tasks (45)
 
 | Task ID | Pattern | Est. Difficulty |
 |---------|---------|-----------------|
 | `0a938d79` | Fill pattern grid | Medium |
-| `10fcaaa3` | Expand tiling pattern | Medium |
-| `11852cab` | Extract grid region | Hard |
-| `1190e5a7` | Vertical/horizontal fills | Medium |
 | `150deff5` | Grid extraction borders | Hard |
 | `178fcbfb` | Fill cross pattern gaps | Medium |
 | `1a07d186` | XOR difference detection | Hard |
@@ -64,8 +66,6 @@
 | `1b60fb0c` | Bounding box extraction | Hard |
 | `1bfc4729` | Diagonal movement | Hard |
 | `1caeab9d` | Line intersection marking | Medium |
-| `1cf80156` | Corners edge inference | Hard |
-| `1e32b0e9` | Grid coordinate mapping | Hard |
 | `1f0c79e5` | Colored region swap | Hard |
 | `1f642eb9` | Marker position projection | Hard |
 | `1f85a75f` | Extract rare color region | Hard |
