@@ -16,7 +16,7 @@ Scan the input grid for markers. For each cell with value 2, fill the entire col
 - `o[i][k]<3` to match 0, 1, 2 for horizontal overwrite
 - Hybrid loop: `enumerate(r)` for inner (need j), manual `i` for outer (-2 bytes)
 
-## Evolution Summary (AlphaEvolve-style)
+## Evolution Summary (AlphaEvolve-Inspired)
 
 10 generations, 40 mutations tested. Final: **217 bytes** (-29%, -87 bytes)
 

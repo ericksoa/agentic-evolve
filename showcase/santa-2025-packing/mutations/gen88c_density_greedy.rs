@@ -1,14 +1,12 @@
-//! Evolved Packing Algorithm - Generation 87d GREEDY BACKTRACKING WAVE
+//! Evolved Packing Algorithm - Generation 88c DENSITY-ORDERED GREEDY
 //!
-//! MUTATION: After wave compaction, add a greedy pass that aggressively moves
-//!           boundary trees inward. If overlap occurs, try rotating first,
-//!           then backtrack if nothing works.
+//! MUTATION: During greedy backtracking, prioritize boundary trees in sparser regions.
+//!           Trees in sparse areas have more room to move; trees in dense areas are locked.
 //!
-//! Strategy: Post-wave greedy pass focusing on trees that define the bounding box.
-//!           These are the trees that, if moved inward, would most reduce the score.
+//! Strategy: Greedy moves ordered by local density (sparse first).
 //!
-//! Hypothesis: Post-wave greedy pass may find missed opportunities.
-//! Base: Gen84c (4+1 bidirectional wave split)
+//! Hypothesis: Sparse-region trees can make larger moves without collision.
+//! Base: Gen87d (greedy backtracking wave)
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -154,21 +152,19 @@ impl EvolvedPacker {
         packings
     }
 
-    // GEN87d: Find trees that are on the bounding box boundary
     fn find_boundary_defining_trees(&self, trees: &[PlacedTree]) -> Vec<(usize, BoundaryEdge)> {
         if trees.is_empty() {
             return Vec::new();
         }
 
         let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
-        let eps = 0.001; // Tighter tolerance for boundary-defining trees
+        let eps = 0.001;
 
         let mut boundary_trees = Vec::new();
 
         for (i, tree) in trees.iter().enumerate() {
             let (bx1, by1, bx2, by2) = tree.bounds();
 
-            // Check if this tree defines any edge of the bounding box
             if (bx1 - min_x).abs() < eps {
                 boundary_trees.push((i, BoundaryEdge::Left));
             }
@@ -186,18 +182,48 @@ impl EvolvedPacker {
         boundary_trees
     }
 
+    // GEN88c: Calculate local density around a tree
+    fn calculate_tree_density(&self, idx: usize, trees: &[PlacedTree]) -> f64 {
+        let tree = &trees[idx];
+        let (bx1, by1, bx2, by2) = tree.bounds();
+        let cx = (bx1 + bx2) / 2.0;
+        let cy = (by1 + by2) / 2.0;
+
+        let radius = 1.0;  // Search radius for density calculation
+        let radius_sq = radius * radius;
+        let mut count = 0.0;
+
+        for (i, other) in trees.iter().enumerate() {
+            if i == idx { continue; }
+
+            let (ox1, oy1, ox2, oy2) = other.bounds();
+            let ocx = (ox1 + ox2) / 2.0;
+            let ocy = (oy1 + oy2) / 2.0;
+
+            let dx = ocx - cx;
+            let dy = ocy - cy;
+            let dist_sq = dx * dx + dy * dy;
+
+            if dist_sq < radius_sq {
+                // Weight by inverse distance (closer = more dense)
+                count += 1.0 - (dist_sq / radius_sq).sqrt();
+            }
+        }
+
+        count
+    }
+
     fn wave_compaction(&self, trees: &mut Vec<PlacedTree>) {
         if trees.len() <= 1 {
             return;
         }
 
-        // GEN84c base: EXTREME SPLIT - outside-in first (4), then inside-out (1)
+        // Standard wave compaction (from Gen84c)
         for wave in 0..self.config.wave_passes {
             let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
             let center_x = (min_x + max_x) / 2.0;
             let center_y = (min_y + max_y) / 2.0;
 
-            // Calculate distances from center
             let mut tree_distances: Vec<(usize, f64)> = trees.iter().enumerate()
                 .map(|(i, t)| {
                     let dx = t.x - center_x;
@@ -206,12 +232,9 @@ impl EvolvedPacker {
                 })
                 .collect();
 
-            // CROSSOVER EXTREME: First 4 waves outside-in, last 1 wave inside-out
             if wave < 4 {
-                // Outside-in: far trees first (descending)
                 tree_distances.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
             } else {
-                // Inside-out: close trees first (ascending) - final settling pass
                 tree_distances.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
             }
 
@@ -323,13 +346,25 @@ impl EvolvedPacker {
             }
         }
 
-        // GEN87d: GREEDY BACKTRACKING PASS
-        // Focus on boundary-defining trees and try aggressive inward moves
-        for _greedy_pass in 0..3 { // Multiple greedy passes
+        // GEN88c: DENSITY-ORDERED GREEDY PASS
+        // Process boundary trees ordered by density (sparse regions first)
+        for _greedy_pass in 0..3 {
             let boundary_trees = self.find_boundary_defining_trees(trees);
             let current_side = compute_side_length(trees);
 
-            for (idx, edge) in boundary_trees {
+            // GEN88c: Calculate density for each boundary tree and sort by density (ascending)
+            let mut boundary_with_density: Vec<(usize, BoundaryEdge, f64)> = boundary_trees
+                .into_iter()
+                .map(|(idx, edge)| {
+                    let density = self.calculate_tree_density(idx, trees);
+                    (idx, edge, density)
+                })
+                .collect();
+
+            // Sort by density - sparse trees first (ascending order)
+            boundary_with_density.sort_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
+
+            for (idx, edge, _density) in boundary_with_density {
                 let old_x = trees[idx].x;
                 let old_y = trees[idx].y;
                 let old_angle = trees[idx].angle_deg;
@@ -338,14 +373,12 @@ impl EvolvedPacker {
                 let center_x = (min_x + max_x) / 2.0;
                 let center_y = (min_y + max_y) / 2.0;
 
-                // Determine movement direction based on which edge this tree defines
                 let (dx, dy) = match edge {
-                    BoundaryEdge::Left => (0.1, 0.0),    // Move right
-                    BoundaryEdge::Right => (-0.1, 0.0),  // Move left
-                    BoundaryEdge::Top => (0.0, -0.1),    // Move down
-                    BoundaryEdge::Bottom => (0.0, 0.1),  // Move up
+                    BoundaryEdge::Left => (0.1, 0.0),
+                    BoundaryEdge::Right => (-0.1, 0.0),
+                    BoundaryEdge::Top => (0.0, -0.1),
+                    BoundaryEdge::Bottom => (0.0, 0.1),
                     BoundaryEdge::Corner => {
-                        // Move toward center
                         let dx = center_x - old_x;
                         let dy = center_y - old_y;
                         let dist = (dx * dx + dy * dy).sqrt();
@@ -358,7 +391,6 @@ impl EvolvedPacker {
                     BoundaryEdge::None => continue,
                 };
 
-                // Try aggressive movement with multiple step sizes
                 let mut success = false;
                 for scale in [1.0, 0.5, 0.25, 0.1, 0.05] {
                     let new_x = old_x + dx * scale;
@@ -372,11 +404,9 @@ impl EvolvedPacker {
                             break;
                         }
                     }
-                    // Revert
                     trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
                 }
 
-                // If movement failed, try with rotation
                 if !success {
                     for rot_delta in [45.0, -45.0, 90.0, -90.0] {
                         let new_angle = (old_angle + rot_delta).rem_euclid(360.0);

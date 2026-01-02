@@ -7,7 +7,7 @@
 | **ONE task per session** | Context availability = evolution effectiveness |
 | **Clear after every task** | Fresh context for maximum gains |
 | **Largest first** | More bytes = more room for improvement |
-| **Full AlphaEvolve always** | 5-10 gens, 3-4 mutations each |
+| **Full evolution always** | 5-10 gens, 3-4 mutations each (AlphaEvolve-inspired) |
 
 ---
 
@@ -34,10 +34,10 @@
 |------|-------|--------|
 | `0a938d79` | ~~539~~ **237** | ✅ DONE! README + re-golf (-56%, +302 pts) |
 | `1bfc4729` | ~~406~~ **108** | ✅ DONE! README + re-golf (-73%, +298 pts) |
-| `11852cab` | ~~333~~ **280** | ✅ DONE! README + AlphaEvolve (-16%, +53 pts) |
-| `178fcbfb` | ~~304~~ **217** | ✅ DONE! README + AlphaEvolve (-29%, +87 pts) |
+| `11852cab` | ~~333~~ **280** | ✅ DONE! README + evolution (-16%, +53 pts) |
+| `178fcbfb` | ~~304~~ **217** | ✅ DONE! README + evolution (-29%, +87 pts) |
 
-#### Medium (100-300 bytes) - Document + AlphaEvolve (REQUIRED)
+#### Medium (100-300 bytes) - Document + Evolution (REQUIRED)
 | Task | Bytes | Status | Target |
 |------|-------|--------|--------|
 | `1caeab9d` | 280 | Missing README | ~220 (+60 pts) |
@@ -48,7 +48,7 @@
 | `1b2d62fb` | 170 | Missing README | ~140 (+30 pts) |
 | `1cf80156` | 138 | Missing README | ~110 (+28 pts) |
 
-**All 7 require full AlphaEvolve treatment (5-10 gens, 3-4 mutations each)**
+**All 7 require full evolution (5-10 gens, 3-4 mutations each, AlphaEvolve-inspired)**
 **Estimated total gain: ~264 pts if targets met**
 
 ### README Template
@@ -125,7 +125,7 @@ Only after documentation is complete. Pick from Medium difficulty analyzed list.
 
 ### Session 4: Hard tier batch ✅ COMPLETE
 - ~~`0a938d79`~~ ✅, ~~`1bfc4729`~~ ✅, ~~`11852cab`~~ ✅, ~~`178fcbfb`~~ ✅
-- All 4 tasks re-golfed with AlphaEvolve
+- All 4 tasks re-golfed with evolution (AlphaEvolve-inspired)
 - All READMEs written
 - **+740 pts gained in Session 4**
 
@@ -137,7 +137,7 @@ Context availability directly correlates with evolution effectiveness.
 **Each session:**
 1. Read task JSON + current solution
 2. Write README.md
-3. Run AlphaEvolve (5-10 gens, 3-4 mutations each)
+3. Run evolution (5-10 gens, 3-4 mutations each)
 4. Update README with evolution summary
 5. Commit, push, clear context
 
@@ -179,8 +179,8 @@ Context availability directly correlates with evolution effectiveness.
 - `1bfc4729`: +298 pts (406→108)
 - `1a07d186`: +201 pts (635→434)
 - `150deff5`: +190 pts (684→494)
-- `11852cab`: +53 pts (333→280) **AlphaEvolve: 10 gens, 40 mutations**
-- `178fcbfb`: +87 pts (304→217) **AlphaEvolve: 10 gens, 40 mutations**
+- `11852cab`: +53 pts (333→280) **10 gens, 40 mutations**
+- `178fcbfb`: +87 pts (304→217) **10 gens, 40 mutations**
 - **Total gained: +1,621 pts**
 
 ---
@@ -215,7 +215,7 @@ Steps:
 1. Read tasks/<task_id>.json - understand the pattern
 2. Read <task_id>/solution.py - understand current approach
 3. Write <task_id>/README.md following CONTRIBUTING.md template
-4. Run AlphaEvolve-style evolution:
+4. Run evolution (AlphaEvolve-inspired):
    - Create .evolve/<task_id>/mutations/ directory
    - Run 5-10 generations with 3-4 mutations each
    - Track all results, document learnings
@@ -235,7 +235,7 @@ For each task:
 1. Read tasks/<task_id>.json
 2. Read <task_id>/solution.py
 3. Write <task_id>/README.md with pattern description and algorithm explanation
-4. For 200+ byte solutions: Run AlphaEvolve evolution (min 5 generations)
+4. For 200+ byte solutions: Run evolution (min 5 generations)
 5. Quick golf check for smaller solutions
 
 Working directory: /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-golf

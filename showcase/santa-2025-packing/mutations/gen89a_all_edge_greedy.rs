@@ -1,14 +1,13 @@
-//! Evolved Packing Algorithm - Generation 87d GREEDY BACKTRACKING WAVE
+//! Evolved Packing Algorithm - Generation 89a ALL-EDGE GREEDY
 //!
-//! MUTATION: After wave compaction, add a greedy pass that aggressively moves
-//!           boundary trees inward. If overlap occurs, try rotating first,
-//!           then backtrack if nothing works.
+//! MUTATION: In greedy pass, try moving boundary trees in ALL beneficial directions
+//!           not just the direction away from their edge. A tree on the left edge
+//!           might benefit from moving up/down instead of just right.
 //!
-//! Strategy: Post-wave greedy pass focusing on trees that define the bounding box.
-//!           These are the trees that, if moved inward, would most reduce the score.
+//! Strategy: More flexible greedy moves that consider all directions.
 //!
-//! Hypothesis: Post-wave greedy pass may find missed opportunities.
-//! Base: Gen84c (4+1 bidirectional wave split)
+//! Hypothesis: Some boundary trees can shrink bounds by moving perpendicular to edge.
+//! Base: Gen87d (greedy backtracking wave)
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -154,21 +153,19 @@ impl EvolvedPacker {
         packings
     }
 
-    // GEN87d: Find trees that are on the bounding box boundary
     fn find_boundary_defining_trees(&self, trees: &[PlacedTree]) -> Vec<(usize, BoundaryEdge)> {
         if trees.is_empty() {
             return Vec::new();
         }
 
         let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
-        let eps = 0.001; // Tighter tolerance for boundary-defining trees
+        let eps = 0.001;
 
         let mut boundary_trees = Vec::new();
 
         for (i, tree) in trees.iter().enumerate() {
             let (bx1, by1, bx2, by2) = tree.bounds();
 
-            // Check if this tree defines any edge of the bounding box
             if (bx1 - min_x).abs() < eps {
                 boundary_trees.push((i, BoundaryEdge::Left));
             }
@@ -191,13 +188,12 @@ impl EvolvedPacker {
             return;
         }
 
-        // GEN84c base: EXTREME SPLIT - outside-in first (4), then inside-out (1)
+        // Standard wave compaction (from Gen84c)
         for wave in 0..self.config.wave_passes {
             let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
             let center_x = (min_x + max_x) / 2.0;
             let center_y = (min_y + max_y) / 2.0;
 
-            // Calculate distances from center
             let mut tree_distances: Vec<(usize, f64)> = trees.iter().enumerate()
                 .map(|(i, t)| {
                     let dx = t.x - center_x;
@@ -206,12 +202,9 @@ impl EvolvedPacker {
                 })
                 .collect();
 
-            // CROSSOVER EXTREME: First 4 waves outside-in, last 1 wave inside-out
             if wave < 4 {
-                // Outside-in: far trees first (descending)
                 tree_distances.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
             } else {
-                // Inside-out: close trees first (ascending) - final settling pass
                 tree_distances.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
             }
 
@@ -323,13 +316,13 @@ impl EvolvedPacker {
             }
         }
 
-        // GEN87d: GREEDY BACKTRACKING PASS
-        // Focus on boundary-defining trees and try aggressive inward moves
-        for _greedy_pass in 0..3 { // Multiple greedy passes
+        // GEN89a: ALL-EDGE GREEDY PASS
+        // Try moving boundary trees in ALL directions, not just away from their edge
+        for _greedy_pass in 0..3 {
             let boundary_trees = self.find_boundary_defining_trees(trees);
             let current_side = compute_side_length(trees);
 
-            for (idx, edge) in boundary_trees {
+            for (idx, _edge) in boundary_trees {
                 let old_x = trees[idx].x;
                 let old_y = trees[idx].y;
                 let old_angle = trees[idx].angle_deg;
@@ -338,66 +331,91 @@ impl EvolvedPacker {
                 let center_x = (min_x + max_x) / 2.0;
                 let center_y = (min_y + max_y) / 2.0;
 
-                // Determine movement direction based on which edge this tree defines
-                let (dx, dy) = match edge {
-                    BoundaryEdge::Left => (0.1, 0.0),    // Move right
-                    BoundaryEdge::Right => (-0.1, 0.0),  // Move left
-                    BoundaryEdge::Top => (0.0, -0.1),    // Move down
-                    BoundaryEdge::Bottom => (0.0, 0.1),  // Move up
-                    BoundaryEdge::Corner => {
-                        // Move toward center
-                        let dx = center_x - old_x;
-                        let dy = center_y - old_y;
-                        let dist = (dx * dx + dy * dy).sqrt();
-                        if dist > 0.01 {
-                            (dx / dist * 0.1, dy / dist * 0.1)
-                        } else {
-                            continue;
-                        }
-                    }
-                    BoundaryEdge::None => continue,
-                };
+                // GEN89a: Try ALL 8 directions + center pull for each boundary tree
+                let directions = [
+                    (0.1, 0.0),    // Right
+                    (-0.1, 0.0),   // Left
+                    (0.0, 0.1),    // Up
+                    (0.0, -0.1),   // Down
+                    (0.07, 0.07),  // Up-Right
+                    (-0.07, 0.07), // Up-Left
+                    (0.07, -0.07), // Down-Right
+                    (-0.07, -0.07), // Down-Left
+                ];
 
-                // Try aggressive movement with multiple step sizes
-                let mut success = false;
-                for scale in [1.0, 0.5, 0.25, 0.1, 0.05] {
-                    let new_x = old_x + dx * scale;
-                    let new_y = old_y + dy * scale;
-                    trees[idx] = PlacedTree::new(new_x, new_y, old_angle);
+                let mut best_move: Option<(f64, f64, f64)> = None;
+                let mut best_new_side = current_side;
 
-                    if !has_overlap(trees, idx) {
-                        let new_side = compute_side_length(trees);
-                        if new_side < current_side {
-                            success = true;
-                            break;
+                // Try all 8 directions
+                for (base_dx, base_dy) in directions {
+                    for scale in [1.0, 0.5, 0.25, 0.1, 0.05] {
+                        let new_x = old_x + base_dx * scale;
+                        let new_y = old_y + base_dy * scale;
+                        trees[idx] = PlacedTree::new(new_x, new_y, old_angle);
+
+                        if !has_overlap(trees, idx) {
+                            let new_side = compute_side_length(trees);
+                            if new_side < best_new_side {
+                                best_new_side = new_side;
+                                best_move = Some((new_x, new_y, old_angle));
+                            }
                         }
+                        trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
                     }
-                    // Revert
-                    trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
                 }
 
-                // If movement failed, try with rotation
-                if !success {
+                // Also try center pull
+                let dx = center_x - old_x;
+                let dy = center_y - old_y;
+                let dist = (dx * dx + dy * dy).sqrt();
+                if dist > 0.01 {
+                    let norm_dx = dx / dist * 0.1;
+                    let norm_dy = dy / dist * 0.1;
+
+                    for scale in [1.0, 0.5, 0.25, 0.1, 0.05] {
+                        let new_x = old_x + norm_dx * scale;
+                        let new_y = old_y + norm_dy * scale;
+                        trees[idx] = PlacedTree::new(new_x, new_y, old_angle);
+
+                        if !has_overlap(trees, idx) {
+                            let new_side = compute_side_length(trees);
+                            if new_side < best_new_side {
+                                best_new_side = new_side;
+                                best_move = Some((new_x, new_y, old_angle));
+                            }
+                        }
+                        trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
+                    }
+                }
+
+                // If no translation worked, try rotation + best direction
+                if best_move.is_none() {
                     for rot_delta in [45.0, -45.0, 90.0, -90.0] {
                         let new_angle = (old_angle + rot_delta).rem_euclid(360.0);
 
-                        for scale in [1.0, 0.5, 0.25, 0.1] {
-                            let new_x = old_x + dx * scale;
-                            let new_y = old_y + dy * scale;
-                            trees[idx] = PlacedTree::new(new_x, new_y, new_angle);
+                        // Try all directions with rotation
+                        for (base_dx, base_dy) in directions {
+                            for scale in [1.0, 0.5, 0.25, 0.1] {
+                                let new_x = old_x + base_dx * scale;
+                                let new_y = old_y + base_dy * scale;
+                                trees[idx] = PlacedTree::new(new_x, new_y, new_angle);
 
-                            if !has_overlap(trees, idx) {
-                                let new_side = compute_side_length(trees);
-                                if new_side < current_side {
-                                    success = true;
-                                    break;
+                                if !has_overlap(trees, idx) {
+                                    let new_side = compute_side_length(trees);
+                                    if new_side < best_new_side {
+                                        best_new_side = new_side;
+                                        best_move = Some((new_x, new_y, new_angle));
+                                    }
                                 }
+                                trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
                             }
-                            trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
                         }
-
-                        if success { break; }
                     }
+                }
+
+                // Apply best move if found
+                if let Some((new_x, new_y, new_angle)) = best_move {
+                    trees[idx] = PlacedTree::new(new_x, new_y, new_angle);
                 }
             }
         }

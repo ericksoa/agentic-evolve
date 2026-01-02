@@ -84,7 +84,10 @@ def solve(g):
 def solve(g):...  # one-liner if possible
 ```
 
-### 3. AlphaEvolve-Style Evolution (REQUIRED for 200+ byte solutions)
+### 3. Evolution (AlphaEvolve-Inspired) (REQUIRED for 200+ byte solutions)
+
+We use techniques *inspired by* AlphaEvolve (mutation, crossover, selection) but
+implemented via our `/evolve` skill - not the actual AlphaEvolve system.
 
 For any solution over 200 bytes, run **at least 5-10 generations** of evolution:
 
@@ -125,7 +128,7 @@ mkdir -p .evolve/<task_id>/mutations
 Add to README.md:
 
 ```markdown
-## Evolution Summary (AlphaEvolve-style)
+## Evolution Summary (AlphaEvolve-Inspired)
 
 X generations, Y mutations tested. Final: **Z bytes** (-N%, -M bytes)
 

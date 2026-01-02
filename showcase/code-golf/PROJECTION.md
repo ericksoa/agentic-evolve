@@ -121,8 +121,8 @@ If we could reduce:
 - `0a938d79`: 539→237 bytes = **+302 points** (56% reduction)
 - `1a07d186`: 635→434 bytes = **+201 points** (32% reduction)
 - `150deff5`: 684→494 bytes = **+190 points** (28% reduction)
-- `178fcbfb`: 304→217 bytes = **+87 points** (29% reduction) - AlphaEvolve 10 gens
-- `11852cab`: 333→280 bytes = **+53 points** (16% reduction) - AlphaEvolve 10 gens
+- `178fcbfb`: 304→217 bytes = **+87 points** (29% reduction) - 10 gens evolution
+- `11852cab`: 333→280 bytes = **+53 points** (16% reduction) - 10 gens evolution
 
 ---
 

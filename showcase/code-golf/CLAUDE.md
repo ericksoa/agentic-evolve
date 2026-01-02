@@ -14,9 +14,12 @@ When working on ANY code golf task (new solution or re-golf), you MUST follow th
 - Apply known golf tricks
 - Document in README.md
 
-### 3. AlphaEvolve-Style Evolution (REQUIRED)
+### 3. Evolution (AlphaEvolve-Inspired) (REQUIRED)
 
-**For ANY solution over 200 bytes, you MUST run evolution:**
+**For ANY solution over 200 bytes, you MUST run evolution.**
+
+We use techniques *inspired by* AlphaEvolve (mutation, crossover, selection) but
+implemented via our `/evolve` skill - not the actual AlphaEvolve system.
 
 ```
 Run at least 5-10 generations of mutations
@@ -80,7 +83,7 @@ python3 evaluator.py <task_id> <task_id>/solution.py
 
 ---
 
-## EXAMPLE: Task 11852cab Evolution
+## EXAMPLE: Task 11852cab Evolution (AlphaEvolve-Inspired)
 
 This task went from **333 → 280 bytes** (-16%) through 10 generations:
 

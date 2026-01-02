@@ -20,7 +20,7 @@ point (i,j) are: (u-j, t+i-u), (s-i, t-j), (j+u-t, u-i).
 - Move for loop outside `if P:` block to reduce indentation bytes
 - Chained comparison `R>a>=0<=b<C` for compact bounds check
 
-## Evolution Summary (AlphaEvolve-style)
+## Evolution Summary (AlphaEvolve-Inspired)
 
 10 generations, 40 mutations tested. Final result: **280 bytes** (-53 bytes, -16% from original)
 
