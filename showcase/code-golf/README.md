@@ -9,9 +9,9 @@
 | Metric | Value |
 |--------|-------|
 | **Solved** | 41 / 400 (10.3%) |
-| **Total Score** | 90,314 points |
-| **Avg Score/Task** | 2,203 points |
-| **Projected Final** | ~881,000 points ([details](./PROJECTION.md)) |
+| **Total Score** | 90,612 points |
+| **Avg Score/Task** | 2,210 points |
+| **Projected Final** | ~884,000 points ([details](./PROJECTION.md)) |
 
 ---
 
@@ -26,6 +26,7 @@
 | [`1e0a9b12`](./1e0a9b12/README.md) | Gravity (drop cells) | **69** | 2,431 | [solution.py](./1e0a9b12/solution.py) |
 | [`27a28665`](./27a28665/README.md) | Pattern shape classification | **70** | 2,430 | [solution.py](./27a28665/solution.py) |
 | [`017c7c7b`](./017c7c7b/README.md) | Extend pattern + double | **80** | 2,420 | [solution.py](./017c7c7b/solution.py) |
+| [`1bfc4729`](./1bfc4729/README.md) | Dual frame pattern | **108** | 2,392 | [solution.py](./1bfc4729/solution.py) |
 | [`05269061`](./05269061/README.md) | Diagonal color cycle | **113** | 2,387 | [solution.py](./05269061/solution.py) |
 | [`137eaa0f`](./137eaa0f/README.md) | Symmetry reflection | **130** | 2,370 | [solution.py](./137eaa0f/solution.py) |
 | [`1cf80156`](./1cf80156/) | Bounding box extraction | **138** | 2,362 | [solution.py](./1cf80156/solution.py) |
@@ -50,7 +51,6 @@
 | [`05f2a901`](./05f2a901/README.md) | Move shape to reference | **326** | 2,174 | [solution.py](./05f2a901/solution.py) |
 | [`11852cab`](./11852cab/) | 90° rotational symmetry | **333** | 2,167 | [solution.py](./11852cab/solution.py) |
 | [`06df4c85`](./06df4c85/README.md) | Grid line completion | **378** | 2,122 | [solution.py](./06df4c85/solution.py) |
-| [`1bfc4729`](./1bfc4729/) | Diagonal movement | **406** | 2,094 | [solution.py](./1bfc4729/solution.py) |
 | [`1a07d186`](./1a07d186/README.md) | Line projection | **434** | 2,066 | [solution.py](./1a07d186/solution.py) |
 | [`0b148d64`](./0b148d64/README.md) | Quadrant extraction | **454** | 2,046 | [solution.py](./0b148d64/solution.py) |
 | [`2bcee788`](./2bcee788/README.md) | Color replacement by marker | **465** | 2,035 | [solution.py](./2bcee788/solution.py) |
@@ -475,11 +475,11 @@ python evaluator.py <task_id> solutions/<task_id>.py
 
 | Metric | Current | Target | Winner |
 |--------|---------|--------|--------|
-| Tasks solved | 42 | 400 | 400 |
-| Total score | 91,687 | ~875,000 | 962,070 |
+| Tasks solved | 41 | 400 | 400 |
+| Total score | 90,612 | ~884,000 | 962,070 |
 | Competition status | Ended (Oct 2025) | - | - |
 
-**Projection**: At current performance levels (avg 2,186 pts/task), we project a final score of ~875,000 points (90.9% of winner). See [PROJECTION.md](./PROJECTION.md) for details.
+**Projection**: At current performance levels (avg 2,210 pts/task), we project a final score of ~884,000 points (91.9% of winner). See [PROJECTION.md](./PROJECTION.md) for details.
 
 This showcase demonstrates the `/evolve-size` capability. The techniques transfer to any code golf challenge.
 
