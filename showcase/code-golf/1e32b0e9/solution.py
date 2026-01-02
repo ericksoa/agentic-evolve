@@ -1,1 +1,1 @@
-def solve(g,R=range):gc=g[5][0];T=max([[g[r*6+i][c*6:c*6+5]for i in R(5)]for r in R(3)for c in R(3)],key=str);[g[r].__setitem__(c,g[r][c]or gc)for r in R(17)for c in R(17)if r%6<5>c%6if T[r%6][c%6]];return g
+def solve(g,R=range):T=max([[g[r*6+i][c*6:c*6+5]for i in R(5)]for r in R(3)for c in R(3)],key=str);[g[r].__setitem__(c,g[r][c]or g[5][0])for r in R(17)for c in R(17)if r%6<5>c%6if T[r%6][c%6]];return g
