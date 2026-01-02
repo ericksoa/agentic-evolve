@@ -5,7 +5,7 @@
 | Metric | Value |
 |--------|-------|
 | Tasks Solved | 41 / 400 |
-| Total Score | 90,956 |
+| Total Score | 90,958 |
 | Avg Score/Task | 2,218 |
 | Projected Final | ~887,200 (92.1% of winner) |
 
@@ -36,7 +36,7 @@
 | 09629e4f | 170 | 2,330 | ~2,380 | 97.9% |
 | 239be575 | 170 | 2,330 | ~2,380 | 97.9% |
 | 1b2d62fb | 170 | 2,330 | ~2,380 | 97.9% |
-| 10fcaaa3 | 176 | 2,324 | ~2,380 | 97.6% |
+| 10fcaaa3 | 174 | 2,326 | ~2,380 | 97.7% |
 | 1190e5a7 | 124 | 2,376 | ~2,400 | 99.0% |
 | 363442ee | 144 | 2,356 | ~2,400 | 98.2% |
 | 0ca9ddb6 | 207 | 2,293 | ~2,360 | 97.2% |
@@ -127,6 +127,7 @@ If we could reduce:
 - `363442ee`: 205→144 bytes = **+61 points** (30% reduction) - 10 gens evolution
 - `11852cab`: 333→280 bytes = **+53 points** (16% reduction) - 10 gens evolution
 - `1e32b0e9`: 207→201 bytes = **+6 points** (3% reduction) - 10 gens evolution (plateau)
+- `10fcaaa3`: 176→174 bytes = **+2 points** (1% reduction) - 10 gens evolution (near plateau)
 
 ---
 

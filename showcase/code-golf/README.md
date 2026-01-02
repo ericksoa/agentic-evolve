@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | **Solved** | 41 / 400 (10.3%) |
-| **Total Score** | 90,956 points |
+| **Total Score** | 90,958 points |
 | **Avg Score/Task** | 2,218 points |
 | **Projected Final** | ~887,200 points ([details](./PROJECTION.md)) |
 
@@ -34,7 +34,7 @@
 | [`09629e4f`](./09629e4f/README.md) | Fill grid segments | **170** | 2,330 | [solution.py](./09629e4f/solution.py) |
 | [`239be575`](./239be575/README.md) | Small pattern movement | **170** | 2,330 | [solution.py](./239be575/solution.py) |
 | [`1b2d62fb`](./1b2d62fb/) | Conditional grid coloring | **170** | 2,330 | [solution.py](./1b2d62fb/solution.py) |
-| [`10fcaaa3`](./10fcaaa3/) | 2x2 tiling + diagonal 8s | **176** | 2,324 | [solution.py](./10fcaaa3/solution.py) |
+| [`10fcaaa3`](./10fcaaa3/README.md) | 2x2 tiling + diagonal 8s | **174** | 2,326 | [solution.py](./10fcaaa3/solution.py) |
 | [`1190e5a7`](./1190e5a7/README.md) | Count cells by grid lines | **124** | 2,376 | [solution.py](./1190e5a7/solution.py) |
 | [`363442ee`](./363442ee/README.md) | Fill bottom row pattern | **144** | 2,356 | [solution.py](./363442ee/solution.py) |
 | [`0ca9ddb6`](./0ca9ddb6/README.md) | Color spread from seeds | **207** | 2,293 | [solution.py](./0ca9ddb6/solution.py) |
@@ -476,7 +476,7 @@ python evaluator.py <task_id> solutions/<task_id>.py
 | Metric | Current | Target | Winner |
 |--------|---------|--------|--------|
 | Tasks solved | 41 | 400 | 400 |
-| Total score | 90,956 | ~887,200 | 962,070 |
+| Total score | 90,958 | ~887,200 | 962,070 |
 | Competition status | Ended (Oct 2025) | - | - |
 
 **Projection**: At current performance levels (avg 2,218 pts/task), we project a final score of ~887,200 points (92.1% of winner). See [PROJECTION.md](./PROJECTION.md) for details.

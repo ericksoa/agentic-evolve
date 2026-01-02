@@ -1,1 +1,1 @@
-def solve(g):H=len(g);W=len(g[0]);return[[g[r%H][c%W]or 8*(2in{(r-i)**2+(c-j)**2for i,R in enumerate(g*2)for j,v in enumerate(R*2)if v})for c in range(W*2)]for r in range(H*2)]
+def solve(g):H=len(g);W=len(g[0]);return[[g[r%H][c%W]or 8*(2in{(r-i)**2+(c-j)**2for i in range(H*2)for j in range(W*2)if g[i%H][j%W]})for c in range(W*2)]for r in range(H*2)]

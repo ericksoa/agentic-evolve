@@ -44,12 +44,12 @@
 | `1e32b0e9` | ~~207~~ **201** | ✅ DONE! README + evolution (-3%, +6 pts) | ~170 |
 | `363442ee` | ~~205~~ **144** | ✅ DONE! README + evolution (-30%, +61 pts) | ~170 |
 | `1190e5a7` | ~~188~~ **124** | ✅ DONE! README + evolution (-34%, +64 pts) | ~150 |
-| `10fcaaa3` | 176 | Missing README | ~140 (+36 pts) |
+| `10fcaaa3` | ~~176~~ **174** | ✅ DONE! README + evolution (-1%, +2 pts) | ~140 |
 | `1b2d62fb` | 170 | Missing README | ~140 (+30 pts) |
 | `1cf80156` | 138 | Missing README | ~110 (+28 pts) |
 
-**3 remaining require full evolution (5-10 gens, 3-4 mutations each, AlphaEvolve-inspired)**
-**Estimated total gain: ~94 pts if targets met**
+**2 remaining require full evolution (5-10 gens, 3-4 mutations each, AlphaEvolve-inspired)**
+**Estimated total gain: ~58 pts if targets met**
 
 ### README Template
 
@@ -148,7 +148,7 @@ Context availability directly correlates with evolution effectiveness.
 | 6 | `1e32b0e9` | ~~207~~ **201** | ✅ DONE | **+6 pts** |
 | 7 | `363442ee` | ~~205~~ **144** | ✅ DONE | **+61 pts** |
 | 8 | `1190e5a7` | ~~188~~ **124** | ✅ DONE | **+64 pts** |
-| 9 | `10fcaaa3` | 176 | ~140 | +36 pts |
+| 9 | `10fcaaa3` | ~~176~~ **174** | ✅ DONE | **+2 pts** |
 | 10 | `1b2d62fb` | 170 | ~140 | +30 pts |
 | 11 | `1cf80156` | 138 | ~110 | +28 pts |
 
@@ -179,6 +179,13 @@ Context availability directly correlates with evolution effectiveness.
 - Exceeded target by 26 bytes!
 - **+64 points gained!**
 
+### Session 9: Document + Evolve `10fcaaa3` ✅ COMPLETE
+- ~~176 bytes~~ → **174 bytes** (-1%)
+- 10 generations, ~40 mutations tested
+- Key breakthrough: range(H*2) with modular lookup vs enumerate(g*2)
+- Solution near plateau - already well-optimized modular tiling algorithm
+- **+2 points gained!**
+
 ### Session 12+: V.Hard re-golf or new tasks
 
 ---
@@ -187,18 +194,18 @@ Context availability directly correlates with evolution effectiveness.
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| READMEs Complete | 38/41 | 41/41 |
-| Total Score | 90,956 | 92,000+ |
+| READMEs Complete | 39/41 | 41/41 |
+| Total Score | 90,958 | 92,000+ |
 | Avg Score/Task | 2,219 | 2,250+ |
-| Points Gained | **+1,825** | +2,000+ |
+| Points Gained | **+1,827** | +2,000+ |
 
 ### Remaining Potential
 | Source | Tasks | Est. Gain |
 |--------|-------|-----------|
-| Medium batch (Session 9-11) | 3 | ~94 pts |
+| Medium batch (Session 10-11) | 2 | ~58 pts |
 | V.Hard re-golf | 2 | ~1,100 pts |
 | Hard re-golf | 2 | ~314 pts |
-| **Total remaining** | **7** | **~1,508 pts** |
+| **Total remaining** | **6** | **~1,472 pts** |
 
 ### Points Breakdown
 - `2dd70a9a`: +490 pts (1163→673)
@@ -212,7 +219,8 @@ Context availability directly correlates with evolution effectiveness.
 - `363442ee`: +61 pts (205→144) **10 gens, 40 mutations** (exceeded target!)
 - `11852cab`: +53 pts (333→280) **10 gens, 40 mutations**
 - `1e32b0e9`: +6 pts (207→201) **10 gens, 40 mutations** (hit plateau)
-- **Total gained: +1,825 pts**
+- `10fcaaa3`: +2 pts (176→174) **10 gens, 40 mutations** (near plateau)
+- **Total gained: +1,827 pts**
 
 ---
 
