@@ -34,7 +34,7 @@
 |------|-------|--------|
 | `0a938d79` | ~~539~~ **237** | ✅ DONE! README + re-golf (-56%, +302 pts) |
 | `1bfc4729` | ~~406~~ **108** | ✅ DONE! README + re-golf (-73%, +298 pts) |
-| `11852cab` | 333 | Missing README (batch 4) |
+| `11852cab` | ~~333~~ **280** | ✅ DONE! README + AlphaEvolve (-16%, +53 pts) |
 | `178fcbfb` | 304 | Missing README |
 
 #### Medium (100-300 bytes) - Document + Quick Golf Check
@@ -138,10 +138,10 @@ Only after documentation is complete. Pick from Medium difficulty analyzed list.
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| READMEs Complete | 31/41 | 41/41 |
-| Total Score | 90,612 | 92,000+ |
-| Avg Score/Task | 2,210 | 2,250+ |
-| Points Gained | **+1,481** | +1,500+ |
+| READMEs Complete | 32/41 | 41/41 |
+| Total Score | 90,665 | 92,000+ |
+| Avg Score/Task | 2,211 | 2,250+ |
+| Points Gained | **+1,534** | +2,000+ |
 
 ### Points Breakdown
 - `2dd70a9a`: +490 pts (1163→673)
@@ -149,7 +149,8 @@ Only after documentation is complete. Pick from Medium difficulty analyzed list.
 - `1bfc4729`: +298 pts (406→108)
 - `1a07d186`: +201 pts (635→434)
 - `150deff5`: +190 pts (684→494)
-- **Total gained: +1,481 pts**
+- `11852cab`: +53 pts (333→280) **AlphaEvolve: 10 gens, 40 mutations**
+- **Total gained: +1,534 pts**
 
 ---
 
@@ -175,17 +176,24 @@ for d in */; do [ -f "${d}solution.py" ] && [ ! -f "${d}README.md" ] && echo "$d
 
 ## Resume Prompts
 
-### For Document + Re-Golf Session:
+### For Document + Re-Golf Session (WITH EVOLUTION):
 ```
-Document and re-golf ARC task <task_id>. Current solution is <bytes> bytes.
+Document and re-golf ARC task <task_id>. Current solution is <bytes> bytes (<tier> tier, missing README).
 
+Steps:
 1. Read tasks/<task_id>.json - understand the pattern
 2. Read <task_id>/solution.py - understand current approach
-3. Write <task_id>/README.md documenting the pattern and algorithm
-4. Attempt to re-golf with fresh perspective
+3. Write <task_id>/README.md following CONTRIBUTING.md template
+4. Run AlphaEvolve-style evolution:
+   - Create .evolve/<task_id>/mutations/ directory
+   - Run 5-10 generations with 3-4 mutations each
+   - Track all results, document learnings
+   - Update README with evolution summary
 
-Target: reduce by 100+ bytes if possible.
+Target: reduce by 10-20% if possible.
 Working directory: /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-golf
+
+Reference: See CONTRIBUTING.md for evolution requirements, CLAUDE.md for workflow.
 ```
 
 ### For Documentation Batch Session:
@@ -196,7 +204,15 @@ For each task:
 1. Read tasks/<task_id>.json
 2. Read <task_id>/solution.py
 3. Write <task_id>/README.md with pattern description and algorithm explanation
-4. Quick golf check - apply any obvious tricks
+4. For 200+ byte solutions: Run AlphaEvolve evolution (min 5 generations)
+5. Quick golf check for smaller solutions
 
 Working directory: /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-golf
+Reference: See CONTRIBUTING.md and CLAUDE.md for workflow requirements.
 ```
+
+### Key Evolution Insights (from 11852cab)
+- Variable elimination often beats variable reuse
+- `x>>1` saves 2 bytes over `(x)//2`
+- Failed approaches are valuable data - document them
+- Crossover compounds: combine tricks from different generations

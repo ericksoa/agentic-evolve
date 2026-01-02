@@ -78,21 +78,77 @@ def solve(g):
     # ... working solution
 ```
 
-### 2. Golf It
+### 2. Initial Golf
 ```python
-# Minimize bytes while maintaining correctness
+# Apply known tricks to minimize bytes
 def solve(g):...  # one-liner if possible
 ```
 
-### 3. Document Immediately
+### 3. AlphaEvolve-Style Evolution (REQUIRED for 200+ byte solutions)
+
+For any solution over 200 bytes, run **at least 5-10 generations** of evolution:
+
+```
+mkdir -p .evolve/<task_id>/mutations
+```
+
+#### Evolution Process
+
+**Each generation**: Create 3-4 mutations, test all, keep best:
+
+```python
+# Gen N mutations to try:
+# a) Variable elimination - can we remove a variable?
+# b) Expression rewriting - can we express X differently?
+# c) Algorithm change - is there a fundamentally shorter approach?
+# d) Crossover - combine tricks from previous best solutions
+```
+
+#### Mutation Categories
+
+| Category | Examples | Typical Savings |
+|----------|----------|-----------------|
+| **Variable elimination** | `v=u-t` → inline `u-t` | 3-10 bytes |
+| **Operator substitution** | `//2` → `>>1` | 2 bytes |
+| **Loop restructuring** | nested loops → list comp | varies |
+| **Algorithm change** | complex → integer math | 10-30 bytes |
+| **Copy method** | `[r[:]for r in g]` → `eval(str(g))` | 4 bytes |
+
+#### When to Stop Evolution
+
+- 3 consecutive generations with no improvement (plateau)
+- Solution is under 100 bytes (diminishing returns)
+- All obvious mutation categories exhausted
+
+#### Evolution Documentation
+
+Add to README.md:
+
+```markdown
+## Evolution Summary (AlphaEvolve-style)
+
+X generations, Y mutations tested. Final: **Z bytes** (-N%, -M bytes)
+
+### Key Discoveries
+| Gen | Discovery | Bytes | Delta |
+|-----|-----------|-------|-------|
+| 4 | v=u-t insight | 284 | -5 |
+| 6 | >>1 bit shift | 280 | -9 |
+
+### Failed Approaches
+- Lambda functions (added overhead)
+- Dict-based storage (too verbose)
+```
+
+### 4. Document Immediately
 Create README.md **before** committing. Do not commit solutions without documentation.
 
-### 4. Verify
+### 5. Verify
 ```bash
 python3 evaluator.py <task_id> <task_id>/solution.py
 ```
 
-### 5. Commit Together
+### 6. Commit Together
 ```bash
 git add <task_id>/solution.py <task_id>/README.md
 git commit -m "<task_id>: <pattern> (<bytes> bytes)"
@@ -110,6 +166,39 @@ Before committing any solution:
 - [ ] Algorithm explanation is understandable
 - [ ] Key tricks are documented for future reference
 - [ ] Byte history shows evolution (even if just v1)
+- [ ] **For 200+ byte solutions**: Evolution was attempted (min 5 generations)
+
+---
+
+## Known Golf Tricks Library
+
+### Deep Copy
+| Trick | Bytes | Notes |
+|-------|-------|-------|
+| `eval(str(g))` | 12 | Best for 2D lists |
+| `[*map(list,g)]` | 15 | Standard approach |
+| `[r[:]for r in g]` | 16 | Verbose |
+
+### Division by 2
+| Trick | Bytes | Notes |
+|-------|-------|-------|
+| `x>>1` | 4 | Best (bit shift) |
+| `x//2` | 4 | Same length but needs parens in expressions |
+| `(x)//2` | 6 | With precedence |
+
+### Variable Patterns
+| Pattern | When to Use |
+|---------|-------------|
+| Keep variable | Used 3+ times |
+| Inline expression | Used 1-2 times, or can be simplified |
+| Eliminate via algebra | `v=u-t` type relationships |
+
+### Loop Structures
+| Structure | Best For |
+|-----------|----------|
+| Explicit `for` loops | Side effects, multiple statements |
+| List comprehension | Building new lists, simple transforms |
+| `map`/`filter` | Rarely shorter in Python 3 |
 
 ---
 
@@ -119,6 +208,7 @@ Before committing any solution:
 2. **Re-golf opportunities** - Documented tricks help identify improvements
 3. **Knowledge transfer** - Tricks discovered apply to other tasks
 4. **Debugging** - Easier to fix broken solutions with documented intent
+5. **Evolution tracking** - Failed approaches inform future attempts
 
 ---
 
@@ -130,14 +220,16 @@ Before committing any solution:
 - Key Tricks: 2-3 bullets
 - Byte History: 1-2 rows
 
-### For Complex Tasks (300+ bytes)
+### For Complex Tasks (200-400 bytes)
 - Pattern: 1-2 sentences
 - Algorithm: 3-5 sentences, may include pseudocode
 - Key Tricks: 4-6 bullets with explanations
 - Byte History: multiple iterations
+- **Evolution Summary**: generations run, key discoveries
 - Optional: "Failed Approaches" section
 
-### For Very Hard Tasks (600+ bytes)
+### For Very Hard Tasks (400+ bytes)
 All of the above, plus:
 - "Challenges" section explaining what made it hard
 - "Potential Improvements" for future re-golf attempts
+- Full evolution log in `.evolve/<task_id>/evolution.md`
