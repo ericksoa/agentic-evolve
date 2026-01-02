@@ -1,0 +1,1 @@
+def solve(g):E=enumerate;[g[r+d].__setitem__(c+e,1)for r,R in E(g)for c,v in E(R)if v>4for d in(-1,0,1)for e in(-1,0,1)if 9>r+d>-1<c+e<9>g[r+d][c+e]+4];return g
