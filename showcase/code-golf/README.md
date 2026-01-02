@@ -198,6 +198,16 @@
 
 ---
 
+## Solution Standards
+
+**All solutions must include documentation.** See [CONTRIBUTING.md](./CONTRIBUTING.md) for requirements.
+
+Each solution directory must contain:
+- `solution.py` - The golfed Python code
+- `README.md` - Pattern description, algorithm explanation, and golf tricks used
+
+---
+
 ## Directory Structure
 
 Each solved task has its own subdirectory:
