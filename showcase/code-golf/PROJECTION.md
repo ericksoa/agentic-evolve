@@ -5,9 +5,9 @@
 | Metric | Value |
 |--------|-------|
 | Tasks Solved | 41 / 400 |
-| Total Score | 90,825 |
-| Avg Score/Task | 2,215 |
-| Projected Final | ~886,000 (92.0% of winner) |
+| Total Score | 90,956 |
+| Avg Score/Task | 2,218 |
+| Projected Final | ~887,200 (92.1% of winner) |
 
 ---
 
@@ -37,10 +37,10 @@
 | 239be575 | 170 | 2,330 | ~2,380 | 97.9% |
 | 1b2d62fb | 170 | 2,330 | ~2,380 | 97.9% |
 | 10fcaaa3 | 176 | 2,324 | ~2,380 | 97.6% |
-| 1190e5a7 | 188 | 2,312 | ~2,370 | 97.6% |
-| 363442ee | 205 | 2,295 | ~2,360 | 97.2% |
+| 1190e5a7 | 124 | 2,376 | ~2,400 | 99.0% |
+| 363442ee | 144 | 2,356 | ~2,400 | 98.2% |
 | 0ca9ddb6 | 207 | 2,293 | ~2,360 | 97.2% |
-| 1e32b0e9 | 207 | 2,293 | ~2,360 | 97.2% |
+| 1e32b0e9 | 201 | 2,299 | ~2,360 | 97.4% |
 | 00d62c1b | 219 | 2,281 | ~2,350 | 97.1% |
 | 0a938d79 | 237 | 2,263 | ~2,340 | 96.7% |
 | 0dfd9992 | 239 | 2,261 | ~2,340 | 96.6% |
@@ -123,7 +123,10 @@ If we could reduce:
 - `150deff5`: 684→494 bytes = **+190 points** (28% reduction)
 - `178fcbfb`: 304→217 bytes = **+87 points** (29% reduction) - 10 gens evolution
 - `1caeab9d`: 280→207 bytes = **+73 points** (26% reduction) - 10 gens evolution
+- `1190e5a7`: 188→124 bytes = **+64 points** (34% reduction) - 11 gens evolution
+- `363442ee`: 205→144 bytes = **+61 points** (30% reduction) - 10 gens evolution
 - `11852cab`: 333→280 bytes = **+53 points** (16% reduction) - 10 gens evolution
+- `1e32b0e9`: 207→201 bytes = **+6 points** (3% reduction) - 10 gens evolution (plateau)
 
 ---
 

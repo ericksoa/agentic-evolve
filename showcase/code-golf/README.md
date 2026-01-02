@@ -9,9 +9,9 @@
 | Metric | Value |
 |--------|-------|
 | **Solved** | 41 / 400 (10.3%) |
-| **Total Score** | 90,752 points |
-| **Avg Score/Task** | 2,214 points |
-| **Projected Final** | ~885,400 points ([details](./PROJECTION.md)) |
+| **Total Score** | 90,956 points |
+| **Avg Score/Task** | 2,218 points |
+| **Projected Final** | ~887,200 points ([details](./PROJECTION.md)) |
 
 ---
 
@@ -35,10 +35,10 @@
 | [`239be575`](./239be575/README.md) | Small pattern movement | **170** | 2,330 | [solution.py](./239be575/solution.py) |
 | [`1b2d62fb`](./1b2d62fb/) | Conditional grid coloring | **170** | 2,330 | [solution.py](./1b2d62fb/solution.py) |
 | [`10fcaaa3`](./10fcaaa3/) | 2x2 tiling + diagonal 8s | **176** | 2,324 | [solution.py](./10fcaaa3/solution.py) |
-| [`1190e5a7`](./1190e5a7/) | Count cells by grid lines | **188** | 2,312 | [solution.py](./1190e5a7/solution.py) |
-| [`363442ee`](./363442ee/) | Fill bottom row pattern | **205** | 2,295 | [solution.py](./363442ee/solution.py) |
+| [`1190e5a7`](./1190e5a7/README.md) | Count cells by grid lines | **124** | 2,376 | [solution.py](./1190e5a7/solution.py) |
+| [`363442ee`](./363442ee/README.md) | Fill bottom row pattern | **144** | 2,356 | [solution.py](./363442ee/solution.py) |
 | [`0ca9ddb6`](./0ca9ddb6/README.md) | Color spread from seeds | **207** | 2,293 | [solution.py](./0ca9ddb6/solution.py) |
-| [`1e32b0e9`](./1e32b0e9/) | Grid template completion | **207** | 2,293 | [solution.py](./1e32b0e9/solution.py) |
+| [`1e32b0e9`](./1e32b0e9/README.md) | Grid template completion | **201** | 2,299 | [solution.py](./1e32b0e9/solution.py) |
 | [`00d62c1b`](./00d62c1b/README.md) | Fill enclosed regions | **219** | 2,281 | [solution.py](./00d62c1b/solution.py) |
 | [`0a938d79`](./0a938d79/README.md) | Alternating stripe pattern | **237** | 2,263 | [solution.py](./0a938d79/solution.py) |
 | [`0dfd9992`](./0dfd9992/README.md) | Color substitution pairs | **239** | 2,261 | [solution.py](./0dfd9992/solution.py) |
@@ -476,10 +476,10 @@ python evaluator.py <task_id> solutions/<task_id>.py
 | Metric | Current | Target | Winner |
 |--------|---------|--------|--------|
 | Tasks solved | 41 | 400 | 400 |
-| Total score | 90,752 | ~885,400 | 962,070 |
+| Total score | 90,956 | ~887,200 | 962,070 |
 | Competition status | Ended (Oct 2025) | - | - |
 
-**Projection**: At current performance levels (avg 2,214 pts/task), we project a final score of ~885,400 points (92.0% of winner). See [PROJECTION.md](./PROJECTION.md) for details.
+**Projection**: At current performance levels (avg 2,218 pts/task), we project a final score of ~887,200 points (92.1% of winner). See [PROJECTION.md](./PROJECTION.md) for details.
 
 This showcase demonstrates the `/evolve-size` capability. The techniques transfer to any code golf challenge.
 
