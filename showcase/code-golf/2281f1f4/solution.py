@@ -1,0 +1,1 @@
+solve=lambda g:[[[v,2][R[-1]>4<m]for m,v in zip(g[0],R)]for R in g]
