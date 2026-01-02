@@ -1,12 +1,11 @@
-//! Evolved Packing Algorithm - Generation 79b DIRECTIONAL WAVE
+//! Evolved Packing Algorithm - Generation 79a EVEN FINER WAVE
 //!
-//! MUTATION: Directional wave compaction (X then Y separately)
+//! MUTATION: Add even finer wave step (0.002)
 //!
 //! Changes from Gen78b (baseline 88.92):
-//! - Wave compaction tries X-direction first, then Y-direction
-//! - May find positions that diagonal approach misses
+//! - wave steps: [0.10, 0.05, 0.02, 0.01, 0.005] -> add 0.002
 //!
-//! Hypothesis: Separating X and Y movement may help trees slide into gaps
+//! Hypothesis: Even finer movement will help trees settle into tighter positions
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -157,13 +156,11 @@ impl EvolvedPacker {
             return;
         }
 
-        // GEN79b: Directional wave - X first, then Y, then diagonal
         for _wave in 0..self.config.wave_passes {
             let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
             let center_x = (min_x + max_x) / 2.0;
             let center_y = (min_y + max_y) / 2.0;
 
-            // Sort by distance from center (outside-in)
             let mut tree_distances: Vec<(usize, f64)> = trees.iter().enumerate()
                 .map(|(i, t)| {
                     let dx = t.x - center_x;
@@ -173,61 +170,25 @@ impl EvolvedPacker {
                 .collect();
             tree_distances.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
-            // Phase 1: Try X-direction movement only
-            for &(idx, _) in &tree_distances {
-                let old_x = trees[idx].x;
-                let old_y = trees[idx].y;
-                let old_angle = trees[idx].angle_deg;
-                let dx = center_x - old_x;
-
-                if dx.abs() < 0.02 { continue; }
-
-                for step in [0.10, 0.05, 0.02, 0.01, 0.005] {
-                    let new_x = old_x + dx * step;
-                    trees[idx] = PlacedTree::new(new_x, old_y, old_angle);
-                    if has_overlap(trees, idx) {
-                        trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
-                    } else {
-                        break;
-                    }
-                }
-            }
-
-            // Phase 2: Try Y-direction movement only
-            for &(idx, _) in &tree_distances {
-                let old_x = trees[idx].x;
-                let old_y = trees[idx].y;
-                let old_angle = trees[idx].angle_deg;
-                let dy = center_y - old_y;
-
-                if dy.abs() < 0.02 { continue; }
-
-                for step in [0.10, 0.05, 0.02, 0.01, 0.005] {
-                    let new_y = old_y + dy * step;
-                    trees[idx] = PlacedTree::new(old_x, new_y, old_angle);
-                    if has_overlap(trees, idx) {
-                        trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
-                    } else {
-                        break;
-                    }
-                }
-            }
-
-            // Phase 3: Try diagonal movement (original approach)
             for (idx, _dist) in tree_distances {
                 let old_x = trees[idx].x;
                 let old_y = trees[idx].y;
                 let old_angle = trees[idx].angle_deg;
+
                 let dx = center_x - old_x;
                 let dy = center_y - old_y;
                 let dist = (dx * dx + dy * dy).sqrt();
 
-                if dist < 0.05 { continue; }
+                if dist < 0.05 {
+                    continue;
+                }
 
-                for step in [0.10, 0.05, 0.02, 0.01, 0.005] {
+                for step in [0.10, 0.05, 0.02, 0.01, 0.005, 0.002] {  // GEN79a: added 0.002
                     let new_x = old_x + dx * step;
                     let new_y = old_y + dy * step;
+
                     trees[idx] = PlacedTree::new(new_x, new_y, old_angle);
+
                     if has_overlap(trees, idx) {
                         trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
                     } else {

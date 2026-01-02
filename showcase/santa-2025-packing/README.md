@@ -19,7 +19,7 @@ Pack 1-200 Christmas tree-shaped polygons into the smallest square box.
 
 **Scoring**: `score = Σ(side²/n)` for n=1 to 200 (lower is better)
 
-**Leaderboard**: Top scores ~69, our current best: **88.92** (Gen78b)
+**Leaderboard**: Top scores ~69, our current best: **88.57** (Gen79b)
 
 ## Tree Shape
 
@@ -32,9 +32,9 @@ The tree is a 15-vertex polygon:
 
 ![Packing visualization for n=200 trees](packing_n200.svg)
 
-*Gen78b packing of 200 trees with side length 9.21. Green polygons are the tree shapes, blue box shows the bounding square.*
+*Gen79b packing of 200 trees with side length 9.25. Green polygons are the tree shapes, blue box shows the bounding square.*
 
-## Current Best Algorithm (Gen78b)
+## Current Best Algorithm (Gen79b)
 
 ```rust
 // 6 parallel placement strategies
@@ -45,7 +45,7 @@ strategies = [ClockwiseSpiral, CounterclockwiseSpiral, Grid,
 for attempt in 0..200 {
     let dir = select_direction_for_strategy(n, strategy, attempt);
 
-    // Gen78b: Use finer angles for late-stage trees (last 30%)
+    // Use finer angles for late-stage trees (last 30%)
     let angles = if n >= 140 {
         // Last 30% of trees: 15° step angles (24 total)
         [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165,
@@ -69,10 +69,15 @@ for attempt in 0..200 {
 // - 28,000 iterations per pass
 // - NOTE: SA still uses 45° angles only (maintains stability)
 
-// Gen78b: Enhanced wave compaction (5 passes, finer steps)
-for wave in 0..5 {  // Increased from 3 to 5
+// Gen79b: Directional wave compaction (X then Y then diagonal)
+for wave in 0..5 {
     for tree in trees_sorted_by_distance_from_center.desc() {
-        try_move_toward_center(tree, [0.10, 0.05, 0.02, 0.01, 0.005]);  // Added 0.005
+        // Phase 1: Try X-direction only
+        try_move_toward_center_x(tree, [0.10, 0.05, 0.02, 0.01, 0.005]);
+        // Phase 2: Try Y-direction only
+        try_move_toward_center_y(tree, [0.10, 0.05, 0.02, 0.01, 0.005]);
+        // Phase 3: Try diagonal movement
+        try_move_toward_center_diagonal(tree, [0.10, 0.05, 0.02, 0.01, 0.005]);
     }
 }
 ```
@@ -81,7 +86,7 @@ for wave in 0..5 {  // Increased from 3 to 5
 
 1. **ConcentricRings placement** - Structured > chaotic
 2. **Gentle radius compression** - Pull trees toward center (20% prob, 0.08 strength)
-3. **Enhanced wave compaction** (Gen78b) - 5 passes with finer steps [0.10, 0.05, 0.02, 0.01, 0.005]
+3. **Directional wave compaction** (Gen79b) - Compress in X, then Y, then diagonal directions
 4. **Hot restarts with elite pool** - Escape local optima
 5. **Boundary-focused SA** (85% probability) - Move trees that define bbox
 6. **Binary search for placement** - Fast, precise positioning
@@ -375,20 +380,27 @@ Tested 8 candidates using crossover (combining best features from multiple gener
 - Gen74a: Extended threshold approach
 - Gen71a: Compression probability and center pull strength
 
-### Phase 15: Wave Compaction Refinement (Gen78)
+### Phase 15: Wave Compaction Refinement (Gen78-Gen79)
 **Goal**: Improve wave compaction after Gen77's post-SA experiments failed
 
 | Gen | Strategy | Score | Learning |
 |-----|----------|-------|----------|
 | 78a | Stronger compression (35%, 0.10 pull) | 89.64 | Too aggressive - hurts packing |
-| **78b** | **5 wave passes + finer 0.005 step** | **88.92** | **NEW BEST!** More passes with finer steps |
+| 78b | 5 wave passes + finer 0.005 step | 88.92 | More passes with finer steps help |
+| 79a | Add 0.002 step to wave | 89.06 | Even finer step doesn't help |
+| **79b** | **Directional waves (X then Y then diagonal)** | **88.57** | **NEW BEST!** Separating axes improves compression |
 
 **Key insights**:
 1. **Stronger compression hurts** - Gen78a's 35% compression probability was too aggressive
 2. **More wave passes + finer steps help** - 5 passes with added 0.005 step improves compaction
-3. **High run-to-run variance** - Scores vary 1-2 points due to stochastic SA
+3. **Directional wave compaction works** - Compressing in X, then Y, then diagonal finds better positions
+4. **Finer steps have limits** - Adding 0.002 step didn't improve over 0.005
 
-**Gen78b innovation**: Enhanced wave compaction with 5 passes (instead of 3) and finer step sizes [0.10, 0.05, 0.02, 0.01, 0.005]. The added 0.005 step allows trees to settle into tighter positions.
+**Gen79b innovation**: Directional wave compaction that tries moving trees toward center in separate phases:
+1. X-direction only (horizontal compression)
+2. Y-direction only (vertical compression)
+3. Diagonal movement (original approach)
+This allows trees to find positions that might be blocked when moving diagonally.
 
 ## Running
 
@@ -415,13 +427,14 @@ santa-2025-packing/
 ├── README.md
 ├── data/
 │   └── sample_submission.csv
-├── mutations/           # All generation variants (Gen29-Gen76+)
+├── mutations/           # All generation variants (Gen29-Gen79+)
 │   ├── gen47_concentric.rs         # First sub-90
 │   ├── gen62_radius_compress.rs    # Former best (88.22)
 │   ├── gen72b_wave_compaction.rs   # Former best (89.46)
 │   ├── gen73c_late_continuous.rs   # Former best (88.90)
 │   ├── gen74a_extended_late_continuous.rs  # Former best (88.72)
-│   ├── gen76d_middle_threshold.rs  # Current best (87.86) - 3-way crossover
+│   ├── gen78b_better_wave.rs       # Former best (88.92)
+│   ├── gen79b_directional_wave.rs  # Current best (88.57)
 │   └── ...
 └── rust/
     ├── Cargo.toml
@@ -446,7 +459,8 @@ santa-2025-packing/
 | Gen73c LateContinuous | 88.90 | +29% | Fine angles for last 20% trees |
 | Gen74a ExtendedLate | 88.72 | +29% | Fine angles for last 30% trees |
 | Gen76d Crossover | ~89.4 | +30% | 3-way crossover: threshold=150, 25% compression |
-| **Gen78b WaveCompaction** | **88.92** | **+29%** | **5 wave passes + finer steps (0.005)** |
+| Gen78b WaveCompaction | 88.92 | +29% | 5 wave passes + finer steps (0.005) |
+| **Gen79b DirectionalWave** | **88.57** | **+28%** | **Directional wave: X then Y then diagonal** |
 | *Target (top solution)* | *~69* | - | Continuous angles + global rotation |
 
 **Note**: High run-to-run variance (1-2 points) due to stochastic SA. Scores shown are best of 3 runs.
