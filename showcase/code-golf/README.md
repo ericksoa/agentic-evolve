@@ -9,8 +9,8 @@
 | Metric | Value |
 |--------|-------|
 | **Solved** | 41 / 400 (10.3%) |
-| **Total Score** | 90,958 points |
-| **Avg Score/Task** | 2,218 points |
+| **Total Score** | 91,070 points |
+| **Avg Score/Task** | 2,221 points |
 | **Projected Final** | ~887,200 points ([details](./PROJECTION.md)) |
 
 ---
@@ -33,7 +33,7 @@
 | [`08ed6ac7`](./08ed6ac7/README.md) | Column rank labeling | **142** | 2,358 | [solution.py](./08ed6ac7/solution.py) |
 | [`09629e4f`](./09629e4f/README.md) | Fill grid segments | **170** | 2,330 | [solution.py](./09629e4f/solution.py) |
 | [`239be575`](./239be575/README.md) | Small pattern movement | **170** | 2,330 | [solution.py](./239be575/solution.py) |
-| [`1b2d62fb`](./1b2d62fb/) | Conditional grid coloring | **170** | 2,330 | [solution.py](./1b2d62fb/solution.py) |
+| [`1b2d62fb`](./1b2d62fb/README.md) | Conditional grid coloring | **58** | 2,442 | [solution.py](./1b2d62fb/solution.py) |
 | [`10fcaaa3`](./10fcaaa3/README.md) | 2x2 tiling + diagonal 8s | **174** | 2,326 | [solution.py](./10fcaaa3/solution.py) |
 | [`1190e5a7`](./1190e5a7/README.md) | Count cells by grid lines | **124** | 2,376 | [solution.py](./1190e5a7/solution.py) |
 | [`363442ee`](./363442ee/README.md) | Fill bottom row pattern | **144** | 2,356 | [solution.py](./363442ee/solution.py) |
