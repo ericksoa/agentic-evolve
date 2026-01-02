@@ -25,8 +25,8 @@
 | Task | Bytes | Status |
 |------|-------|--------|
 | `2dd70a9a` | ~~1,163~~ **673** | ✅ DONE! README + re-golf (-42%, +490 pts) |
-| `1b60fb0c` | 933 | Missing README |
-| `150deff5` | 684 | Missing README |
+| `150deff5` | ~~684~~ **494** | ✅ DONE! README + re-golf (-28%, +190 pts) |
+| `1b60fb0c` | 933 | Missing README (SKIPPED - complex pattern) |
 | `1a07d186` | 635 | Missing README |
 
 #### Hard (300-600 bytes) - Document + Try Re-golf
@@ -109,10 +109,17 @@ Only after documentation is complete. Pick from Medium difficulty analyzed list.
 - Key tricks: walrus, tuple indexing, __setitem__, variable reuse
 - **+490 points gained!**
 
-### Session 2: Document + Re-golf `1b60fb0c` (933 bytes)
-Same process as Session 1
+### Session 2: Document + Re-golf `150deff5` ✅ COMPLETE
+- ~~684 bytes~~ → **494 bytes** (-28%)
+- README.md written with 7 evolution steps documented
+- Key breakthrough: bitmask enumeration + non-overlap via len check
+- **+190 points gained!**
 
-### Session 3: Document batch (3-4 medium/hard tasks)
+### Session 3: Document + Re-golf `1a07d186` (635 bytes)
+- Next V.Hard task to tackle
+- Target: <500 bytes (+135 pts potential)
+
+### Session 4: Document batch (3-4 medium/hard tasks)
 - `0a938d79`, `1bfc4729`, `11852cab`, `178fcbfb`
 - Quick golf attempt on each
 - Write READMEs
@@ -130,10 +137,15 @@ Same process as Session 1
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| READMEs Complete | 27/41 | 41/41 |
-| Total Score | 89,621 | 92,000+ |
-| Avg Score/Task | 2,186 | 2,200+ |
-| V.Hard Avg | 1,638 | 1,700+ |
+| READMEs Complete | 28/40 | 40/40 |
+| Total Score | 89,811 | 92,000+ |
+| Avg Score/Task | 2,245 | 2,250+ |
+| Points Gained | **+680** | +1,500+ |
+
+### Points Breakdown
+- `2dd70a9a`: +490 pts (1163→673)
+- `150deff5`: +190 pts (684→494)
+- **Total gained: +680 pts**
 
 ---
 
