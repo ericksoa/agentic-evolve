@@ -8,14 +8,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **Solved** | 42 / 400 (10.5%) |
-| **Total Score** | 91,687 points |
-| **Avg Score/Task** | 2,183 points |
-| **Projected Final** | ~875,000 points ([details](./PROJECTION.md)) |
+| **Solved** | 43 / 400 (10.8%) |
+| **Total Score** | 91,989 points |
+| **Avg Score/Task** | 2,139 points |
+| **Projected Final** | ~856,000 points ([details](./PROJECTION.md)) |
 
 ---
 
-## Solved Problems (42)
+## Solved Problems (43)
 
 | Task | Pattern | Bytes | Score | Solution |
 |------|---------|-------|-------|----------|
@@ -37,6 +37,7 @@
 | [`0ca9ddb6`](./0ca9ddb6/README.md) | Color spread from seeds | **207** | 2,293 | [solution.py](./0ca9ddb6/solution.py) |
 | [`1e32b0e9`](./1e32b0e9/) | Grid template completion | **207** | 2,293 | [solution.py](./1e32b0e9/solution.py) |
 | [`00d62c1b`](./00d62c1b/README.md) | Fill enclosed regions | **219** | 2,281 | [solution.py](./00d62c1b/solution.py) |
+| [`0a938d79`](./0a938d79/README.md) | Alternating stripe pattern | **237** | 2,263 | [solution.py](./0a938d79/solution.py) |
 | [`0dfd9992`](./0dfd9992/README.md) | Color substitution pairs | **239** | 2,261 | [solution.py](./0dfd9992/solution.py) |
 | [`0962bcdd`](./0962bcdd/README.md) | T-junction detection | **241** | 2,259 | [solution.py](./0962bcdd/solution.py) |
 | [`1c786137`](./1c786137/README.md) | Corner rectangle frames | **249** | 2,251 | [solution.py](./1c786137/solution.py) |
@@ -57,11 +58,10 @@
 
 ## Unsolved Problems (369)
 
-### Analyzed Tasks (43)
+### Analyzed Tasks (42)
 
 | Task ID | Pattern | Est. Difficulty |
 |---------|---------|-----------------|
-| `0a938d79` | Fill pattern grid | Medium |
 | `150deff5` | Grid extraction borders | Hard |
 | `178fcbfb` | Fill cross pattern gaps | Medium |
 | `1b2d62fb` | Conditional grid coloring | Hard |

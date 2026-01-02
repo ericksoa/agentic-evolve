@@ -4,10 +4,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Tasks Solved | 41 / 400 |
-| Total Score | 89,621 |
-| Avg Score/Task | 2,186 |
-| Projected Final | ~875,000 (90.9% of winner) |
+| Tasks Solved | 43 / 400 |
+| Total Score | 91,989 |
+| Avg Score/Task | 2,139 |
+| Projected Final | ~856,000 (88.9% of winner) |
 
 ---
 
@@ -41,6 +41,7 @@
 | 0ca9ddb6 | 207 | 2,293 | ~2,360 | 97.2% |
 | 1e32b0e9 | 207 | 2,293 | ~2,360 | 97.2% |
 | 00d62c1b | 219 | 2,281 | ~2,350 | 97.1% |
+| 0a938d79 | 237 | 2,263 | ~2,340 | 96.7% |
 | 0dfd9992 | 239 | 2,261 | ~2,340 | 96.6% |
 | 0962bcdd | 241 | 2,259 | ~2,340 | 96.5% |
 | 1c786137 | 249 | 2,251 | ~2,330 | 96.6% |
@@ -60,7 +61,6 @@
 | 0b148d64 | 454 | 2,046 | ~2,150 | 95.2% |
 | 2bcee788 | 465 | 2,035 | ~2,140 | 95.1% |
 | a64e4611 | 523 | 1,977 | ~2,100 | 94.1% |
-| 0a938d79 | 539 | 1,961 | ~2,080 | 94.3% |
 | 045e512c | 591 | 1,909 | ~2,050 | 93.1% |
 | **Avg** | **432** | **2,068** | **2,173** | **95.1%** |
 
@@ -106,7 +106,6 @@ Tasks with byte counts significantly above tier average:
 | 1b60fb0c | 933 | 862 | +71 | Medium priority |
 | 2dd70a9a | 673 | 862 | -189 | ✓ Optimized! |
 | 045e512c | 591 | 432 | +159 | Medium priority |
-| 0a938d79 | 539 | 432 | +107 | Medium priority |
 | a64e4611 | 523 | 432 | +91 | Medium priority |
 
 ### Score Impact of Re-golfing
@@ -119,6 +118,7 @@ If we could reduce:
 **Total potential gain: ~1,300+ points**
 
 ### Recent Re-golf Wins
+- `0a938d79`: 539→237 bytes = **+302 points** (56% reduction)
 - `2dd70a9a`: 1163→673 bytes = **+490 points** (42% reduction)
 
 ---
