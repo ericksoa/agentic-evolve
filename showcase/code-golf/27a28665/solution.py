@@ -1,0 +1,1 @@
+solve=lambda g:[[393>>sum(7<<i for i in range(9)if g[i//3][i%3])%9&7]]

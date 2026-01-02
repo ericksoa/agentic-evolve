@@ -8,56 +8,61 @@
 
 | Metric | Value |
 |--------|-------|
-| **Solved** | 16 / 400 (4.0%) |
-| **Total Score** | 35,153 points |
-| **Projected Final** | ~906,000 points ([details](./PROJECTION.md)) |
+| **Solved** | 26 / 400 (6.5%) |
+| **Total Score** | 57,992 points |
+| **Projected Final** | ~892,000 points ([details](./PROJECTION.md)) |
 
 ---
 
-## Solved Problems (16)
+## Solved Problems (26)
 
 | Task | Pattern | Bytes | Score | Solution |
 |------|---------|-------|-------|----------|
 | [`0520fde7`](./0520fde7/README.md) | Grid AND comparison | **57** | 2,443 | [solution.py](./0520fde7/solution.py) |
 | [`0d3d703e`](./0d3d703e/README.md) | Color mapping (LUT) | **58** | 2,442 | [solution.py](./0d3d703e/solution.py) |
 | [`007bbfb7`](./007bbfb7/README.md) | Outer product grid | **65** | 2,435 | [solution.py](./007bbfb7/solution.py) |
+| [`29c11459`](./29c11459/README.md) | Horizontal line splitting | **68** | 2,432 | [solution.py](./29c11459/solution.py) |
 | [`1e0a9b12`](./1e0a9b12/README.md) | Gravity (drop cells) | **69** | 2,431 | [solution.py](./1e0a9b12/solution.py) |
+| [`27a28665`](./27a28665/README.md) | Pattern shape classification | **70** | 2,430 | [solution.py](./27a28665/solution.py) |
 | [`017c7c7b`](./017c7c7b/README.md) | Extend pattern + double | **80** | 2,420 | [solution.py](./017c7c7b/solution.py) |
 | [`05269061`](./05269061/README.md) | Diagonal color cycle | **113** | 2,387 | [solution.py](./05269061/solution.py) |
+| [`137eaa0f`](./137eaa0f/README.md) | Symmetry reflection | **130** | 2,370 | [solution.py](./137eaa0f/solution.py) |
 | [`08ed6ac7`](./08ed6ac7/README.md) | Column rank labeling | **142** | 2,358 | [solution.py](./08ed6ac7/solution.py) |
+| [`09629e4f`](./09629e4f/README.md) | Fill grid segments | **170** | 2,330 | [solution.py](./09629e4f/solution.py) |
+| [`239be575`](./239be575/README.md) | Small pattern movement | **170** | 2,330 | [solution.py](./239be575/solution.py) |
 | [`0ca9ddb6`](./0ca9ddb6/README.md) | Color spread from seeds | **207** | 2,293 | [solution.py](./0ca9ddb6/solution.py) |
 | [`00d62c1b`](./00d62c1b/README.md) | Fill enclosed regions | **219** | 2,281 | [solution.py](./00d62c1b/solution.py) |
+| [`0dfd9992`](./0dfd9992/README.md) | Color substitution pairs | **239** | 2,261 | [solution.py](./0dfd9992/solution.py) |
 | [`0962bcdd`](./0962bcdd/README.md) | T-junction detection | **241** | 2,259 | [solution.py](./0962bcdd/solution.py) |
+| [`1c786137`](./1c786137/README.md) | Corner rectangle frames | **249** | 2,251 | [solution.py](./1c786137/solution.py) |
 | [`025d127b`](./025d127b/README.md) | Parallelogram to rect | **266** | 2,234 | [solution.py](./025d127b/solution.py) |
+| [`32597951`](./32597951/README.md) | Extract repeating tile | **274** | 2,226 | [solution.py](./32597951/solution.py) |
+| [`05f2a901`](./05f2a901/README.md) | Move shape to reference | **326** | 2,174 | [solution.py](./05f2a901/solution.py) |
 | [`06df4c85`](./06df4c85/README.md) | Grid line completion | **378** | 2,122 | [solution.py](./06df4c85/solution.py) |
 | [`0b148d64`](./0b148d64/README.md) | Quadrant extraction | **454** | 2,046 | [solution.py](./0b148d64/solution.py) |
+| [`2bcee788`](./2bcee788/README.md) | Color replacement by marker | **465** | 2,035 | [solution.py](./2bcee788/solution.py) |
 | [`a64e4611`](./a64e4611/README.md) | Largest rectangle + cross | **523** | 1,977 | [solution.py](./a64e4611/solution.py) |
 | [`045e512c`](./045e512c/README.md) | Template matching | **591** | 1,909 | [solution.py](./045e512c/solution.py) |
 | [`0e206a2e`](./0e206a2e/README.md) | Rotated template placement | **1384** | 1,116 | [solution.py](./0e206a2e/solution.py) |
 
 ---
 
-## Unsolved Problems (384)
+## Unsolved Problems (374)
 
-### Analyzed Tasks (60)
+### Analyzed Tasks (50)
 
 | Task ID | Pattern | Est. Difficulty |
 |---------|---------|-----------------|
-| `05f2a901` | Move shape to reference | Medium |
-| `09629e4f` | Fill grid segments | Medium |
 | `0a938d79` | Fill pattern grid | Medium |
-| `0dfd9992` | Color substitution pairs | Hard |
 | `10fcaaa3` | Expand tiling pattern | Medium |
 | `11852cab` | Extract grid region | Hard |
 | `1190e5a7` | Vertical/horizontal fills | Medium |
-| `137eaa0f` | Symmetry reflection | Hard |
 | `150deff5` | Grid extraction borders | Hard |
 | `178fcbfb` | Fill cross pattern gaps | Medium |
 | `1a07d186` | XOR difference detection | Hard |
 | `1b2d62fb` | Conditional grid coloring | Hard |
 | `1b60fb0c` | Bounding box extraction | Hard |
 | `1bfc4729` | Diagonal movement | Hard |
-| `1c786137` | Corner rectangle frames | Medium |
 | `1caeab9d` | Line intersection marking | Medium |
 | `1cf80156` | Corners edge inference | Hard |
 | `1e32b0e9` | Grid coordinate mapping | Hard |
@@ -75,7 +80,6 @@
 | `22eb0ac0` | Marker color detection | Hard |
 | `234bbc79` | Bounding box intersection | Very Hard |
 | `23581191` | Minority shape rule | Hard |
-| `239be575` | Small pattern movement | Easy |
 | `23b5c85d` | Rare color ray extension | Hard |
 | `253bf280` | Position-based lines | Hard |
 | `25d487eb` | Container fill with color | Hard |
@@ -83,13 +87,10 @@
 | `25ff71a9` | Pattern isolation | Hard |
 | `264363fd` | Grid region coloring | Very Hard |
 | `272f95fa` | Grid cell quadrant coloring | Very Hard |
-| `27a28665` | Pattern shape classification | Easy |
 | `28bf18c6` | Extract and duplicate shape | Medium |
 | `28e73c20` | Nested recursive maze | Very Hard |
 | `29623171` | Grid cell fill by quadrant | Hard |
-| `29c11459` | Horizontal line splitting | Easy |
 | `29ec7d0e` | Fill missing pattern | Hard |
-| `2bcee788` | Color replacement by marker | Medium |
 | `2bee17df` | Extract rectangular patch | Medium |
 | `2c608aff` | Connect marked cross lines | Hard |
 | `2dc579da` | Remove noise keep signal | Hard |
@@ -97,7 +98,6 @@
 | `2dee498d` | Shape replication | Hard |
 | `31aa019c` | Vertical background lines | Hard |
 | `321b1fc6` | Find unique odd pattern | Hard |
-| `32597951` | Extract repeating tile | Easy |
 | `3345333e` | Shape copy across shape | Hard |
 | `3428a4f5` | Replace one color | Medium |
 | `3618c87e` | Grid splitting with marker | Hard |
