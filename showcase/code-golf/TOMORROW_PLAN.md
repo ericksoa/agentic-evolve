@@ -4,10 +4,10 @@
 
 | Rule | Rationale |
 |------|-----------|
-| **2-3 tasks per session** | Keep context under ~50K tokens |
-| **Clear between complex tasks** | Fresh context for novel patterns |
-| **Hardest first** | Use clean context for tricky problems |
-| **Single-task for V.Hard** | Maximum attention on algorithm rework |
+| **ONE task per session** | Context availability = evolution effectiveness |
+| **Clear after every task** | Fresh context for maximum gains |
+| **Largest first** | More bytes = more room for improvement |
+| **Full AlphaEvolve always** | 5-10 gens, 3-4 mutations each |
 
 ---
 
@@ -129,25 +129,30 @@ Only after documentation is complete. Pick from Medium difficulty analyzed list.
 - All READMEs written
 - **+740 pts gained in Session 4**
 
-### Session 5: Medium tier batch (7 tasks)
-**Each task requires:**
+### Sessions 5-11: Medium tier (ONE TASK PER SESSION)
+
+**IMPORTANT: One task per session, fresh context each time.**
+Context availability directly correlates with evolution effectiveness.
+
+**Each session:**
 1. Read task JSON + current solution
 2. Write README.md
 3. Run AlphaEvolve (5-10 gens, 3-4 mutations each)
 4. Update README with evolution summary
+5. Commit, push, clear context
 
-**Batch A (larger, 2-3 per session):**
-- `1caeab9d` (280 bytes) - target ~220
-- `1e32b0e9` (207 bytes) - target ~170
-- `363442ee` (205 bytes) - target ~170
+**Queue (largest first for maximum gains):**
+| Session | Task | Bytes | Target | Est. Gain |
+|---------|------|-------|--------|-----------|
+| 5 | `1caeab9d` | 280 | ~220 | +60 pts |
+| 6 | `1e32b0e9` | 207 | ~170 | +37 pts |
+| 7 | `363442ee` | 205 | ~170 | +35 pts |
+| 8 | `1190e5a7` | 188 | ~150 | +38 pts |
+| 9 | `10fcaaa3` | 176 | ~140 | +36 pts |
+| 10 | `1b2d62fb` | 170 | ~140 | +30 pts |
+| 11 | `1cf80156` | 138 | ~110 | +28 pts |
 
-**Batch B (smaller, 3-4 per session):**
-- `1190e5a7` (188 bytes) - target ~150
-- `10fcaaa3` (176 bytes) - target ~140
-- `1b2d62fb` (170 bytes) - target ~140
-- `1cf80156` (138 bytes) - target ~110
-
-### Session 6+: V.Hard re-golf or new tasks
+### Session 12+: V.Hard re-golf or new tasks
 
 ---
 
