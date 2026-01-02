@@ -19,7 +19,7 @@ Pack 1-200 Christmas tree-shaped polygons into the smallest square box.
 
 **Scoring**: `score = Σ(side²/n)` for n=1 to 200 (lower is better)
 
-**Leaderboard**: Top scores ~69, our current best: **88.57** (Gen79b)
+**Leaderboard**: Top scores ~69, our current best: **88.44** (Gen80b)
 
 ## Tree Shape
 
@@ -32,9 +32,9 @@ The tree is a 15-vertex polygon:
 
 ![Packing visualization for n=200 trees](packing_n200.svg)
 
-*Gen79b packing of 200 trees with side length 9.25. Green polygons are the tree shapes, blue box shows the bounding square.*
+*Gen80b packing of 200 trees with side length 9.19. Green polygons are the tree shapes, blue box shows the bounding square.*
 
-## Current Best Algorithm (Gen79b)
+## Current Best Algorithm (Gen80b)
 
 ```rust
 // 6 parallel placement strategies
@@ -69,15 +69,19 @@ for attempt in 0..200 {
 // - 28,000 iterations per pass
 // - NOTE: SA still uses 45° angles only (maintains stability)
 
-// Gen79b: Directional wave compaction (X then Y then diagonal)
+// Gen80b: 4-cardinal wave compaction (right→left→up→down→diagonal)
 for wave in 0..5 {
     for tree in trees_sorted_by_distance_from_center.desc() {
-        // Phase 1: Try X-direction only
-        try_move_toward_center_x(tree, [0.10, 0.05, 0.02, 0.01, 0.005]);
-        // Phase 2: Try Y-direction only
-        try_move_toward_center_y(tree, [0.10, 0.05, 0.02, 0.01, 0.005]);
-        // Phase 3: Try diagonal movement
-        try_move_toward_center_diagonal(tree, [0.10, 0.05, 0.02, 0.01, 0.005]);
+        // Phase 1: Move RIGHT (trees left of center)
+        if tree.x < center_x { try_move_right(tree, steps); }
+        // Phase 2: Move LEFT (trees right of center)
+        if tree.x > center_x { try_move_left(tree, steps); }
+        // Phase 3: Move UP (trees below center)
+        if tree.y < center_y { try_move_up(tree, steps); }
+        // Phase 4: Move DOWN (trees above center)
+        if tree.y > center_y { try_move_down(tree, steps); }
+        // Phase 5: Diagonal movement (final polish)
+        try_move_toward_center_diagonal(tree, steps);
     }
 }
 ```
@@ -86,7 +90,7 @@ for wave in 0..5 {
 
 1. **ConcentricRings placement** - Structured > chaotic
 2. **Gentle radius compression** - Pull trees toward center (20% prob, 0.08 strength)
-3. **Directional wave compaction** (Gen79b) - Compress in X, then Y, then diagonal directions
+3. **4-cardinal wave compaction** (Gen80b) - Compress in right→left→up→down→diagonal directions
 4. **Hot restarts with elite pool** - Escape local optima
 5. **Boundary-focused SA** (85% probability) - Move trees that define bbox
 6. **Binary search for placement** - Fast, precise positioning
@@ -380,7 +384,7 @@ Tested 8 candidates using crossover (combining best features from multiple gener
 - Gen74a: Extended threshold approach
 - Gen71a: Compression probability and center pull strength
 
-### Phase 15: Wave Compaction Refinement (Gen78-Gen79)
+### Phase 15: Wave Compaction Refinement (Gen78-Gen80)
 **Goal**: Improve wave compaction after Gen77's post-SA experiments failed
 
 | Gen | Strategy | Score | Learning |
@@ -388,19 +392,25 @@ Tested 8 candidates using crossover (combining best features from multiple gener
 | 78a | Stronger compression (35%, 0.10 pull) | 89.64 | Too aggressive - hurts packing |
 | 78b | 5 wave passes + finer 0.005 step | 88.92 | More passes with finer steps help |
 | 79a | Add 0.002 step to wave | 89.06 | Even finer step doesn't help |
-| **79b** | **Directional waves (X then Y then diagonal)** | **88.57** | **NEW BEST!** Separating axes improves compression |
+| 79b | Directional waves (X→Y→diagonal) | 88.57 | Separating axes improves compression |
+| 80a | Y first then X (Y→X→diagonal) | 88.52 | Marginal improvement |
+| **80b** | **4-cardinal (right→left→up→down→diag)** | **88.44** | **NEW BEST!** More granular = better |
 
 **Key insights**:
 1. **Stronger compression hurts** - Gen78a's 35% compression probability was too aggressive
 2. **More wave passes + finer steps help** - 5 passes with added 0.005 step improves compaction
 3. **Directional wave compaction works** - Compressing in X, then Y, then diagonal finds better positions
-4. **Finer steps have limits** - Adding 0.002 step didn't improve over 0.005
+4. **More phases = better** - 4 cardinal directions (right/left/up/down) outperforms 2-axis (X/Y)
+5. **Decomposition trend continues** - Breaking movement into more granular phases keeps helping
 
-**Gen79b innovation**: Directional wave compaction that tries moving trees toward center in separate phases:
-1. X-direction only (horizontal compression)
-2. Y-direction only (vertical compression)
-3. Diagonal movement (original approach)
-This allows trees to find positions that might be blocked when moving diagonally.
+**Gen80b innovation**: 4-cardinal wave compaction with 5 phases:
+1. Move RIGHT (trees left of center move right)
+2. Move LEFT (trees right of center move left)
+3. Move UP (trees below center move up)
+4. Move DOWN (trees above center move down)
+5. Diagonal movement (final polish)
+
+This provides more granular control than 2-axis X/Y approaches, finding additional compaction opportunities.
 
 ## Running
 
@@ -427,14 +437,15 @@ santa-2025-packing/
 ├── README.md
 ├── data/
 │   └── sample_submission.csv
-├── mutations/           # All generation variants (Gen29-Gen79+)
+├── mutations/           # All generation variants (Gen29-Gen80+)
 │   ├── gen47_concentric.rs         # First sub-90
 │   ├── gen62_radius_compress.rs    # Former best (88.22)
 │   ├── gen72b_wave_compaction.rs   # Former best (89.46)
 │   ├── gen73c_late_continuous.rs   # Former best (88.90)
 │   ├── gen74a_extended_late_continuous.rs  # Former best (88.72)
 │   ├── gen78b_better_wave.rs       # Former best (88.92)
-│   ├── gen79b_directional_wave.rs  # Current best (88.57)
+│   ├── gen79b_directional_wave.rs  # Former best (88.57)
+│   ├── gen80b_cardinal_wave.rs     # Current best (88.44)
 │   └── ...
 └── rust/
     ├── Cargo.toml
@@ -460,7 +471,8 @@ santa-2025-packing/
 | Gen74a ExtendedLate | 88.72 | +29% | Fine angles for last 30% trees |
 | Gen76d Crossover | ~89.4 | +30% | 3-way crossover: threshold=150, 25% compression |
 | Gen78b WaveCompaction | 88.92 | +29% | 5 wave passes + finer steps (0.005) |
-| **Gen79b DirectionalWave** | **88.57** | **+28%** | **Directional wave: X then Y then diagonal** |
+| Gen79b DirectionalWave | 88.57 | +28% | Directional wave: X then Y then diagonal |
+| **Gen80b CardinalWave** | **88.44** | **+28%** | **4-cardinal: right→left→up→down→diagonal** |
 | *Target (top solution)* | *~69* | - | Continuous angles + global rotation |
 
 **Note**: High run-to-run variance (1-2 points) due to stochastic SA. Scores shown are best of 3 runs.

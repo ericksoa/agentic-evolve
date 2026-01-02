@@ -1,12 +1,12 @@
-//! Evolved Packing Algorithm - Generation 80b 4-CARDINAL WAVE
+//! Evolved Packing Algorithm - Generation 80a Y-X WAVE ORDER
 //!
-//! MUTATION: Wave compaction with 4 cardinal directions (up/down/left/right)
+//! MUTATION: Wave compaction with Y first, then X, then diagonal
 //!
 //! Changes from Gen79b (baseline 88.57):
-//! - Instead of X→Y→diagonal, try: right→left→up→down→diagonal
-//! - More granular directional control may find more opportunities
+//! - Swapped order: Y-direction first, then X-direction
+//! - Hypothesis: Tree shape is taller than wide, so Y-compression may be more effective first
 //!
-//! Hypothesis: Separating into 4 cardinal directions gives more flexibility
+//! Trees are ~1.0 tall and ~0.7 wide, so there may be more room to compress vertically
 
 use crate::{Packing, PlacedTree};
 use rand::Rng;
@@ -157,7 +157,7 @@ impl EvolvedPacker {
             return;
         }
 
-        // GEN80b: 4 cardinal directions + diagonal
+        // GEN80a: Y first, then X, then diagonal (swapped from Gen79b)
         for _wave in 0..self.config.wave_passes {
             let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
             let center_x = (min_x + max_x) / 2.0;
@@ -173,60 +173,14 @@ impl EvolvedPacker {
                 .collect();
             tree_distances.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
-            // Phase 1: Move RIGHT (trees on left side move right toward center)
+            // GEN80a: Phase 1 - Try Y-direction movement FIRST (trees are taller than wide)
             for &(idx, _) in &tree_distances {
                 let old_x = trees[idx].x;
                 let old_y = trees[idx].y;
                 let old_angle = trees[idx].angle_deg;
-
-                // Only move trees that are to the left of center
-                if old_x >= center_x { continue; }
-                let dx = center_x - old_x;
-                if dx < 0.02 { continue; }
-
-                for step in [0.10, 0.05, 0.02, 0.01, 0.005] {
-                    let new_x = old_x + dx * step;
-                    trees[idx] = PlacedTree::new(new_x, old_y, old_angle);
-                    if has_overlap(trees, idx) {
-                        trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
-                    } else {
-                        break;
-                    }
-                }
-            }
-
-            // Phase 2: Move LEFT (trees on right side move left toward center)
-            for &(idx, _) in &tree_distances {
-                let old_x = trees[idx].x;
-                let old_y = trees[idx].y;
-                let old_angle = trees[idx].angle_deg;
-
-                // Only move trees that are to the right of center
-                if old_x <= center_x { continue; }
-                let dx = old_x - center_x;
-                if dx < 0.02 { continue; }
-
-                for step in [0.10, 0.05, 0.02, 0.01, 0.005] {
-                    let new_x = old_x - dx * step;
-                    trees[idx] = PlacedTree::new(new_x, old_y, old_angle);
-                    if has_overlap(trees, idx) {
-                        trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
-                    } else {
-                        break;
-                    }
-                }
-            }
-
-            // Phase 3: Move UP (trees below center move up toward center)
-            for &(idx, _) in &tree_distances {
-                let old_x = trees[idx].x;
-                let old_y = trees[idx].y;
-                let old_angle = trees[idx].angle_deg;
-
-                // Only move trees that are below center
-                if old_y >= center_y { continue; }
                 let dy = center_y - old_y;
-                if dy < 0.02 { continue; }
+
+                if dy.abs() < 0.02 { continue; }
 
                 for step in [0.10, 0.05, 0.02, 0.01, 0.005] {
                     let new_y = old_y + dy * step;
@@ -239,20 +193,18 @@ impl EvolvedPacker {
                 }
             }
 
-            // Phase 4: Move DOWN (trees above center move down toward center)
+            // Phase 2: Try X-direction movement
             for &(idx, _) in &tree_distances {
                 let old_x = trees[idx].x;
                 let old_y = trees[idx].y;
                 let old_angle = trees[idx].angle_deg;
+                let dx = center_x - old_x;
 
-                // Only move trees that are above center
-                if old_y <= center_y { continue; }
-                let dy = old_y - center_y;
-                if dy < 0.02 { continue; }
+                if dx.abs() < 0.02 { continue; }
 
                 for step in [0.10, 0.05, 0.02, 0.01, 0.005] {
-                    let new_y = old_y - dy * step;
-                    trees[idx] = PlacedTree::new(old_x, new_y, old_angle);
+                    let new_x = old_x + dx * step;
+                    trees[idx] = PlacedTree::new(new_x, old_y, old_angle);
                     if has_overlap(trees, idx) {
                         trees[idx] = PlacedTree::new(old_x, old_y, old_angle);
                     } else {
@@ -261,7 +213,7 @@ impl EvolvedPacker {
                 }
             }
 
-            // Phase 5: Try diagonal movement (original approach)
+            // Phase 3: Try diagonal movement (original approach)
             for (idx, _dist) in tree_distances {
                 let old_x = trees[idx].x;
                 let old_y = trees[idx].y;
