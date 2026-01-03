@@ -1,0 +1,1 @@
+solve=lambda g:[[r[0]]*10if r[0]==r[-1]else r for r in g]
