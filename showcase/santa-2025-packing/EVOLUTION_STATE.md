@@ -1,15 +1,64 @@
-# Evolution State - Gen100 Complete (Sparrow Algorithm Tested)
+# Evolution State - Gen101 Complete (Combined Strategy)
 
 ## Current Status
-- **Champion: Gen91b** (rotation-first optimization)
-- **Score: ~89.6** (varies with runs, lower is better)
+- **Champion: Gen91b + Combined refinement**
+- **Score: ~89.59** (best via combined strategies)
 - **Target: ~70** (top leaderboard)
-- **Gap: ~30%**
+- **Gap: ~28%**
 
 ## Competition Status
 - Competition ends: January 30, 2026
 - Current #1: Rafbill - 69.99
 - 2,412 teams participating
+
+## Gen101 Results Summary - Combined Multi-Strategy Approach
+
+Generation 101 tested **combinations of all previous approaches**, based on the insight that "best ideas often are combinations."
+
+### Combined Strategy Architecture
+
+```
+For n <= 20:
+  Strategy A: Diamond init → Sparrow explore → Wave compact → Local search
+  Strategy B: Hexagonal init → Sparrow explore → Wave compact → Local search
+  Strategy C: Evolved base → Extra local refinement (3x iterations)
+  → Pick best result per N
+
+For n > 20:
+  Strategy C only (evolved + local refinement)
+  → Pattern strategies don't scale well to large N
+```
+
+### Full Benchmark Results (n=1-200)
+
+| Approach | Score | Time | Wins |
+|----------|-------|------|------|
+| Combined | 89.59 | 85 min | 76/200 |
+| Evolved | 89.93 | 3 min | 123/200 |
+| **Improvement** | **0.38%** | | |
+
+### N-range Analysis
+
+| Range | Combined Wins | Notes |
+|-------|--------------|-------|
+| n=1-20 | ~17/20 (85%) | Pattern strategies help |
+| n=21-50 | ~15/30 (50%) | Mixed results |
+| n=51-200 | ~44/150 (29%) | Evolved usually better |
+
+### Key Findings
+
+1. **Pattern-based init helps for small N**: Diamond/hexagonal patterns with Sparrow exploration beat evolved for most n <= 20
+
+2. **Evolved is already optimal for large N**: The greedy + SA approach is hard to improve upon for n > 50
+
+3. **Marginal gains require significant compute**: 0.38% improvement costs 30x more time
+
+### Files Added
+- `rust/src/combined.rs` - Multi-strategy combiner
+- `rust/src/bin/benchmark_combined.rs` - Combined benchmark
+- `rust/src/bin/submit_combined.rs` - Submission generator
+
+---
 
 ## Gen100 Results Summary - Sparrow Algorithm
 

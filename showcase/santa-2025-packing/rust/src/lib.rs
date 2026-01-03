@@ -3,6 +3,7 @@
 //! Pack Christmas tree-shaped polygons into the smallest square box.
 
 pub mod baselines;
+pub mod combined;
 pub mod evolved;
 pub mod global_opt;
 pub mod hybrid;
