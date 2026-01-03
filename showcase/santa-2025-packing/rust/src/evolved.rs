@@ -401,7 +401,6 @@ impl EvolvedPacker {
                 }
             }
         }
-
     }
 
     fn find_placement_with_strategy(

@@ -1,62 +1,79 @@
-# Evolution State - Gen92 Complete (No Improvement)
+# Evolution State - Gen93 Complete (No Improvement)
 
 ## Current Champion
 - **Gen91b** (rotation-first optimization)
 - **Score: 87.29** (lower is better)
 - Location: `rust/src/evolved.rs`
 
-## Gen92 Results Summary
+## Gen93 Results Summary
 
-Generation 92 explored many mutations to improve on Gen91b's rotation-first optimization. **All mutations were rejected** - none beat the champion score of 87.29.
+Generation 93 tried fundamentally different algorithmic approaches after Gen92 exhaustively tried parameter tuning. **All mutations were rejected** - none beat the champion score of 87.29.
 
 | Candidate | Score | Strategy | Result |
 |-----------|-------|----------|--------|
-| Gen92a (16 rotations) | 95.81 | 22.5° rotation granularity | REJECTED - Much worse |
-| Gen92c (micro-adjust) | 88.46 | Position micro-adjustment after placement | REJECTED |
-| Gen92e (N-scaled) | 88.38 | Scale search attempts by n | REJECTED |
-| Gen92f (compute realloc) | 87.61 | 150 search, 35k SA iterations | REJECTED - Close |
-| Gen92g (aggressive SA) | 87.90 | 150 search, 40k SA iterations | REJECTED |
-| Gen92h (7 wave passes) | 89.01 | Increased wave passes from 5 to 7 | REJECTED |
-| Gen92i (5 greedy passes) | 89.27 | Increased greedy backtracking from 3 to 5 | REJECTED |
-| Gen92j (finer binary) | 87.72 | Binary search precision 0.0005 | REJECTED - Close |
-| Gen92k (squeeze pass) | 89.06 | Final squeeze toward center | REJECTED |
+| Gen93a (relocate moves) | 88.52 | Remove and re-place trees during SA | REJECTED - High variance |
+| Gen93c (coarse-to-fine) | 91.15 | Coarse placement + fine refinement | REJECTED - Much worse |
+| Gen93e (aspect ratio 0.25) | 87.93 | Strong penalty for non-square boxes | REJECTED - Close |
+| Gen93e-v2 (aspect ratio 0.15) | 88.86 | Moderate penalty | REJECTED - Worse than v1 |
+| Gen93g (force-directed) | 88.41 | Physics simulation compression | REJECTED |
+| Gen93i (combined search) | 88.76 | 300 attempts + 0.0005 precision | REJECTED |
+| Gen93j (rotation-focused) | 88.84 | 70% rotation moves for boundary | REJECTED |
 
-## Key Learnings from Gen92
+## Key Learnings from Gen93
 
-1. **More rotations hurt badly**: 16 rotations (22.5° steps) increased score from 87.29 to 95.81 - nearly 10% worse. The extra computation doesn't pay off.
+1. **Relocate moves increase variance**: Gen93a had occasional good runs (86.59) but couldn't consistently beat champion. High variance makes it unreliable.
 
-2. **Parameter tuning hits a wall**: Multiple attempts at adjusting search_attempts, sa_iterations, wave_passes, and greedy passes all failed to beat 87.29.
+2. **Coarse-to-fine hurts badly**: Reducing binary search precision from 0.001 to 0.05 sped up but degraded quality significantly (91.15 vs 87.29).
 
-3. **Closest attempts**:
-   - Gen92f (compute realloc): 87.61 - Only 0.32 worse
-   - Gen92j (finer binary): 87.72 - Only 0.43 worse
+3. **Aspect ratio penalty**: Original 0.10 is near optimal. Both higher (0.25) and lower (0.15) performed worse.
 
-4. **Post-processing doesn't help**: Position micro-adjustment and final squeeze pass both made things worse.
+4. **Force-directed optimization**: Physics-based compression didn't help - the wave compaction already does this effectively.
+
+5. **Combined parameter changes**: Increasing both search attempts (300) and precision (0.0005) didn't stack benefits - each hurt individually too.
+
+6. **Rotation-focused SA**: Forcing more rotation moves for boundary trees didn't help - the current ~20% rotation probability is well-tuned.
 
 ## Performance Summary
 - Champion (Gen91b): 87.29
-- Best Gen92 attempt: 87.61 (Gen92f)
+- Best Gen93 attempt: 87.93 (Gen93e aspect ratio 0.25)
 - Target (leaderboard top): ~69
 - Gap to target: 26.5%
 
-## What We Learned Overall
+## Algorithm Plateau Analysis
 
-The Gen91b rotation-first optimization appears to be a local optimum. Simple parameter adjustments and post-processing additions don't improve it. Breaking through the 87.29 barrier may require:
+After Gen92 (parameter tuning) and Gen93 (algorithmic changes) both failed, we've identified a fundamental plateau:
 
-1. **Fundamentally different placement strategy** - Not just parameter tuning
-2. **Better initial placement** - More intelligent direction selection
-3. **Different tree representation** - Maybe coordinate transformations
-4. **Hybrid approaches** - Combining different algorithms
+**What's Working (Gen91b)**:
+- Exhaustive 8-rotation search at each position
+- 5-pass wave compaction with bidirectional order
+- Greedy backtracking for boundary trees
+- Multi-strategy evaluation with cross-pollination
+
+**What Doesn't Help**:
+- More rotations (16 → worse)
+- Finer placement (0.0005 → no improvement)
+- Post-processing moves (relocate, force-directed)
+- Different scoring (aspect ratio penalty)
+- More iterations/attempts
+
+## Gap to Target (26.5%)
+
+The significant gap to leaderboard (~69) suggests top solutions use fundamentally different approaches:
+
+1. **Non-incremental methods**: Maybe placing all trees simultaneously rather than one-by-one
+2. **Different representations**: Polar coordinates, space-filling curves
+3. **Global optimization**: Branch-and-bound, ILP formulations
+4. **Domain-specific insights**: Exploiting the identical tree assumption more effectively
 
 ## File Locations
 - Champion code: `rust/src/evolved.rs`
-- Champion backup: `rust/src/evolved_champion.rs`
 - Benchmark: `cargo build --release && ./target/release/benchmark 200 3`
 
-## Next Directions (Gen93+)
+## Next Directions (Gen94+)
 
-Consider:
-1. **Simulated annealing on placement order** - Try different tree placement sequences
-2. **Gradient-free optimization** - CMA-ES or other evolutionary strategies on parameters
-3. **Completely different algorithm** - Maybe hexagonal packing, force-directed layout, or other approaches
-4. **Specialized handling for different n ranges** - Different strategies for small/medium/large n
+At this point, incremental mutations have been exhausted. Breakthrough requires:
+
+1. **Research leaderboard solutions**: Study what methods achieve ~69
+2. **Non-greedy global optimization**: MILP, constraint programming
+3. **Population-based meta-search**: Genetic algorithm over configurations
+4. **Completely different paradigm**: Strip packing, guillotine cuts, etc.
