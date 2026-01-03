@@ -1,0 +1,1 @@
+solve=lambda g:[[c for r in g for c in r if c]]

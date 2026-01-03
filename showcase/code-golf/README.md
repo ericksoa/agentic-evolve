@@ -8,23 +8,24 @@
 
 | Metric | Value |
 |--------|-------|
-| **Solved** | 68 / 400 (17.0%) |
-| **Total Score** | 154,080 points |
-| **Avg Score/Task** | 2,266 points |
-| **% of Winner Avg** | 94.2% (winner: 2,405 pts/task) |
+| **Solved** | 69 / 400 (17.3%) |
+| **Total Score** | 156,533 points |
+| **Avg Score/Task** | 2,269 points |
+| **% of Winner Avg** | 94.3% (winner: 2,405 pts/task) |
 | **Projected Final** | ~906,400 points ([details](./PROJECTION.md)) |
 
 <!-- Competition winner: Code Golf International with 962,070 pts (DO NOT MODIFY) -->
 
 ---
 
-## Solved Problems (68)
+## Solved Problems (69)
 
 | Task | Pattern | Bytes | Score | Solution |
 |------|---------|-------|-------|----------|
 | [`4c4377d9`](./4c4377d9/README.md) | Vertical flip concat | **24** | 2,476 | [solution.py](./4c4377d9/solution.py) |
 | [`3c9b0459`](./3c9b0459/README.md) | 180° rotation | **40** | 2,460 | [solution.py](./3c9b0459/solution.py) |
 | [`44f52bb0`](./44f52bb0/README.md) | Horizontal symmetry check | **46** | 2,454 | [solution.py](./44f52bb0/solution.py) |
+| [`d631b094`](./d631b094/README.md) | Collect non-zero cells | **47** | 2,453 | [solution.py](./d631b094/solution.py) |
 | [`25d8a9c8`](./25d8a9c8/README.md) | Row uniformity check | **50** | 2,450 | [solution.py](./25d8a9c8/solution.py) |
 | [`0520fde7`](./0520fde7/README.md) | Grid AND comparison | **57** | 2,443 | [solution.py](./0520fde7/solution.py) |
 | [`22eb0ac0`](./22eb0ac0/README.md) | Matching edge markers fill | **57** | 2,443 | [solution.py](./22eb0ac0/solution.py) |
