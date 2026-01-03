@@ -8,17 +8,17 @@
 
 | Metric | Value |
 |--------|-------|
-| **Solved** | 58 / 400 (14.5%) |
-| **Total Score** | 130,896 points |
-| **Avg Score/Task** | 2,257 points |
+| **Solved** | 59 / 400 (14.8%) |
+| **Total Score** | 133,130 points |
+| **Avg Score/Task** | 2,256 points |
 | **% of Winner Avg** | 93.8% (winner: 2,405 pts/task) |
-| **Projected Final** | ~902,800 points ([details](./PROJECTION.md)) |
+| **Projected Final** | ~902,400 points ([details](./PROJECTION.md)) |
 
 <!-- Competition winner: Code Golf International with 962,070 pts (DO NOT MODIFY) -->
 
 ---
 
-## Solved Problems (58)
+## Solved Problems (59)
 
 | Task | Pattern | Bytes | Score | Solution |
 |------|---------|-------|-------|----------|
@@ -63,6 +63,7 @@
 | [`1c786137`](./1c786137/README.md) | Corner rectangle frames | **249** | 2,251 | [solution.py](./1c786137/solution.py) |
 | [`1f0c79e5`](./1f0c79e5/README.md) | Diagonal ray extension | **261** | 2,239 | [solution.py](./1f0c79e5/solution.py) |
 | [`025d127b`](./025d127b/README.md) | Parallelogram to rect | **266** | 2,234 | [solution.py](./025d127b/solution.py) |
+| [`1f642eb9`](./1f642eb9/README.md) | Marker position projection | **266** | 2,234 | [solution.py](./1f642eb9/solution.py) |
 | [`32597951`](./32597951/README.md) | Extract repeating tile | **274** | 2,226 | [solution.py](./32597951/solution.py) |
 | [`1caeab9d`](./1caeab9d/README.md) | Line intersection marking | **207** | 2,293 | [solution.py](./1caeab9d/solution.py) |
 | [`178fcbfb`](./178fcbfb/README.md) | Extend markers to lines | **217** | 2,283 | [solution.py](./178fcbfb/solution.py) |
@@ -83,13 +84,12 @@
 
 ---
 
-## Unsolved Problems (343)
+## Unsolved Problems (341)
 
-### Analyzed Tasks (22)
+### Analyzed Tasks (21)
 
 | Task ID | Pattern | Est. Difficulty |
 |---------|---------|-----------------|
-| `1f642eb9` | Marker position projection | Hard |
 | `1fad071e` | Count matching blocks | Hard |
 | `22eb0ac0` | Marker color detection | Hard |
 | `234bbc79` | Bounding box intersection | Very Hard |
@@ -483,9 +483,9 @@ python evaluator.py <task_id> solutions/<task_id>.py
 
 | Metric | Current | Projected (Conservative) | Projected (Optimistic) | Winner |
 |--------|---------|--------------------------|------------------------|--------|
-| Tasks solved | 57 | 400 | 400 | 400 |
-| Total score | 128,657 | ~902,800 | ~916,700 | **962,070** |
-| Avg pts/task | 2,257 | 2,257 | 2,292 | 2,405 |
+| Tasks solved | 59 | 400 | 400 | 400 |
+| Total score | 133,130 | ~902,400 | ~916,700 | **962,070** |
+| Avg pts/task | 2,256 | 2,256 | 2,292 | 2,405 |
 | % of winner | 93.8% | 93.8% | 95.3% | 100% |
 | **Est. Place** | - | **~110th** | **~80th** | 1st |
 
