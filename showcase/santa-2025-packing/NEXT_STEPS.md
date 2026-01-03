@@ -1,142 +1,142 @@
 # Next Steps for Santa 2025 Packing Evolution
 
-**Last Updated**: Gen86 complete (champion unchanged at 87.36)
-**Current Champion**: Gen84c (87.36)
+**Last Updated**: Gen95 complete (all candidates rejected)
+**Current Champion**: Gen91b (~87-88)
+**Status**: PLATEAUED - Greedy incremental approach exhausted
 
 ## Quick Start
 
 ```bash
 cd rust
 cargo build --release
-./target/release/benchmark  # Test current champion
+./target/release/benchmark 200 3  # Test current champion
 ```
 
-## Current Champion: Gen84c (87.36)
+## Current Champion: Gen91b (~87-88)
 
-Key innovation: **Extreme 4+1 bidirectional wave split**
-- First 4 waves: outside-in (far trees first)
-- Last 1 wave: inside-out (close trees first)
+Key innovation: **Rotation-first optimization**
+- For each candidate position, try ALL 8 rotations
+- Fine-tune binary search for each rotation
+- Keep best (position, rotation) pair
 
-## Recent Evolution History
+Combined with:
+- 5-pass wave compaction (4 outside-in + 1 inside-out)
+- Greedy backtracking for boundary trees
+- 6 parallel placement strategies
 
-### Gen86 Results (ALL REJECTED)
+## Evolution Plateau (Gen92-95)
 
-| Candidate | Strategy | Best Score | Delta | Status |
-|-----------|----------|------------|-------|--------|
-| 86a | Adaptive step sizes by tree count | 88.59 | +1.23 | REJECTED |
-| 86b | Phase-specific ordering (H/V asymmetric) | 88.94 | +1.58 | REJECTED |
-| 86c | Graduated 3-1-1 split (mixed middle) | 88.58 | +1.22 | REJECTED |
-| 86d | Enhanced 8-directional diagonal | 89.09 | +1.73 | REJECTED |
+After 4 generations of systematic exploration, all approaches have failed:
 
-**Key learnings from Gen86**:
-- Adaptive/dynamic parameters hurt consistency
-- Asymmetric phase ordering reduces packing efficiency
-- Mixed-ordering middle wave adds noise without benefit
-- More directions in diagonal phase = diminishing returns + overhead
+### Gen92: Parameter Tuning - ALL REJECTED
+- More rotations (16), finer precision (0.0005)
+- Different wave passes, SA temperatures, cooling rates
+- **Learning**: Parameters are already well-tuned
 
-### Gen85 Results (ALL REJECTED)
+### Gen93: Algorithmic Changes - ALL REJECTED
+- Relocate moves, coarse-to-fine optimization
+- Aspect ratio penalty, force-directed compression
+- **Learning**: Local algorithmic changes don't help
 
-| Candidate | Strategy | Best Score | Delta | Status |
-|-----------|----------|------------|-------|--------|
-| 85a | 6 waves with 5+1 split | 88.30 | +0.94 | REJECTED |
-| 85b | Larger step sizes [0.15, 0.08, ...] | 89.36 | +2.00 | REJECTED |
-| 85c | 7 waves with 6+1 split | 89.56 | +2.20 | REJECTED |
-| 85d | Stronger center pull (0.12) | 88.23 | +0.87 | REJECTED |
+### Gen94: Paradigm Shifts - ALL REJECTED
+| Candidate | Score | Strategy |
+|-----------|-------|----------|
+| 94a | 88.60 | Multi-start (3 attempts per n) |
+| 94c | 88.88 | Hexagonal grid seeding |
+| 94e | 88.95 | Genetic algorithm crossover |
+- **Learning**: Even paradigm shifts within greedy framework fail
 
-**Key learnings from Gen85**:
-- More waves hurt (6 and 7 both regressed)
-- Larger steps hurt precision
-- Stronger center pull disrupts balance
-- 5 waves with 4+1 remains optimal
+### Gen95: Global Optimization - ALL REJECTED
+| Candidate | Score | Strategy |
+|-----------|-------|----------|
+| 95e | 89.39 | Annealing overhaul (temp 2.0, 100k iters) |
+| 95a | 88.69 | Full configuration SA |
+| 95c | 88.58 | Global rotation optimization |
+| 95d | 88.57 | Center-first placement |
+- **Learning**: Global optimization after incremental placement doesn't help
 
-## Gen87 Plan: Fundamentally Different Approaches
+## Why We're Stuck
 
-Gen85-86 exhausted parameter variations on wave compaction. Time for structural changes.
+The greedy incremental approach has fundamental limitations:
 
-### Candidates to Explore
+1. **Order dependency**: Trees placed early constrain later placements
+2. **Local decisions**: Each tree is placed optimally for current state, not globally
+3. **Compaction limits**: Wave compaction can't overcome poor initial placement
+4. **SA limitations**: Discrete moves can't explore continuous solution space
 
-#### 87a: Rotation-Aware Wave Compaction
-- During diagonal phase, try rotating trees to unlock tighter fit
-- Only accept rotation if it reduces bounding box
-- Hypothesis: Trees may "interlock" better with slight rotations
+## What Would Be Needed to Progress
 
-#### 87b: Density-Guided Tree Ordering
-- Instead of distance-from-center, sort by local density
-- Process trees in sparse regions first (more room to move)
-- Hypothesis: Sparse-first may create cascading improvements
+### Option 1: Integer Linear Programming (ILP)
+- Formulate as constraint satisfaction problem
+- Use commercial solver (CPLEX, Gurobi) or open source (OR-Tools)
+- May be slow for n=200, but could find optimal solutions
 
-#### 87c: Axis-Aligned Compression
-- Replace diagonal phase with sequential X then Y compression
-- Move all trees left to tight boundary, then all trees down
-- Hypothesis: Separating X/Y may avoid diagonal deadlocks
+### Option 2: Simultaneous Placement
+- Place all trees at once, not incrementally
+- Start from random/dense configuration
+- Use global optimization (not greedy)
 
-#### 87d: Greedy Backtracking Wave
-- After wave compaction, try moving boundary trees inward aggressively
-- If overlap, try rotating, then backtrack
-- Hypothesis: Post-wave greedy pass may find missed opportunities
+### Option 3: Problem-Specific Insights
+- Analyze Christmas tree shape for packing patterns
+- Look for symmetries or interlocking configurations
+- Study what makes top solutions (score ~69) work
 
-### Alternative Research Directions
+### Option 4: Learn from Winners
+- Study published Kaggle solutions after competition
+- Understand what algorithmic paradigm achieves ~69 score
+- The 26% gap suggests fundamentally different approach
 
-1. **Initial placement quality**: Can we place trees better initially?
-2. **Rotation search during placement**: Binary search on angle too?
-3. **Gap detection + targeted movement**: Find voids and pull trees toward them
-4. **Boundary-aware SA**: Focus SA iterations on boundary trees only
+## Score Progression
 
-## Score Progression (for reference)
+| Gen | Score | Innovation |
+|-----|-------|------------|
+| 47 | 89.59 | ConcentricRings breakthrough |
+| 62 | 88.22 | Radius compression |
+| 80b | 88.44 | 4-cardinal waves |
+| 84c | 87.36 | 4+1 bidirectional split |
+| **91b** | **~87-88** | **Rotation-first** |
+| 92-95 | N/A | All failed (plateau) |
+| Target | ~69 | Unknown paradigm |
 
-| Gen | Split | Score | Notes |
-|-----|-------|-------|-------|
-| 62 | N/A (radius) | 88.22 | Original best |
-| 80b | 5+0 | 88.44 | All outside-in |
-| 82a | 0+5 | 88.62 | All inside-out |
-| 83a | 3+2 | 88.22 | First crossover success |
-| **84c** | **4+1** | **87.36** | **CURRENT BEST** |
-| 85a | 5+1 | 88.30 | Too many waves |
-| 85d | 4+1 stronger | 88.23 | Center pull too strong |
-| 86a | adaptive | 88.59 | Dynamic steps hurt |
-| 86c | 3-1-1 | 88.58 | Mixed wave no help |
+## What Works (Don't Break)
 
-## What Works (Don't Break These)
-
-1. **Discrete 45 deg angles in SA** - Continuous angles break the framework
-2. **6 parallel placement strategies** - Diversity helps
+1. **Discrete 45 deg angles** - Continuous hurts SA convergence
+2. **6 parallel strategies** - Diversity helps
 3. **Hot restarts from elite pool** - Escape local optima
 4. **Bidirectional wave processing** - Better than single direction
-5. **Cardinal phase order** (R->L->U->D->diagonal) - Optimal sequence
-6. **4+1 outside-in:inside-out ratio** - Optimal split found
-7. **5 wave passes** - Sweet spot, more hurts
-8. **Step sizes [0.10, 0.05, 0.02, 0.01, 0.005]** - Fine-grained works
+5. **4+1 outside-in:inside-out ratio** - Optimal split
+6. **5 wave passes** - Sweet spot
+7. **Step sizes [0.10, 0.05, 0.02, 0.01, 0.005]** - Fine-grained
+8. **Exhaustive 8-rotation search** - Gen91b key innovation
 
-## What Doesn't Work (Avoid)
+## What Doesn't Work (Exhaustively Tested)
 
-1. More SA iterations (diminishing returns)
-2. Finer step sizes in wave compaction (too fine = noise)
-3. More than 5 wave phases (undoes positioning)
-4. Alternating O-I-O-I-O pattern (88.36, worse than 4+1)
-5. Inverse split 2+3 (88.39, order matters)
-6. Higher compression probability (88.98, 35% hurt)
-7. Adaptive step sizes (88.59, inconsistent)
-8. Phase-specific ordering (88.94, asymmetry hurts)
-9. Mixed middle wave (88.58, noise without benefit)
-10. 8-directional diagonal (89.09, overhead outweighs benefit)
-11. Larger steps [0.15, 0.08, ...] (89.36, too coarse)
-12. More waves (6 or 7) (88.30-89.56, worse)
-13. Stronger center pull 0.12 (88.23, disrupts balance)
+### Parameters
+- More SA iterations
+- Finer step sizes
+- More than 5 wave phases
+- Higher compression probability
+- Stronger center pull
 
-## Files to Reference
+### Algorithms
+- Relocate moves
+- Force-directed compression
+- Aspect ratio penalties
+- Coarse-to-fine optimization
 
-- `mutations/gen84c_extreme_split.rs` - Current champion
-- `mutations/gen83a_bidirectional_wave.rs` - Previous best crossover
-- `mutations/gen86*.rs` - Latest rejected experiments
-- `GEN84_STRATEGY.md` - Full analysis of split ratios
-- `GEN83_STRATEGY.md` - Crossover breakthrough details
+### Paradigms
+- Multi-start optimization
+- Genetic algorithms
+- Hexagonal grid seeding
+- Global SA on complete config
+- Decoupled rotation optimization
+- Re-centering and compression
 
 ## Commands Reference
 
 ```bash
-# Test a mutation
-cp mutations/gen87a_xxx.rs rust/src/evolved.rs
-cd rust && cargo build --release && ./target/release/benchmark
+# Test the champion
+cd rust && cargo build --release && ./target/release/benchmark 200 3
 
 # Generate visualization
 ./target/release/visualize
@@ -144,13 +144,15 @@ open packing_n200.svg
 
 # Submit to Kaggle
 ./target/release/submit
-kaggle competitions submit -c santa-2025 -f submission.csv -m "Gen87a: description"
+kaggle competitions submit -c santa-2025 -f submission.csv -m "Gen91b champion"
 ```
 
 ## Target
 
-- **Current**: 87.36
+- **Current**: ~87-88 (varies with runs)
 - **Leaderboard top**: ~69
-- **Gap**: 26.6%
+- **Gap**: 26-28%
 
-Each 1-point improvement is significant progress toward the leaderboard.
+## Conclusion
+
+The evolution has reached a plateau. The greedy incremental + SA framework has been exhaustively optimized. Breaking through to ~69 requires a fundamentally different algorithmic paradigm, not incremental improvements to the current approach.

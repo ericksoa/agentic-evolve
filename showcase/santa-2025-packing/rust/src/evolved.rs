@@ -55,7 +55,7 @@ impl Default for EvolvedConfig {
         Self {
             search_attempts: 200,
             direction_samples: 64,
-            sa_iterations: 28000,
+            sa_iterations: 28000,           // Reverted to champion values
             sa_initial_temp: 0.45,
             sa_cooling_rate: 0.99993,
             sa_min_temp: 0.00001,
@@ -138,6 +138,8 @@ impl EvolvedPacker {
             }
 
             let best = best_trees.unwrap();
+            let best_side = compute_side_length(&best);
+
             let mut packing = Packing::new();
             for t in &best {
                 packing.trees.push(t.clone());

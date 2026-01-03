@@ -1,66 +1,37 @@
-# Continuation Prompt for Gen95
+# Gen95 Complete - Plateau Confirmed
 
-Copy everything below the line and paste after clearing context:
+**Status**: All Gen95 candidates were rejected. Evolution has plateaued.
 
----
+## Gen95 Results
 
-/evolve-perf Continue from Gen94 plateau - Santa 2025 Kaggle packing competition
+| Candidate | Score | Strategy | Result |
+|-----------|-------|----------|--------|
+| Gen95e | 89.39 | Annealing overhaul (temp 2.0, 100k iters) | REJECTED |
+| Gen95a | 88.69 | Full configuration SA | REJECTED |
+| Gen95c | 88.58 | Global rotation optimization | REJECTED |
+| Gen95d | 88.57 | Center-first placement | REJECTED |
 
-## Context
-Read these files first:
-- `EVOLUTION_STATE.md` - Current champion and history
-- `GEN95_PLAN.md` - Plan for this generation
-- `rust/src/evolved.rs` - Champion code (Gen91b)
+**Champion Gen91b (~87-88) remains unchanged.**
 
-## Quick Summary
-- **CHAMPION**: Gen91b (rotation-first optimization) scored **87.29**
-- **TARGET**: ~69 (leaderboard top), **gap: 26.5%**
-- Gen92-94 exhaustively tried: parameter tuning, algorithmic changes, paradigm shifts
-- All failed - we're at a fundamental plateau
+## Plateau Summary
 
-## Gen95 Strategy: Global Optimization
-Try approaches that optimize entire configurations at once, not incrementally:
+After Gen92-95 (4 generations), all mutation strategies have been exhausted:
+- Gen92: Parameter tuning
+- Gen93: Algorithmic changes
+- Gen94: Paradigm shifts within greedy
+- Gen95: Global optimization
 
-1. **Gen95e: Annealing overhaul** (try first - simplest)
-   - Higher initial temp: 2.0 (vs 0.45)
-   - Slower cooling: 0.99998 (vs 0.99993)
-   - More iterations: 100k (vs 28k)
+## What's Needed for Progress
 
-2. **Gen95a: Full configuration SA**
-   - Start with complete n-tree configuration
-   - SA on entire configuration (not just last tree)
-   - Higher acceptance of "worse" moves early
+The greedy incremental approach has reached its limit. Closing the 26-28% gap to leaderboard (~69) requires:
 
-3. **Gen95c: Global rotation optimization**
-   - Fix champion positions
-   - Optimize rotations only
-   - Decouple position/rotation search
+1. **ILP/Constraint Programming**: Formulate as optimization problem
+2. **Simultaneous Placement**: Place all trees at once, not incrementally
+3. **Problem-Specific Insights**: Study winning solutions after competition
+4. **Different Paradigm**: The top solutions likely use a fundamentally different approach
 
-4. **Gen95d: Center-first placement**
-   - Place center trees first
-   - Spiral outward (reverse of current)
+## Files
 
-## Key Constraints (Don't Change)
-- Keep discrete 45° angles in SA
-- Keep 6 parallel placement strategies
-- Keep step sizes [0.10, 0.05, 0.02, 0.01, 0.005]
-- Keep 5 wave passes total
-
-## Benchmark Command
-```bash
-cd rust && cargo build --release && ./target/release/benchmark 200 3
-```
-
-## Execution Instructions
-1. Read the files listed above
-2. Start with Gen95e (annealing overhaul) - simplest change
-3. Modify `rust/src/evolved.rs` with the mutation
-4. Build and benchmark
-5. If score < 87.29, run 5 times to verify
-6. If worse, restore champion and try next mutation
-7. Update EVOLUTION_STATE.md with results
-
-## File Locations
-- Champion: `rust/src/evolved.rs`
-- Mutations archive: `mutations/`
-- State tracking: `EVOLUTION_STATE.md`
+- Current state: `EVOLUTION_STATE.md`
+- Future directions: `NEXT_STEPS.md`
+- Champion code: `rust/src/evolved.rs`

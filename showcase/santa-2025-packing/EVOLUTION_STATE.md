@@ -1,62 +1,82 @@
-# Evolution State - Gen94 Complete (No Improvement)
+# Evolution State - Gen95 Complete (No Improvement)
 
 ## Current Champion
 - **Gen91b** (rotation-first optimization)
-- **Score: 87.29** (lower is better)
+- **Score: ~87-88** (varies with runs, lower is better)
 - Location: `rust/src/evolved.rs`
 
-## Gen94 Results Summary
+## Gen95 Results Summary
 
-Generation 94 tried radical paradigm shifts after Gen93's algorithmic changes failed. **All mutations were rejected** - none beat the champion score of 87.29.
+Generation 95 tried **global optimization approaches** after Gen92-94's local optimization approaches all failed. **All mutations were rejected** - none beat the champion.
 
 | Candidate | Score | Strategy | Result |
 |-----------|-------|----------|--------|
-| Gen94a (multi-start) | 88.60 (86.71 outlier) | Run 3 attempts per n, keep best | REJECTED - High variance, unreliable |
-| Gen94c (hex grid) | 88.88 | Hexagonal grid placement strategy | REJECTED - Worse than champion |
-| Gen94e (genetic algorithm) | 88.95 | Population-based crossover + mutation | REJECTED - Worse and slower (270s vs 200s) |
+| Gen95e (annealing overhaul) | 89.39 | Temp 2.0, cooling 0.99998, 100k iters | REJECTED - Worse than champion |
+| Gen95a (full config SA) | 88.69 | SA on complete configuration after placement | REJECTED - Worse than champion |
+| Gen95c (global rotation) | 88.58 | Optimize all rotations together, positions fixed | REJECTED - Worse than champion |
+| Gen95d (center-first) | 88.57 | Re-center packing and compress from new origin | REJECTED - Worse than champion |
 
-## Gen94 Key Learnings
+## Gen95 Key Learnings
 
-1. **Multi-start exploits variance but unreliable**: Gen94a showed occasional good results (86.71) but typical runs (88.60) were worse. The variance exploitation doesn't consistently beat the champion.
+1. **More aggressive SA doesn't help**: Gen95e with 4.4x higher temperature and 3.6x more iterations actually performed worse (89.39 vs ~87-88). The existing SA schedule is well-tuned.
 
-2. **Hexagonal grid seeding doesn't help**: The 60-degree angular pattern didn't improve packing density. The existing strategy diversity (spiral, grid, boundary-first, etc.) already covers the search space well.
+2. **Global SA on complete config doesn't help**: Gen95a's approach of running SA on all trees simultaneously after incremental placement didn't improve scores. The incremental optimization during placement already finds good configurations.
 
-3. **Genetic algorithm crossover is problematic for packing**: Blending positions between two parent configurations creates overlaps. The repair process (moving trees apart) expands the bounding box, negating any benefit from crossover.
+3. **Decoupled rotation optimization doesn't help**: Gen95c's idea of optimizing rotations separately while keeping positions fixed didn't work. The current exhaustive rotation search at placement time (Gen91b's key innovation) already handles this well.
 
-4. **Computation overhead doesn't pay off**: Gen94e was 35% slower (270s vs 200s) while producing worse results. The genetic algorithm overhead is significant.
+4. **Re-centering doesn't help**: Gen95d's center-of-mass re-centering and compression didn't improve the bounding box. The existing wave compaction already effectively centers the packing.
 
 ## Performance Summary
-- Champion (Gen91b): 87.29
-- Best Gen94 attempt: 86.71 (Gen94a outlier, not reproducible)
+- Champion (Gen91b): ~87-88 (varies with runs)
+- Best Gen95 attempt: 88.57 (Gen95d)
 - Target (leaderboard top): ~69
-- Gap to target: 26.5%
+- Gap to target: 26-28%
 
-## Cumulative Plateau Analysis
+## Cumulative Plateau Analysis (Gen92-95)
 
-After Gen92 (parameter tuning), Gen93 (algorithmic changes), and Gen94 (paradigm shifts) all failed, we've confirmed a fundamental plateau:
+After **four full generations** of failed attempts, we've confirmed a fundamental plateau in the greedy incremental approach:
 
-**Approaches Exhaustively Tried**:
-- Parameter tuning (Gen92): rotations, precision, iterations, wave passes
-- Algorithmic changes (Gen93): relocate moves, coarse-to-fine, aspect ratio, force-directed
-- Paradigm shifts (Gen94): multi-start, hexagonal grid, genetic algorithm
+**Gen92 (Parameter Tuning) - All Failed**:
+- More rotations, finer precision, more iterations
+- Different wave passes, SA temperatures, cooling rates
 
-**What's Working (Gen91b)**:
+**Gen93 (Algorithmic Changes) - All Failed**:
+- Relocate moves, coarse-to-fine, aspect ratio penalty
+- Force-directed compression, combined parameters
+
+**Gen94 (Paradigm Shifts within Greedy) - All Failed**:
+- Multi-start (high variance, unreliable)
+- Hexagonal grid seeding
+- Genetic algorithm (crossover creates overlaps)
+
+**Gen95 (Global Optimization) - All Failed**:
+- Annealing schedule overhaul (more exploration)
+- Full configuration SA (optimize all at once)
+- Global rotation optimization (decouple position/rotation)
+- Center-first placement (re-center and compress)
+
+## What's Working (Gen91b)
 - Exhaustive 8-rotation search at each position
 - 5-pass wave compaction with bidirectional order (4 outside-in + 1 inside-out)
 - Greedy backtracking for boundary trees
 - Multi-strategy evaluation with cross-pollination
+- Well-tuned SA parameters (temp 0.45, cooling 0.99993, 28k iters)
 
-**What Doesn't Help**:
+## What Doesn't Help
 - More rotations, finer precision, more iterations
 - Post-processing moves (relocate, force-directed)
 - Different scoring functions (aspect ratio penalty)
 - Multi-start optimization (high variance)
 - Genetic algorithms (crossover creates overlaps)
 - Alternative grid patterns (hexagonal)
+- More aggressive SA (higher temp, slower cooling)
+- Global SA on complete configuration
+- Decoupled rotation optimization
+- Re-centering and compression
 
-## Gap to Target (26.5%)
+## Gap to Target (26-28%)
 
-The significant and persistent gap to leaderboard (~69) suggests top solutions use fundamentally different approaches that we haven't tried:
+The significant and persistent gap to leaderboard (~69) suggests top solutions use **fundamentally different approaches** that we haven't tried:
 
 1. **Non-greedy global optimization**: Branch-and-bound, integer linear programming (ILP), constraint satisfaction
 2. **Problem-specific geometric insights**: The Christmas tree shape may have exploitable symmetries or packing patterns
@@ -69,9 +89,11 @@ The significant and persistent gap to leaderboard (~69) suggests top solutions u
 
 ## Recommendation
 
-At this point, local search mutations (parameter tuning, algorithmic tweaks, even paradigm shifts within the greedy framework) have been exhausted. Further progress requires:
+At this point, **all local optimization approaches have been exhaustively tried**. The greedy incremental framework has reached its limit. Further progress requires:
 
 1. **Research competition solutions**: Study Kaggle discussions and published approaches
 2. **Try completely different algorithm families**: ILP/constraint programming, SAT solvers
 3. **Analyze optimal small cases**: What does a provably optimal packing for n=10 look like?
 4. **Domain expertise**: Consult computational geometry literature for irregular polygon packing
+
+The evolution has plateaued. Any future generations should explore radically different algorithmic paradigms rather than variations of greedy incremental placement with local search.
