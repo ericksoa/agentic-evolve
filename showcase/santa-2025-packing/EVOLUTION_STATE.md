@@ -1,9 +1,29 @@
-# Evolution State - Gen95 Complete (No Improvement)
+# Evolution State - Gen96 Complete (Plateau Confirmed)
 
 ## Current Champion
 - **Gen91b** (rotation-first optimization)
 - **Score: ~87-88** (varies with runs, lower is better)
 - Location: `rust/src/evolved.rs`
+
+## Gen96 Results Summary
+
+Generation 96 tried **fundamentally different paradigms** (separation-based packing, continuous angles) after Gen92-95's incremental improvements all failed. **All mutations were rejected** - none beat the champion.
+
+| Candidate | Score | Strategy | Result |
+|-----------|-------|----------|--------|
+| Gen96 (separation-based) | 88.42 | Dense placement → separate → compact | REJECTED - Worse & 2x slower |
+| Gen96b (relaxed SA) | TIMEOUT | Allow temporary overlaps, then resolve | REJECTED - Too slow |
+| Gen96c (continuous angles) | 88.43 | Continuous angle polish for boundary trees | REJECTED - No improvement |
+
+## Gen96 Key Learnings
+
+1. **Separation-based packing doesn't help**: Starting with dense overlapping placement and separating trees expands the packing too much, worse than greedy incremental.
+
+2. **Relaxed SA is too slow**: Allowing temporary overlaps during SA and resolving them later is computationally infeasible.
+
+3. **Continuous angles don't help**: Fine-grained rotation optimization beyond the 45° discrete steps doesn't improve boundary tree positions.
+
+---
 
 ## Gen95 Results Summary
 
@@ -32,9 +52,9 @@ Generation 95 tried **global optimization approaches** after Gen92-94's local op
 - Target (leaderboard top): ~69
 - Gap to target: 26-28%
 
-## Cumulative Plateau Analysis (Gen92-95)
+## Cumulative Plateau Analysis (Gen92-96)
 
-After **four full generations** of failed attempts, we've confirmed a fundamental plateau in the greedy incremental approach:
+After **five full generations** of failed attempts, we've confirmed a fundamental plateau:
 
 **Gen92 (Parameter Tuning) - All Failed**:
 - More rotations, finer precision, more iterations
@@ -55,6 +75,11 @@ After **four full generations** of failed attempts, we've confirmed a fundamenta
 - Global rotation optimization (decouple position/rotation)
 - Center-first placement (re-center and compress)
 
+**Gen96 (Paradigm Shifts) - All Failed**:
+- Separation-based packing (dense start → push apart → compact)
+- Relaxed SA (allow temporary overlaps, resolve later) - too slow
+- Continuous angle optimization (fine-grained rotation beyond 45°)
+
 ## What's Working (Gen91b)
 - Exhaustive 8-rotation search at each position
 - 5-pass wave compaction with bidirectional order (4 outside-in + 1 inside-out)
@@ -73,6 +98,8 @@ After **four full generations** of failed attempts, we've confirmed a fundamenta
 - Global SA on complete configuration
 - Decoupled rotation optimization
 - Re-centering and compression
+- Separation-based packing (dense start → push apart → compact)
+- Continuous angle optimization (fine-grained rotation beyond 45°)
 
 ## Gap to Target (26-28%)
 
@@ -89,11 +116,13 @@ The significant and persistent gap to leaderboard (~69) suggests top solutions u
 
 ## Recommendation
 
-At this point, **all local optimization approaches have been exhaustively tried**. The greedy incremental framework has reached its limit. Further progress requires:
+At this point, **all local optimization approaches AND paradigm shifts have been exhaustively tried**. Five generations (92-96) of mutations have failed to improve on Gen91b. The framework has reached its fundamental limit.
 
-1. **Research competition solutions**: Study Kaggle discussions and published approaches
-2. **Try completely different algorithm families**: ILP/constraint programming, SAT solvers
-3. **Analyze optimal small cases**: What does a provably optimal packing for n=10 look like?
-4. **Domain expertise**: Consult computational geometry literature for irregular polygon packing
+Further progress likely requires:
 
-The evolution has plateaued. Any future generations should explore radically different algorithmic paradigms rather than variations of greedy incremental placement with local search.
+1. **Integer Linear Programming (ILP)**: Formulate as optimization problem with commercial solvers
+2. **Simultaneous placement**: Place all trees at once, not incrementally
+3. **Learn from winners**: Study published Kaggle solutions after competition ends
+4. **Different geometry**: The ~69 score solutions likely exploit tree shape properties we haven't discovered
+
+The evolution has plateaued at 26-28% gap to target. The greedy incremental approach with local search cannot close this gap.
