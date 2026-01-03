@@ -27,8 +27,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Tasks Solved | 63 / 400 |
-| Total Score | 142,240 |
+| Tasks Solved | 64 / 400 |
+| Total Score | 144,501 |
 | Avg Score/Task | 2,258 |
 | **% of Winner Avg** | 93.9% (2,258 ÷ 2,405) |
 
@@ -63,7 +63,7 @@
 | 3428a4f5 | 88 | 2,412 | ~2,440 | 98.9% |
 | **Avg** | **64** | **2,436** | **2,450** | **99.4%** |
 
-### Medium (100-300 bytes) - 36 tasks
+### Medium (100-300 bytes) - 37 tasks
 | Task | Bytes | Score | Est. Winner | % of Winner |
 |------|-------|-------|-------------|-------------|
 | 1bfc4729 | 108 | 2,392 | ~2,420 | 98.8% |
@@ -93,6 +93,7 @@
 | 00d62c1b | 219 | 2,281 | ~2,350 | 97.1% |
 | 0a938d79 | 237 | 2,263 | ~2,340 | 96.7% |
 | 0dfd9992 | 239 | 2,261 | ~2,340 | 96.6% |
+| 3bdb4ada | 239 | 2,261 | ~2,340 | 96.6% |
 | 0962bcdd | 241 | 2,259 | ~2,340 | 96.5% |
 | 1c786137 | 249 | 2,251 | ~2,330 | 96.6% |
 | 025d127b | 266 | 2,234 | ~2,320 | 96.3% |
@@ -132,15 +133,15 @@
 
 ## Projection Model
 
-Based on 63 solved tasks with tier distribution:
+Based on 64 solved tasks with tier distribution:
 
 | Tier | Solved | Our Avg | Assumed # | Projected | Winner Est. |
 |------|--------|---------|-----------|-----------|-------------|
 | Easy | 13 | 2,436 | 180 | 438,480 | 441,000 |
-| Medium | 36 | 2,316 | 140 | 324,240 | 330,120 |
+| Medium | 37 | 2,315 | 140 | 324,100 | 330,120 |
 | Hard | 11 | 2,038 | 60 | 122,280 | 127,920 |
 | V.Hard | 3 | 1,555 | 20 | 31,100 | 35,000 |
-| **Total** | **63** | **2,258** | **400** | **916,100** | **934,040** |
+| **Total** | **64** | **2,258** | **400** | **915,960** | **934,040** |
 
 **Conservative estimate (current avg × 400)**: 2,258 × 400 = **903,200 points** → **~110th place**
 
@@ -191,9 +192,9 @@ Tasks with byte counts significantly above tier average:
 
 ## Key Insights
 
-1. **Easy tasks (12): 99.4%** - Nearly optimal, minimal room for improvement
-2. **Medium tasks (35): 98.2%** - Good performance, 2% gap
-3. **Hard tasks (10): 95.7%** - 4% gap, some byte savings possible
+1. **Easy tasks (13): 99.4%** - Nearly optimal, minimal room for improvement
+2. **Medium tasks (37): 98.2%** - Good performance, 2% gap
+3. **Hard tasks (11): 95.6%** - 4% gap, some byte savings possible
 4. **Very Hard tasks (3): 92.4%** - 7.6% gap, all 3 tasks now optimized!
 
 ## Recommendations

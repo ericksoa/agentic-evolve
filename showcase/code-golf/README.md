@@ -8,8 +8,8 @@
 
 | Metric | Value |
 |--------|-------|
-| **Solved** | 63 / 400 (15.8%) |
-| **Total Score** | 142,240 points |
+| **Solved** | 64 / 400 (16.0%) |
+| **Total Score** | 144,501 points |
 | **Avg Score/Task** | 2,258 points |
 | **% of Winner Avg** | 93.9% (winner: 2,405 pts/task) |
 | **Projected Final** | ~903,200 points ([details](./PROJECTION.md)) |
@@ -18,7 +18,7 @@
 
 ---
 
-## Solved Problems (63)
+## Solved Problems (64)
 
 | Task | Pattern | Bytes | Score | Solution |
 |------|---------|-------|-------|----------|
@@ -62,6 +62,7 @@
 | [`00d62c1b`](./00d62c1b/README.md) | Fill enclosed regions | **219** | 2,281 | [solution.py](./00d62c1b/solution.py) |
 | [`0a938d79`](./0a938d79/README.md) | Alternating stripe pattern | **237** | 2,263 | [solution.py](./0a938d79/solution.py) |
 | [`0dfd9992`](./0dfd9992/README.md) | Color substitution pairs | **239** | 2,261 | [solution.py](./0dfd9992/solution.py) |
+| [`3bdb4ada`](./3bdb4ada/README.md) | Middle row stripe | **239** | 2,261 | [solution.py](./3bdb4ada/solution.py) |
 | [`0962bcdd`](./0962bcdd/README.md) | T-junction detection | **241** | 2,259 | [solution.py](./0962bcdd/solution.py) |
 | [`1c786137`](./1c786137/README.md) | Corner rectangle frames | **249** | 2,251 | [solution.py](./1c786137/solution.py) |
 | [`1f0c79e5`](./1f0c79e5/README.md) | Diagonal ray extension | **261** | 2,239 | [solution.py](./1f0c79e5/solution.py) |
@@ -88,7 +89,7 @@
 
 ---
 
-## Unsolved Problems (337)
+## Unsolved Problems (336)
 
 ### Analyzed Tasks (18)
 
@@ -484,8 +485,8 @@ python evaluator.py <task_id> solutions/<task_id>.py
 
 | Metric | Current | Projected (Conservative) | Projected (Optimistic) | Winner |
 |--------|---------|--------------------------|------------------------|--------|
-| Tasks solved | 63 | 400 | 400 | 400 |
-| Total score | 142,240 | ~903,200 | ~918,000 | **962,070** |
+| Tasks solved | 64 | 400 | 400 | 400 |
+| Total score | 144,501 | ~903,200 | ~918,000 | **962,070** |
 | Avg pts/task | 2,258 | 2,258 | 2,295 | 2,405 |
 | % of winner | 93.9% | 93.9% | 95.4% | 100% |
 | **Est. Place** | - | **~110th** | **~80th** | 1st |
