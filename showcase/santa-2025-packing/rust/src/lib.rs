@@ -4,8 +4,10 @@
 
 pub mod baselines;
 pub mod evolved;
+pub mod global_opt;
 pub mod incremental;
 pub mod multistart;
+pub mod pattern_based;
 pub mod simulated_annealing;
 
 use std::f64::consts::PI;
