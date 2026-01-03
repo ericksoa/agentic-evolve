@@ -1,4 +1,4 @@
-# Evolution State - Gen99 Complete (ILP/Optimization Analysis)
+# Evolution State - Gen100 Complete (Sparrow Algorithm Tested)
 
 ## Current Status
 - **Champion: Gen91b** (rotation-first optimization)
@@ -10,6 +10,36 @@
 - Competition ends: January 30, 2026
 - Current #1: Rafbill - 69.99
 - 2,412 teams participating
+
+## Gen100 Results Summary - Sparrow Algorithm
+
+Generation 100 implemented the **Sparrow algorithm** from recent research (arxiv.org/html/2509.13329) - a state-of-the-art approach for 2D nesting problems.
+
+### Sparrow Key Ideas
+1. **Temporary overlap tolerance** - Allow collisions, use penetration depth as continuous metric
+2. **Guided Local Search** - Dynamic weights on persistently colliding pairs
+3. **Two-phase architecture** - Exploration (aggressive) then Compression (refinement)
+
+### Results (n=1-20)
+
+| Approach | Score | vs Champion | Notes |
+|----------|-------|-------------|-------|
+| Evolved (champion) | 10.88 | Baseline | Greedy + SA |
+| Sparrow | 12.33 | +13% worse | Pure Sparrow approach |
+| Hybrid | 11.20 | +3% worse | Evolved + Sparrow refinement |
+
+### Why Sparrow Didn't Help
+
+The Sparrow algorithm is designed for **strip packing** (infinite length, fixed width), not **square box minimization**. Our evolved algorithm already effectively:
+- Navigates the "desert of infeasibility"
+- Uses simulated annealing for escape from local optima
+- Applies intensive local search via wave compaction
+
+### Files Added
+- `rust/src/sparrow.rs` - Sparrow-inspired algorithm
+- `rust/src/hybrid.rs` - Evolved + Sparrow refinement
+
+---
 
 ## Gen99 Results Summary - ILP/Optimization Analysis
 
