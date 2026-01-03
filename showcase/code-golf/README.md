@@ -8,17 +8,17 @@
 
 | Metric | Value |
 |--------|-------|
-| **Solved** | 62 / 400 (15.5%) |
-| **Total Score** | 140,266 points |
-| **Avg Score/Task** | 2,262 points |
-| **% of Winner Avg** | 94.0% (winner: 2,405 pts/task) |
-| **Projected Final** | ~904,800 points ([details](./PROJECTION.md)) |
+| **Solved** | 63 / 400 (15.8%) |
+| **Total Score** | 142,240 points |
+| **Avg Score/Task** | 2,258 points |
+| **% of Winner Avg** | 93.9% (winner: 2,405 pts/task) |
+| **Projected Final** | ~903,200 points ([details](./PROJECTION.md)) |
 
 <!-- Competition winner: Code Golf International with 962,070 pts (DO NOT MODIFY) -->
 
 ---
 
-## Solved Problems (62)
+## Solved Problems (63)
 
 | Task | Pattern | Bytes | Score | Solution |
 |------|---------|-------|-------|----------|
@@ -80,6 +80,7 @@
 | [`150deff5`](./150deff5/README.md) | Grid extraction borders | **494** | 2,006 | [solution.py](./150deff5/solution.py) |
 | [`228f6490`](./228f6490/README.md) | Shape-to-hole matching | **520** | 1,980 | [solution.py](./228f6490/solution.py) |
 | [`a64e4611`](./a64e4611/README.md) | Largest rectangle + cross | **523** | 1,977 | [solution.py](./a64e4611/solution.py) |
+| [`39a8645d`](./39a8645d/README.md) | Most frequent shape | **526** | 1,974 | [solution.py](./39a8645d/solution.py) |
 | [`045e512c`](./045e512c/README.md) | Pattern replication | **486** | 2,014 | [solution.py](./045e512c/solution.py) |
 | [`2dd70a9a`](./2dd70a9a/README.md) | U-shape connector | **673** | 1,827 | [solution.py](./2dd70a9a/solution.py) |
 | [`1b60fb0c`](./1b60fb0c/README.md) | Segment extraction | **1026** | 1,474 | [solution.py](./1b60fb0c/solution.py) |
@@ -87,7 +88,7 @@
 
 ---
 
-## Unsolved Problems (338)
+## Unsolved Problems (337)
 
 ### Analyzed Tasks (18)
 
@@ -483,17 +484,17 @@ python evaluator.py <task_id> solutions/<task_id>.py
 
 | Metric | Current | Projected (Conservative) | Projected (Optimistic) | Winner |
 |--------|---------|--------------------------|------------------------|--------|
-| Tasks solved | 62 | 400 | 400 | 400 |
-| Total score | 140,266 | ~904,800 | ~918,800 | **962,070** |
-| Avg pts/task | 2,262 | 2,262 | 2,296 | 2,405 |
-| % of winner | 94.0% | 94.0% | 95.4% | 100% |
+| Tasks solved | 63 | 400 | 400 | 400 |
+| Total score | 142,240 | ~903,200 | ~918,000 | **962,070** |
+| Avg pts/task | 2,258 | 2,258 | 2,295 | 2,405 |
+| % of winner | 93.9% | 93.9% | 95.4% | 100% |
 | **Est. Place** | - | **~110th** | **~80th** | 1st |
 
 **Winner**: Code Golf International (962,070 pts) - [Final Leaderboard](https://clist.by/standings/neurips-2025-google-code-golf-championship-optimization-custom-metric-61087802/)
 
 ### Projection Methods
-- **Conservative**: Current average (2,262 pts/task) × 400 = ~904,800 pts → **~110th place**
-- **Optimistic** (tier-weighted): Maintain tier averages = ~918,400 pts → **~80th place**
+- **Conservative**: Current average (2,258 pts/task) × 400 = ~903,200 pts → **~110th place**
+- **Optimistic** (tier-weighted): Maintain tier averages = ~918,000 pts → **~80th place**
 
 See [PROJECTION.md](./PROJECTION.md) for detailed tier breakdowns.
 
