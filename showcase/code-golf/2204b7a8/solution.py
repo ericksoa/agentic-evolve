@@ -1,0 +1,1 @@
+def solve(g):E=enumerate;a=g[0][0];return[[[c,[a,g[-1][-1]][2*[i,j][v:=a==g[1][0]]>=len([g,r][v])]][c==3]for j,c in E(r)]for i,r in E(g)]
