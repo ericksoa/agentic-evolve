@@ -5,6 +5,45 @@
 - **Score: ~86.1** (submission score)
 - **Target: ~70** (top leaderboard)
 - **Gap: ~23%**
+- **BLOCKER: Kaggle reports "Overlapping trees in group 104"**
+
+---
+
+## TODO: Fix Overlap Validation (Priority)
+
+Kaggle rejected submission with "Overlapping trees in group 104". Our local `has_overlaps()` check passed but Kaggle's validation failed.
+
+### Investigation Plan
+
+1. **Compare validation methods**
+   - Read our `has_overlaps()` implementation in `lib.rs`
+   - Check polygon intersection algorithm (SAT? exact arithmetic?)
+   - Look for floating-point precision issues
+
+2. **Debug n=104 specifically**
+   - Extract n=104 packing from submission.csv
+   - Visualize with `visualize` binary
+   - Run local overlap check with verbose output
+   - Try tighter epsilon in collision detection
+
+3. **Potential root causes**
+   - Floating-point precision mismatch (we use f64, Kaggle might use different)
+   - Different polygon intersection algorithms
+   - Edge cases in SAT (Separating Axis Theorem)
+   - Rounding in CSV export (we use 6 decimal places)
+
+4. **Fixes to try**
+   - Add safety margin (shrink trees by small epsilon before validation)
+   - Use higher precision in CSV export
+   - Implement exact arithmetic for overlap check
+   - Add post-processing step to nudge overlapping trees apart
+
+5. **Validation improvements**
+   - Create `validate_submission.rs` that mimics Kaggle's check
+   - Test against sample_submission.csv format
+   - Add stricter overlap threshold
+
+---
 
 ## Gen103 Results Summary - Best-of-N Optimization
 
