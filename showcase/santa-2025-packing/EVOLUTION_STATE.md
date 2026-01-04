@@ -45,6 +45,48 @@ Kaggle rejected submission with "Overlapping trees in group 104". Our local `has
 
 ---
 
+## TODO: ML Improvements (Gen104)
+
+The Gen102 ML model predicted well (MAE=0.04) but failed at selection (-0.98%). Root cause: trained for absolute prediction, but needed relative ranking.
+
+### Approaches to Try
+
+1. **Pairwise ranking model**
+   - Train on pairs: (packing_A, packing_B) → "is A better?"
+   - Loss: binary cross-entropy on comparison
+   - This directly optimizes for the selection task
+
+2. **Contrastive learning**
+   - Sample (good, bad) packing pairs from same N
+   - Train to maximize distance between good/bad embeddings
+   - Use embedding similarity for ranking
+
+3. **Better training data**
+   - Only use top-10% packings (learn good→great, not bad→average)
+   - Generate more samples per N for harder comparisons
+   - Balance across N values
+
+4. **Improved features**
+   - Minimum pairwise tree distance
+   - Boundary utilization (how close trees are to bbox edge)
+   - Local density variance
+   - Symmetry/regularity metrics
+   - Convex hull efficiency
+
+5. **Guide SA search (ambitious)**
+   - Use ML as value function during SA, not just final selection
+   - Predict which moves will improve quality
+   - Learn move proposals instead of random selection
+
+### Implementation Priority
+
+1. First: Fix overlap validation (blocker)
+2. Then: Try pairwise ranking (simplest ML fix)
+3. If that works: Add better features
+4. Stretch: Guide SA with learned value function
+
+---
+
 ## Gen103 Results Summary - Best-of-N Optimization
 
 ### Approach Comparison
