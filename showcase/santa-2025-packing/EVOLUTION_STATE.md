@@ -88,25 +88,35 @@ Implemented the hybrid GPU/CPU approach from the 70.1 analysis:
 ## Continuation Prompt
 
 ```
-Continue working on the Santa 2025 packing competition. Gen107 hybrid approach implemented.
+Continue working on the Santa 2025 packing competition. Read GEN108_PLAN.md for details.
+
+Gen108: Rust-Python Hybrid Pipeline
 
 Current status:
 - Score: 86.17 (Rust Gen91b + best-of-20)
 - Gap to #1 (~69): 24%
 - Gen107 Python hybrid working but 5-10x slower than Rust
 
-Gen107 Python implementation:
-- python/polygon_collision.py - Numba collision (0.45 µs/pair)
-- python/hybrid_collision.py - GPU bbox + CPU polygon
-- python/gpu_sa.py - SA with hybrid collision (550 iter/sec)
-- python/multi_stage_opt.py - Full pipeline
-- python/gen107_runner.py - Benchmark runner
+Key insight: Initial placement quality dominates final result.
+Rust greedy achieves ~3.2 for n=20, Python grid starts at 7.5.
 
-Next steps to consider:
-1. Use Rust greedy output as initial placement for Python SA
-2. Implement incremental collision checking
-3. Try different optimization approaches (ILP for small n?)
-4. Focus competition resources on Rust champion
+Gen108 plan:
+1. Add JSON export to Rust evolved algorithm
+2. Load Rust packing in Python, apply SA refinement
+3. Run parallel refinements (6 workers)
+4. Best-of-N from combined Rust+Python pipeline
+
+Priority order:
+1. Rust JSON export (rust/src/bin/export_packing.rs)
+2. Python import & refine (python/rust_hybrid.py)
+3. Parallel refinement pipeline
+4. (Optional) ILP for small n
+
+Files to create:
+- rust/src/bin/export_packing.rs
+- python/rust_hybrid.py
+- python/parallel_refine.py
+- python/gen108_runner.py
 ```
 
 ---
