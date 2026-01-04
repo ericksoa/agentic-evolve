@@ -127,6 +127,8 @@ impl EvolvedPacker {
                 }
 
                 self.wave_compaction(&mut trees);
+                // GEN105: Disabled - baseline is better for best-of-N
+                // squeeze_toward_center(&mut trees);
 
                 let side = compute_side_length(&trees);
                 strategy_trees[s_idx] = trees.clone();
@@ -1399,6 +1401,209 @@ fn has_overlap(trees: &[PlacedTree], idx: usize) -> bool {
         }
     }
     false
+}
+
+/// GEN105: Global rotation optimization
+/// Rotate ALL trees together around the center to minimize bounding box
+/// IMPORTANT: Validates that rotation doesn't create overlaps
+pub fn global_rotation_optimize(trees: &mut Vec<PlacedTree>) {
+    if trees.len() <= 1 {
+        return;
+    }
+
+    let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
+    let center_x = (min_x + max_x) / 2.0;
+    let center_y = (min_y + max_y) / 2.0;
+    let current_side = (max_x - min_x).max(max_y - min_y);
+
+    let mut best_angle = 0.0;
+    let mut best_side = current_side;
+
+    // Test rotation angles from 0 to 90 degrees (due to symmetry)
+    // Coarse search: 3 degree increments
+    for angle_deg in (0..=90).step_by(3) {
+        let angle_rad = (angle_deg as f64) * PI / 180.0;
+
+        // Check if this rotation creates overlaps
+        if rotation_creates_overlaps(trees, center_x, center_y, angle_rad) {
+            continue;
+        }
+
+        let side = compute_rotated_side_length(trees, center_x, center_y, angle_rad);
+
+        if side < best_side {
+            best_side = side;
+            best_angle = angle_rad;
+        }
+    }
+
+    // Fine search: 0.5 degree increments around best angle
+    let fine_start = ((best_angle * 180.0 / PI) - 3.0).max(0.0);
+    let fine_end = ((best_angle * 180.0 / PI) + 3.0).min(90.0);
+    let mut fine_angle = fine_start;
+    while fine_angle <= fine_end {
+        let angle_rad = fine_angle * PI / 180.0;
+
+        // Check if this rotation creates overlaps
+        if rotation_creates_overlaps(trees, center_x, center_y, angle_rad) {
+            fine_angle += 0.5;
+            continue;
+        }
+
+        let side = compute_rotated_side_length(trees, center_x, center_y, angle_rad);
+
+        if side < best_side {
+            best_side = side;
+            best_angle = angle_rad;
+        }
+        fine_angle += 0.5;
+    }
+
+    // Apply the best rotation if it improves and doesn't create overlaps
+    if best_side < current_side - 1e-6 && !rotation_creates_overlaps(trees, center_x, center_y, best_angle) {
+        apply_global_rotation(trees, center_x, center_y, best_angle);
+    }
+}
+
+/// Check if a global rotation would create overlaps
+fn rotation_creates_overlaps(
+    trees: &[PlacedTree],
+    center_x: f64,
+    center_y: f64,
+    angle_rad: f64,
+) -> bool {
+    if angle_rad.abs() < 1e-6 {
+        return false; // No rotation, no new overlaps
+    }
+
+    let cos_a = angle_rad.cos();
+    let sin_a = angle_rad.sin();
+
+    // Create rotated trees
+    let rotated: Vec<PlacedTree> = trees.iter().map(|tree| {
+        let dx = tree.x - center_x;
+        let dy = tree.y - center_y;
+        let new_x = center_x + dx * cos_a - dy * sin_a;
+        let new_y = center_y + dx * sin_a + dy * cos_a;
+        let new_angle = (tree.angle_deg + angle_rad * 180.0 / PI).rem_euclid(360.0);
+        PlacedTree::new(new_x, new_y, new_angle)
+    }).collect();
+
+    // Check for overlaps
+    for i in 0..rotated.len() {
+        for j in (i + 1)..rotated.len() {
+            if rotated[i].overlaps(&rotated[j]) {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+/// Compute the side length after rotating all trees by angle_rad around center
+fn compute_rotated_side_length(
+    trees: &[PlacedTree],
+    center_x: f64,
+    center_y: f64,
+    angle_rad: f64,
+) -> f64 {
+    let cos_a = angle_rad.cos();
+    let sin_a = angle_rad.sin();
+
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+
+    for tree in trees {
+        // Rotate tree center position around packing center
+        let dx = tree.x - center_x;
+        let dy = tree.y - center_y;
+        let new_x = center_x + dx * cos_a - dy * sin_a;
+        let new_y = center_y + dx * sin_a + dy * cos_a;
+
+        // Create rotated tree (both position and angle)
+        let new_angle = (tree.angle_deg + angle_rad * 180.0 / PI).rem_euclid(360.0);
+        let rotated_tree = PlacedTree::new(new_x, new_y, new_angle);
+
+        let (bx1, by1, bx2, by2) = rotated_tree.bounds();
+        min_x = min_x.min(bx1);
+        min_y = min_y.min(by1);
+        max_x = max_x.max(bx2);
+        max_y = max_y.max(by2);
+    }
+
+    (max_x - min_x).max(max_y - min_y)
+}
+
+/// Apply global rotation to all trees
+fn apply_global_rotation(
+    trees: &mut Vec<PlacedTree>,
+    center_x: f64,
+    center_y: f64,
+    angle_rad: f64,
+) {
+    let cos_a = angle_rad.cos();
+    let sin_a = angle_rad.sin();
+
+    for i in 0..trees.len() {
+        let dx = trees[i].x - center_x;
+        let dy = trees[i].y - center_y;
+        let new_x = center_x + dx * cos_a - dy * sin_a;
+        let new_y = center_y + dx * sin_a + dy * cos_a;
+        let new_angle = (trees[i].angle_deg + angle_rad * 180.0 / PI).rem_euclid(360.0);
+
+        trees[i] = PlacedTree::new(new_x, new_y, new_angle);
+    }
+}
+
+/// GEN105: Squeeze operation - shrink all trees toward center
+/// Similar to 70.1 solution's squeeze factors
+pub fn squeeze_toward_center(trees: &mut Vec<PlacedTree>) {
+    if trees.len() <= 1 {
+        return;
+    }
+
+    let squeeze_factors = [0.9999, 0.9995, 0.999, 0.998, 0.995, 0.99, 0.98, 0.97, 0.96, 0.95];
+
+    for &factor in &squeeze_factors {
+        let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
+        let center_x = (min_x + max_x) / 2.0;
+        let center_y = (min_y + max_y) / 2.0;
+        let current_side = (max_x - min_x).max(max_y - min_y);
+
+        // Try squeezing all trees by this factor
+        let mut squeezed_trees: Vec<PlacedTree> = Vec::with_capacity(trees.len());
+        for tree in trees.iter() {
+            let dx = tree.x - center_x;
+            let dy = tree.y - center_y;
+            let new_x = center_x + dx * factor;
+            let new_y = center_y + dy * factor;
+            squeezed_trees.push(PlacedTree::new(new_x, new_y, tree.angle_deg));
+        }
+
+        // Check for overlaps
+        let mut valid = true;
+        for i in 0..squeezed_trees.len() {
+            for j in (i + 1)..squeezed_trees.len() {
+                if squeezed_trees[i].overlaps(&squeezed_trees[j]) {
+                    valid = false;
+                    break;
+                }
+            }
+            if !valid {
+                break;
+            }
+        }
+
+        if valid {
+            let new_side = compute_side_length(&squeezed_trees);
+            if new_side < current_side {
+                *trees = squeezed_trees;
+            }
+        }
+    }
 }
 
 #[cfg(test)]

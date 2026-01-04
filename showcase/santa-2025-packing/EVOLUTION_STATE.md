@@ -1,32 +1,240 @@
-# Evolution State - Gen104 Complete (ML Ranking Failed)
+# Evolution State - Gen107 Complete (Hybrid GPU/CPU Approach)
+
+## Current Best
+- **Score: 86.17** (Gen103 + best-of-20)
+- **Top leaderboard: ~69** (24% gap)
+- **Champion: Gen91b Rust implementation**
+
+---
+
+## Gen107 Results - Hybrid GPU/CPU Optimization (Implemented)
+
+### What Was Built
+
+Implemented the hybrid GPU/CPU approach from the 70.1 analysis:
+
+1. **polygon_collision.py** - Numba-accelerated polygon collision
+   - SAT algorithm matching Rust implementation
+   - 0.45 µs/pair (serial), 0.02 µs/pair (parallel batch)
+   - 4.5x slower than Rust, but acceptable for hybrid approach
+
+2. **hybrid_collision.py** - GPU bbox filter + CPU polygon check
+   - GPU for fast bbox filtering (MPS on M2 Pro)
+   - CPU (Numba) for accurate polygon collision
+   - 3.84 ms/check for n=200, 260 configs/sec
+   - **100% false positive filtering** (43 bbox → 0 polygon overlaps in test)
+
+3. **gpu_sa.py** - Simulated annealing with hybrid collision
+   - 550-580 iterations/sec (n=20)
+   - Move types: position (40%), rotation (30%), combined (20%), squeeze (10%)
+   - Exponential temperature schedule
+
+4. **multi_stage_opt.py** - Full pipeline matching 70.1 approach
+   - Stage 1: Global rotation optimization
+   - Stage 2: Compaction passes (15x)
+   - Stage 3: Squeeze toward center
+   - Stage 4: SA (40k iters, 6 restarts)
+   - Stage 5: Final polish
+
+### Benchmark Results
+
+**n=20 Full Optimization:**
+- Initial: side=7.53
+- Final: side=**3.33** (56% improvement)
+- Time: 7.5 minutes
+- Overlaps: 0
+
+**Comparison with Rust (n=10):**
+| Method | Side Length | Time | Score |
+|--------|-------------|------|-------|
+| Rust evolved | 2.31 | 4.5s | 5.92 (n=1-10) |
+| Python hybrid (quick) | 2.77 | 18.6s | - |
+
+**Comparison with Rust (n=20):**
+| Method | Side Length | Notes |
+|--------|-------------|-------|
+| Rust evolved | ~3.2 (estimated) | 12s for n=1-20 |
+| Python hybrid (full) | 3.33 | 7.5 min |
+
+### Why Python Is Still Slower
+
+1. **Starting point**: Python uses grid placement, Rust uses optimized greedy
+2. **SA iteration rate**: Python ~550/sec vs Rust ~3000/sec
+3. **No incremental collision**: Python re-checks all pairs each iteration
+
+### Key Insights
+
+1. **Hybrid approach works**: GPU bbox filtering + CPU polygon is correct approach
+2. **SA converges**: Python SA reaches good solutions given enough iterations
+3. **Greedy matters**: Initial placement quality dominates final result
+4. **Speed gap remains**: Python ~5-10x slower than Rust per iteration
+
+### Potential Improvements
+
+1. **Use Rust greedy as initial placement** - load Rust packing, refine with Python SA
+2. **Incremental collision** - only re-check modified trees
+3. **Parallel SA restarts** - run multiple SA chains concurrently
+4. **Better move selection** - learn which moves help from training data
+
+### Files Added
+- `python/polygon_collision.py` - Numba polygon collision
+- `python/hybrid_collision.py` - GPU bbox + CPU polygon
+- `python/gpu_sa.py` - SA with hybrid collision
+- `python/multi_stage_opt.py` - Full pipeline
+- `python/gen107_runner.py` - Benchmark runner
+
+---
 
 ## Continuation Prompt
 
 ```
-Continue working on the Santa 2025 packing competition. Read EVOLUTION_STATE.md for full context.
+Continue working on the Santa 2025 packing competition. Gen107 hybrid approach implemented.
 
 Current status:
-- Submission 86.17 accepted, passed validation
-- Top leaderboard: ~69 (24% better)
-- ML selection PROVEN to not help (post-hoc selection by min(side_length) is optimal)
-- Pure best-of-N is already optimal for selection - need better algorithm
+- Score: 86.17 (Rust Gen91b + best-of-20)
+- Gap to #1 (~69): 24%
+- Gen107 Python hybrid working but 5-10x slower than Rust
 
-Gen104 key insight:
-- Post-hoc selection cannot beat direct side_length comparison
-- ML can only help DURING search (guiding placement), not after
-- Closing the 24% gap requires fundamental algorithm improvement
+Gen107 Python implementation:
+- python/polygon_collision.py - Numba collision (0.45 µs/pair)
+- python/hybrid_collision.py - GPU bbox + CPU polygon
+- python/gpu_sa.py - SA with hybrid collision (550 iter/sec)
+- python/multi_stage_opt.py - Full pipeline
+- python/gen107_runner.py - Benchmark runner
 
-Possible approaches to close the gap:
-1. ILP solver for small n (Gurobi/CPLEX)
-2. Simultaneous placement (not greedy incremental)
-3. Tree-specific geometric insights (interlocking patterns)
-4. Study winning solutions after competition ends
-5. ML to guide search (not selection)
-
-Current best submission:
-- Score: 86.17 (Gen103 + safety margin + best-of-20)
-- Generator: rust/src/bin/final_submission.rs
+Next steps to consider:
+1. Use Rust greedy output as initial placement for Python SA
+2. Implement incremental collision checking
+3. Try different optimization approaches (ILP for small n?)
+4. Focus competition resources on Rust champion
 ```
+
+---
+
+## Gen106 Results - GPU-Accelerated Optimization (Fundamental Limitation Found)
+
+### Approach
+Implemented GPU-accelerated optimization using PyTorch MPS on Apple M2 Pro:
+1. **gpu_primitives.py**: Batched tree transformations, bbox computation
+2. **parallel_sa.py**: Multiple SA chains in parallel
+3. **population_opt.py**: Evolutionary operators (selection, mutation, crossover)
+
+### GPU Primitives Performance (n=200, batch=32)
+| Operation | Time |
+|-----------|------|
+| Transform | 0.25 ms |
+| BBox | 0.28 ms |
+| Overlaps | 0.63 ms |
+| Full pipeline | 0.94 ms |
+| **Throughput** | **34k configs/sec** |
+
+### Benchmark Results
+
+**Small scale (n=20)**:
+- Hybrid optimizer achieved 0 bbox overlaps
+- Side length: 4.68 (reasonable)
+- Works as expected
+
+**Full scale (n=200)**:
+| Method | Final Side | BBox Overlaps | Notes |
+|--------|------------|---------------|-------|
+| Parallel SA | 21.63 | 0 | Too sparse |
+| Compress-refine (70 rounds) | 16.49 | 34 | Can't compress further |
+| Target (Rust greedy) | ~9.0 | 0 | Polygon collision |
+
+### Why It Failed (Root Cause)
+
+**Bounding box overlap is fundamentally too conservative:**
+
+1. Tree bboxes are ~0.7 x 1.0 (area 0.7)
+2. Tree polygon area is ~0.25 (35% of bbox)
+3. Two trees can have overlapping bboxes but non-overlapping polygons
+4. This means bbox checks reject 65%+ of valid configurations
+
+**Visual explanation:**
+```
+   BBox overlap         Polygon OK
+   ┌─────────┐         ╱╲    ╱╲
+   │  ╱╲     │        ╱  ╲  ╱  ╲
+   │ ╱  ╲    │       ╱    ╲╱    ╲
+   │╱    ╲   │  →   Actual trees
+   │  ╱╲  ╲  │       can fit in
+   │ ╱  ╲  ╲ │       each other's
+   └─────────┘       bbox gaps
+```
+
+**Result**: Cannot achieve side_length < 16 with bbox-only checks for n=200.
+Rust greedy achieves ~9.0 because it uses proper polygon collision detection.
+
+### Files Added
+- `python/gpu_primitives.py` - GPU tensor operations
+- `python/parallel_sa.py` - Parallel simulated annealing
+- `python/population_opt.py` - Population-based optimization
+- `python/gen106_benchmark.py` - Benchmark runner
+
+### Key Insight
+
+**GPU acceleration helps with parallelism, not with the core collision problem.**
+
+Top solutions likely use:
+1. GPU bbox as fast filter (reject definite non-overlaps)
+2. CPU polygon check for candidates (Shapely or custom SAT)
+3. Or custom CUDA kernels for polygon collision
+
+### What Would Help
+
+1. **Hybrid approach**: GPU bbox filter + CPU polygon validation
+2. **Custom polygon kernels**: Implement SAT on GPU
+3. **Use Rust as-is**: Already well-optimized with proper collision
+
+---
+
+## Gen105 Results - Global Rotation + Squeeze (Did Not Help)
+
+### Approach
+Based on the 70.1 GitHub solution, implemented:
+1. **Global rotation**: Rotate ALL trees together around center to minimize bounding box
+2. **Squeeze operation**: Shrink all positions toward center (factors 0.95-0.9999)
+
+### Benchmark Results (best-of-5, n=1-200)
+
+| Variant | Score | vs Baseline |
+|---------|-------|-------------|
+| Baseline (Gen91b) | 86.91 | - |
+| Squeeze only | 86.89 | -0.02% |
+| Global rotation + squeeze (full) | 87.72 | +0.9% worse |
+| Global rotation (n≤50) + squeeze (n≤100) | 87.70 | +0.9% worse |
+
+**Result: All Gen105 variants perform worse or equivalent to baseline**
+
+### Why It Failed
+
+1. **Global rotation creates overlaps**: After wave_compaction, trees are tightly packed.
+   Any rotation causes overlaps. With overlap validation, most rotations are rejected.
+
+2. **Overlap checking is O(n²)**: For each rotation angle tested, we must check all
+   n(n-1)/2 pairs for overlaps. This adds significant overhead for large n.
+
+3. **Squeeze after compaction**: Wave compaction already pushes trees toward center.
+   Additional squeeze doesn't help because trees are already as close as possible.
+
+4. **Different algorithm paradigm**: The 70.1 solution uses GPU acceleration, continuous
+   angles, and a different optimization pipeline. Our greedy approach can't easily adopt
+   their techniques.
+
+### Key Insight
+
+The 70.1 solution (score ~70) likely uses:
+- GPU-accelerated parallel computation
+- Continuous angle optimization (not discrete 45°)
+- Different algorithmic approach (possibly ILP or global optimization)
+
+Our greedy incremental approach with simulated annealing has reached its fundamental
+limit. The ~24% gap to the leaderboard cannot be closed with local improvements.
+
+### Files Modified
+- `rust/src/evolved.rs` - Added global_rotation_optimize(), squeeze_toward_center()
+- Functions remain but are disabled (commented out)
 
 ---
 
