@@ -1,89 +1,172 @@
-# Evolution State - Gen103 Complete (Best-of-N Optimization)
+# Evolution State - Gen104 Complete (ML Ranking Failed)
+
+## Continuation Prompt
+
+```
+Continue working on the Santa 2025 packing competition. Read EVOLUTION_STATE.md for full context.
+
+Current status:
+- Submission 86.17 accepted, passed validation
+- Top leaderboard: ~69 (24% better)
+- ML selection PROVEN to not help (post-hoc selection by min(side_length) is optimal)
+- Pure best-of-N is already optimal for selection - need better algorithm
+
+Gen104 key insight:
+- Post-hoc selection cannot beat direct side_length comparison
+- ML can only help DURING search (guiding placement), not after
+- Closing the 24% gap requires fundamental algorithm improvement
+
+Possible approaches to close the gap:
+1. ILP solver for small n (Gurobi/CPLEX)
+2. Simultaneous placement (not greedy incremental)
+3. Tree-specific geometric insights (interlocking patterns)
+4. Study winning solutions after competition ends
+5. ML to guide search (not selection)
+
+Current best submission:
+- Score: 86.17 (Gen103 + safety margin + best-of-20)
+- Generator: rust/src/bin/final_submission.rs
+```
+
+---
+
+## Gen104 Results - Pairwise ML Ranking (Did Not Help)
+
+### Approach
+Created pairwise ranking model to select best packing from N candidates:
+- Siamese network comparing two packings
+- Trained on 5,498 pairs with 80.87% validation accuracy
+- Round-robin comparison to rank candidates
+
+### Benchmark Results (n=1-30, 10 runs)
+
+| Selection Method | Score | Accuracy |
+|-----------------|-------|----------|
+| **Pure best-of-N** | **78.74** | N/A |
+| ML ranking | 79.77 | 0% wins |
+
+**Result: ML performs worse than simple min(side_length)**
+
+### Root Cause Analysis
+
+1. **Training accuracy**: 96.8% on training data
+2. **Test accuracy**: ~50% on new candidates (random chance)
+3. **Diagnosis**: Classic overfitting
+
+The model memorized specific feature patterns from training runs rather than
+learning what makes a packing "good". When given new packings from different
+runs, it performs at random chance.
+
+### Why Overfitting Occurred
+
+- Features are raw positions (x, y) normalized by /10.0
+- Different runs produce different absolute positions even for similar quality
+- Model learned to match specific position patterns, not quality indicators
+- Validation set was from same distribution as training (same runs)
+
+### Files Added
+- `ml/rerank_with_model.py` - Re-ranking script using pairwise model
+- `rust/src/bin/generate_candidates.rs` - Generate candidates for ML testing
+
+### Key Insight: Post-Hoc Selection is Optimal
+
+For selecting from completed packings, **min(side_length) is provably optimal**:
+- We want to select the packing with smallest side_length
+- The selection criterion IS the optimization objective
+- Therefore: no method can beat direct comparison of side_length
+
+Where ML *could* help (not yet tried):
+1. **During search**: Predict which partial packing leads to good final result
+2. **Search guidance**: Prioritize which positions/rotations to try
+3. **Early termination**: Predict if search is unlikely to beat current best
+
+### Submission Status
+- **Submission accepted**: 86.174381 (passed validation)
+- **Top leaderboard**: ~69
+- **Gap**: ~24% - requires fundamental algorithm improvement, not better selection
+
+---
+
+# Evolution State - Gen103 Complete (Overlap Fix Applied)
 
 ## Current Status
-- **Champion: Gen91b + Best-of-25 selection**
-- **Score: ~86.1** (submission score)
+- **Champion: Gen91b + Best-of-20 selection + Safety Margin**
+- **Score: ~87.6** (5-run with safety margin) / ~86 expected (20-run)
 - **Target: ~70** (top leaderboard)
-- **Gap: ~23%**
-- **BLOCKER: Kaggle reports "Overlapping trees in group 104"**
+- **Gap: ~24%**
+- **FIXED: Overlap validation issue resolved**
 
 ---
 
-## TODO: Fix Overlap Validation (Priority)
+## Gen103 Overlap Fix (Completed)
 
-Kaggle rejected submission with "Overlapping trees in group 104". Our local `has_overlaps()` check passed but Kaggle's validation failed.
+### Problem
+Kaggle rejected submissions with "Overlapping trees in group 104". Our local `has_overlaps()` passed but Kaggle's validation (using shapely) failed.
 
-### Investigation Plan
+### Root Cause
+- Floating-point precision loss when exporting to CSV (6 decimal places)
+- Kaggle uses shapely for polygon intersection which detects tiny overlaps (~1e-12 area)
+- Trees placed very close together create overlap artifacts after rounding
 
-1. **Compare validation methods**
-   - Read our `has_overlaps()` implementation in `lib.rs`
-   - Check polygon intersection algorithm (SAT? exact arithmetic?)
-   - Look for floating-point precision issues
+### Solution Applied
+1. **Safety margin in overlap detection** (`lib.rs`):
+   - Added `SAFETY_MARGIN = 1e-5` in `polygons_overlap()`
+   - Trees must now be at least 1e-5 apart, not just non-overlapping
+   - Uses `point_near_segment()` to check vertex-to-edge distances
 
-2. **Debug n=104 specifically**
-   - Extract n=104 packing from submission.csv
-   - Visualize with `visualize` binary
-   - Run local overlap check with verbose output
-   - Try tighter epsilon in collision detection
+2. **Increased CSV precision** (`final_submission.rs`):
+   - Changed from 6 to 9 decimal places in CSV export
+   - Format: `s{:.9}` instead of `s{:.6}`
 
-3. **Potential root causes**
-   - Floating-point precision mismatch (we use f64, Kaggle might use different)
-   - Different polygon intersection algorithms
-   - Edge cases in SAT (Separating Axis Theorem)
-   - Rounding in CSV export (we use 6 decimal places)
+3. **Created validation script** (`validate_submission.py`):
+   - Uses shapely to match Kaggle's validation
+   - Run before submitting: `python3 validate_submission.py rust/submission.csv`
 
-4. **Fixes to try**
-   - Add safety margin (shrink trees by small epsilon before validation)
-   - Use higher precision in CSV export
-   - Implement exact arithmetic for overlap check
-   - Add post-processing step to nudge overlapping trees apart
-
-5. **Validation improvements**
-   - Create `validate_submission.rs` that mimics Kaggle's check
-   - Test against sample_submission.csv format
-   - Add stricter overlap threshold
+### Results
+- 5-run test submission: **VALID** (shapely validation passes)
+- 20-run final submission: **VALID** (shapely validation passes)
+- **Final Score: 86.1744** (20 runs with safety margin)
+- Time to generate: 70.5 minutes
+- Submitted to Kaggle: 2026-01-04
 
 ---
 
-## TODO: ML Improvements (Gen104)
+## Gen104 ML Improvements (In Progress)
+
+### Pairwise Ranking Model (Completed)
 
 The Gen102 ML model predicted well (MAE=0.04) but failed at selection (-0.98%). Root cause: trained for absolute prediction, but needed relative ranking.
 
-### Approaches to Try
+**Solution: Pairwise ranking model**
+- Train on pairs: (packing_A, packing_B) → "is A better?"
+- Loss: binary cross-entropy on comparison
+- Directly optimizes for the selection task
 
-1. **Pairwise ranking model**
-   - Train on pairs: (packing_A, packing_B) → "is A better?"
-   - Loss: binary cross-entropy on comparison
-   - This directly optimizes for the selection task
+**Training Results:**
+- Generated 5,498 training pairs from existing data
+- Model: Siamese network with shared encoder (107K params)
+- **Best validation accuracy: 80.87%** (vs 50% baseline)
+- Training time: 7 seconds on MPS
 
-2. **Contrastive learning**
-   - Sample (good, bad) packing pairs from same N
-   - Train to maximize distance between good/bad embeddings
-   - Use embedding similarity for ranking
+**Files Added:**
+- `ml/pairwise_model.py` - Siamese ranking network
+- `ml/generate_pairs.py` - Pair generation script
+- `ml/train_pairwise.py` - Training script
+- `ml/pairwise_data.jsonl` - 5,498 training pairs
+- `ml/ranking_model.pt` - Trained model
 
-3. **Better training data**
-   - Only use top-10% packings (learn good→great, not bad→average)
-   - Generate more samples per N for harder comparisons
-   - Balance across N values
+### TODO: Use Ranking Model for Selection
 
-4. **Improved features**
-   - Minimum pairwise tree distance
-   - Boundary utilization (how close trees are to bbox edge)
-   - Local density variance
-   - Symmetry/regularity metrics
-   - Convex hull efficiency
+Next steps to improve score:
+1. Create re-ranking script that uses pairwise model to select best from N candidates
+2. Benchmark against pure best-of-N selection
+3. If successful, integrate into submission pipeline
 
-5. **Guide SA search (ambitious)**
-   - Use ML as value function during SA, not just final selection
-   - Predict which moves will improve quality
-   - Learn move proposals instead of random selection
+### Future Improvements
 
-### Implementation Priority
-
-1. First: Fix overlap validation (blocker)
-2. Then: Try pairwise ranking (simplest ML fix)
-3. If that works: Add better features
-4. Stretch: Guide SA with learned value function
+- **Hard pairs training**: Compare top 10% vs top 30% (not worst vs best)
+- **Better features**: Min pairwise distance, boundary utilization, density variance
+- **Guide SA search**: Use ML as value function during SA, not just selection
 
 ---
 

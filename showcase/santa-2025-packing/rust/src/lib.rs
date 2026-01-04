@@ -103,11 +103,14 @@ impl PlacedTree {
     }
 }
 
-/// Check if two convex/concave polygons overlap
+/// Check if two convex/concave polygons overlap or are too close
 /// Uses separating axis theorem for edge normals
-/// Added epsilon buffer to be conservative (Kaggle validation is strict)
+/// Added safety margin to ensure Kaggle validation passes after CSV export
 fn polygons_overlap(poly1: &[(f64, f64)], poly2: &[(f64, f64)]) -> bool {
-    const EPSILON: f64 = 1e-9;  // Small buffer for numerical precision
+    // Safety margin: require trees to be at least this far apart
+    // This accounts for precision loss when exporting to CSV (9 decimal places)
+    const SAFETY_MARGIN: f64 = 1e-5;
+    const EPSILON: f64 = 1e-9;
 
     // First check if bounding boxes overlap (with epsilon)
     let (min1x, min1y, max1x, max1y) = polygon_bounds(poly1);
@@ -151,6 +154,25 @@ fn polygons_overlap(poly1: &[(f64, f64)], poly2: &[(f64, f64)]) -> bool {
         }
     }
 
+    // Safety margin check: ensure polygons are not too close
+    // Check if any vertex of one polygon is within safety margin of any edge of the other
+    for &p in poly1 {
+        for k in 0..poly2.len() {
+            let l = (k + 1) % poly2.len();
+            if point_near_segment(p, poly2[k], poly2[l], SAFETY_MARGIN) {
+                return true;
+            }
+        }
+    }
+    for &p in poly2 {
+        for k in 0..poly1.len() {
+            let l = (k + 1) % poly1.len();
+            if point_near_segment(p, poly1[k], poly1[l], SAFETY_MARGIN) {
+                return true;
+            }
+        }
+    }
+
     false
 }
 
@@ -173,7 +195,7 @@ fn polygon_bounds(poly: &[(f64, f64)]) -> (f64, f64, f64, f64) {
 /// Check if two segments intersect (including touching/collinear cases)
 /// More conservative than proper intersection to match Kaggle validation
 fn segments_intersect_proper(a1: (f64, f64), a2: (f64, f64), b1: (f64, f64), b2: (f64, f64)) -> bool {
-    const EPSILON: f64 = 1e-9;
+    const EPSILON: f64 = 1e-6;  // Match CSV precision
 
     let d1 = cross_product_sign(b1, b2, a1);
     let d2 = cross_product_sign(b1, b2, a2);
@@ -198,7 +220,7 @@ fn segments_intersect_proper(a1: (f64, f64), a2: (f64, f64), b1: (f64, f64), b2:
 
 /// Check if segments touch or overlap (for collinear/near-collinear cases)
 fn segments_touch_or_overlap(a1: (f64, f64), a2: (f64, f64), b1: (f64, f64), b2: (f64, f64)) -> bool {
-    const EPSILON: f64 = 1e-9;
+    const EPSILON: f64 = 1e-6;  // Match CSV precision
 
     // Check if any endpoint of one segment is very close to the other segment
     if point_near_segment(a1, b1, b2, EPSILON) ||
@@ -245,6 +267,7 @@ fn cross_product_sign(a: (f64, f64), b: (f64, f64), c: (f64, f64)) -> f64 {
 
 /// Check if point is strictly inside polygon (not on boundary)
 fn point_strictly_inside_polygon(p: (f64, f64), poly: &[(f64, f64)]) -> bool {
+    const EPSILON: f64 = 1e-6;  // Match CSV precision
     let mut winding = 0i32;
     let n = poly.len();
 
@@ -257,14 +280,14 @@ fn point_strictly_inside_polygon(p: (f64, f64), poly: &[(f64, f64)]) -> bool {
             if y2 > p.1 {
                 // Upward crossing
                 let cross = (x2 - x1) * (p.1 - y1) - (p.0 - x1) * (y2 - y1);
-                if cross > 1e-10 {
+                if cross > EPSILON {
                     winding += 1;
                 }
             }
         } else if y2 <= p.1 {
             // Downward crossing
             let cross = (x2 - x1) * (p.1 - y1) - (p.0 - x1) * (y2 - y1);
-            if cross < -1e-10 {
+            if cross < -EPSILON {
                 winding -= 1;
             }
         }

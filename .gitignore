@@ -28,3 +28,6 @@ venv/
 
 # Generated benchmark data (regenerate with cargo run --bin generate_data)
 showcase/*/rust/data/*.json
+
+# Local/private planning docs (not for publication)
+PLAN.md
