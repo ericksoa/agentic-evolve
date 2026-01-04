@@ -80,13 +80,17 @@ fn main() {
     let file = File::create(output_file).expect("Failed to create file");
     let mut writer = BufWriter::new(file);
 
-    writeln!(writer, "row_id,x,y,angle").unwrap();
+    writeln!(writer, "id,x,y,deg").unwrap();
 
-    let mut row_id = 0;
-    for packing in &best_packings {
-        for tree in &packing.trees {
-            writeln!(writer, "{},{},{},{}", row_id, tree.x, tree.y, tree.angle_deg).unwrap();
-            row_id += 1;
+    for (n, packing) in best_packings.iter().enumerate() {
+        let n = n + 1;
+        for (i, tree) in packing.trees.iter().enumerate() {
+            writeln!(
+                writer,
+                "{:03}_{},s{:.6},s{:.6},s{:.6}",
+                n, i, tree.x, tree.y, tree.angle_deg
+            )
+            .unwrap();
         }
     }
 

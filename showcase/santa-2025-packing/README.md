@@ -19,7 +19,7 @@ Pack 1-200 Christmas tree-shaped polygons into the smallest square box.
 
 **Scoring**: `score = sum(side^2/n)` for n=1 to 200 (lower is better)
 
-**Leaderboard**: Top scores ~69, our current best: **~87-88** (Gen91b)
+**Leaderboard**: Top scores ~69, our current best: **~86** (Gen103 Best-of-N)
 
 ## Tree Shape
 
@@ -32,72 +32,65 @@ The tree is a 15-vertex polygon:
 
 ![Packing visualization for n=200 trees](packing_n200.svg)
 
-*Gen91b packing of 200 trees. Green polygons are the tree shapes, blue box shows the bounding square.*
+*Gen103 Best-of-N packing of 200 trees. Green polygons are the tree shapes, blue box shows the bounding square.*
 
-## Current Best Algorithm (Gen91b - ROTATION-FIRST OPTIMIZATION)
+## Current Best Algorithm (Gen103 - BEST-OF-N SELECTION)
 
 ```rust
+// Gen103 KEY INNOVATION: Best-of-N selection
+// Run the evolved algorithm N times, pick best result for each n
+// Exploits stochastic variance in SA algorithm
+
+for n in 1..=200 {
+    let mut best_packing = None;
+    let mut best_side = f64::INFINITY;
+
+    for run in 0..20 {  // Best-of-20 gives +3.87% improvement
+        let packing = evolved_pack(n);  // Gen91b algorithm below
+        if packing.side_length() < best_side {
+            best_side = packing.side_length();
+            best_packing = Some(packing);
+        }
+    }
+    results.push(best_packing);
+}
+
+// --- Gen91b Core Algorithm (unchanged) ---
+
 // 6 parallel placement strategies
 strategies = [ClockwiseSpiral, CounterclockwiseSpiral, Grid,
               Random, BoundaryFirst, ConcentricRings]
 
-// Gen91b KEY INNOVATION: Exhaustive rotation search at each position
+// Exhaustive rotation search at each position
 for attempt in 0..200 {
     let dir = select_direction_for_strategy(n, strategy, attempt);
-
-    // First find approximate valid distance (any rotation)
     let probe_dist = binary_search_any_rotation_valid(dir);
 
-    // Then try ALL 8 rotations at this distance with fine-tuning
+    // Try ALL 8 rotations at this distance
     for angle in [0, 45, 90, 135, 180, 225, 270, 315] {
         let pos = fine_tune_binary_search(dir, probe_dist, angle);
         if better_score(pos) { best = pos; }
     }
 }
 
-// SA optimization parameters:
-// - 85% boundary-focused moves
-// - 20% compression probability
-// - center_pull_strength: 0.08
-// - Hot restarts from elite pool
-// - 28,000 iterations per pass
-
-// Wave compaction: 5 passes with 4+1 bidirectional split
-for wave in 0..5 {
-    let tree_order = if wave < 4 {
-        trees_sorted_by_distance_from_center.desc()  // Outside-in (4 waves)
-    } else {
-        trees_sorted_by_distance_from_center.asc()   // Inside-out (1 wave)
-    };
-
-    for tree in tree_order {
-        // Phase 1-4: Cardinal directions (R->L->U->D)
-        // Phase 5: Diagonal movement
-        try_compaction_moves(tree, steps);
-    }
-}
-
+// SA optimization: 85% boundary-focused, 20% compression, 28k iters
+// Wave compaction: 5 passes (4 outside-in + 1 inside-out)
 // Greedy backtracking for boundary trees
-for pass in 0..3 {
-    for tree in boundary_defining_trees {
-        try_aggressive_inward_move(tree);
-        if_failed_try_with_rotation(tree);
-    }
-}
 ```
 
 ## What Works
 
-1. **Exhaustive 8-rotation search at each position** (Gen91b) - Try all rotations for best placement
-2. **ConcentricRings placement** - Structured > chaotic
-3. **Gentle radius compression** - Pull trees toward center (20% prob, 0.08 strength)
-4. **Bidirectional wave compaction** - First 4 waves outside-in, last 1 wave inside-out
-5. **4-cardinal wave phases** - Compress in right->left->up->down->diagonal directions
-6. **Hot restarts with elite pool** - Escape local optima
-7. **Boundary-focused SA** (85% probability) - Move trees that define bbox
-8. **Binary search for placement** - Fast, precise positioning
-9. **Discrete 45 deg angles** - Maintains SA stability
-10. **Greedy backtracking for boundary trees** - Post-wave optimization
+1. **Best-of-N selection** (Gen103) - Run algorithm N times, pick best per n (+3.87% improvement)
+2. **Exhaustive 8-rotation search at each position** (Gen91b) - Try all rotations for best placement
+3. **ConcentricRings placement** - Structured > chaotic
+4. **Gentle radius compression** - Pull trees toward center (20% prob, 0.08 strength)
+5. **Bidirectional wave compaction** - First 4 waves outside-in, last 1 wave inside-out
+6. **4-cardinal wave phases** - Compress in right->left->up->down->diagonal directions
+7. **Hot restarts with elite pool** - Escape local optima
+8. **Boundary-focused SA** (85% probability) - Move trees that define bbox
+9. **Binary search for placement** - Fast, precise positioning
+10. **Discrete 45 deg angles** - Maintains SA stability
+11. **Greedy backtracking for boundary trees** - Post-wave optimization
 
 ## What Doesn't Work (Exhaustively Tested)
 
@@ -232,12 +225,13 @@ santa-2025-packing/
 | Gen47 ConcentricRings | 89.59 | +30% | Structured placement |
 | Gen62 RadiusCompress | 88.22 | +28% | Compression moves |
 | Gen84c ExtremeSplit | 87.36 | +27% | 4+1 wave split |
-| **Gen91b RotationFirst** | **~87-88** | **~27%** | **Exhaustive rotation search** |
+| Gen91b RotationFirst | ~87-88 | ~27% | Exhaustive rotation search |
+| **Gen103 Best-of-N** | **~86** | **~25%** | **Multiple runs + selection** |
 | *Target (top solution)* | *~69* | - | Unknown (likely ILP or different paradigm) |
 
-**Note**: High run-to-run variance (1-2 points) due to stochastic SA. Scores shown are best of 3 runs.
+**Note**: Best-of-20 gives +3.87% improvement by exploiting stochastic variance in SA algorithm.
 
-**Status**: Evolution plateaued at Gen91b. Further progress requires fundamentally different algorithmic paradigm (ILP, constraint programming, etc.).
+**Status**: Gen103 Best-of-N provides best results. The core algorithm (Gen91b) is already well-tuned - parameter variation doesn't help. Gap to leader (~25%) requires fundamentally different paradigm.
 
 ## References
 
