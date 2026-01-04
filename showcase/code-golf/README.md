@@ -30,6 +30,7 @@
 | [`0520fde7`](./0520fde7/README.md) | Grid AND comparison | **57** | 2,443 | [solution.py](./0520fde7/solution.py) |
 | [`22eb0ac0`](./22eb0ac0/README.md) | Matching edge markers fill | **57** | 2,443 | [solution.py](./22eb0ac0/solution.py) |
 | [`0d3d703e`](./0d3d703e/README.md) | Color mapping (LUT) | **58** | 2,442 | [solution.py](./0d3d703e/solution.py) |
+| [`1b2d62fb`](./1b2d62fb/README.md) | Conditional grid coloring | **58** | 2,442 | [solution.py](./1b2d62fb/solution.py) |
 | [`007bbfb7`](./007bbfb7/README.md) | Outer product grid | **65** | 2,435 | [solution.py](./007bbfb7/solution.py) |
 | [`2281f1f4`](./2281f1f4/README.md) | Row/column intersection fill | **67** | 2,433 | [solution.py](./2281f1f4/solution.py) |
 | [`28bf18c6`](./28bf18c6/README.md) | Extract + duplicate shape | **67** | 2,433 | [solution.py](./28bf18c6/solution.py) |
@@ -42,64 +43,63 @@
 | [`1fad071e`](./1fad071e/README.md) | Count 2x2 blue blocks | **109** | 2,391 | [solution.py](./1fad071e/solution.py) |
 | [`22168020`](./22168020/README.md) | Fill between endpoints | **112** | 2,388 | [solution.py](./22168020/solution.py) |
 | [`05269061`](./05269061/README.md) | Diagonal color cycle | **113** | 2,387 | [solution.py](./05269061/solution.py) |
+| [`1190e5a7`](./1190e5a7/README.md) | Count cells by grid lines | **124** | 2,376 | [solution.py](./1190e5a7/solution.py) |
 | [`137eaa0f`](./137eaa0f/README.md) | Symmetry reflection | **130** | 2,370 | [solution.py](./137eaa0f/solution.py) |
 | [`1cf80156`](./1cf80156/README.md) | Bounding box extraction | **130** | 2,370 | [solution.py](./1cf80156/solution.py) |
 | [`2bee17df`](./2bee17df/README.md) | Cross line fill | **132** | 2,368 | [solution.py](./2bee17df/solution.py) |
 | [`2204b7a8`](./2204b7a8/README.md) | Border region coloring | **137** | 2,363 | [solution.py](./2204b7a8/solution.py) |
 | [`08ed6ac7`](./08ed6ac7/README.md) | Column rank labeling | **142** | 2,358 | [solution.py](./08ed6ac7/solution.py) |
+| [`363442ee`](./363442ee/README.md) | Fill bottom row pattern | **144** | 2,356 | [solution.py](./363442ee/solution.py) |
+| [`28e73c20`](./28e73c20/README.md) | Spiral maze generation | **149** | 2,351 | [solution.py](./28e73c20/solution.py) |
+| [`3ac3eb23`](./3ac3eb23/README.md) | Diagonal checkerboard | **150** | 2,350 | [solution.py](./3ac3eb23/solution.py) |
+| [`2013d3e2`](./2013d3e2/README.md) | Symmetry axis extraction | **152** | 2,348 | [solution.py](./2013d3e2/solution.py) |
+| [`4258a5f9`](./4258a5f9/README.md) | 3×3 box around 5s | **160** | 2,340 | [solution.py](./4258a5f9/solution.py) |
 | [`09629e4f`](./09629e4f/README.md) | Fill grid segments | **170** | 2,330 | [solution.py](./09629e4f/solution.py) |
 | [`239be575`](./239be575/README.md) | Small pattern movement | **170** | 2,330 | [solution.py](./239be575/solution.py) |
-| [`1b2d62fb`](./1b2d62fb/README.md) | Conditional grid coloring | **58** | 2,442 | [solution.py](./1b2d62fb/solution.py) |
 | [`10fcaaa3`](./10fcaaa3/README.md) | 2x2 tiling + diagonal 8s | **174** | 2,326 | [solution.py](./10fcaaa3/solution.py) |
 | [`1f876c06`](./1f876c06/README.md) | Diagonal line propagation | **174** | 2,326 | [solution.py](./1f876c06/solution.py) |
 | [`3aa6fb7a`](./3aa6fb7a/README.md) | L-shaped 8s + corner 1 | **178** | 2,322 | [solution.py](./3aa6fb7a/solution.py) |
 | [`1f85a75f`](./1f85a75f/README.md) | Extract rare color region | **182** | 2,318 | [solution.py](./1f85a75f/solution.py) |
 | [`2dc579da`](./2dc579da/README.md) | Extract quadrant with anomaly | **189** | 2,311 | [solution.py](./2dc579da/solution.py) |
 | [`23581191`](./23581191/README.md) | Cross lines intersection | **198** | 2,302 | [solution.py](./23581191/solution.py) |
-| [`1190e5a7`](./1190e5a7/README.md) | Count cells by grid lines | **124** | 2,376 | [solution.py](./1190e5a7/solution.py) |
-| [`363442ee`](./363442ee/README.md) | Fill bottom row pattern | **144** | 2,356 | [solution.py](./363442ee/solution.py) |
-| [`28e73c20`](./28e73c20/README.md) | Spiral maze generation | **149** | 2,351 | [solution.py](./28e73c20/solution.py) |
-| [`3ac3eb23`](./3ac3eb23/README.md) | Diagonal checkerboard | **150** | 2,350 | [solution.py](./3ac3eb23/solution.py) |
-| [`2013d3e2`](./2013d3e2/README.md) | Symmetry axis extraction | **152** | 2,348 | [solution.py](./2013d3e2/solution.py) |
-| [`4258a5f9`](./4258a5f9/README.md) | 3×3 box around 5s | **160** | 2,340 | [solution.py](./4258a5f9/solution.py) |
-| [`0ca9ddb6`](./0ca9ddb6/README.md) | Color spread from seeds | **207** | 2,293 | [solution.py](./0ca9ddb6/solution.py) |
-| [`253bf280`](./253bf280/README.md) | Connect 8s with 3s | **207** | 2,293 | [solution.py](./253bf280/solution.py) |
 | [`1e32b0e9`](./1e32b0e9/README.md) | Grid template completion | **201** | 2,299 | [solution.py](./1e32b0e9/solution.py) |
 | [`23b5c85d`](./23b5c85d/README.md) | Smallest colored rectangle | **201** | 2,299 | [solution.py](./23b5c85d/solution.py) |
+| [`0ca9ddb6`](./0ca9ddb6/README.md) | Color spread from seeds | **207** | 2,293 | [solution.py](./0ca9ddb6/solution.py) |
+| [`1caeab9d`](./1caeab9d/README.md) | Line intersection marking | **207** | 2,293 | [solution.py](./1caeab9d/solution.py) |
+| [`253bf280`](./253bf280/README.md) | Connect 8s with 3s | **207** | 2,293 | [solution.py](./253bf280/solution.py) |
+| [`178fcbfb`](./178fcbfb/README.md) | Extend markers to lines | **217** | 2,283 | [solution.py](./178fcbfb/solution.py) |
 | [`00d62c1b`](./00d62c1b/README.md) | Fill enclosed regions | **219** | 2,281 | [solution.py](./00d62c1b/solution.py) |
 | [`3de23699`](./3de23699/README.md) | Extract marker-bounded region | **225** | 2,275 | [solution.py](./3de23699/solution.py) |
 | [`0a938d79`](./0a938d79/README.md) | Alternating stripe pattern | **237** | 2,263 | [solution.py](./0a938d79/solution.py) |
-| [`0dfd9992`](./0dfd9992/README.md) | Color substitution pairs | **239** | 2,261 | [solution.py](./0dfd9992/solution.py) |
 | [`3bdb4ada`](./3bdb4ada/README.md) | Middle row stripe | **239** | 2,261 | [solution.py](./3bdb4ada/solution.py) |
+| [`0dfd9992`](./0dfd9992/README.md) | Color substitution pairs | **239** | 2,261 | [solution.py](./0dfd9992/solution.py) |
 | [`0962bcdd`](./0962bcdd/README.md) | T-junction detection | **241** | 2,259 | [solution.py](./0962bcdd/solution.py) |
 | [`1c786137`](./1c786137/README.md) | Corner rectangle frames | **249** | 2,251 | [solution.py](./1c786137/solution.py) |
 | [`1f0c79e5`](./1f0c79e5/README.md) | Diagonal ray extension | **261** | 2,239 | [solution.py](./1f0c79e5/solution.py) |
 | [`025d127b`](./025d127b/README.md) | Parallelogram to rect | **266** | 2,234 | [solution.py](./025d127b/solution.py) |
 | [`1f642eb9`](./1f642eb9/README.md) | Marker position projection | **266** | 2,234 | [solution.py](./1f642eb9/solution.py) |
 | [`32597951`](./32597951/README.md) | Extract repeating tile | **274** | 2,226 | [solution.py](./32597951/solution.py) |
-| [`1caeab9d`](./1caeab9d/README.md) | Line intersection marking | **207** | 2,293 | [solution.py](./1caeab9d/solution.py) |
-| [`178fcbfb`](./178fcbfb/README.md) | Extend markers to lines | **217** | 2,283 | [solution.py](./178fcbfb/solution.py) |
-| [`05f2a901`](./05f2a901/README.md) | Move shape to reference | **326** | 2,174 | [solution.py](./05f2a901/solution.py) |
 | [`11852cab`](./11852cab/README.md) | 4-fold rotational symmetry | **280** | 2,220 | [solution.py](./11852cab/solution.py) |
+| [`05f2a901`](./05f2a901/README.md) | Move shape to reference | **326** | 2,174 | [solution.py](./05f2a901/solution.py) |
 | [`06df4c85`](./06df4c85/README.md) | Grid line completion | **378** | 2,122 | [solution.py](./06df4c85/solution.py) |
 | [`1a07d186`](./1a07d186/README.md) | Line projection | **434** | 2,066 | [solution.py](./1a07d186/solution.py) |
 | [`0b148d64`](./0b148d64/README.md) | Quadrant extraction | **454** | 2,046 | [solution.py](./0b148d64/solution.py) |
 | [`2bcee788`](./2bcee788/README.md) | Color replacement by marker | **465** | 2,035 | [solution.py](./2bcee788/solution.py) |
 | [`22233c11`](./22233c11/README.md) | Diagonal corner marking | **474** | 2,026 | [solution.py](./22233c11/solution.py) |
+| [`045e512c`](./045e512c/README.md) | Pattern replication | **486** | 2,014 | [solution.py](./045e512c/solution.py) |
 | [`150deff5`](./150deff5/README.md) | Grid extraction borders | **494** | 2,006 | [solution.py](./150deff5/solution.py) |
 | [`228f6490`](./228f6490/README.md) | Shape-to-hole matching | **520** | 1,980 | [solution.py](./228f6490/solution.py) |
 | [`a64e4611`](./a64e4611/README.md) | Largest rectangle + cross | **523** | 1,977 | [solution.py](./a64e4611/solution.py) |
 | [`39a8645d`](./39a8645d/README.md) | Most frequent shape | **526** | 1,974 | [solution.py](./39a8645d/solution.py) |
-| [`045e512c`](./045e512c/README.md) | Pattern replication | **486** | 2,014 | [solution.py](./045e512c/solution.py) |
 | [`2dd70a9a`](./2dd70a9a/README.md) | U-shape connector | **673** | 1,827 | [solution.py](./2dd70a9a/solution.py) |
-| [`1b60fb0c`](./1b60fb0c/README.md) | Segment extraction | **1026** | 1,474 | [solution.py](./1b60fb0c/solution.py) |
-| [`0e206a2e`](./0e206a2e/README.md) | Rotated template placement | **1135** | 1,365 | [solution.py](./0e206a2e/solution.py) |
+| [`1b60fb0c`](./1b60fb0c/README.md) | Segment extraction | **1,026** | 1,474 | [solution.py](./1b60fb0c/solution.py) |
+| [`0e206a2e`](./0e206a2e/README.md) | Rotated template placement | **1,135** | 1,365 | [solution.py](./0e206a2e/solution.py) |
 
 ---
 
 ## Unsolved Problems (328)
 
-### Analyzed Tasks (16)
+### Analyzed Tasks (15)
 
 | Task ID | Pattern | Est. Difficulty |
 |---------|---------|-----------------|
@@ -111,7 +111,6 @@
 | `29623171` | Grid cell fill by quadrant | Hard |
 | `29ec7d0e` | Fill missing pattern | Hard |
 | `2c608aff` | Connect marked cross lines | Hard |
-| `2dc579da` | Remove noise keep signal | Hard |
 | `2dee498d` | Shape replication | Hard |
 | `31aa019c` | Vertical background lines | Hard |
 | `321b1fc6` | Find unique odd pattern | Hard |
