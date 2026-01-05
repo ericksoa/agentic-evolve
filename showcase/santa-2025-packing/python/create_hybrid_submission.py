@@ -126,7 +126,7 @@ def write_submission_csv(solutions: Dict[int, List[Tree]], output_path: str):
     """Write solutions to submission CSV format."""
     with open(output_path, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(['row_id', 'x', 'y', 'angle'])
+        writer.writerow(['id', 'x', 'y', 'angle'])
 
         row_id = 0
         for n in range(1, max(solutions.keys()) + 1):
