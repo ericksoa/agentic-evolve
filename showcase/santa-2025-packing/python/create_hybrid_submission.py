@@ -43,6 +43,7 @@ def compute_side(trees: List[Tree]) -> float:
 
 
 def has_overlap(trees: List[Tree], tol: float = 1e-8) -> bool:
+    """Check overlap using Shapely."""
     polys = [t.get_poly() for t in trees]
     n = len(polys)
     for i in range(n):
@@ -50,6 +51,63 @@ def has_overlap(trees: List[Tree], tol: float = 1e-8) -> bool:
             if polys[i].intersects(polys[j]):
                 inter = polys[i].intersection(polys[j])
                 if inter.area > tol:
+                    return True
+    return False
+
+
+def has_overlap_strict(trees: List[Tree]) -> bool:
+    """Strict overlap check using segment intersection (matches Kaggle)."""
+    def ccw(A, B, C):
+        return (C[1] - A[1]) * (B[0] - A[0]) - (B[1] - A[1]) * (C[0] - A[0])
+
+    def segments_intersect(A, B, C, D):
+        d1, d2 = ccw(A, B, C), ccw(A, B, D)
+        d3, d4 = ccw(C, D, A), ccw(C, D, B)
+        if ((d1 > 0 and d2 < 0) or (d1 < 0 and d2 > 0)) and \
+           ((d3 > 0 and d4 < 0) or (d3 < 0 and d4 > 0)):
+            return True
+        return False
+
+    def point_in_polygon(point, polygon):
+        x, y = point
+        n = len(polygon)
+        inside = False
+        j = n - 1
+        for i in range(n):
+            xi, yi = polygon[i]
+            xj, yj = polygon[j]
+            if ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi) + xi):
+                inside = not inside
+            j = i
+        return inside
+
+    def get_vertices(tree):
+        import math
+        angle_rad = math.radians(tree.angle)
+        cos_a, sin_a = math.cos(angle_rad), math.sin(angle_rad)
+        VERTS = [(0.0, 0.8), (0.125, 0.5), (0.0625, 0.5), (0.2, 0.25), (0.1, 0.25),
+                 (0.35, 0.0), (0.075, 0.0), (0.075, -0.2), (-0.075, -0.2), (-0.075, 0.0),
+                 (-0.35, 0.0), (-0.1, 0.25), (-0.2, 0.25), (-0.0625, 0.5), (-0.125, 0.5)]
+        return [(vx * cos_a - vy * sin_a + tree.x, vx * sin_a + vy * cos_a + tree.y) for vx, vy in VERTS]
+
+    polys = [get_vertices(t) for t in trees]
+    n = len(polys)
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            p1, p2 = polys[i], polys[j]
+            n1, n2 = len(p1), len(p2)
+            # Check edge intersections
+            for ei in range(n1):
+                for ej in range(n2):
+                    if segments_intersect(p1[ei], p1[(ei+1) % n1], p2[ej], p2[(ej+1) % n2]):
+                        return True
+            # Check containment
+            for v in p1:
+                if point_in_polygon(v, p2):
+                    return True
+            for v in p2:
+                if point_in_polygon(v, p1):
                     return True
     return False
 
@@ -108,9 +166,12 @@ def merge_best_solutions(
 
         if n in python_solutions:
             py_trees = python_solutions[n]
-            if not has_overlap(py_trees):
+            # Use strict validation for Python solutions
+            if not has_overlap_strict(py_trees):
                 py_side = compute_side(py_trees)
                 candidates.append(('python', py_side, py_trees))
+            else:
+                print(f"  Warning: Python solution for n={n} has overlaps, skipping")
 
         if candidates:
             # Take best
