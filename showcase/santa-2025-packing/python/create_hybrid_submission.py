@@ -123,20 +123,23 @@ def merge_best_solutions(
 
 
 def write_submission_csv(solutions: Dict[int, List[Tree]], output_path: str):
-    """Write solutions to submission CSV format."""
+    """Write solutions to submission CSV format.
+
+    Format: id is {n:03d}_{tree_idx}, values prefixed with 's'
+    Example: 001_0,s0.0,s0.0,s90.0
+    """
     with open(output_path, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(['id', 'x', 'y', 'angle'])
+        writer.writerow(['id', 'x', 'y', 'deg'])
 
-        row_id = 0
         for n in range(1, max(solutions.keys()) + 1):
             if n not in solutions:
                 print(f"Warning: missing n={n}")
                 continue
 
-            for tree in solutions[n]:
-                writer.writerow([row_id, tree.x, tree.y, tree.angle])
-                row_id += 1
+            for tree_idx, tree in enumerate(solutions[n]):
+                row_id = f"{n:03d}_{tree_idx}"
+                writer.writerow([row_id, f"s{tree.x}", f"s{tree.y}", f"s{tree.angle}"])
 
 
 def main():
