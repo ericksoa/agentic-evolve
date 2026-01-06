@@ -19,7 +19,7 @@ Pack 1-200 Christmas tree-shaped polygons into the smallest square box.
 
 **Scoring**: `score = sum(side^2/n)` for n=1 to 200 (lower is better)
 
-**Leaderboard**: Top scores ~69, our current best: **85.45** (Gen115)
+**Leaderboard**: Top scores ~69, our current best: **85.41** (Gen118)
 
 ## Tree Shape
 
@@ -193,7 +193,9 @@ This project uses the `/evolve` skill to discover novel packing algorithms throu
 | 112 | 85.59 | Pattern-based SA optimization (-0.08 points) |
 | 113 | 85.56 | Continued SA refinement for n≤10 (-0.03 points) |
 | 114 | 85.50 | CMA-ES global optimization (-0.05 points) |
-| **115** | **85.45** | **Fixed n=7 with strict validation (-0.05 points)** |
+| 115 | 85.45 | Fixed n=7 with strict validation (-0.05 points) |
+| 116-117 | 85.45 | CMA-ES for medium n, pattern-based SA (no improvement) |
+| **118** | **85.41** | **Post-SA continuous angle refinement (-0.04 points)** |
 
 ### Plateau and Breakthrough (Gen92-103)
 
@@ -359,12 +361,13 @@ santa-2025-packing/
 | Gen112 Pattern-based | 85.59 | ~24% | Pattern-based initialization |
 | Gen113 SA Refinement | 85.56 | ~24% | Continued small n optimization |
 | Gen114 | 85.50 | ~24% | CMA-ES global optimization |
-| **Gen115 (current)** | **85.45** | **~24%** | **Fixed n=7 with strict validation** |
+| Gen115 | 85.45 | ~24% | Fixed n=7 with strict validation |
+| **Gen118 (current)** | **85.41** | **~24%** | **Post-SA continuous angle refinement** |
 | *Target (top solution)* | *~69* | - | Unknown (likely ILP or different paradigm) |
 
 **Note**: Best-of-20 gives +3.87% improvement by exploiting stochastic variance in SA algorithm. Small n values (n≤10) have the most room for improvement via exhaustive search and CMA-ES.
 
-**Status**: Gen115 fixed the n=7 optimization using strict segment-intersection validation. CMA-ES with multiple restarts found a strictly valid 1.795 solution (5.24% improvement). The 24% gap to leaders requires fundamentally different approach - likely exact solvers (ILP/SAT) or continuous optimization with tighter bounds.
+**Status**: Gen118 applies continuous angle refinement (±10° search with 0.5° precision) after discrete SA optimization. This finds tighter packings for 136 groups while using strict segment-intersection validation. The 24% gap to leaders requires fundamentally different approach - likely exact solvers (ILP/SAT) or continuous optimization with tighter bounds.
 
 ## References
 
