@@ -19,7 +19,7 @@ Pack 1-200 Christmas tree-shaped polygons into the smallest square box.
 
 **Scoring**: `score = sum(side^2/n)` for n=1 to 200 (lower is better)
 
-**Leaderboard**: Top scores ~69, our current best: **~86** (Gen103 Best-of-N)
+**Leaderboard**: Top scores ~69, our current best: **~85.6** (Gen112)
 
 ## Tree Shape
 
@@ -141,7 +141,14 @@ This project uses the `/evolve` skill to discover novel packing algorithms throu
 | 99-100 | - | ILP, Sparrow algorithm (all failed) |
 | 101 | 89.59 | Combined strategies (+0.38%) |
 | 102 | 86.55 | ML value function + Best-of-N discovery |
-| **103** | **~86** | **Best-of-N optimization (+3.87%)** |
+| **103** | ~86 | Best-of-N optimization (+3.87%) |
+| 104-105 | ~86 | ML selection / global rotation (no improvement) |
+| 106-107 | ~86 | GPU acceleration experiments (validation only) |
+| 108 | ~86 | Rust-Python hybrid pipeline (Rust already optimal) |
+| 109 | 86.17 | Multi-strategy optimization (no improvement) |
+| **110** | 85.76 | **Small n exhaustive search (-0.41 points)** |
+| **111** | 85.67 | **Multi-start SA for n=4-8 (-0.09 points)** |
+| **112** | **~85.6** | **Pattern-based initialization (in progress)** |
 
 ### Plateau and Breakthrough (Gen92-103)
 
@@ -177,6 +184,54 @@ This project uses the `/evolve` skill to discover novel packing algorithms throu
 | Multi-strategy | 86.80 | +2.06% |
 
 **Key insight**: The evolved algorithm's default parameters are already optimal. Parameter variation and multi-strategy approaches don't help. Simple multiple runs with selection is most effective.
+
+### Post-Best-of-N Optimization (Gen104-112)
+
+**Gen104-105**: Alternative approaches tested
+- ML pairwise ranking: 80% accuracy but can't beat min(side_length)
+- Global rotation + squeeze (from 70.1 solution): Creates overlaps in tightly packed trees
+- **Lesson**: ML can only help DURING search, not after
+
+**Gen106-107**: GPU acceleration experiments
+- GPU bbox filtering + CPU polygon validation works
+- But Python is 5-10x slower than Rust even with GPU
+- **Lesson**: Initial placement quality dominates; SA refinement adds minimal value
+
+**Gen108**: Rust-Python hybrid pipeline
+- Rust JSON export + Python SA refinement
+- Finding: Python adds only 0-0.04% improvement
+- **Lesson**: Rust's evolved greedy is already near-optimal
+
+**Gen109**: Multi-strategy optimization
+- Implemented squeeze moves, combined position+rotation moves
+- ILP solver for small n (computationally expensive)
+- No improvement over Rust baseline
+
+**Gen110**: Small n exhaustive search (breakthrough!)
+- Grid search + refinement for n=1-10
+- Found better solutions for n=2,3,5,6,7
+- **Result**: 86.38 → 85.76 (-0.62 points, 0.72% improvement)
+
+**Gen111**: Multi-start SA for small n
+- Random initialization + 80k SA iterations
+- n=4: 1.452 → 1.327 (biggest win!)
+- n=5,7,8: Small refinements
+- **Result**: 85.77 → 85.67 (-0.10 points, 0.12% improvement)
+
+**Gen112**: Pattern-based initialization (in progress)
+- Analyzed n=4 solution pattern: trees at 90° angle offsets
+- Circular/grid initialization with pattern-based angles
+- n=5: 1.593 → 1.501 (major improvement!)
+
+| Generation | Score | Key Finding |
+|------------|-------|-------------|
+| 104 | ~86 | ML selection doesn't beat min() |
+| 105 | ~86 | Global rotation creates overlaps |
+| 106-107 | ~86 | GPU useful for validation only |
+| 108 | ~86 | Rust already near-optimal |
+| **110** | 85.76 | **Small n has slack** |
+| **111** | 85.67 | **Multi-start SA finds better local minima** |
+| **112** | ~85.6 | **Pattern-based initialization works** |
 
 ## Running
 
@@ -226,12 +281,15 @@ santa-2025-packing/
 | Gen62 RadiusCompress | 88.22 | +28% | Compression moves |
 | Gen84c ExtremeSplit | 87.36 | +27% | 4+1 wave split |
 | Gen91b RotationFirst | ~87-88 | ~27% | Exhaustive rotation search |
-| **Gen103 Best-of-N** | **~86** | **~25%** | **Multiple runs + selection** |
+| Gen103 Best-of-N | ~86 | ~25% | Multiple runs + selection |
+| Gen110 Small-n Search | 85.76 | ~24% | Exhaustive search for n≤10 |
+| Gen111 Multi-start SA | 85.67 | ~24% | Better local minima for small n |
+| **Gen112 (current)** | **~85.6** | **~24%** | **Pattern-based initialization** |
 | *Target (top solution)* | *~69* | - | Unknown (likely ILP or different paradigm) |
 
-**Note**: Best-of-20 gives +3.87% improvement by exploiting stochastic variance in SA algorithm.
+**Note**: Best-of-20 gives +3.87% improvement by exploiting stochastic variance in SA algorithm. Small n values (n≤10) have the most room for improvement via exhaustive search.
 
-**Status**: Gen103 Best-of-N provides best results. The core algorithm (Gen91b) is already well-tuned - parameter variation doesn't help. Gap to leader (~25%) requires fundamentally different paradigm.
+**Status**: Gen112 continues to find improvements in small n values using pattern-based SA initialization. The 24% gap to leaders requires fundamentally different approach - likely global optimization or exact solvers for small n.
 
 ## References
 
