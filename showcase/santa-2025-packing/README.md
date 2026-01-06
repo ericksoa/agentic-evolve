@@ -34,7 +34,7 @@ The tree is a 15-vertex polygon:
 
 ![Packing visualization for n=200 trees](packing_n200.svg)
 
-*Gen115 packing of 200 trees (side=8.996). Green polygons are the tree shapes, blue dashed box shows the bounding square.*
+*Gen118 packing of 200 trees (side=8.996). Green polygons are the tree shapes, blue dashed box shows the bounding square.*
 
 ### Small n Examples
 
@@ -42,7 +42,7 @@ The tree is a 15-vertex polygon:
 |:---:|:---:|:---:|
 | ![n=4](packing_n4.svg) | ![n=5](packing_n5.svg) | ![n=10](packing_n10.svg) |
 
-*Small n values were optimized using CMA-ES (Gen115). n=7 improved from 1.894 to 1.795 (5.24%) with strict segment-intersection validation.*
+*Small n values were optimized using CMA-ES (Gen114-115). Gen118 adds continuous angle refinement across all n.*
 
 ### Medium/Large n Examples
 
@@ -52,7 +52,7 @@ The tree is a 15-vertex polygon:
 
 *Larger n values use Best-of-20 selection with the evolved greedy algorithm.*
 
-## Core Packing Algorithm (Gen103 Rust + Gen115 Python Optimization)
+## Core Packing Algorithm (Gen103 Rust + Gen118 Python Optimization)
 
 The solution combines two layers:
 1. **Rust (Gen103)**: Best-of-20 greedy placement + SA optimization
