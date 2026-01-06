@@ -118,7 +118,15 @@ def load_submission_csv(csv_path: str) -> Dict[int, List[Tree]]:
     with open(csv_path) as f:
         reader = csv.DictReader(f)
         for row in reader:
-            trees.append(Tree(float(row['x']), float(row['y']), float(row['angle'])))
+            # Handle 's' prefix and both 'deg'/'angle' column names
+            x_val = row.get('x', '')
+            y_val = row.get('y', '')
+            deg_val = row.get('deg', row.get('angle', ''))
+            # Strip 's' prefix if present
+            x = float(x_val.replace('s', '')) if isinstance(x_val, str) else float(x_val)
+            y = float(y_val.replace('s', '')) if isinstance(y_val, str) else float(y_val)
+            deg = float(deg_val.replace('s', '')) if isinstance(deg_val, str) else float(deg_val)
+            trees.append(Tree(x, y, deg))
 
     # Group by n
     solutions = {}

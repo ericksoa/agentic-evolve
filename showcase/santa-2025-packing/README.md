@@ -19,7 +19,7 @@ Pack 1-200 Christmas tree-shaped polygons into the smallest square box.
 
 **Scoring**: `score = sum(side^2/n)` for n=1 to 200 (lower is better)
 
-**Leaderboard**: Top scores ~69, our current best: **85.50** (Gen114)
+**Leaderboard**: Top scores ~69, our current best: **85.45** (Gen115)
 
 ## Tree Shape
 
@@ -34,7 +34,7 @@ The tree is a 15-vertex polygon:
 
 ![Packing visualization for n=200 trees](packing_n200.svg)
 
-*Gen114 packing of 200 trees (side=8.996). Green polygons are the tree shapes, blue dashed box shows the bounding square.*
+*Gen115 packing of 200 trees (side=8.996). Green polygons are the tree shapes, blue dashed box shows the bounding square.*
 
 ### Small n Examples
 
@@ -42,7 +42,7 @@ The tree is a 15-vertex polygon:
 |:---:|:---:|:---:|
 | ![n=4](packing_n4.svg) | ![n=5](packing_n5.svg) | ![n=10](packing_n10.svg) |
 
-*Small n values were optimized using CMA-ES (Gen114). These tight packings required global optimization to escape local minima.*
+*Small n values were optimized using CMA-ES (Gen115). n=7 improved from 1.894 to 1.795 (5.24%) with strict segment-intersection validation.*
 
 ### Medium/Large n Examples
 
@@ -168,7 +168,8 @@ This project uses the `/evolve` skill to discover novel packing algorithms throu
 | 111 | 85.67 | Multi-start SA for n=4-8 (-0.09 points) |
 | 112 | 85.59 | Pattern-based SA optimization (-0.08 points) |
 | 113 | 85.56 | Continued SA refinement for n≤10 (-0.03 points) |
-| **114** | **85.50** | **CMA-ES global optimization (-0.05 points)** |
+| 114 | 85.50 | CMA-ES global optimization (-0.05 points) |
+| **115** | **85.45** | **Fixed n=7 with strict validation (-0.05 points)** |
 
 ### Plateau and Breakthrough (Gen92-103)
 
@@ -249,7 +250,7 @@ This project uses the `/evolve` skill to discover novel packing algorithms throu
 - Further refinements to n=6 and n=7
 - **Result**: 85.59 → 85.56 (-0.03 points)
 
-**Gen114**: CMA-ES global optimization (current best!)
+**Gen114**: CMA-ES global optimization
 - Used CMA-ES (Covariance Matrix Adaptation Evolution Strategy)
 - Better at escaping local optima than simulated annealing
 - **Critical fix**: Reset baseline from actual submission (JSON was stale)
@@ -257,6 +258,15 @@ This project uses the `/evolve` skill to discover novel packing algorithms throu
 - n=9: 2.129 → 2.088 (-1.9%)
 - n=7 CMA-ES result had overlaps - rejected after strict validation
 - **Result**: 85.56 → 85.50 (-0.05 points, 0.07% improvement)
+
+**Gen115**: Fixed n=7 with strict validation (current best!)
+- Fixed the n=7 optimization that Gen114 couldn't validate
+- Started from submission's valid 1.894 instead of invalid JSON 1.795
+- Multiple restarts with perturbation to escape local optima
+- n=7: 1.894 → 1.795 (-5.24%, strictly valid with 0 overlap)
+- n=6 CMA-ES found 1.706 but has edge crossings - kept 1.715
+- n=11-13 couldn't be improved - already near-optimal
+- **Result**: 85.50 → 85.45 (-0.05 points)
 
 | Generation | Score | Key Finding |
 |------------|-------|-------------|
@@ -268,7 +278,8 @@ This project uses the `/evolve` skill to discover novel packing algorithms throu
 | 111 | 85.67 | Multi-start SA finds better local minima |
 | 112 | 85.59 | Pattern-based initialization works |
 | 113 | 85.56 | Continued refinement for small n |
-| **114** | **85.50** | **CMA-ES escapes local optima** |
+| 114 | 85.50 | CMA-ES escapes local optima |
+| **115** | **85.45** | **Fixed n=7 with strict validation** |
 
 ## Running
 
@@ -323,12 +334,13 @@ santa-2025-packing/
 | Gen111 Multi-start SA | 85.67 | ~24% | Better local minima for small n |
 | Gen112 Pattern-based | 85.59 | ~24% | Pattern-based initialization |
 | Gen113 SA Refinement | 85.56 | ~24% | Continued small n optimization |
-| **Gen114 (current)** | **85.50** | **~24%** | **CMA-ES global optimization** |
+| Gen114 | 85.50 | ~24% | CMA-ES global optimization |
+| **Gen115 (current)** | **85.45** | **~24%** | **Fixed n=7 with strict validation** |
 | *Target (top solution)* | *~69* | - | Unknown (likely ILP or different paradigm) |
 
 **Note**: Best-of-20 gives +3.87% improvement by exploiting stochastic variance in SA algorithm. Small n values (n≤10) have the most room for improvement via exhaustive search and CMA-ES.
 
-**Status**: Gen114 uses CMA-ES (Covariance Matrix Adaptation Evolution Strategy) for global optimization of small n values. CMA-ES is better at escaping local optima than SA. The 24% gap to leaders requires fundamentally different approach - likely exact solvers (ILP/SAT) or continuous optimization with tighter bounds.
+**Status**: Gen115 fixed the n=7 optimization using strict segment-intersection validation. CMA-ES with multiple restarts found a strictly valid 1.795 solution (5.24% improvement). The 24% gap to leaders requires fundamentally different approach - likely exact solvers (ILP/SAT) or continuous optimization with tighter bounds.
 
 ## References
 
