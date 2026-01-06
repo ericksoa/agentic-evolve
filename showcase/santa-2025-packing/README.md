@@ -19,7 +19,7 @@ Pack 1-200 Christmas tree-shaped polygons into the smallest square box.
 
 **Scoring**: `score = sum(side^2/n)` for n=1 to 200 (lower is better)
 
-**Leaderboard**: Top scores ~69, our current best: **85.17** (Gen119)
+**Leaderboard**: Top scores ~69, our current best: **85.10** (Gen120)
 
 ## Tree Shape
 
@@ -196,7 +196,8 @@ This project uses the `/evolve` skill to discover novel packing algorithms throu
 | 115 | 85.45 | Fixed n=7 with strict validation (-0.05 points) |
 | 116-117 | 85.45 | CMA-ES for medium n, pattern-based SA (no improvement) |
 | 118 | 85.41 | Post-SA continuous angle refinement (-0.04 points) |
-| **119** | **85.17** | **Combined position + angle refinement (-0.24 points)** |
+| 119 | 85.17 | Combined position + angle refinement (-0.24 points) |
+| **120** | **85.10** | **Full-config SA for small n (-0.07 points)** |
 
 ### Plateau and Breakthrough (Gen92-103)
 
@@ -364,12 +365,13 @@ santa-2025-packing/
 | Gen114 | 85.50 | ~24% | CMA-ES global optimization |
 | Gen115 | 85.45 | ~24% | Fixed n=7 with strict validation |
 | Gen118 | 85.41 | ~24% | Post-SA continuous angle refinement |
-| **Gen119 (current)** | **85.17** | **~23%** | **Combined position + angle refinement** |
+| Gen119 | 85.17 | ~23% | Combined position + angle refinement |
+| **Gen120 (current)** | **85.10** | **~23%** | **Full-config SA for small n** |
 | *Target (top solution)* | *~69* | - | Unknown (likely ILP or different paradigm) |
 
 **Note**: Best-of-20 gives +3.87% improvement by exploiting stochastic variance in SA algorithm. Small n values (n≤10) have the most room for improvement via exhaustive search and CMA-ES.
 
-**Status**: Gen119 applies combined position (±0.05) + angle (±10°) refinement to all groups. This improves 114 groups by searching a local neighborhood for each tree while maintaining strict segment-intersection validation. The ~23% gap to leaders requires a fundamentally different approach - likely exact solvers (ILP/SAT) or continuous optimization with tighter bounds.
+**Status**: Gen120 applies full-configuration SA (optimizing all trees simultaneously rather than one-at-a-time). Found improvements on n=2,5,7,8,9. Also tried exact optimization, strip/hex packing, and genetic algorithms - all confirmed current solutions are near local optima. The ~23% gap to leaders (85.10 vs 69.02) requires a fundamentally different approach.
 
 ## References
 

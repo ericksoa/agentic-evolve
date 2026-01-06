@@ -59,6 +59,13 @@ def compute_side_from_trees(trees: list) -> float:
     return max(maxx - minx, maxy - miny)
 
 
+def parse_value(s: str) -> float:
+    """Parse value that may have 's' prefix."""
+    if isinstance(s, str) and s.startswith('s'):
+        return float(s[1:])
+    return float(s)
+
+
 def analyze_submission(csv_path: str, max_n: int = 200):
     """Analyze submission and print side lengths for each n."""
     trees = []
@@ -66,9 +73,11 @@ def analyze_submission(csv_path: str, max_n: int = 200):
     with open(csv_path) as f:
         reader = csv.DictReader(f)
         for row in reader:
-            x = float(row['x'])
-            y = float(row['y'])
-            angle = float(row['angle'])
+            x = parse_value(row['x'])
+            y = parse_value(row['y'])
+            # Handle both 'angle' and 'deg' column names
+            angle_col = 'deg' if 'deg' in row else 'angle'
+            angle = parse_value(row[angle_col])
             trees.append((x, y, angle))
 
     print(f"\nAnalyzing {csv_path}")
