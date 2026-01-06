@@ -14,7 +14,7 @@ fn random_config(rng: &mut impl Rng, base: &EvolvedConfig) -> EvolvedConfig {
     EvolvedConfig {
         search_attempts: rng.gen_range(150..250),
         direction_samples: rng.gen_range(48..80),
-        sa_iterations: rng.gen_range(20000..35000),
+        sa_iterations: rng.gen_range(30000..50000),  // GEN109: increased range
         sa_initial_temp: rng.gen_range(0.35..0.55),
         sa_cooling_rate: rng.gen_range(0.99990..0.99996),
         sa_min_temp: base.sa_min_temp,
@@ -37,6 +37,9 @@ fn random_config(rng: &mut impl Rng, base: &EvolvedConfig) -> EvolvedConfig {
         late_stage_threshold: base.late_stage_threshold,
         fine_angle_step: base.fine_angle_step,
         swap_prob: base.swap_prob,
+        // GEN109: new parameters
+        combined_move_prob: rng.gen_range(0.15..0.25),
+        squeeze_interval: rng.gen_range(4000..6000),
     }
 }
 

@@ -76,33 +76,7 @@ fn main() {
 
     for (name, config) in &configs {
         eprintln!("  Running strategy: {}", name);
-        let packer = EvolvedPacker { config: EvolvedConfig {
-            search_attempts: config.search_attempts,
-            direction_samples: config.direction_samples,
-            sa_iterations: config.sa_iterations,
-            sa_initial_temp: config.sa_initial_temp,
-            sa_cooling_rate: config.sa_cooling_rate,
-            sa_min_temp: config.sa_min_temp,
-            translation_scale: config.translation_scale,
-            rotation_granularity: config.rotation_granularity,
-            center_pull_strength: config.center_pull_strength,
-            sa_passes: config.sa_passes,
-            early_exit_threshold: config.early_exit_threshold,
-            boundary_focus_prob: config.boundary_focus_prob,
-            num_strategies: config.num_strategies,
-            density_grid_resolution: config.density_grid_resolution,
-            gap_penalty_weight: config.gap_penalty_weight,
-            local_density_radius: config.local_density_radius,
-            fill_move_prob: config.fill_move_prob,
-            hot_restart_interval: config.hot_restart_interval,
-            hot_restart_temp: config.hot_restart_temp,
-            elite_pool_size: config.elite_pool_size,
-            compression_prob: config.compression_prob,
-            wave_passes: config.wave_passes,
-            late_stage_threshold: config.late_stage_threshold,
-            fine_angle_step: config.fine_angle_step,
-            swap_prob: config.swap_prob,
-        }};
+        let packer = EvolvedPacker { config: config.clone() };
         let packings = packer.pack_all(max_n);
         all_packings.push((name, packings));
     }

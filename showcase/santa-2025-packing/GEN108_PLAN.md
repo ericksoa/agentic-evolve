@@ -193,10 +193,33 @@ def ilp_pack(n: int, grid_resolution: int = 100) -> np.ndarray:
 
 ## Success Criteria
 
-- [ ] Rust JSON export working
-- [ ] Python can load and refine Rust packings
-- [ ] Refinement improves Rust baseline by >0.5%
-- [ ] Parallel pipeline working for full n=1-200
+- [x] Rust JSON export working
+- [x] Python can load and refine Rust packings
+- [ ] Refinement improves Rust baseline by >0.5% - **FINDING: Only 0-0.04% improvement, Rust is already near-optimal**
+- [x] Parallel pipeline working for full n=1-200
+
+## Gen108 Results (2025-01-04)
+
+**Files Created:**
+- `rust/src/bin/export_packing.rs` - JSON export binary
+- `python/rust_hybrid.py` - Load and refine Rust packings
+- `python/parallel_refine.py` - Parallel worker execution
+- `python/gen108_runner.py` - Main runner script
+
+**Key Findings:**
+
+1. **Python SA adds minimal improvement** (0-0.04%) when starting from Rust solution
+   - Rust's evolved greedy is already near-optimal
+   - SA restarts create overlaps due to perturbation
+
+2. **Variance exploitation is the real value:**
+   - Best-of-4 workers: 3.0615 vs worst: 3.1650 (3.4% spread)
+   - Rust best-of-10: 4% improvement over single run
+
+3. **Recommended approach:**
+   - Focus on parallel Rust runs (best-of-N)
+   - Skip Python SA refinement (not cost-effective)
+   - Python is useful for features Rust lacks (ILP, global rotation)
 
 ## Files to Create
 

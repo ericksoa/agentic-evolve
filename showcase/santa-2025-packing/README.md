@@ -19,7 +19,7 @@ Pack 1-200 Christmas tree-shaped polygons into the smallest square box.
 
 **Scoring**: `score = sum(side^2/n)` for n=1 to 200 (lower is better)
 
-**Leaderboard**: Top scores ~69, our current best: **~85.6** (Gen112)
+**Leaderboard**: Top scores ~69, our current best: **85.50** (Gen114)
 
 ## Tree Shape
 
@@ -28,11 +28,29 @@ The tree is a 15-vertex polygon:
 - Width: 0.7 (at base)
 - 3 tiers of branches + rectangular trunk
 
-## Current Best Packing (n=200)
+## Visualizations
+
+### n=200 (Largest)
 
 ![Packing visualization for n=200 trees](packing_n200.svg)
 
-*Gen103 Best-of-N packing of 200 trees. Green polygons are the tree shapes, blue box shows the bounding square.*
+*Gen114 packing of 200 trees (side=8.996). Green polygons are the tree shapes, blue dashed box shows the bounding square.*
+
+### Small n Examples
+
+| n=4 (side=1.295) | n=5 (side=1.501) | n=10 (side=2.196) |
+|:---:|:---:|:---:|
+| ![n=4](packing_n4.svg) | ![n=5](packing_n5.svg) | ![n=10](packing_n10.svg) |
+
+*Small n values were optimized using CMA-ES (Gen114). These tight packings required global optimization to escape local minima.*
+
+### Medium/Large n Examples
+
+| n=50 (side=4.624) | n=100 (side=6.474) | n=150 (side=7.799) |
+|:---:|:---:|:---:|
+| ![n=50](packing_n50.svg) | ![n=100](packing_n100.svg) | ![n=150](packing_n150.svg) |
+
+*Larger n values use Best-of-20 selection with the evolved greedy algorithm.*
 
 ## Current Best Algorithm (Gen103 - BEST-OF-N SELECTION)
 
@@ -146,9 +164,11 @@ This project uses the `/evolve` skill to discover novel packing algorithms throu
 | 106-107 | ~86 | GPU acceleration experiments (validation only) |
 | 108 | ~86 | Rust-Python hybrid pipeline (Rust already optimal) |
 | 109 | 86.17 | Multi-strategy optimization (no improvement) |
-| **110** | 85.76 | **Small n exhaustive search (-0.41 points)** |
-| **111** | 85.67 | **Multi-start SA for n=4-8 (-0.09 points)** |
-| **112** | **~85.6** | **Pattern-based initialization (in progress)** |
+| 110 | 85.76 | Small n exhaustive search (-0.41 points) |
+| 111 | 85.67 | Multi-start SA for n=4-8 (-0.09 points) |
+| 112 | 85.59 | Pattern-based SA optimization (-0.08 points) |
+| 113 | 85.56 | Continued SA refinement for n≤10 (-0.03 points) |
+| **114** | **85.50** | **CMA-ES global optimization (-0.05 points)** |
 
 ### Plateau and Breakthrough (Gen92-103)
 
@@ -218,10 +238,25 @@ This project uses the `/evolve` skill to discover novel packing algorithms throu
 - n=5,7,8: Small refinements
 - **Result**: 85.77 → 85.67 (-0.10 points, 0.12% improvement)
 
-**Gen112**: Pattern-based initialization (in progress)
+**Gen112**: Pattern-based SA optimization
 - Analyzed n=4 solution pattern: trees at 90° angle offsets
 - Circular/grid initialization with pattern-based angles
 - n=5: 1.593 → 1.501 (major improvement!)
+- **Result**: 85.67 → 85.59 (-0.08 points)
+
+**Gen113**: Continued SA refinement
+- Multi-start SA with 80k iterations for n=3-10
+- Further refinements to n=6 and n=7
+- **Result**: 85.59 → 85.56 (-0.03 points)
+
+**Gen114**: CMA-ES global optimization (current best!)
+- Used CMA-ES (Covariance Matrix Adaptation Evolution Strategy)
+- Better at escaping local optima than simulated annealing
+- **Critical fix**: Reset baseline from actual submission (JSON was stale)
+- n=8: 2.038 → 1.970 (-3.3%)
+- n=9: 2.129 → 2.088 (-1.9%)
+- n=7 CMA-ES result had overlaps - rejected after strict validation
+- **Result**: 85.56 → 85.50 (-0.05 points, 0.07% improvement)
 
 | Generation | Score | Key Finding |
 |------------|-------|-------------|
@@ -229,9 +264,11 @@ This project uses the `/evolve` skill to discover novel packing algorithms throu
 | 105 | ~86 | Global rotation creates overlaps |
 | 106-107 | ~86 | GPU useful for validation only |
 | 108 | ~86 | Rust already near-optimal |
-| **110** | 85.76 | **Small n has slack** |
-| **111** | 85.67 | **Multi-start SA finds better local minima** |
-| **112** | ~85.6 | **Pattern-based initialization works** |
+| 110 | 85.76 | Small n has slack |
+| 111 | 85.67 | Multi-start SA finds better local minima |
+| 112 | 85.59 | Pattern-based initialization works |
+| 113 | 85.56 | Continued refinement for small n |
+| **114** | **85.50** | **CMA-ES escapes local optima** |
 
 ## Running
 
@@ -284,12 +321,14 @@ santa-2025-packing/
 | Gen103 Best-of-N | ~86 | ~25% | Multiple runs + selection |
 | Gen110 Small-n Search | 85.76 | ~24% | Exhaustive search for n≤10 |
 | Gen111 Multi-start SA | 85.67 | ~24% | Better local minima for small n |
-| **Gen112 (current)** | **~85.6** | **~24%** | **Pattern-based initialization** |
+| Gen112 Pattern-based | 85.59 | ~24% | Pattern-based initialization |
+| Gen113 SA Refinement | 85.56 | ~24% | Continued small n optimization |
+| **Gen114 (current)** | **85.50** | **~24%** | **CMA-ES global optimization** |
 | *Target (top solution)* | *~69* | - | Unknown (likely ILP or different paradigm) |
 
-**Note**: Best-of-20 gives +3.87% improvement by exploiting stochastic variance in SA algorithm. Small n values (n≤10) have the most room for improvement via exhaustive search.
+**Note**: Best-of-20 gives +3.87% improvement by exploiting stochastic variance in SA algorithm. Small n values (n≤10) have the most room for improvement via exhaustive search and CMA-ES.
 
-**Status**: Gen112 continues to find improvements in small n values using pattern-based SA initialization. The 24% gap to leaders requires fundamentally different approach - likely global optimization or exact solvers for small n.
+**Status**: Gen114 uses CMA-ES (Covariance Matrix Adaptation Evolution Strategy) for global optimization of small n values. CMA-ES is better at escaping local optima than SA. The 24% gap to leaders requires fundamentally different approach - likely exact solvers (ILP/SAT) or continuous optimization with tighter bounds.
 
 ## References
 

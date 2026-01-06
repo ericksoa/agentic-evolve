@@ -22,6 +22,7 @@ pub enum PlacementStrategy {
     ConcentricRings,
 }
 
+#[derive(Clone)]
 pub struct EvolvedConfig {
     pub search_attempts: usize,
     pub direction_samples: usize,
@@ -48,6 +49,9 @@ pub struct EvolvedConfig {
     pub late_stage_threshold: usize,
     pub fine_angle_step: f64,
     pub swap_prob: f64,  // GEN90c: Probability of boundary swap operation
+    // GEN109: New parameters
+    pub combined_move_prob: f64,    // Probability of combined position+rotation move
+    pub squeeze_interval: usize,     // Apply squeeze every N iterations
 }
 
 impl Default for EvolvedConfig {
@@ -55,7 +59,7 @@ impl Default for EvolvedConfig {
         Self {
             search_attempts: 200,
             direction_samples: 64,
-            sa_iterations: 28000,
+            sa_iterations: 28000,  // Reverted to original champion value
             sa_initial_temp: 0.45,
             sa_cooling_rate: 0.99993,
             sa_min_temp: 0.00001,
@@ -78,6 +82,9 @@ impl Default for EvolvedConfig {
             late_stage_threshold: 140,
             fine_angle_step: 15.0,
             swap_prob: 0.0,  // GEN90d: Disabled swap (didn't help)
+            // GEN109: New parameters (disabled - reverting to champion config)
+            combined_move_prob: 0.0,     // Disabled
+            squeeze_interval: 999999,    // Effectively disabled
         }
     }
 }
@@ -959,6 +966,51 @@ impl EvolvedPacker {
                     *trees = old_trees;
                     iterations_without_improvement += 1;
                 }
+            } else if iter > 0 && iter % self.config.squeeze_interval == 0 {
+                // GEN109: Squeeze phase every squeeze_interval iterations
+                if self.sa_squeeze_move(trees, rng) {
+                    current_side = compute_side_length(trees);
+                    if current_side < best_side {
+                        best_side = current_side;
+                        best_config = trees.clone();
+                        iterations_without_improvement = 0;
+                        self.update_elite_pool(&mut elite_pool, current_side, trees.clone());
+                    }
+                }
+            } else if rng.gen::<f64>() < self.config.combined_move_prob {
+                // GEN109: Combined position + rotation move
+                let idx = if !boundary_info.is_empty() && rng.gen::<f64>() < self.config.boundary_focus_prob {
+                    let bi = &boundary_info[rng.gen_range(0..boundary_info.len())];
+                    bi.0
+                } else {
+                    rng.gen_range(0..trees.len())
+                };
+
+                let old_tree = trees[idx].clone();
+                let success = self.combined_move(trees, idx, temp, rng);
+
+                if success {
+                    let new_side = compute_side_length(trees);
+                    let delta = new_side - current_side;
+
+                    if delta <= 0.0 || rng.gen::<f64>() < (-delta / temp).exp() {
+                        current_side = new_side;
+                        if current_side < best_side {
+                            best_side = current_side;
+                            best_config = trees.clone();
+                            iterations_without_improvement = 0;
+                            self.update_elite_pool(&mut elite_pool, current_side, trees.clone());
+                        } else {
+                            iterations_without_improvement += 1;
+                        }
+                    } else {
+                        trees[idx] = old_tree;
+                        iterations_without_improvement += 1;
+                    }
+                } else {
+                    trees[idx] = old_tree;
+                    iterations_without_improvement += 1;
+                }
             } else {
                 let do_fill_move = rng.gen::<f64>() < self.config.fill_move_prob;
 
@@ -1172,6 +1224,97 @@ impl EvolvedPacker {
         }
 
         boundary_info
+    }
+
+    // GEN109: Combined position + rotation move
+    // Adjust both position and rotation together for more exploration
+    #[inline]
+    fn combined_move(
+        &self,
+        trees: &mut [PlacedTree],
+        idx: usize,
+        temp: f64,
+        rng: &mut impl Rng,
+    ) -> bool {
+        let old = &trees[idx];
+        let old_x = old.x;
+        let old_y = old.y;
+        let old_angle = old.angle_deg;
+
+        let scale = (temp / self.config.sa_initial_temp).max(0.1);
+
+        // Combined move: smaller position change + rotation
+        let dx = rng.gen_range(-0.08..0.08) * scale;
+        let dy = rng.gen_range(-0.08..0.08) * scale;
+        let d_angle = rng.gen_range(-30.0..30.0) * scale;
+
+        let new_angle = (old_angle + d_angle).rem_euclid(360.0);
+        trees[idx] = PlacedTree::new(old_x + dx, old_y + dy, new_angle);
+
+        !has_overlap(trees, idx)
+    }
+
+    // GEN109: Squeeze all trees toward center
+    // Returns true if successful (no overlaps created and side reduced)
+    fn sa_squeeze_move(&self, trees: &mut [PlacedTree], rng: &mut impl Rng) -> bool {
+        if trees.len() <= 2 {
+            return false;
+        }
+
+        let (min_x, min_y, max_x, max_y) = compute_bounds(trees);
+        let center_x = (min_x + max_x) / 2.0;
+        let center_y = (min_y + max_y) / 2.0;
+        let current_side = (max_x - min_x).max(max_y - min_y);
+
+        // Randomized squeeze factor
+        let factor = rng.gen_range(0.995..0.9999);
+
+        // Save old positions
+        let old_trees: Vec<(f64, f64, f64)> = trees.iter()
+            .map(|t| (t.x, t.y, t.angle_deg))
+            .collect();
+
+        // Apply squeeze
+        for tree in trees.iter_mut() {
+            let dx = tree.x - center_x;
+            let dy = tree.y - center_y;
+            let new_x = center_x + dx * factor;
+            let new_y = center_y + dy * factor;
+            *tree = PlacedTree::new(new_x, new_y, tree.angle_deg);
+        }
+
+        // Check for overlaps
+        let mut valid = true;
+        for i in 0..trees.len() {
+            for j in (i + 1)..trees.len() {
+                if trees[i].overlaps(&trees[j]) {
+                    valid = false;
+                    break;
+                }
+            }
+            if !valid {
+                break;
+            }
+        }
+
+        if !valid {
+            // Revert
+            for (i, &(x, y, a)) in old_trees.iter().enumerate() {
+                trees[i] = PlacedTree::new(x, y, a);
+            }
+            return false;
+        }
+
+        let new_side = compute_side_length(trees);
+        if new_side >= current_side {
+            // Revert - no improvement
+            for (i, &(x, y, a)) in old_trees.iter().enumerate() {
+                trees[i] = PlacedTree::new(x, y, a);
+            }
+            return false;
+        }
+
+        true
     }
 
     #[inline]

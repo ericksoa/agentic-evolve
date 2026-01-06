@@ -19,7 +19,7 @@ fn random_config(rng: &mut impl Rng) -> EvolvedConfig {
     EvolvedConfig {
         search_attempts: rng.gen_range(150..250),
         direction_samples: rng.gen_range(48..80),
-        sa_iterations: rng.gen_range(20000..40000),
+        sa_iterations: rng.gen_range(30000..50000),  // GEN109: increased
         sa_initial_temp: rng.gen_range(0.35..0.55),
         sa_cooling_rate: rng.gen_range(0.99990..0.99996),
         sa_min_temp: 0.00001,
@@ -42,6 +42,9 @@ fn random_config(rng: &mut impl Rng) -> EvolvedConfig {
         late_stage_threshold: 140,
         fine_angle_step: 15.0,
         swap_prob: 0.0,
+        // GEN109: new parameters
+        combined_move_prob: rng.gen_range(0.15..0.25),
+        squeeze_interval: rng.gen_range(4000..6000),
     }
 }
 
@@ -114,33 +117,7 @@ fn main() {
     eprintln!("\nRunning {} strategy configs...", strategies.len());
     for (idx, config) in strategies.iter().enumerate() {
         eprintln!("  Strategy {}/{}", idx + 1, strategies.len());
-        let packer = EvolvedPacker { config: EvolvedConfig {
-            search_attempts: config.search_attempts,
-            direction_samples: config.direction_samples,
-            sa_iterations: config.sa_iterations,
-            sa_initial_temp: config.sa_initial_temp,
-            sa_cooling_rate: config.sa_cooling_rate,
-            sa_min_temp: config.sa_min_temp,
-            translation_scale: config.translation_scale,
-            rotation_granularity: config.rotation_granularity,
-            center_pull_strength: config.center_pull_strength,
-            sa_passes: config.sa_passes,
-            early_exit_threshold: config.early_exit_threshold,
-            boundary_focus_prob: config.boundary_focus_prob,
-            num_strategies: config.num_strategies,
-            density_grid_resolution: config.density_grid_resolution,
-            gap_penalty_weight: config.gap_penalty_weight,
-            local_density_radius: config.local_density_radius,
-            fill_move_prob: config.fill_move_prob,
-            hot_restart_interval: config.hot_restart_interval,
-            hot_restart_temp: config.hot_restart_temp,
-            elite_pool_size: config.elite_pool_size,
-            compression_prob: config.compression_prob,
-            wave_passes: config.wave_passes,
-            late_stage_threshold: config.late_stage_threshold,
-            fine_angle_step: config.fine_angle_step,
-            swap_prob: config.swap_prob,
-        }};
+        let packer = EvolvedPacker { config: config.clone() };
         all_packings.push(packer.pack_all(max_n));
     }
 
