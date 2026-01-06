@@ -65,3 +65,74 @@ python3 python/create_hybrid_submission.py \
 # Validate before submitting
 python3 python/validate_submission.py submission_best.csv
 ```
+
+## Post-Improvement Workflow
+
+**After finding improvements that update submission_best.csv:**
+
+### 1. Update Visualizations
+```bash
+# Regenerate SVG visualizations for improved n values
+./rust/target/release/visualize submission_best.csv
+
+# View updated visualizations
+open packing_n*.svg
+```
+
+### 2. Update README.md
+The README needs updates when:
+- Score improves (update leaderboard position and score)
+- New generation (add to evolution journey table)
+- New algorithm techniques (update "What Works" section)
+
+Key sections to check:
+- **Line 22**: Current best score (e.g., "our current best: **85.45** (Gen115)")
+- **Line 55+**: Core algorithm description (should reflect current approach)
+- **Evolution Journey table**: Add new generation milestone
+- **Results Summary table**: Update final row with current score
+
+### 3. Create GEN*_RESULTS.md
+Document what was tried and what worked:
+```markdown
+# Gen116 Results
+
+## Summary
+- Starting score: 85.45
+- Final score: XX.XX
+- Improvement: X.XX points
+
+## What Worked
+- [List successful optimizations]
+
+## What Didn't Work
+- [List failed attempts with brief reason]
+
+## Key Learnings
+- [Technical insights for future generations]
+```
+
+### 4. Commit Checklist
+Before committing:
+```bash
+# 1. Validate submission
+python3 python/validate_submission.py submission_best.csv
+
+# 2. Stage all related files
+git add submission_best.csv README.md GEN*_RESULTS.md packing_n*.svg
+
+# 3. Descriptive commit message
+git commit -m "Gen116: [brief description] - score XX.XX -> YY.YY"
+```
+
+## Strict Validation Requirements
+
+**CRITICAL**: The Kaggle validator uses strict segment-intersection overlap checking.
+
+Always use `python/validate_submission.py` which matches Kaggle's checker:
+- Segment intersection (not just area-based Shapely)
+- Point-in-polygon for containment
+- Zero tolerance for edge crossings
+
+The CMA-ES optimizer should use `has_any_overlap_strict()` which combines:
+1. Shapely fast filter (skip non-intersecting pairs)
+2. Segment intersection for edge cases with zero-area overlaps

@@ -52,10 +52,14 @@ The tree is a 15-vertex polygon:
 
 *Larger n values use Best-of-20 selection with the evolved greedy algorithm.*
 
-## Current Best Algorithm (Gen103 - BEST-OF-N SELECTION)
+## Core Packing Algorithm (Gen103 Rust + Gen115 Python Optimization)
+
+The solution combines two layers:
+1. **Rust (Gen103)**: Best-of-20 greedy placement + SA optimization
+2. **Python (Gen110-115)**: CMA-ES global optimization for small n (≤10)
 
 ```rust
-// Gen103 KEY INNOVATION: Best-of-N selection
+// Gen103 Rust Layer: Best-of-N selection
 // Run the evolved algorithm N times, pick best result for each n
 // Exploits stochastic variance in SA algorithm
 
@@ -94,6 +98,26 @@ for attempt in 0..200 {
 // SA optimization: 85% boundary-focused, 20% compression, 28k iters
 // Wave compaction: 5 passes (4 outside-in + 1 inside-out)
 // Greedy backtracking for boundary trees
+```
+
+```python
+# Gen110-115 Python Layer: CMA-ES optimization for small n
+# Builds on Rust output, finds global optima with population-based search
+
+for n in range(2, 11):  # Small n only (n=1 is trivial)
+    trees = load_from_rust_submission(n)
+
+    # CMA-ES: Covariance Matrix Adaptation Evolution Strategy
+    best_side, best_trees = optimize_with_cmaes(
+        trees,
+        max_evals=10000,    # Population-based search
+        sigma=0.15,          # Search radius
+        penalty_weight=2000  # High overlap penalty
+    )
+
+    # Only accept strictly valid solutions (segment intersection check)
+    if is_valid_strict(best_trees) and best_side < current_side:
+        update_submission(n, best_trees)
 ```
 
 ## What Works
