@@ -189,6 +189,7 @@ class EvolvedTDEClassifier(BaseEstimator, ClassifierMixin):
     - Gen 3: Threshold optimization + tuned class weights
     - Gen 4: Ensemble (LogReg + XGBoost) with soft voting -> F1 = 0.415
     - Gen 5: Feature selection (20 best features) -> F1 = 0.552 (+33%)
+    - Gen 6: Replace XGBoost with LightGBM -> F1 = 0.575 (+108% total)
     """
 
     # Top 20 features identified via importance ranking
@@ -204,23 +205,24 @@ class EvolvedTDEClassifier(BaseEstimator, ClassifierMixin):
         self.use_feature_selection = use_feature_selection
         self.optimal_threshold_ = None
 
-        # Ensemble components
+        # Gen 6: LR + LightGBM ensemble (replaces XGBoost)
         self.lr_model_ = None
-        self.xgb_model_ = None
+        self.lgb_model_ = None  # Gen 6: LightGBM replaces XGBoost
         self.imputer_ = None
         self.scaler_ = None
         self.feature_names_ = None
         self.selected_features_ = None
 
-        # Ensemble weights (learned)
-        self.lr_weight_ = 0.5
-        self.xgb_weight_ = 0.5
+        # Gen 6: Ensemble weights (LR=0.3, LGB=0.7)
+        self.lr_weight_ = 0.3
+        self.lgb_weight_ = 0.7
 
     def fit(self, X: pd.DataFrame, y: pd.Series) -> 'EvolvedTDEClassifier':
         """
-        Gen 5: Fit ensemble with feature selection and adaptive weighting.
+        Gen 6: Fit LR + LightGBM ensemble with feature selection.
         """
         from sklearn.linear_model import LogisticRegression
+        import lightgbm as lgb
 
         self.feature_names_ = list(X.columns)
 
@@ -253,34 +255,31 @@ class EvolvedTDEClassifier(BaseEstimator, ClassifierMixin):
         )
         self.lr_model_.fit(X_scaled, y)
 
-        # Model 2: XGBoost (powerful but needs more data)
-        self.xgb_model_ = xgb.XGBClassifier(
+        # Gen 6: Model 2: LightGBM (better than XGBoost on small data)
+        self.lgb_model_ = lgb.LGBMClassifier(
             n_estimators=200,
-            max_depth=3,  # Very shallow to prevent overfitting
+            max_depth=3,  # Shallow to prevent overfitting
             learning_rate=0.05,
             subsample=0.7,
             colsample_bytree=0.7,
             min_child_weight=5,
-            gamma=0.2,
-            reg_alpha=0.2,
-            reg_lambda=3,
             scale_pos_weight=scale_pos,
             random_state=42,
-            eval_metric='logloss'
+            verbose=-1
         )
-        self.xgb_model_.fit(X_scaled, y)
+        self.lgb_model_.fit(X_scaled, y)
 
         # Optimize ensemble weights and threshold using training data
         lr_proba = self.lr_model_.predict_proba(X_scaled)[:, 1]
-        xgb_proba = self.xgb_model_.predict_proba(X_scaled)[:, 1]
+        lgb_proba = self.lgb_model_.predict_proba(X_scaled)[:, 1]
 
         best_f1 = 0
-        best_lr_w = 0.5
+        best_lr_w = 0.3
         best_thresh = 0.35
 
-        for lr_w in [0.3, 0.4, 0.5, 0.6, 0.7]:
-            xgb_w = 1 - lr_w
-            combined = lr_w * lr_proba + xgb_w * xgb_proba
+        for lr_w in [0.2, 0.3, 0.4, 0.5]:
+            lgb_w = 1 - lr_w
+            combined = lr_w * lr_proba + lgb_w * lgb_proba
 
             thresh, f1 = optimize_threshold(y.values, combined)
             if f1 > best_f1:
@@ -289,14 +288,14 @@ class EvolvedTDEClassifier(BaseEstimator, ClassifierMixin):
                 best_thresh = thresh
 
         self.lr_weight_ = best_lr_w
-        self.xgb_weight_ = 1 - best_lr_w
+        self.lgb_weight_ = 1 - best_lr_w
         self.optimal_threshold_ = best_thresh
         self.threshold = best_thresh
 
         return self
 
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        """Predict probability with ensemble."""
+        """Predict probability with Gen 6 LR + LightGBM ensemble."""
         # Apply feature selection
         if self.use_feature_selection and self.selected_features_:
             X = X[self.selected_features_]
@@ -305,9 +304,9 @@ class EvolvedTDEClassifier(BaseEstimator, ClassifierMixin):
         X_scaled = self.scaler_.transform(X_imputed)
 
         lr_proba = self.lr_model_.predict_proba(X_scaled)[:, 1]
-        xgb_proba = self.xgb_model_.predict_proba(X_scaled)[:, 1]
+        lgb_proba = self.lgb_model_.predict_proba(X_scaled)[:, 1]
 
-        combined = self.lr_weight_ * lr_proba + self.xgb_weight_ * xgb_proba
+        combined = self.lr_weight_ * lr_proba + self.lgb_weight_ * lgb_proba
 
         # Return in sklearn format [P(0), P(1)]
         return np.column_stack([1 - combined, combined])

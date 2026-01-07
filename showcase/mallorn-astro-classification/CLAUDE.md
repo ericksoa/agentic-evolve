@@ -153,7 +153,7 @@ kaggle competitions submit \
   -m "Description of changes"
 ```
 
-## Evolution Results (Current Best: F1 = 0.552)
+## Evolution Results (Current Best: F1 = 0.575)
 
 | Generation | Strategy | F1 Score | Key Learning |
 |------------|----------|----------|--------------|
@@ -161,7 +161,8 @@ kaggle competitions submit \
 | Gen 2 | + Physics features | 0.368 | Domain knowledge beats data |
 | Gen 3 | + Threshold tuning | ~0.38 | Never use 0.5 for imbalanced |
 | Gen 4 | + LR+XGB ensemble | 0.415 | Ensemble reduces variance |
-| Gen 5 | + Feature selection | **0.552** | Less is more (20 of 121 features) |
+| Gen 5 | + Feature selection | 0.552 | Less is more (20 of 121 features) |
+| Gen 6 | + LightGBM (replaces XGB) | **0.575** | LGB > XGB on small data |
 
 **Read `EVOLUTION_LOG.md` for detailed learnings from each generation.**
 

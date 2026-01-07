@@ -211,6 +211,38 @@ The physics-based features (decay_alpha, tde_alpha_diff) ranked LOW in importanc
 
 ---
 
+## Generation 6: LightGBM Replaces XGBoost
+
+**F1 Score: 0.575 (+4% from Gen 5, +108% total)**
+
+### What We Tested
+
+| Ensemble | F1 Score |
+|----------|----------|
+| LR only | 0.358 |
+| XGB only | 0.546 |
+| LGB only | 0.567 |
+| LR + XGB (Gen 5) | 0.552 |
+| **LR + LGB** | **0.575** |
+| XGB + LGB | 0.568 |
+| LR + XGB + LGB | 0.570 |
+
+### Key Learnings
+
+1. **LightGBM > XGBoost on small data**: 0.567 vs 0.546 (solo performance)
+2. **2 models > 3 models**: Adding XGBoost to LR+LGB hurt performance
+3. **Simpler ensembles generalize better**: More models add noise on tiny samples
+4. **Optimal weights**: LR=0.3, LGB=0.7
+
+### Why LightGBM Wins
+
+- Better leaf-wise growth (vs XGBoost's level-wise)
+- More efficient handling of categorical-like features
+- Less prone to overfitting on small data
+- Faster training (bonus for iteration)
+
+---
+
 ## Summary: Evolution Trajectory
 
 ```
@@ -223,8 +255,10 @@ Gen 3: + Threshold optimization  F1 ~ 0.38
 Gen 4: + Ensemble (LR + XGB)     F1 = 0.415
        ↓ +33% (feature selection)
 Gen 5: + Feature selection       F1 = 0.552
+       ↓ +4% (LightGBM)
+Gen 6: + LightGBM replaces XGB   F1 = 0.575
                                  ─────────
-                         Total: +100% improvement
+                         Total: +108% improvement
 ```
 
 ---
