@@ -160,6 +160,57 @@ prediction = (ensemble_proba >= threshold).astype(int)
 
 ---
 
+## Generation 5: Feature Selection
+
+**F1 Score: 0.552 (+33% from Gen 4)**
+
+### What We Discovered
+
+Feature importance analysis revealed that only 20 of 121 features carry most signal:
+
+| Rank | Feature | Type |
+|------|---------|------|
+| 1 | g_skew | Statistical |
+| 2 | r_scatter | Smoothness |
+| 3 | r_skew | Statistical |
+| 4 | i_skew | Statistical |
+| 5 | i_kurtosis | Statistical |
+| 6 | r_kurtosis | Statistical |
+| 7 | u_max | Band stat |
+| 8 | g_min | Band stat |
+| 9 | u_range | Band stat |
+| 10 | y_mean | Band stat |
+
+### Feature Count vs F1 Score
+
+| Features | F1 Score |
+|----------|----------|
+| 10 | 0.454 |
+| **20** | **0.552** |
+| 30 | 0.546 |
+| 50 | 0.522 |
+| 75 | 0.531 |
+| 121 (all) | 0.492 |
+
+### Key Learnings
+
+1. **Less is more**: 20 features outperform 121 features by 12%
+2. **Statistical > Physics on tiny data**: Skewness and kurtosis beat power-law fits
+3. **Simpler features generalize better**: Complex physics fits overfit on small samples
+4. **Feature selection is critical**: Reduces noise, improves generalization
+
+### Surprising Finding
+
+The physics-based features (decay_alpha, tde_alpha_diff) ranked LOW in importance. On tiny data, the fitting errors dominate the signal. Simple statistics (skewness, scatter) are more robust.
+
+### Recommendations
+
+- Always do feature selection on small datasets
+- Start with simple statistics before complex domain features
+- The best features may not be the most intuitive ones
+
+---
+
 ## Summary: Evolution Trajectory
 
 ```
@@ -170,8 +221,10 @@ Gen 2: + TDE features            F1 = 0.368
 Gen 3: + Threshold optimization  F1 ~ 0.38
        ↓ +12% (ensemble)
 Gen 4: + Ensemble (LR + XGB)     F1 = 0.415
+       ↓ +33% (feature selection)
+Gen 5: + Feature selection       F1 = 0.552
                                  ─────────
-                         Total: +50% improvement
+                         Total: +100% improvement
 ```
 
 ---
