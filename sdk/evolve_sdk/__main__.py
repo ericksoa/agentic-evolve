@@ -102,15 +102,17 @@ def main():
     elif args.config:
         # Load from config file
         from .config import EvolutionConfig
-        config = EvolutionConfig.from_config_file(
-            args.config,
-            problem=args.problem,  # Override if provided
-            max_generations=args.max_generations,
-            population_size=args.population_size,
-            plateau_threshold=args.plateau,
-            evolve_dir=args.evolve_dir,
-            model=args.model,
-        )
+        # Build overrides dict, only including non-None values
+        overrides = {
+            "max_generations": args.max_generations,
+            "population_size": args.population_size,
+            "plateau_threshold": args.plateau,
+            "evolve_dir": args.evolve_dir,
+            "model": args.model,
+        }
+        if args.problem:  # Only override problem if explicitly provided
+            overrides["problem"] = args.problem
+        config = EvolutionConfig.from_config_file(args.config, **overrides)
         # Override mode if explicitly provided
         if args.mode != "size":  # size is default, so only override if explicitly set
             config.mode = args.mode

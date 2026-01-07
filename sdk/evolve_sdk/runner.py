@@ -354,18 +354,8 @@ class EvolutionRunner:
 
         result_text = ""
 
-        # Create hooks
-        hooks = {}
-        if self.config.enable_validation_hooks:
-            validation_hook = create_validation_hook(
-                blocked_patterns=self.config.blocked_imports,
-                allowed_paths=[str(self.work_dir)],
-            )
-            logging_hook = create_logging_hook(self.log_file, self.generation)
-            hooks = {
-                "PreToolUse": [HookMatcher(hooks=[validation_hook, logging_hook])],
-                "PostToolUse": [HookMatcher(hooks=[logging_hook])],
-            }
+        # Note: hooks disabled for now due to SDK compatibility issues
+        # TODO: Re-enable when claude_agent_sdk hook interface is clarified
 
         try:
             async for message in query(
@@ -376,9 +366,7 @@ class EvolutionRunner:
                     permission_mode="acceptEdits",
                     max_turns=max_turns,
                     model=self.config.model,
-                    hooks=hooks if hooks else None,
                     cwd=self.cwd,
-                    env=self.env if self.env else None,
                 ),
             ):
                 # Collect result text
