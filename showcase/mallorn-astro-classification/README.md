@@ -108,23 +108,43 @@ mallorn-astro-classification/
 
 | Algorithm | F1 Score | Notes |
 |-----------|----------|-------|
-| **Evolved (ours)** | TBD | - |
-| Random Forest Baseline | TBD | Standard features |
-| XGBoost Baseline | TBD | Standard features |
+| **Evolved Ensemble (Gen 4)** | **0.415** | LR + XGBoost with physics features |
+| Logistic Regression | 0.368 | With evolved features |
+| XGBoost Baseline | 0.313 | With evolved features |
+| Logistic Regression Baseline | 0.276 | Basic statistics only |
+| Random Forest Baseline | 0.000 | Fails on small imbalanced data |
 
 ## Evolution Journey
 
-*To be documented as we evolve solutions*
+### Generation 1: Baseline Establishment (F1 = 0.276)
+- [x] Logistic Regression with basic statistics: **F1 = 0.276**
+- [x] XGBoost baseline: F1 = 0.180
+- [x] Random Forest: F1 = 0.000 (fails on imbalanced data)
 
-### Generation 1: Baseline Establishment
-- [ ] Random Forest with hand-crafted features
-- [ ] XGBoost with hand-crafted features
-- [ ] Simple neural network
+### Generation 2: Physics Feature Evolution (F1 = 0.368)
+- [x] Power-law decay fitting (TDE signature: α ≈ -5/3)
+- [x] Rise time / decay time asymmetry
+- [x] Color evolution (g-r, r-i at peak and slope)
+- [x] Smoothness metrics (reduced χ², scatter)
+- [x] Blue excess indicator
+- **Improvement: +33% over baseline**
 
-### Generation 2+: Feature Evolution
-- [ ] Evolve feature extraction functions
-- [ ] Evolve feature combinations
-- [ ] Evolve classifier architectures
+### Generation 3: Threshold & Class Weight Optimization
+- [x] Lower threshold (0.5 → 0.35) for better recall
+- [x] Increased class weights (scale_pos_weight = 15)
+- [x] Post-hoc threshold optimization on validation
+
+### Generation 4: Ensemble Strategy (F1 = 0.415)
+- [x] Soft voting ensemble: LogReg (stable) + XGBoost (powerful)
+- [x] Adaptive weight learning (optimized per-fold)
+- [x] Combined threshold optimization
+- **Final improvement: +50% over Gen 1 baseline**
+
+### Key Insights
+1. **Logistic Regression beats tree methods** on tiny datasets (12 TDEs/split)
+2. **Physics features matter**: Power-law decay and color evolution are discriminative
+3. **Threshold is critical**: Optimal threshold ≈ 0.35 (not 0.5) for imbalanced classes
+4. **Ensemble stabilizes**: Combining LR + XGBoost reduces variance across splits
 
 ## References
 

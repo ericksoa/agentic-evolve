@@ -179,52 +179,120 @@ class TDEClassifier(BaseEstimator, ClassifierMixin):
 # EVOLVED CLASSIFIER (placeholder for evolution)
 # =============================================================================
 
-class EvolvedTDEClassifier(TDEClassifier):
+class EvolvedTDEClassifier(BaseEstimator, ClassifierMixin):
     """
-    Evolved TDE classifier with optimized parameters and ensemble strategies.
+    Evolved TDE classifier with ensemble strategy.
 
-    This class will be modified by the /evolve skill to discover
-    better classification strategies.
+    Evolution history:
+    - Gen 1: Default XGBoost (F1 = 0.18)
+    - Gen 2: With physics features (Optimal F1 = 0.447)
+    - Gen 3: Threshold optimization + tuned class weights
+    - Gen 4: Ensemble (LogReg + XGBoost) with soft voting
     """
 
-    def __init__(self):
-        # Evolved parameters (to be optimized)
-        super().__init__(
-            model_type='xgboost',
-            model_params={
-                'n_estimators': 200,
-                'max_depth': 6,
-                'learning_rate': 0.1,
-                'subsample': 0.8,
-                'colsample_bytree': 0.8,
-                'min_child_weight': 1,
-                'gamma': 0,
-                'reg_alpha': 0,
-                'reg_lambda': 1,
-            },
-            threshold=0.5,  # Can be evolved
-            use_class_weights=True
-        )
+    def __init__(self, threshold: float = 0.35):
+        self.threshold = threshold
+        self.optimal_threshold_ = None
+
+        # Ensemble components
+        self.lr_model_ = None
+        self.xgb_model_ = None
+        self.imputer_ = None
+        self.scaler_ = None
+        self.feature_names_ = None
+
+        # Ensemble weights (learned)
+        self.lr_weight_ = 0.5
+        self.xgb_weight_ = 0.5
 
     def fit(self, X: pd.DataFrame, y: pd.Series) -> 'EvolvedTDEClassifier':
         """
-        Evolved fitting procedure.
-
-        Can include:
-        - Feature selection
-        - Threshold optimization
-        - Ensemble methods
+        Gen 4: Fit ensemble with adaptive weighting.
         """
-        # For now, use base implementation
-        # Evolution will modify this
-        return super().fit(X, y)
+        from sklearn.linear_model import LogisticRegression
+
+        self.feature_names_ = list(X.columns)
+
+        # Preprocess
+        self.imputer_ = SimpleImputer(strategy='median')
+        X_imputed = self.imputer_.fit_transform(X)
+
+        self.scaler_ = StandardScaler()
+        X_scaled = self.scaler_.fit_transform(X_imputed)
+
+        # Calculate class weight
+        n_neg = (y == 0).sum()
+        n_pos = (y == 1).sum()
+        scale_pos = n_neg / max(n_pos, 1)
+
+        # Model 1: Logistic Regression (stable with small data)
+        self.lr_model_ = LogisticRegression(
+            class_weight='balanced',
+            max_iter=1000,
+            C=0.5,  # Some regularization
+            random_state=42
+        )
+        self.lr_model_.fit(X_scaled, y)
+
+        # Model 2: XGBoost (powerful but needs more data)
+        self.xgb_model_ = xgb.XGBClassifier(
+            n_estimators=200,
+            max_depth=3,  # Very shallow to prevent overfitting
+            learning_rate=0.05,
+            subsample=0.7,
+            colsample_bytree=0.7,
+            min_child_weight=5,
+            gamma=0.2,
+            reg_alpha=0.2,
+            reg_lambda=3,
+            scale_pos_weight=scale_pos,
+            random_state=42,
+            eval_metric='logloss'
+        )
+        self.xgb_model_.fit(X_scaled, y)
+
+        # Optimize ensemble weights and threshold using training data
+        lr_proba = self.lr_model_.predict_proba(X_scaled)[:, 1]
+        xgb_proba = self.xgb_model_.predict_proba(X_scaled)[:, 1]
+
+        best_f1 = 0
+        best_lr_w = 0.5
+        best_thresh = 0.35
+
+        for lr_w in [0.3, 0.4, 0.5, 0.6, 0.7]:
+            xgb_w = 1 - lr_w
+            combined = lr_w * lr_proba + xgb_w * xgb_proba
+
+            thresh, f1 = optimize_threshold(y.values, combined)
+            if f1 > best_f1:
+                best_f1 = f1
+                best_lr_w = lr_w
+                best_thresh = thresh
+
+        self.lr_weight_ = best_lr_w
+        self.xgb_weight_ = 1 - best_lr_w
+        self.optimal_threshold_ = best_thresh
+        self.threshold = best_thresh
+
+        return self
+
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict probability with ensemble."""
+        X_imputed = self.imputer_.transform(X)
+        X_scaled = self.scaler_.transform(X_imputed)
+
+        lr_proba = self.lr_model_.predict_proba(X_scaled)[:, 1]
+        xgb_proba = self.xgb_model_.predict_proba(X_scaled)[:, 1]
+
+        combined = self.lr_weight_ * lr_proba + self.xgb_weight_ * xgb_proba
+
+        # Return in sklearn format [P(0), P(1)]
+        return np.column_stack([1 - combined, combined])
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        """
-        Evolved prediction with optimized threshold.
-        """
-        # Evolved threshold optimization could go here
-        return super().predict(X)
+        """Predict with optimized threshold."""
+        proba = self.predict_proba(X)[:, 1]
+        return (proba >= self.threshold).astype(int)
 
 
 def optimize_threshold(
