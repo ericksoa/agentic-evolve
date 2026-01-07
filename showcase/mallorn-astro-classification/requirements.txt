@@ -1,0 +1,25 @@
+# Core ML
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+lightgbm>=4.0.0
+
+# Deep learning (optional)
+# torch>=2.0.0
+
+# Light curve processing
+scipy>=1.11.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Kaggle API
+kaggle>=1.5.0
+
+# Progress bars
+tqdm>=4.65.0
+
+# Data validation
+pandera>=0.17.0
