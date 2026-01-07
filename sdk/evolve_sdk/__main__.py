@@ -132,6 +132,7 @@ def main():
             test_command=config.test_command,
             starter_solutions=config.starter_solutions,
             optimization_strategies=config.optimization_strategies,
+            cwd=getattr(config, 'cwd', None),
         )
     else:
         if not args.problem:

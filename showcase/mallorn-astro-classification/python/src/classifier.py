@@ -326,10 +326,38 @@ class EvolvedTDEClassifier(BaseEstimator, ClassifierMixin):
 class Gen9_LROnly(BaseEstimator, ClassifierMixin):
     """
     Gen 9: Pure Logistic Regression - simpler is better on tiny data.
-    SUPERSEDED by Gen10 (threshold=0.40 is better).
+    SUPERSEDED by Gen10 (threshold=0.40 is better). Use Gen10_LROnly instead.
     """
 
     def __init__(self, threshold: float = 0.35):
+        # Redirect to Gen10 with Gen9's threshold
+        self.threshold = threshold
+        self.lr_ = None
+        self.imputer_ = None
+        self.scaler_ = None
+        self.feature_names_ = None
+
+    def fit(self, X, y):
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.impute import SimpleImputer
+        from sklearn.preprocessing import StandardScaler
+        self.feature_names_ = list(X.columns)
+        self.imputer_ = SimpleImputer(strategy='median')
+        X_imputed = self.imputer_.fit_transform(X)
+        self.scaler_ = StandardScaler()
+        X_scaled = self.scaler_.fit_transform(X_imputed)
+        self.lr_ = LogisticRegression(class_weight='balanced', C=0.05, max_iter=1000, random_state=42)
+        self.lr_.fit(X_scaled, y)
+        return self
+
+    def predict_proba(self, X):
+        X_imputed = self.imputer_.transform(X)
+        X_scaled = self.scaler_.transform(X_imputed)
+        return self.lr_.predict_proba(X_scaled)
+
+    def predict(self, X):
+        proba = self.predict_proba(X)[:, 1]
+        return (proba >= self.threshold).astype(int)
 
 
 class Gen10_LROnly(BaseEstimator, ClassifierMixin):

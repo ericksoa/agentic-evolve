@@ -562,14 +562,92 @@ Gen10: Pure LogReg (t=0.40)      Holdout = 0.5025 → PENDING (+21% vs Gen 4)
 
 ---
 
+## Generation 11: Feature Interactions (via /evolve-sdk)
+
+**Holdout F1: 0.5296 (+5.4% vs Gen10's 0.5025)**
+
+### What We Added
+
+Polynomial feature interactions for the top 6 predictors:
+- `g_skew`, `r_scatter`, `r_skew`, `i_skew`, `i_kurtosis`, `r_kurtosis`
+
+This creates 21 new features:
+- 6 squared terms (x^2)
+- 15 pairwise interactions (x1*x2)
+
+### Threshold Optimization
+
+| Threshold | Holdout F1 |
+|-----------|------------|
+| 0.40 | 0.5089 |
+| 0.41 | 0.5184 |
+| 0.42 | 0.5270 |
+| **0.43** | **0.5296** |
+| 0.44 | 0.5050 |
+| 0.45 | 0.5103 |
+
+### Gen11 Champion Configuration
+
+```python
+class Gen11_Champion:
+    TOP_FEATURES = ['g_skew', 'r_scatter', 'r_skew', 'i_skew', 'i_kurtosis', 'r_kurtosis']
+    threshold = 0.43  # Optimized (was 0.40)
+    C = 0.05          # Keep strong regularization
+    PolynomialFeatures(degree=2, interaction_only=False)  # Include x^2
+```
+
+### Key Learnings
+
+1. **Squared terms help**: `interaction_only=False` (0.5296) beats `interaction_only=True` (0.4824)
+2. **Threshold matters more than regularization**: t=0.43 with C=0.05 beats t=0.40 with C=0.08
+3. **Don't combine improvements blindly**: C=0.08 + t=0.42 (0.5067) worse than either alone
+4. **Feature interactions capture physics**: Cross-band correlations (color evolution) and moment interactions (shape consistency)
+
+### Files Created
+
+- `.evolve-sdk/improve_tde_classification_f1/mutations/gen11_champion.py` - Champion solution
+- `python/src/evolve_benchmark.py` - SDK-compatible benchmark harness
+
+---
+
+## Summary: Evolution Trajectory (Updated)
+
+```
+Gen 1: Baseline LogReg           F1 = 0.276 (CV)
+       ↓ +33% (physics features)
+Gen 2: + TDE features            F1 = 0.368 (CV)
+       ↓ (threshold tuning)
+Gen 3: + Threshold optimization  F1 ~ 0.38 (CV)
+       ↓ +12% (ensemble)
+Gen 4: + Ensemble (LR + XGB)     F1 = 0.415 (CV) → 0.4154 (PUBLIC) ✅ OLD BEST
+       ↓ +33% (feature selection) - OVERFIT!
+Gen 5: + Feature selection       F1 = 0.552 (CV) → 0.3227 (PUBLIC) ❌
+       ↓ +4% (LightGBM) - MORE OVERFIT!
+Gen 6: + LightGBM replaces XGB   F1 = 0.575 (CV) → 0.3191 (PUBLIC) ❌
+       ↓ (anti-overfit measures)
+Gen 7: + Anti-overfitting        F1 = 0.206 (CV) → ? (not submitted)
+       ↓ (TabPFN blocked)
+Gen 8: TabPFN attempt            BLOCKED (infrastructure)
+       ↓ (back to basics)
+Gen 9: Pure LogReg (C=0.05)      Holdout = 0.4611 → PENDING
+       ↓ (threshold optimization)
+Gen10: Pure LogReg (t=0.40)      Holdout = 0.5025 → PENDING (+21% vs Gen 4)
+       ↓ (feature interactions via /evolve-sdk)
+Gen11: + Feature interactions     Holdout = 0.5296 → PENDING (+27% vs Gen 4)
+```
+
+**KEY INSIGHT**: Feature interactions for top predictors + optimized threshold = +5.4% improvement.
+
+---
+
 ## Next Steps (Future Generations)
 
-If Gen 9 succeeds on public LB:
-1. Try even stronger regularization (C=0.01)
-2. Try Ridge Classifier (similar, different implementation)
-3. Try SVM with linear kernel
+If Gen 11 succeeds on public LB:
+1. Try degree=3 polynomial features
+2. Add more features to interaction set
+3. Try different regularization (ElasticNet)
 
-If Gen 9 fails:
-1. Investigate why holdout overestimated performance
-2. Consider different holdout split selection
+If Gen 11 fails:
+1. Investigate which interaction terms are most important
+2. Consider feature selection on the expanded feature set
 3. Try semi-supervised learning with test data

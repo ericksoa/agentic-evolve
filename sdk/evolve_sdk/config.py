@@ -70,8 +70,11 @@ class EvolutionConfig:
         eval_config = data.get("evaluation", {})
         test_command = eval_config.get("test_command")
 
+        # Extract cwd for working directory
+        cwd = data.get("cwd", overrides.get("cwd"))
+
         # Build config with file data and overrides
-        return cls(
+        config = cls(
             problem=overrides.get("problem", problem),
             mode=overrides.get("mode", mode),
             max_generations=overrides.get("max_generations", 50),
@@ -85,3 +88,6 @@ class EvolutionConfig:
             references=data.get("references", []),
             model=overrides.get("model", "claude-sonnet-4-20250514"),
         )
+        # Store cwd as extra attribute for runner
+        config.cwd = cwd
+        return config

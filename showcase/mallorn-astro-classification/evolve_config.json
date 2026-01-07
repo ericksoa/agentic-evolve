@@ -1,0 +1,78 @@
+{
+  "description": "Improve TDE classification F1 score on MALLORN astronomical challenge",
+  "mode": "ml",
+  "problem": {
+    "goal": "Maximize F1 score for TDE (Tidal Disruption Event) detection",
+    "metric": "F1 score on holdout splits",
+    "current_best": {
+      "model": "Gen10_LROnly",
+      "holdout_f1": 0.5025,
+      "public_f1": 0.4154,
+      "config": {
+        "C": 0.05,
+        "threshold": 0.40,
+        "class_weight": "balanced"
+      }
+    },
+    "constraints": [
+      "Must pass holdout validation (CV-holdout gap < 0.10)",
+      "Prefer simpler models (learned from Gen 5-6 overfitting)",
+      "Do NOT use LightGBM (overfits on this tiny data)",
+      "Do NOT use aggressive feature selection (< 30 features)"
+    ]
+  },
+  "cwd": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/mallorn-astro-classification",
+  "evaluation": {
+    "test_command": "cd /Users/aerickson/Documents/Claude\\ Code\\ Projects/agentic-evolve/showcase/mallorn-astro-classification && source venv/bin/activate && python python/src/evolve_benchmark.py --evaluate {solution} --data-dir data --json 2>/dev/null",
+    "cv_splits": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16],
+    "holdout_splits": [14, 17, 20],
+    "acceptance_criteria": {
+      "min_holdout_f1": 0.40,
+      "max_cv_holdout_gap": 0.10
+    }
+  },
+  "starter_solutions": [
+    "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/mallorn-astro-classification/python/src/gen10_starter.py"
+  ],
+  "optimization_strategies": [
+    {
+      "name": "threshold_sweep",
+      "description": "Test thresholds in range 0.35-0.45",
+      "values": [0.35, 0.38, 0.40, 0.42, 0.45]
+    },
+    {
+      "name": "regularization_sweep",
+      "description": "Test C values for LogisticRegression",
+      "values": [0.03, 0.05, 0.08, 0.10]
+    },
+    {
+      "name": "linear_alternatives",
+      "description": "Try other linear models",
+      "options": ["RidgeClassifier", "SGDClassifier", "LinearSVC"]
+    },
+    {
+      "name": "feature_interactions",
+      "description": "Add polynomial features for top predictors",
+      "top_features": ["g_skew", "r_scatter", "r_skew", "i_skew"]
+    }
+  ],
+  "references": [
+    "EVOLUTION_LOG.md - Critical learnings from Gen 1-10",
+    "python/src/classifier.py - Current best (Gen10_LROnly)",
+    "python/src/features.py - Feature extraction"
+  ],
+  "domain_knowledge": {
+    "tde_signatures": [
+      "Power-law decay with exponent ~ -5/3",
+      "Rapid rise (days to weeks)",
+      "Blue colors (high g-band flux)",
+      "Smooth light curves (unlike SNe)"
+    ],
+    "data_characteristics": {
+      "n_samples_per_split": "100-170",
+      "n_positive_per_split": "3-12 TDEs",
+      "imbalance_ratio": "~20:1",
+      "n_features": "~120"
+    }
+  }
+}
