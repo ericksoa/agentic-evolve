@@ -153,16 +153,16 @@ kaggle competitions submit \
   -m "Description of changes"
 ```
 
-## Evolution Results (Current Best: F1 = 0.575)
+## Evolution Results (Current Best Public: F1 = 0.4154, Pending: 0.50)
 
-| Generation | Strategy | F1 Score | Key Learning |
-|------------|----------|----------|--------------|
-| Gen 1 | Baseline LogReg | 0.276 | Simple models win on tiny data |
-| Gen 2 | + Physics features | 0.368 | Domain knowledge beats data |
-| Gen 3 | + Threshold tuning | ~0.38 | Never use 0.5 for imbalanced |
-| Gen 4 | + LR+XGB ensemble | 0.415 | Ensemble reduces variance |
-| Gen 5 | + Feature selection | 0.552 | Less is more (20 of 121 features) |
-| Gen 6 | + LightGBM (replaces XGB) | **0.575** | LGB > XGB on small data |
+| Gen | Strategy | CV F1 | Holdout F1 | Public F1 | Status |
+|-----|----------|-------|------------|-----------|--------|
+| 4 | LR+XGB ensemble | 0.415 | ~0.41 | **0.4154** | Best Public |
+| 5-6 | Feature sel + LGB | 0.55-0.58 | ~0.32 | 0.32 | OVERFIT |
+| 9 | Pure LogReg (t=0.35) | 0.227 | 0.4611 | Pending | +11% |
+| **10** | **Pure LogReg (t=0.40)** | 0.235 | **0.5025** | Pending | **+21%** |
+
+**CRITICAL**: Gen 5-6 showed that higher CV score != better public score. Gen 9-10 focus on holdout validation.
 
 **Read `EVOLUTION_LOG.md` for detailed learnings from each generation.**
 

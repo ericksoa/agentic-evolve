@@ -106,13 +106,15 @@ mallorn-astro-classification/
 
 ## Results Summary
 
-| Algorithm | F1 Score | Notes |
-|-----------|----------|-------|
-| **Evolved Ensemble (Gen 4)** | **0.415** | LR + XGBoost with physics features |
-| Logistic Regression | 0.368 | With evolved features |
-| XGBoost Baseline | 0.313 | With evolved features |
-| Logistic Regression Baseline | 0.276 | Basic statistics only |
-| Random Forest Baseline | 0.000 | Fails on small imbalanced data |
+| Generation | Algorithm | Holdout F1 | Public F1 | Status |
+|------------|-----------|------------|-----------|--------|
+| **Gen 10** | **Pure LogReg (t=0.40)** | **0.5025** | Pending | **+21% vs best** |
+| Gen 9 | Pure LogReg (t=0.35) | 0.4611 | Pending | +11% vs best |
+| Gen 4 | LR + XGBoost ensemble | ~0.41 | **0.4154** | Best Public |
+| Gen 5-6 | Feature sel + LightGBM | ~0.32 | 0.32 | OVERFIT |
+| Gen 1 | Baseline LogReg | 0.276 | - | Baseline |
+
+**Key Finding**: Gen 5-6 showed that higher CV score ≠ better public score. Gen 9-10 use holdout validation to prevent overfitting.
 
 ## Evolution Journey
 
@@ -134,17 +136,33 @@ mallorn-astro-classification/
 - [x] Increased class weights (scale_pos_weight = 15)
 - [x] Post-hoc threshold optimization on validation
 
-### Generation 4: Ensemble Strategy (F1 = 0.415)
+### Generation 4: Ensemble Strategy (Public F1 = 0.4154)
 - [x] Soft voting ensemble: LogReg (stable) + XGBoost (powerful)
 - [x] Adaptive weight learning (optimized per-fold)
 - [x] Combined threshold optimization
-- **Final improvement: +50% over Gen 1 baseline**
+- **Best public leaderboard score: 0.4154**
+
+### Generations 5-6: Overfitting Lesson (CV=0.55, Public=0.32)
+- [x] Feature selection (20 of 121 features) - OVERFIT
+- [x] LightGBM replaces XGBoost - MORE OVERFIT
+- **Key lesson**: Higher CV score ≠ better public score
+
+### Generation 9: Back to Basics (Holdout F1 = 0.4611)
+- [x] Pure Logistic Regression (removed XGBoost)
+- [x] Strong regularization (C=0.05)
+- [x] Holdout validation protocol (splits 14, 17, 20)
+- **+11% improvement over best public**
+
+### Generation 10: Threshold Optimization (Holdout F1 = 0.5025)
+- [x] Optimized threshold: 0.35 → 0.40
+- [x] Fewer false positives, better precision
+- **+21% improvement over best public (pending submission)**
 
 ### Key Insights
-1. **Logistic Regression beats tree methods** on tiny datasets (12 TDEs/split)
-2. **Physics features matter**: Power-law decay and color evolution are discriminative
-3. **Threshold is critical**: Optimal threshold ≈ 0.35 (not 0.5) for imbalanced classes
-4. **Ensemble stabilizes**: Combining LR + XGBoost reduces variance across splits
+1. **Simpler is better**: Pure LogReg beats LR+XGB ensemble on tiny data
+2. **Holdout validation is critical**: CV score can be misleading
+3. **Threshold matters**: 0.40 > 0.35 for this imbalanced dataset
+4. **Strong regularization prevents overfitting**: C=0.05 (not 1.0)
 
 ## References
 
