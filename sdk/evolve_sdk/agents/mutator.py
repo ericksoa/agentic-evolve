@@ -1,5 +1,7 @@
 """Mutator agent - creates mutations of existing solutions."""
 
+from ..skills import get_mode_guidance
+
 MUTATOR_SYSTEM = """You are a mutation specialist for evolutionary algorithm discovery.
 
 Your role: Create ONE focused mutation of a parent solution to explore the fitness landscape.
@@ -20,6 +22,35 @@ Mutation strategies (pick ONE per invocation):
 Output format: Always return valid JSON with your results.
 """
 
+# Fallback guidance if no skill file is found
+_DEFAULT_MODE_GUIDANCE = {
+    "size": """
+SIZE optimization mutations to try:
+- Remove whitespace, shorten variable names
+- Use list comprehensions instead of loops
+- Combine statements with semicolons or commas
+- Use operator tricks (x or y, x and y, -~x for x+1)
+- Replace function definitions with lambdas
+- Use string multiplication, slice tricks
+- Eliminate unnecessary parentheses""",
+    "perf": """
+PERFORMANCE optimization mutations to try:
+- Change algorithm complexity (sort method, search strategy)
+- Add/remove caching or memoization
+- Change data structure (list vs set vs dict)
+- Vectorize operations (numpy, SIMD-friendly patterns)
+- Reduce memory allocations
+- Optimize hot loops (move invariants out, reduce calls)""",
+    "ml": """
+ML accuracy optimization mutations to try:
+- Adjust hyperparameters (learning rate, regularization)
+- Add/remove features
+- Change model architecture (layers, neurons)
+- Try different preprocessing
+- Adjust class weights or sampling
+- Try ensemble techniques""",
+}
+
 
 def get_mutator_prompt(
     parent_file: str,
@@ -32,33 +63,13 @@ def get_mutator_prompt(
 ) -> str:
     """Generate the prompt for a mutator agent."""
 
-    mode_guidance = {
-        "size": """
-SIZE optimization mutations to try:
-- Remove whitespace, shorten variable names
-- Use list comprehensions instead of loops
-- Combine statements with semicolons or commas
-- Use operator tricks (x or y, x and y, -~x for x+1)
-- Replace function definitions with lambdas
-- Use string multiplication, slice tricks
-- Eliminate unnecessary parentheses""",
-        "perf": """
-PERFORMANCE optimization mutations to try:
-- Change algorithm complexity (sort method, search strategy)
-- Add/remove caching or memoization
-- Change data structure (list vs set vs dict)
-- Vectorize operations (numpy, SIMD-friendly patterns)
-- Reduce memory allocations
-- Optimize hot loops (move invariants out, reduce calls)""",
-        "ml": """
-ML accuracy optimization mutations to try:
-- Adjust hyperparameters (learning rate, regularization)
-- Add/remove features
-- Change model architecture (layers, neurons)
-- Try different preprocessing
-- Adjust class weights or sampling
-- Try ensemble techniques""",
-    }
+    # Try to get guidance from skill file first, fall back to defaults
+    skill_guidance = get_mode_guidance(mode, "mutator")
+    if skill_guidance:
+        mode_section = f"""## Mode Guidance (from /evolve-{mode} skill)
+{skill_guidance}"""
+    else:
+        mode_section = _DEFAULT_MODE_GUIDANCE.get(mode, _DEFAULT_MODE_GUIDANCE["size"])
 
     hint_section = ""
     if mutation_hint:
@@ -73,7 +84,7 @@ Parent fitness: {parent_fitness}
 Generation: {generation}, Variant: {variant}
 Mode: {mode}
 
-{mode_guidance.get(mode, mode_guidance["size"])}
+{mode_section}
 {hint_section}
 
 Instructions:

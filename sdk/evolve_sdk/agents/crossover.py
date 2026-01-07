@@ -1,5 +1,7 @@
 """Crossover agent - combines multiple parent solutions."""
 
+from ..skills import get_mode_guidance
+
 CROSSOVER_SYSTEM = """You are a crossover specialist for evolutionary algorithm discovery.
 
 Your role: Combine the best aspects of multiple parent solutions into a hybrid.
@@ -19,6 +21,25 @@ Crossover strategies:
 Output format: Always return valid JSON with your results.
 """
 
+# Fallback guidance if no skill file is found
+_DEFAULT_MODE_GUIDANCE = {
+    "size": """
+SIZE crossover strategies:
+- Take the shortest implementation of each function
+- Combine golf tricks from different parents
+- Use one parent's algorithm with another's variable naming""",
+    "perf": """
+PERFORMANCE crossover strategies:
+- Combine fast paths from different parents
+- Mix data structures (e.g., one's caching + another's algorithm)
+- Blend optimization techniques""",
+    "ml": """
+ML crossover strategies:
+- Ensemble: Combine predictions from multiple models
+- Architecture mixing: Layers from different models
+- Feature union: Combine feature engineering from parents""",
+}
+
 
 def get_crossover_prompt(
     parent_files: list[str],
@@ -34,23 +55,13 @@ def get_crossover_prompt(
         for f, fit in zip(parent_files, parent_fitnesses)
     )
 
-    mode_guidance = {
-        "size": """
-SIZE crossover strategies:
-- Take the shortest implementation of each function
-- Combine golf tricks from different parents
-- Use one parent's algorithm with another's variable naming""",
-        "perf": """
-PERFORMANCE crossover strategies:
-- Combine fast paths from different parents
-- Mix data structures (e.g., one's caching + another's algorithm)
-- Blend optimization techniques""",
-        "ml": """
-ML crossover strategies:
-- Ensemble: Combine predictions from multiple models
-- Architecture mixing: Layers from different models
-- Feature union: Combine feature engineering from parents""",
-    }
+    # Try to get guidance from skill file first, fall back to defaults
+    skill_guidance = get_mode_guidance(mode, "crossover")
+    if skill_guidance:
+        mode_section = f"""## Mode Guidance (from /evolve-{mode} skill)
+{skill_guidance}"""
+    else:
+        mode_section = _DEFAULT_MODE_GUIDANCE.get(mode, _DEFAULT_MODE_GUIDANCE["size"])
 
     return f"""Create a crossover hybrid from multiple parents.
 
@@ -60,7 +71,7 @@ Parents:
 Generation: {generation}
 Mode: {mode}
 
-{mode_guidance.get(mode, mode_guidance["size"])}
+{mode_section}
 
 Instructions:
 1. Read ALL parent solutions
