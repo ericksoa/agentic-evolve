@@ -14,6 +14,7 @@ from pathlib import Path
 
 from .runner import EvolutionRunner
 from .config import EvolutionConfig
+from .progress import print_final_results
 
 
 def main():
@@ -153,7 +154,7 @@ def main():
     # Run evolution
     try:
         result = asyncio.run(runner.run())
-        print_results(result)
+        print_final_results(result)
     except KeyboardInterrupt:
         print("\n[!] Evolution interrupted. State saved.")
         sys.exit(130)
@@ -188,34 +189,6 @@ def resume_evolution(evolve_dir: Path) -> tuple[str, str] | None:
     _, _, state = evolutions[0]
 
     return state.get("problem", "unknown"), state.get("mode", "size")
-
-
-def print_results(result: dict):
-    """Pretty print evolution results."""
-    print("\n" + "=" * 60)
-    print("FINAL RESULTS")
-    print("=" * 60)
-
-    champion = result.get("champion")
-    if champion:
-        print(f"\nChampion: {champion.get('file')}")
-        print(f"Fitness: {champion.get('fitness')}")
-        if champion.get("approach"):
-            print(f"Approach: {champion.get('approach')}")
-    else:
-        print("\nNo champion found")
-
-    print(f"\nGenerations run: {result.get('generations', 0)}")
-    print(f"Final population size: {len(result.get('population', []))}")
-
-    # Show fitness progression
-    history = result.get("history", [])
-    if history:
-        print("\nFitness progression:")
-        for entry in history[-10:]:  # Last 10 generations
-            gen = entry.get("generation", "?")
-            fitness = entry.get("best_fitness", 0)
-            print(f"  Gen {gen}: {fitness:.4f}")
 
 
 if __name__ == "__main__":

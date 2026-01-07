@@ -32,6 +32,10 @@ from .agents import (
     EVALUATOR_SYSTEM, get_evaluator_prompt,
 )
 from .hooks import create_validation_hook, create_logging_hook, set_log_context
+from .progress import (
+    ProgressDisplay, AgentStatus,
+    print_evolution_header, print_evolution_complete, print_final_results,
+)
 
 
 class EvolutionRunner:
@@ -84,6 +88,9 @@ class EvolutionRunner:
         # Logging
         self.log_file = self.work_dir / "tool_usage.jsonl"
 
+        # Progress display
+        self.progress = ProgressDisplay(width=72)
+
     def _sanitize_problem_id(self, problem: str) -> str:
         """Convert problem description to valid directory name."""
         # Take first 30 chars, replace non-alphanumeric with underscore
@@ -97,11 +104,7 @@ class EvolutionRunner:
         Returns:
             Final results including champion solution
         """
-        print(f"\n{'='*60}")
-        print(f"EVOLUTION: {self.config.problem}")
-        print(f"Mode: {self.config.mode}")
-        print(f"Work dir: {self.work_dir}")
-        print(f"{'='*60}\n")
+        print_evolution_header(self.config.problem, self.config.mode, str(self.work_dir))
 
         # Setup directories
         self.work_dir.mkdir(parents=True, exist_ok=True)
@@ -125,7 +128,17 @@ class EvolutionRunner:
             self.generation += 1
             set_log_context(self.log_file, self.generation)
 
-            print(f"\n--- Generation {self.generation} ---")
+            # Display generation header
+            champion_name = self.champion.get("file", "").split("/")[-1] if self.champion else "none"
+            champion_fitness = self.champion.get("fitness", 0) if self.champion else 0
+            self.progress.generation_header(
+                gen=self.generation,
+                champion_name=champion_name,
+                champion_fitness=champion_fitness,
+                population_size=len(self.population),
+                plateau_count=plateau_count,
+                plateau_threshold=self.config.plateau_threshold,
+            )
 
             # Run one generation
             gen_best = await self._run_generation()
@@ -203,27 +216,37 @@ class EvolutionRunner:
             print("[!] No population to evolve from")
             return None
 
-        # Create mutations in parallel
+        # Build agent list for display
+        agents_info = []
         mutation_tasks = []
+        task_variants = []
+
         for i, parent in enumerate(top_n):
             if i >= self.config.mutation_variants:
                 break
             variant = chr(ord("a") + i)
             output_file = str(self.mutations_dir / f"gen{self.generation}{variant}.py")
+            parent_name = parent.get("file", "").split("/")[-1]
+            agents_info.append((variant, "mutation", parent_name))
             task = self._spawn_mutator(parent, output_file, variant)
             mutation_tasks.append(task)
+            task_variants.append(variant)
 
         # Also spawn crossover
         crossover_file = str(self.mutations_dir / f"gen{self.generation}x.py")
         crossover_task = self._spawn_crossover(top_n, crossover_file)
         mutation_tasks.append(crossover_task)
+        task_variants.append("x")
+        parent_names = "+".join(p.get("file", "").split("/")[-1][:8] for p in top_n[:2])
+        agents_info.append(("x", "crossover", parent_names))
+
+        # Show agents starting
+        self.progress.show_agents_starting(agents_info)
 
         # Run mutations in parallel (or sequential if configured)
         if self.config.parallel_mutations:
-            print(f"[Gen {self.generation}] Running {len(mutation_tasks)} mutations in parallel...")
             mutations = await asyncio.gather(*mutation_tasks, return_exceptions=True)
         else:
-            print(f"[Gen {self.generation}] Running {len(mutation_tasks)} mutations sequentially...")
             mutations = []
             for task in mutation_tasks:
                 try:
@@ -232,39 +255,94 @@ class EvolutionRunner:
                 except Exception as e:
                     mutations.append(e)
 
-        # Filter out exceptions
-        valid_mutations = [m for m in mutations if isinstance(m, dict) and m.get("file")]
-        print(f"[Gen {self.generation}] Created {len(valid_mutations)} valid mutations")
+        # Filter out exceptions and track results
+        valid_mutations = []
+        gen_results = []
+
+        for i, (m, variant) in enumerate(zip(mutations, task_variants)):
+            if isinstance(m, Exception):
+                gen_results.append({
+                    "variant": variant,
+                    "mutation_type": agents_info[i][1],
+                    "decision": "DROP",
+                    "error": str(m)[:50],
+                })
+            elif isinstance(m, dict) and m.get("file"):
+                valid_mutations.append(m)
+                m["variant"] = variant
+                m["mutation_type"] = agents_info[i][1]
+            else:
+                gen_results.append({
+                    "variant": variant,
+                    "mutation_type": agents_info[i][1],
+                    "decision": "DROP",
+                    "error": "no file created",
+                })
 
         # Evaluate all new solutions
+        old_champion = self.champion.copy() if self.champion else None
+
         if valid_mutations:
             files_to_eval = [m["file"] for m in valid_mutations]
             evaluations = await self._spawn_evaluator(files_to_eval)
 
-            # Update population with evaluated solutions
-            for eval_result in evaluations:
-                if eval_result.get("valid", False):
-                    self.population.append(eval_result)
+            # Match evaluations back to mutations and build results
+            eval_by_file = {e.get("file"): e for e in evaluations}
+            for m in valid_mutations:
+                eval_result = eval_by_file.get(m["file"], {})
+                fitness = eval_result.get("fitness", 0)
+                is_valid = eval_result.get("valid", False)
+
+                # Determine decision
+                champion_fitness = old_champion.get("fitness", 0) if old_champion else 0
+                if is_valid and fitness > 0:
+                    decision = "KEEP"
+                    # Add to population
+                    combined = {**m, **eval_result}
+                    self.population.append(combined)
+                else:
+                    decision = "DROP"
+
+                gen_results.append({
+                    "variant": m.get("variant", "?"),
+                    "mutation_type": m.get("mutation_type", "unknown"),
+                    "fitness": fitness,
+                    "decision": decision,
+                    "file": m.get("file"),
+                    "error": eval_result.get("error", "") if not is_valid else "",
+                })
 
         # Selection: keep top N
         self.population.sort(key=lambda x: x.get("fitness", 0), reverse=True)
         self.population = self.population[: self.config.population_size]
 
         # Update champion
+        new_champion = None
         if self.population:
             best = self.population[0]
             if not self.champion or best["fitness"] > self.champion["fitness"]:
                 self.champion = best.copy()
+                new_champion = self.champion
                 self._save_champion()
 
+        # Show generation summary
+        self.progress.generation_summary(
+            gen=self.generation,
+            results=gen_results,
+            new_champion=new_champion,
+            old_champion=old_champion,
+            plateau_count=0,  # Will be updated by caller
+        )
+
         # Record history
+        kept_count = sum(1 for r in gen_results if r.get("decision") == "KEEP")
         self.history.append({
             "generation": self.generation,
             "timestamp": datetime.now().isoformat(),
             "population_size": len(self.population),
             "best_fitness": self.champion["fitness"] if self.champion else 0,
             "mutations_tried": len(mutation_tasks),
-            "mutations_valid": len(valid_mutations),
+            "mutations_valid": kept_count,
         })
 
         return self.champion
@@ -385,18 +463,7 @@ class EvolutionRunner:
 
     async def _finalize(self) -> dict[str, Any]:
         """Finalize evolution and return results."""
-        print(f"\n{'='*60}")
-        print("EVOLUTION COMPLETE")
-        print(f"{'='*60}")
-        print(f"Generations: {self.generation}")
-        print(f"Final population: {len(self.population)}")
-
-        if self.champion:
-            print(f"Champion: {self.champion['file']}")
-            print(f"Champion fitness: {self.champion['fitness']}")
-        else:
-            print("No champion found")
-
+        print_evolution_complete(self.generation, self.champion, len(self.population))
         self._save_state()
 
         return {
