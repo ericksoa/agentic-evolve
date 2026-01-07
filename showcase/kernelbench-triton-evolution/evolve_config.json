@@ -1,0 +1,70 @@
+{
+  "name": "kernelbench-softmax",
+  "description": "Evolve fastest Triton softmax kernel",
+  "mode": "perf",
+
+  "problem": {
+    "goal": "Create a Triton softmax kernel faster than PyTorch F.softmax",
+    "language": "Triton (Python DSL for GPU kernels)",
+    "input": "2D tensor (batch_size, seq_len), float32, CUDA",
+    "output": "Softmax along dim=-1, must match PyTorch within 1e-5"
+  },
+
+  "evaluation": {
+    "test_command": "python evaluate_on_lightning.py {solution} --json",
+    "fitness_key": "fitness",
+    "valid_key": "valid",
+    "higher_is_better": true,
+    "notes": "Runs on Lightning.ai T4 GPU - requires .env credentials"
+  },
+
+  "starter_solutions": [
+    "tasks/softmax/starter_kernel.py"
+  ],
+
+  "optimization_strategies": [
+    {
+      "name": "online_softmax",
+      "description": "Compute max and sum in single pass (Flash Attention style)",
+      "hint": "Avoid loading data twice by tracking running max and rescaling"
+    },
+    {
+      "name": "vectorized_loads",
+      "description": "Use tl.load with larger BLOCK_SIZE for coalesced memory access",
+      "hint": "Try BLOCK_SIZE of 1024, 2048, 4096"
+    },
+    {
+      "name": "warp_reductions",
+      "description": "Use warp-level primitives for small reductions",
+      "hint": "For seq_len <= 32, warp shuffle may be faster"
+    },
+    {
+      "name": "split_k",
+      "description": "Split computation across multiple programs for very long sequences",
+      "hint": "Useful when seq_len >> BLOCK_SIZE"
+    },
+    {
+      "name": "memory_layout",
+      "description": "Optimize memory access patterns",
+      "hint": "Consider row-major vs column-major, padding for alignment"
+    },
+    {
+      "name": "register_tiling",
+      "description": "Process multiple elements per thread in registers",
+      "hint": "Reduce shared memory traffic"
+    }
+  ],
+
+  "constraints": [
+    "Must produce numerically stable results (no NaN/Inf)",
+    "Must pass all test cases in tasks/softmax/test_cases.py",
+    "Must handle arbitrary sequence lengths (not just powers of 2)",
+    "Solution must be a single Python file with a 'kernel' or 'softmax_triton' function"
+  ],
+
+  "references": [
+    "https://triton-lang.org/main/getting-started/tutorials/02-fused-softmax.html",
+    "https://arxiv.org/abs/2205.14135 (Flash Attention - online softmax)",
+    "https://github.com/openai/triton/blob/main/python/tutorials/02-fused-softmax.py"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "name": "softmax",
+  "level": 1,
+  "description": "Implement a Triton kernel for softmax that outperforms PyTorch F.softmax",
+  "category": "attention",
+  "difficulty": "medium",
+
+  "problem": {
+    "input": "2D tensor of shape (batch_size, seq_len) with float32 values",
+    "output": "Softmax applied along dim=-1 (last dimension)",
+    "formula": "softmax(x)_i = exp(x_i - max(x)) / sum(exp(x - max(x)))",
+    "constraints": [
+      "Must be numerically stable (subtract max before exp)",
+      "Must handle arbitrary sequence lengths",
+      "Must produce results within 1e-5 of PyTorch reference"
+    ]
+  },
+
+  "test_shapes": [
+    {"batch_size": 1, "seq_len": 128},
+    {"batch_size": 32, "seq_len": 512},
+    {"batch_size": 64, "seq_len": 1024},
+    {"batch_size": 128, "seq_len": 2048},
+    {"batch_size": 256, "seq_len": 4096}
+  ],
+
+  "benchmark_shapes": [
+    {"batch_size": 64, "seq_len": 2048, "note": "typical transformer"},
+    {"batch_size": 128, "seq_len": 4096, "note": "long context"}
+  ],
+
+  "optimization_hints": [
+    "Use online softmax algorithm for single-pass computation",
+    "Leverage shared memory for reduction operations",
+    "Use vectorized loads (tl.load with BLOCK_SIZE)",
+    "Consider warp-level reductions for small sequences",
+    "Fuse the max, subtract, exp, sum, divide operations"
+  ],
+
+  "reference_implementations": [
+    "PyTorch: torch.nn.functional.softmax(x, dim=-1)",
+    "Triton tutorial: https://triton-lang.org/main/getting-started/tutorials/02-fused-softmax.html"
+  ],
+
+  "fitness_metric": {
+    "primary": "speedup_ratio",
+    "formula": "baseline_time / kernel_time",
+    "threshold": {
+      "fast_0": 0.0,
+      "fast_1": 1.0,
+      "fast_2": 2.0
+    }
+  }
+}
