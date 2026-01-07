@@ -4,7 +4,30 @@
 
 **Target:** DeepSeek-V3 style architectures (256 experts, top-8 routing)
 
-**Status:** Implementation complete, benchmarking in progress
+**Status:** Complete - **2x average speedup achieved**
+
+## Benchmark Results
+
+### L40S (48GB VRAM)
+| Config | Baseline | Optimized | Speedup |
+|--------|----------|-----------|---------|
+| B1S1 (decode) | 7.74ms | 2.70ms | **2.86x** |
+| B8S1 (decode) | 18.90ms | 8.78ms | **2.15x** |
+| B32S1 (decode) | 37.20ms | 18.46ms | **2.02x** |
+| B1S128 (prefill) | 43.19ms | 21.89ms | **1.97x** |
+| B1S512 (prefill) | 43.11ms | 21.61ms | **2.00x** |
+| B4S256 (batch) | 43.31ms | 21.76ms | **1.99x** |
+
+### T4 (16GB VRAM)
+| Config | Baseline | Optimized | Speedup |
+|--------|----------|-----------|---------|
+| B1S1 | 4.49ms | 1.81ms | **2.49x** |
+| B8S1 | 10.78ms | 5.02ms | **2.15x** |
+| B1S64 | 24.27ms | 11.84ms | **2.05x** |
+| B1S256 | 24.59ms | 12.35ms | **1.99x** |
+| B4S128 | 24.59ms | 11.99ms | **2.05x** |
+
+**Key finding:** Padding-free token buffers provide consistent 2x speedup across decode and prefill workloads.
 
 ## Quick Start
 
