@@ -101,7 +101,7 @@ def evaluate_kernel(solution_file: str, output_json: bool = False) -> dict:
 
             # Find the softmax function in the imported module
             softmax_fn = None
-            for name in ['softmax_triton', 'triton_softmax', 'softmax', 'kernel']:
+            for name in ['softmax_triton', 'triton_softmax', 'softmax', 'optimized_softmax', 'kernel', 'forward']:
                 if hasattr(kernel_module, name) and callable(getattr(kernel_module, name)):
                     softmax_fn = getattr(kernel_module, name)
                     break
@@ -127,6 +127,18 @@ def evaluate_kernel(solution_file: str, output_json: bool = False) -> dict:
 
             speedups = []
 
+            # Global JIT warmup - trigger compilation for all test sizes first
+            print("JIT warmup phase...", file=sys.stderr)
+            for batch, seq_len in TEST_SIZES:
+                try:
+                    x = torch.randn(batch, seq_len, device='cuda', dtype=torch.float32)
+                    for _ in range(3):  # Multiple calls to ensure JIT is warm
+                        _ = softmax_fn(x)
+                    torch.cuda.synchronize()
+                except Exception:
+                    pass  # Ignore errors during warmup
+            print("JIT warmup complete", file=sys.stderr)
+
             for batch, seq_len in TEST_SIZES:
                 try:
                     x = torch.randn(batch, seq_len, device='cuda', dtype=torch.float32)
@@ -143,8 +155,8 @@ def evaluate_kernel(solution_file: str, output_json: bool = False) -> dict:
                         results["errors"].append(f"{{batch}}x{{seq_len}}: Incorrect output")
                         continue
 
-                    # Benchmark PyTorch
-                    for _ in range(10):
+                    # Benchmark PyTorch (warmup then time)
+                    for _ in range(20):
                         _ = F.softmax(x, dim=-1)
                     torch.cuda.synchronize()
 
@@ -154,8 +166,8 @@ def evaluate_kernel(solution_file: str, output_json: bool = False) -> dict:
                     torch.cuda.synchronize()
                     pytorch_time = (time.perf_counter() - start) / 100
 
-                    # Benchmark Triton
-                    for _ in range(10):
+                    # Benchmark Triton (warmup then time)
+                    for _ in range(20):
                         _ = softmax_fn(x)
                     torch.cuda.synchronize()
 

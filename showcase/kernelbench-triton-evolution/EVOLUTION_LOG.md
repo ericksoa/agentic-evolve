@@ -3,11 +3,120 @@
 ## Summary
 
 **Goal:** Evolve a Triton softmax kernel faster than PyTorch's `F.softmax()`
-**Result:** 2.27x speedup achieved using online softmax with Kahan summation
+**Status:** In Progress - Investigating performance baseline
 **Hardware:** Tesla T4 GPU (Lightning.ai free tier)
 **Framework:** evolve-sdk using Claude Agent SDK
 
 ---
+
+## Phase 2: Root Cause Analysis (Current)
+
+### Discovery: Original Measurements Were Inaccurate
+
+After fixing JIT warmup in the evaluator, we discovered:
+
+| Solution | Original Measurement | Corrected Measurement |
+|----------|---------------------|----------------------|
+| gen0_b.py (champion) | 2.27x | **0.66x** |
+| gen12a.py (mutation) | 0.07x | **0.66x** |
+
+Both solutions perform identically because they have nearly identical code.
+The original 2.27x was a **measurement artifact** from cold JIT compilation.
+
+### Diagnostic Results (T4 GPU)
+
+```
+Device: Tesla T4
+CUDA: 12.8
+Triton: 3.4.0
+
+Size            PyTorch (ms)    Triton (ms)     Speedup    Analysis
+----------------------------------------------------------------------
+256x4096       0.0391          0.0583          0.67       PyTorch wins
+512x4096       0.0732          0.1195          0.61       PyTorch wins
+1024x2048      0.0793          0.0930          0.85       ~Equal
+1024x4096      0.1418          0.2650          0.53       PyTorch wins
+32x128         0.0076          0.0292          0.26       PyTorch wins
+4096x4096      0.5466          1.0642          0.51       PyTorch wins
+```
+
+### Root Cause: 3-Pass Algorithm
+
+| Metric | PyTorch | Triton | Gap |
+|--------|---------|--------|-----|
+| Kernel launch overhead | 7.5 µs | 31.1 µs | **4x slower** |
+| Memory bandwidth | 353.9 GB/s | 188.8 GB/s | **47% efficiency** |
+| Memory passes | ~1-2 | 3 | **3x more reads** |
+
+The current Triton kernel makes 3 passes over global memory:
+1. **Pass 1:** Read all values to find max
+2. **Pass 2:** Read all values to compute sum(exp(x-max))
+3. **Pass 3:** Read all values, compute output, write
+
+PyTorch uses a fused single-pass approach with shared memory.
+
+### Phase 2 Plan: Architectural Restructuring
+
+Based on research from:
+- [Flash Attention](https://github.com/Dao-AILab/flash-attention) - Online softmax algorithm
+- [Triton Attention Anatomy (arXiv:2511.11581)](https://arxiv.org/html/2511.11581v1) - Memory hierarchy optimization
+- [Liger Kernel](https://github.com/linkedin/Liger-Kernel) - Kernel fusion techniques
+- [TritonForge (arXiv:2512.09196)](https://arxiv.org/html/2512.09196v2) - Profiling-guided optimization
+
+Target optimizations:
+1. **Single-pass online softmax** with register storage
+2. **Vectorized float4 loads** for memory coalescing
+3. **Shared memory tiling** for large sequences
+4. **Autotuned configurations** for different sizes
+
+### Phase 2 Results: Manual Optimization
+
+After implementing architectural changes based on research:
+
+| Variant | Avg Speedup | Key Innovation |
+|---------|-------------|----------------|
+| Original (3-pass) | 0.66x | Baseline |
+| V1 (online tiled) | 0.85x | Flash Attention-style online algorithm |
+| V2 (exp2) | 0.94x | exp2() instead of exp() |
+| **V3 (fused single-block)** | **1.02x** | True single-pass for fitting rows |
+
+**V3 detailed results:**
+```
+256x4096:  1.05x (5% faster than PyTorch)
+512x4096:  0.99x (~equal)
+1024x2048: 1.05x (5% faster)
+1024x4096: 0.97x (~equal)
+```
+
+Key insight: For rows that fit in one block (BLOCK_SIZE >= n_cols), use true single-pass:
+1. Single read into registers
+2. Compute max, exp, sum all in registers
+3. Single write output
+
+This achieves the theoretical minimum: 1 read + 1 write.
+
+### All Variants Tested
+
+| Version | Avg Speedup | Description |
+|---------|-------------|-------------|
+| Original | 0.66x | 3-pass naive algorithm |
+| V1 | 0.85x | Flash Attention-style online algorithm |
+| V2 | 0.94x | exp2() hardware instruction |
+| **V3** | **1.02x** | Explicit dispatch + single-pass for fitting rows |
+| V4 | 0.95x | Aggressive autotune configurations |
+| V5 | 0.97x | Explicit dispatch variant |
+
+**Winner: V3 (kernels/v3_fused_single_block.py)**
+
+Key learnings:
+1. **Single-pass is critical**: Eliminating memory re-reads provides the biggest gain
+2. **exp2 helps but isn't decisive**: ~9% gain from V1→V2
+3. **Explicit dispatch beats autotune**: Knowing the size at Python level enables better kernel selection
+4. **T4 prefers fewer warps**: 8-16 warps optimal vs 32
+
+---
+
+## Phase 1: Initial Evolution (Historical)
 
 ## Final Results
 
