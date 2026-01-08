@@ -323,6 +323,100 @@ class EvolvedTDEClassifier(BaseEstimator, ClassifierMixin):
 # GEN 9: LOGISTIC REGRESSION ONLY (Simpler is Better)
 # =============================================================================
 
+class Gen4_Original(BaseEstimator, ClassifierMixin):
+    """
+    Gen 4 Original Configuration Reconstruction.
+
+    This is an attempt to reconstruct the original Gen4 that achieved
+    0.4154 public F1 score. The current EvolvedTDEClassifier is Gen7,
+    which uses stronger regularization that may have hurt generalization.
+
+    Key differences from Gen7:
+    - Weaker LR regularization (C=0.5 vs C=0.1)
+    - Deeper XGBoost trees (max_depth=4 vs max_depth=2)
+    - No feature selection (use all features)
+    - Less aggressive XGBoost regularization
+
+    Note: The original Gen4 may have had adaptive weights, but we use
+    fixed weights to avoid overfitting to the validation set.
+    """
+
+    def __init__(self, threshold: float = 0.35, lr_weight: float = 0.5):
+        self.threshold = threshold
+        self.lr_weight = lr_weight
+        self.lr_model_ = None
+        self.xgb_model_ = None
+        self.imputer_ = None
+        self.scaler_ = None
+        self.feature_names_ = None
+
+    def fit(self, X: pd.DataFrame, y: pd.Series) -> 'Gen4_Original':
+        """Fit with Gen4 original configuration (less regularization)."""
+        from sklearn.linear_model import LogisticRegression
+
+        self.feature_names_ = list(X.columns)
+
+        # NO feature selection - use all features (like original Gen4)
+
+        # Preprocess
+        self.imputer_ = SimpleImputer(strategy='median')
+        X_imputed = self.imputer_.fit_transform(X)
+
+        self.scaler_ = StandardScaler()
+        X_scaled = self.scaler_.fit_transform(X_imputed)
+
+        # Calculate class weight
+        n_neg = (y == 0).sum()
+        n_pos = (y == 1).sum()
+        scale_pos = n_neg / max(n_pos, 1)
+
+        # Gen4 Original: LogReg with WEAKER regularization
+        self.lr_model_ = LogisticRegression(
+            class_weight='balanced',
+            max_iter=1000,
+            C=0.5,  # Gen4: Weaker regularization (was 0.1 in Gen7)
+            random_state=42
+        )
+        self.lr_model_.fit(X_scaled, y)
+
+        # Gen4 Original: XGBoost with default-ish params (less regularization)
+        self.xgb_model_ = xgb.XGBClassifier(
+            n_estimators=200,  # Gen4: More trees (was 100 in Gen7)
+            max_depth=4,       # Gen4: Deeper (was 2 in Gen7)
+            learning_rate=0.1,
+            subsample=0.8,     # Gen4: Less dropout (was 0.6 in Gen7)
+            colsample_bytree=0.8,
+            min_child_weight=3,  # Gen4: Smaller (was 10 in Gen7)
+            scale_pos_weight=scale_pos,
+            reg_alpha=0.1,     # Gen4: Less L1 (was 1.0 in Gen7)
+            reg_lambda=1.0,    # Gen4: Less L2 (was 2.0 in Gen7)
+            random_state=42,
+            eval_metric='logloss',
+            verbosity=0
+        )
+        self.xgb_model_.fit(X_scaled, y)
+
+        return self
+
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict probability with Gen4 ensemble."""
+        X_imputed = self.imputer_.transform(X)
+        X_scaled = self.scaler_.transform(X_imputed)
+
+        lr_proba = self.lr_model_.predict_proba(X_scaled)[:, 1]
+        xgb_proba = self.xgb_model_.predict_proba(X_scaled)[:, 1]
+
+        # Fixed weights (0.5/0.5 by default, but configurable)
+        combined = self.lr_weight * lr_proba + (1 - self.lr_weight) * xgb_proba
+
+        return np.column_stack([1 - combined, combined])
+
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict with fixed threshold."""
+        proba = self.predict_proba(X)[:, 1]
+        return (proba >= self.threshold).astype(int)
+
+
 class Gen9_LROnly(BaseEstimator, ClassifierMixin):
     """
     Gen 9: Pure Logistic Regression - simpler is better on tiny data.

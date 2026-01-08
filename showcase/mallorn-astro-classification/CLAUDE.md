@@ -1,5 +1,30 @@
 # MALLORN Astronomical Classification - Claude Workflow
 
+## ⚠️ CRITICAL: Save Discoveries Immediately
+
+**MANDATORY WORKFLOW RULE**: When you make ANY discovery, insight, or observation during experimentation:
+
+1. **IMMEDIATELY** append it to `DISCOVERIES.md` (create if doesn't exist)
+2. Include: timestamp, what you tried, what you found, why it matters
+3. Do this BEFORE moving on to the next experiment
+4. Do this EVEN IF the discovery seems minor
+
+**Format for DISCOVERIES.md:**
+```markdown
+## [Date] Discovery: [Short Title]
+
+**What I tried:** [Experiment description]
+**What I found:** [Results/observations]
+**Why it matters:** [Implications for next steps]
+**Action:** [What to do with this knowledge]
+```
+
+**Why this matters:** Context can be lost at any time (crashes, session limits, reboots). Undocumented discoveries are LOST discoveries. The 30 seconds to write it down saves hours of re-discovery.
+
+**Current discoveries file:** `DISCOVERIES.md` (check this first when resuming work!)
+
+---
+
 ## Quick Reference
 
 ### Competition Details
