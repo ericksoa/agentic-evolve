@@ -124,9 +124,62 @@ Based on literature:
 - Padding-free: 1.3-5.15x (depends on load imbalance)
 - **Combined: 2-4x target**
 
-## Next Steps
+## State of the Art (Jan 2025)
 
-1. Test correctness on T4
-2. Profile memory bandwidth utilization
-3. Benchmark on H200 with DeepSeek-V3 configs
-4. Compare vs vLLM fused_moe kernel
+### DeepGEMM (DeepSeek)
+**Source:** https://github.com/deepseek-ai/DeepGEMM
+
+- **Performance:** 1550 TFLOPS on H800 (~95% of peak FP8)
+- **Architecture:** CUDA-based, JIT compilation
+- **Features:** FP8 with fine-grained scaling (per-128-channel)
+- **Hardware:** SM90 (Hopper) and SM100 (Blackwell) only
+- **Key insight:** Groups only M-axis (N,K fixed for MoE experts)
+
+This is essentially THE reference implementation. Years of work by DeepSeek team.
+
+### PyTorch Labs Persistent Kernel
+**Source:** https://pytorch.org/blog/accelerating-moes-with-a-triton-persistent-cache-aware-grouped-gemm-kernel/
+
+- **Performance:** 2.62x over naive loop on H100
+- **Dtype:** BF16 only (FP8 listed as "future work")
+- **Key innovations:**
+  1. Persistent CTAs (single wave, no launch overhead)
+  2. Cache-aware tile scheduling (GROUP_SIZE_M for L2 reuse)
+  3. Dynamic TMA descriptors for expert weight access
+
+### TensorRT-LLM (NVIDIA)
+**Source:** https://nvidia.github.io/TensorRT-LLM/blogs/tech_blog/blog1_Pushing_Latency_Boundaries_Optimizing_DeepSeek-R1_Performance_on_NVIDIA_B200_GPUs.html
+
+- **Performance:** 5.5x speedup on B200 (368 TPS)
+- **Features:** Fused operations (LocalReduction + AllReduce + RMSNorm + Quantization)
+- **Hardware tricks:** PDL, NVSwitch oneshot AllReduce
+
+### vLLM fused_moe
+- Integrating DeepGemm (PR #13932)
+- Currently ~2x slower than DeepGemm at TP=1
+- Solid Triton baseline with multiple quantization paths
+
+## Why This Problem Resists Evolutionary/GA Approaches
+
+This project revealed important lessons about the limits of genetic algorithm / evolutionary optimization:
+
+| Characteristic | Good for GA | MoE Kernels |
+|----------------|-------------|-------------|
+| Large solution space | ✓ | ✗ (constrained by hardware) |
+| Gradual fitness gradient | ✓ | ✗ (cliff edges) |
+| Domain-agnostic mutations | ✓ | ✗ (needs TMA, tensor cores) |
+| Baseline far from optimal | ✓ | ✗ (already at 95% peak) |
+
+**Key barriers:**
+1. Architecture-specific intrinsics (TMA descriptors, warp specialization)
+2. Discrete performance cliffs (wrong block size = 10x slower)
+3. Experts already at hardware limits
+4. Deep systems knowledge required (L2 cache, memory coalescing)
+
+**Conclusion:** Some domains require human insight into hardware architecture, not just compute. GA works well for code golf and algorithm discovery with smooth fitness landscapes, but not for GPU kernel optimization where the solution space is heavily constrained by hardware realities.
+
+## Remaining Opportunities
+
+1. **Triton FP8 persistent kernel** - PyTorch Labs says this is "future work"
+2. **Decode-specific optimization** - SplitK + persistent for M=1-8 tokens
+3. **Better tooling** - Auto-selection between DeepGemm/Triton based on shape
