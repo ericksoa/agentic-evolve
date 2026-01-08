@@ -640,14 +640,88 @@ Gen11: + Feature interactions     Holdout = 0.5296 → PENDING (+27% vs Gen 4)
 
 ---
 
-## Next Steps (Future Generations)
+## Generation 12: Three Alternative Approaches (All Failed)
 
-If Gen 11 succeeds on public LB:
-1. Try degree=3 polynomial features
-2. Add more features to interaction set
-3. Try different regularization (ElasticNet)
+**Champion remains: Gen11 (Holdout F1 = 0.5296)**
 
-If Gen 11 fails:
-1. Investigate which interaction terms are most important
-2. Consider feature selection on the expanded feature set
-3. Try semi-supervised learning with test data
+### What We Tested
+
+After Gen11-14 SDK evolution couldn't improve, we tried three fundamentally different approaches:
+
+| Approach | Hypothesis | Holdout F1 | vs Gen11 |
+|----------|------------|------------|----------|
+| **Phase 1: Alternative Linear Models** | | | |
+| SVM-Linear | Different loss (hinge vs log) | 0.2942 | -0.2354 |
+| SGDClassifier | Online learning convergence | 0.4574 | -0.0722 |
+| RidgeClassifier | MSE-based loss | 0.4267 | -0.1029 |
+| **Phase 2: Semi-Supervised** | | | |
+| Self-Training | Use test data pseudo-labels | 0.4997 | -0.0299 |
+| **Phase 3: Physics Features** | | | |
+| Enhanced Physics | Cross-band consistency, temp evolution | 0.4926 | -0.0370 |
+
+### Key Findings
+
+1. **LogReg with L2 regularization is optimal**: SVM (hinge loss), SGD (online), Ridge (MSE) all perform worse on this tiny data
+
+2. **Semi-supervised hurts**: Adding pseudo-labeled test data introduces confirmation bias. The model's predictions are overconfident in its own biases.
+
+3. **More physics features hurt**: Despite adding theoretically-useful features (alpha consistency, temperature evolution, baseline MAD), the model overfits to the noise in these features.
+
+4. **Gen11 is near the ceiling**: With only ~12 TDEs per training split, there may not be enough signal to improve beyond Gen11's approach.
+
+### Why Nothing Worked
+
+| Issue | Explanation |
+|-------|-------------|
+| **Small data** | Only ~12 TDEs per split - complex approaches overfit |
+| **High variance** | Split 14: F1=0.72, Split 20: F1=0.34 - hard to optimize |
+| **Feature curse** | More features → more noise → worse generalization |
+| **Model complexity** | Simpler (LogReg) beats complex (SVM, SGD) |
+
+### Files Created (for reference)
+
+- `python/src/gen12_linear_alternatives.py` - SVM, SGD, Ridge variants
+- `python/src/gen12_self_training.py` - Semi-supervised wrapper
+- `python/src/gen12_physics.py` - Enhanced physics features
+- `python/src/test_self_training.py` - Self-training evaluation
+- `python/src/test_physics_features.py` - Physics features evaluation
+
+### Conclusion
+
+**Gen11 Champion (LogReg + polynomial interactions, C=0.05, threshold=0.43) represents the performance ceiling for this dataset.**
+
+Next step: Submit Gen11 to Kaggle to validate holdout → public score correlation.
+
+---
+
+## Summary: Evolution Trajectory (Final)
+
+```
+Gen 1: Baseline LogReg           F1 = 0.276 (CV)
+       ↓ +33% (physics features)
+Gen 2: + TDE features            F1 = 0.368 (CV)
+       ↓ (threshold tuning)
+Gen 3: + Threshold optimization  F1 ~ 0.38 (CV)
+       ↓ +12% (ensemble)
+Gen 4: + Ensemble (LR + XGB)     F1 = 0.415 (CV) → 0.4154 (PUBLIC) ✅ OLD BEST
+       ↓ +33% (feature selection) - OVERFIT!
+Gen 5: + Feature selection       F1 = 0.552 (CV) → 0.3227 (PUBLIC) ❌
+       ↓ +4% (LightGBM) - MORE OVERFIT!
+Gen 6: + LightGBM replaces XGB   F1 = 0.575 (CV) → 0.3191 (PUBLIC) ❌
+       ↓ (anti-overfit measures)
+Gen 7: + Anti-overfitting        F1 = 0.206 (CV) → ? (not submitted)
+       ↓ (TabPFN blocked)
+Gen 8: TabPFN attempt            BLOCKED (infrastructure)
+       ↓ (back to basics)
+Gen 9: Pure LogReg (C=0.05)      Holdout = 0.4611 → PENDING
+       ↓ (threshold optimization)
+Gen10: Pure LogReg (t=0.40)      Holdout = 0.5025 → PENDING (+21% vs Gen 4)
+       ↓ (feature interactions via /evolve-sdk)
+Gen11: + Feature interactions    Holdout = 0.5296 → PENDING (+27% vs Gen 4) ✅ NEW BEST
+       ↓ (three alternative approaches)
+Gen12: Alt linear models         Holdout = 0.29-0.46 → All worse ❌
+       Semi-supervised           Holdout = 0.4997 → Worse ❌
+       Physics features          Holdout = 0.4926 → Worse ❌
+```
+
+**FINAL INSIGHT**: On extremely small imbalanced datasets (~12 positive examples per split), simple regularized LogReg with thoughtful feature interactions outperforms all complex alternatives.
