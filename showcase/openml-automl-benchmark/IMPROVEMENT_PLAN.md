@@ -4,7 +4,7 @@
 
 - [x] **1. Optimize for other metrics** - Add `optimize_for` parameter (recall/precision/f1/f2)
 - [x] **2. Auto-select base model** - LightGBM/XGBoost for large datasets
-- [ ] **3. Speed optimization** - Combine analysis + optimization CV passes
+- [x] **3. Speed optimization** - Combine analysis + optimization CV passes
 - [ ] **4. Confidence intervals** - Bootstrap CI for benchmark results
 - [ ] **5. Deep dive kc2 vs diabetes** - Why similar profiles, different outcomes?
 - [ ] **6. Test on 50+ datasets** - Validate detection generalizes
@@ -107,8 +107,8 @@ clf = ThresholdOptimizedClassifier(optimize_for='f2')  # Emphasize recall
 | Step | Status | Commit | Notes |
 |------|--------|--------|-------|
 | 1 | Done | 1112e30 | Added optimize_for param (f1/f2/f0.5/recall/precision) |
-| 2 | Done | TBD | Auto-select model: LogReg < 2k, LightGBM >= 2k |
-| 3 | Pending | - | - |
+| 2 | Done | 9f2c096 | Auto-select model: LogReg < 2k, LightGBM >= 2k |
+| 3 | Done | TBD | Single CV pass: reuse probs from analysis |
 | 4 | Pending | - | - |
 | 5 | Pending | - | - |
 | 6 | Pending | - | - |

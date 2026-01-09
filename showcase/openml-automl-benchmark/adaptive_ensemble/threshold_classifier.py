@@ -391,20 +391,23 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'potential_gain': sensitivity['potential_gain'],
         }
 
-    def _optimize_threshold(
+    def _optimize_from_probs(
         self,
-        X: np.ndarray,
-        y: np.ndarray,
+        probs: np.ndarray,
+        true_labels: np.ndarray,
         threshold_range: Tuple[float, float]
     ) -> Tuple[float, float]:
         """
-        Find optimal threshold via cross-validation.
+        Find optimal threshold from pre-computed probabilities.
 
-        Returns (optimal_threshold, best_f1_score).
+        This is faster than running a separate CV loop since it reuses
+        the probabilities already collected during uncertainty analysis.
+
+        Returns (optimal_threshold, best_score).
         """
         if threshold_range[0] == threshold_range[1]:
             # No range to search
-            return threshold_range[0], 0.0
+            return threshold_range[0], self._compute_metric_at_threshold(probs, true_labels, 0.5)
 
         thresholds = np.linspace(
             threshold_range[0],
@@ -414,32 +417,11 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
 
         best_threshold = 0.5
         best_score = 0
-        n_samples = len(X)
-
-        skf = StratifiedKFold(n_splits=self.cv, shuffle=True, random_state=self.random_state)
 
         for thresh in thresholds:
-            scores = []
-            for train_idx, val_idx in skf.split(X, y):
-                X_train, X_val = X[train_idx], X[val_idx]
-                y_train, y_val = y[train_idx], y[val_idx]
-
-                # Scale if needed
-                if self.scale_features:
-                    scaler = StandardScaler()
-                    X_train = scaler.fit_transform(X_train)
-                    X_val = scaler.transform(X_val)
-
-                model = self._get_base_estimator(n_samples)
-                model.fit(X_train, y_train)
-
-                proba = model.predict_proba(X_val)[:, 1]
-                pred = (proba >= thresh).astype(int)
-                scores.append(self._compute_metric(y_val, pred))
-
-            mean_score = np.mean(scores)
-            if mean_score > best_score:
-                best_score = mean_score
+            score = self._compute_metric_at_threshold(probs, true_labels, thresh)
+            if score > best_score:
+                best_score = score
                 best_threshold = thresh
 
         return best_threshold, best_score
@@ -472,6 +454,10 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             actual_range = self.threshold_range
 
         # Step 3: Decide whether to skip optimization
+        # Reuse probabilities from uncertainty analysis (single CV pass optimization)
+        probs = uncertainty['probs']
+        true_labels = uncertainty['true_labels']
+
         skip_strategies = ['skip', 'skip_flat', 'skip_low_gain', 'skip_near_default']
         if self.skip_if_confident and uncertainty['strategy'] in skip_strategies:
             self.optimization_skipped_ = True
@@ -479,7 +465,10 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             best_score = uncertainty['sensitivity']['metric_at_05']
         else:
             self.optimization_skipped_ = False
-            self.optimal_threshold_, best_score = self._optimize_threshold(X, y, actual_range)
+            # Use pre-computed probabilities instead of running another CV loop
+            self.optimal_threshold_, best_score = self._optimize_from_probs(
+                probs, true_labels, actual_range
+            )
 
         # Store diagnostics (including sensitivity analysis)
         sensitivity = uncertainty['sensitivity']
