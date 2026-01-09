@@ -773,6 +773,65 @@ class TestThresholdOptimizedClassifier:
         assert "Confidence:" in explanation
         assert any(level in explanation for level in ["High", "Medium", "Low"])
 
+    # ==================== v7 Feature 3: plot() method ====================
+
+    def test_plot_before_fit(self):
+        """Test that plot raises error before fitting."""
+        clf = ThresholdOptimizedClassifier()
+        with pytest.raises(RuntimeError, match="not fitted"):
+            clf.plot()
+
+    def test_plot_returns_figure(self):
+        """Test that plot with show=False returns figure."""
+        pytest.importorskip("matplotlib")
+        import matplotlib.pyplot as plt
+
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        fig = clf.plot(show=False)
+        assert fig is not None
+        assert hasattr(fig, 'savefig')  # Check it's a Figure object
+        plt.close(fig)
+
+    def test_plot_multiclass_raises(self):
+        """Test that plot raises error for multiclass."""
+        pytest.importorskip("matplotlib")
+
+        X, y = make_classification(
+            n_samples=500, n_features=10, n_classes=3,
+            n_informative=5, n_clusters_per_class=1, random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        with pytest.raises(ValueError, match="binary classification"):
+            clf.plot(show=False)
+
+    def test_plot_has_sensitivity_data(self):
+        """Test that plot uses real sensitivity data."""
+        pytest.importorskip("matplotlib")
+        import matplotlib.pyplot as plt
+
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        # Check sensitivity data is stored
+        assert 'sensitivity' in clf.diagnostics_
+        sensitivity = clf.diagnostics_['sensitivity']
+        assert 'metric_scores' in sensitivity
+        assert 'test_thresholds' in sensitivity
+        assert len(sensitivity['metric_scores']) > 0
+
+        fig = clf.plot(show=False)
+        plt.close(fig)
+
 
 class TestAdaptiveEnsembleClassifier:
     """Tests for AdaptiveEnsembleClassifier."""

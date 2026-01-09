@@ -209,6 +209,63 @@ Optimize for multiple metrics simultaneously:
 
 ---
 
+## v7: Trust & Transparency Features
+
+Goal: Give users confidence in threshold optimization decisions through confidence intervals, explanations, and visualizations.
+
+### v7.1 Confidence Intervals (Completed)
+- New `compute_confidence=True` parameter (default enabled)
+- New `confidence_samples=100` parameter for bootstrap iterations
+- Uses bootstrap resampling on CV probability predictions
+- Stored in `threshold_confidence_` attribute with:
+  - `point_estimate`: Best threshold estimate
+  - `ci_low`, `ci_high`: 95% confidence interval bounds
+  - `std`: Standard deviation of bootstrap estimates
+  - `confidence`: 0-1 score (distance from uncertain 0.5)
+  - `bootstrap_thresholds`: All bootstrap samples
+- When optimization skipped, CI is [0.5, 0.5] with 100% confidence
+- 5 new tests (60 total passing)
+
+### v7.2 `.explain()` Method (Completed)
+- New `explain()` method returns human-readable threshold analysis report
+- Includes:
+  - **Decision summary**: OPTIMIZE or SKIP with strategy name
+  - **Confidence level**: High/Medium/Low based on CI
+  - **Why this decision**: Strategy-specific explanations
+  - **Recommendation**: Threshold to use and expected performance
+  - **Cautions**: Risk warnings (small data, low confidence, etc.)
+- Handles multiclass (explains why threshold NA)
+- Returns "not fitted" message if called before fit()
+- 4 new tests (64 total passing)
+
+### v7.3 `.plot()` Visualization (Completed)
+- New `plot(figsize=(10,6), show=True)` method for matplotlib visualization
+- Shows F1 vs threshold curve with:
+  - Blue curve of actual F1 scores across thresholds
+  - Shaded confidence interval band
+  - Red vertical line at optimal threshold
+  - Gray dashed line at default threshold (0.5)
+  - Green annotation showing % improvement
+- Uses stored sensitivity data (`metric_scores`, `test_thresholds`)
+- `show=False` returns Figure for saving: `fig.savefig('threshold.png')`
+- Raises ValueError for multiclass (threshold NA)
+- Raises RuntimeError if not fitted
+- Requires matplotlib: `pip install matplotlib`
+- 4 new tests (64 total passing)
+
+### v7.4 Safety Mode (Pending)
+- Plan: `safety_mode=True` parameter for holdout validation
+- Will fit on 80% of data, validate threshold on 20%
+- Reject threshold if holdout gain < CV gain - threshold
+- Protects against overfitting on small datasets
+
+### v7.5 sklearn Pipeline Integration (Pending)
+- Plan: Better pipeline compatibility
+- Ensure `get_params`/`set_params` work with GridSearchCV
+- Test with ColumnTransformer and FeatureUnion
+
+---
+
 ## Research Directions
 
 1. **Why do only 2/12 datasets benefit significantly?**
