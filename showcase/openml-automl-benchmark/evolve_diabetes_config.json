@@ -1,0 +1,100 @@
+{
+  "description": "Optimize diabetes classification F1 score using feature selection, SMOTE, and calibration",
+  "mode": "ml",
+  "cwd": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/openml-automl-benchmark",
+
+  "problem": {
+    "goal": "Maximize holdout F1 score for diabetes classification",
+    "dataset": "OpenML diabetes (ID 37) - 768 samples, 8 features, 1.87x class imbalance",
+    "current_best": 0.690,
+    "target": 0.745,
+    "metric": "holdout_f1"
+  },
+
+  "evaluation": {
+    "test_command": "cd /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/openml-automl-benchmark && source venv/bin/activate && python python/src/evolve_fitness.py {solution} --json",
+    "metric": "holdout_f1",
+    "higher_is_better": true,
+    "validation": {
+      "cv_folds": 8,
+      "holdout_folds": 2,
+      "reject_if_gap_exceeds": 0.08
+    }
+  },
+
+  "starter_solutions": [
+    "python/src/evolved_solutions/baseline.py"
+  ],
+
+  "optimization_strategies": [
+    {
+      "name": "feature_selection",
+      "description": "Reduce features from 28 to optimal subset (10 was best)",
+      "priority": "high",
+      "techniques": ["RFE with LogReg", "SelectKBest with mutual_info", "L1-based selection"],
+      "parameters": {
+        "n_features": [5, 8, 10, 12, 15],
+        "method": ["rfe", "selectkbest_mi", "l1"]
+      }
+    },
+    {
+      "name": "smote_oversampling",
+      "description": "Generate synthetic minority samples (k=5 was optimal)",
+      "priority": "medium",
+      "techniques": ["SMOTE", "ADASYN"],
+      "parameters": {
+        "k_neighbors": [3, 5, 7],
+        "method": ["smote", "none"]
+      },
+      "notes": "BorderlineSMOTE and ADASYN performed WORSE - avoid them"
+    },
+    {
+      "name": "calibration",
+      "description": "Calibrate probabilities and optimize threshold",
+      "priority": "medium",
+      "techniques": ["Sigmoid (Platt) scaling"],
+      "parameters": {
+        "method": ["sigmoid", "none"],
+        "threshold": [0.3, 0.35, 0.4, 0.45, 0.5]
+      },
+      "notes": "Isotonic calibration FAILED on small data - use sigmoid only"
+    },
+    {
+      "name": "regularization",
+      "description": "Tune LogReg regularization (C=0.5 was optimal)",
+      "priority": "low",
+      "parameters": {
+        "C": [0.1, 0.5, 1.0],
+        "penalty": ["l2"]
+      }
+    }
+  ],
+
+  "constraints": [
+    "MUST use holdout validation - reject any solution with CV-holdout gap > 0.08",
+    "DO NOT use stacking - it overfits badly on this small dataset (-3.2%)",
+    "DO NOT use neural networks/MLP - no benefit on 768 samples",
+    "DO NOT use isotonic calibration - needs more data",
+    "DO NOT use BorderlineSMOTE or ADASYN - performed worse than basic SMOTE",
+    "PREFER LogReg over RF - LogReg consistently generalized better",
+    "PREFER fewer features - 10 features beat 28 features"
+  ],
+
+  "references": [
+    "results/exp_feature_selection_results.json - Feature selection experiment (BEST: +3.7%)",
+    "results/exp_smote_results.json - SMOTE experiment (+1.8%)",
+    "results/exp_calibration_results.json - Calibration experiment (+1.5%)",
+    "results/exp_stacking_results.json - Stacking experiment (FAILED: -3.2%)",
+    "DIABETES_DEEP_DIVE.md - Comprehensive analysis of all 8 experiments"
+  ],
+
+  "known_results": {
+    "baseline_no_fe": 0.595,
+    "baseline_with_fe": 0.665,
+    "feature_selection_rfe_10": 0.690,
+    "smote_k5": 0.677,
+    "calibration_sigmoid": 0.675,
+    "stacking_4models": 0.644,
+    "target_autosklearn": 0.745
+  }
+}
