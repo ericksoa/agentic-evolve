@@ -232,6 +232,29 @@ clf = ThresholdOptimizedClassifier(
 )
 ```
 
+### Cost-Sensitive Optimization
+
+```python
+# Minimize misclassification cost instead of maximizing F1
+# Useful when FP and FN have different business costs
+
+# Medical diagnosis: missing disease (FN) is much worse than false alarm (FP)
+clf = ThresholdOptimizedClassifier(
+    cost_matrix={'fp': 1, 'fn': 10},  # FN costs 10x more
+)
+clf.fit(X_train, y_train)
+# This will lower the threshold to catch more positives
+
+# Fraud detection: false positives may be acceptable to catch more fraud
+clf = ThresholdOptimizedClassifier(
+    cost_matrix={'fp': 1, 'fn': 5},  # FN costs 5x more
+)
+
+# See cost in diagnostics
+print(clf.diagnostics_['cv_best_score'])  # Total cost at optimal threshold
+print(clf.diagnostics_['cost_matrix'])    # The cost matrix used
+```
+
 ### Get Detailed Diagnostics
 
 ```python
@@ -272,6 +295,7 @@ ThresholdOptimizedClassifier(
     scale_features=True,      # Standardize features
     skip_if_confident=True,   # Skip when detection says it won't help
     tune_base_model=False,    # Auto-tune hyperparameters with GridSearchCV
+    cost_matrix=None,         # Cost-sensitive: {'fp': 1, 'fn': 10}
     calibrate=False,          # Probability calibration (usually not needed)
     random_state=42
 )

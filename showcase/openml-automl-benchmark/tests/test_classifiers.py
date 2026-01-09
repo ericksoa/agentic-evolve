@@ -430,6 +430,74 @@ class TestThresholdOptimizedClassifier:
         assert clf.diagnostics_['tuning']['status'] == 'completed'
         assert clf.diagnostics_['auto_model'] is not None
 
+    def test_cost_matrix_basic(self, imbalanced_data):
+        """Test cost-sensitive optimization."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(
+            cost_matrix={'fp': 1, 'fn': 10},  # FN costs 10x more
+            random_state=42
+        )
+        clf.fit(X_train, y_train)
+
+        # Check that cost_matrix is stored in diagnostics
+        assert clf.diagnostics_['cost_matrix'] == {'fp': 1, 'fn': 10}
+        assert clf.diagnostics_['optimize_for'] == 'cost'
+
+        # Model should still work for predictions
+        predictions = clf.predict(X_test)
+        assert len(predictions) == len(y_test)
+
+    def test_cost_matrix_threshold_shift(self, imbalanced_data):
+        """Test that cost matrix affects threshold."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+
+        # High FN cost should lower threshold (catch more positives)
+        clf_high_fn = ThresholdOptimizedClassifier(
+            cost_matrix={'fp': 1, 'fn': 100},
+            skip_if_confident=False,
+            threshold_range=(0.1, 0.9),
+            random_state=42
+        )
+        clf_high_fn.fit(X_train, y_train)
+
+        # High FP cost should raise threshold (be more selective)
+        clf_high_fp = ThresholdOptimizedClassifier(
+            cost_matrix={'fp': 100, 'fn': 1},
+            skip_if_confident=False,
+            threshold_range=(0.1, 0.9),
+            random_state=42
+        )
+        clf_high_fp.fit(X_train, y_train)
+
+        # High FN cost should result in lower threshold
+        assert clf_high_fn.optimal_threshold_ < clf_high_fp.optimal_threshold_
+
+    def test_cost_matrix_in_summary(self, imbalanced_data):
+        """Test that cost_matrix is shown in summary."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(
+            cost_matrix={'fp': 1, 'fn': 5},
+            random_state=42
+        )
+        clf.fit(X_train, y_train)
+
+        summary = clf.summary()
+        assert "COST" in summary
+        assert "fp=1" in summary
+        assert "fn=5" in summary
+        assert "CV total cost" in summary
+
+    def test_cost_matrix_in_get_params(self, balanced_data):
+        """Test that cost_matrix is included in get_params."""
+        clf = ThresholdOptimizedClassifier(
+            cost_matrix={'fp': 2, 'fn': 3},
+            random_state=42
+        )
+        params = clf.get_params()
+
+        assert 'cost_matrix' in params
+        assert params['cost_matrix'] == {'fp': 2, 'fn': 3}
+
 
 class TestAdaptiveEnsembleClassifier:
     """Tests for AdaptiveEnsembleClassifier."""

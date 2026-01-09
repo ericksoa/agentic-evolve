@@ -134,7 +134,7 @@ Optimize for multiple metrics simultaneously:
 | Priority | Feature | Effort | Expected Gain | Status |
 |----------|---------|--------|---------------|--------|
 | 1 | Hyperparameter tuning | Medium | +2-5% | ✅ Done |
-| 2 | Cost-sensitive optimization | Low | Domain-specific | Pending |
+| 2 | Cost-sensitive optimization | Low | Domain-specific | ✅ Done |
 | 3 | Probability calibration options | Low | +1-2% | Pending |
 | 4 | Ensemble thresholds | Medium | +1-3% stability | Pending |
 | 5 | Meta-learning detection | High | Find more winners | - |
@@ -164,6 +164,14 @@ Optimize for multiple metrics simultaneously:
 - XGBoost/LightGBM: Tunes n_estimators, max_depth, learning_rate
 - Results are mixed: +0.42% on credit-g, -3.06% on kc2
 - Conclusion: Useful option but not always beneficial; can cause overfitting
+
+### Cost-Sensitive Optimization (Completed)
+- New `cost_matrix={'fp': 1, 'fn': 10}` parameter for cost-sensitive threshold search
+- Minimizes total cost: cost = fp_cost * FP + fn_cost * FN
+- High FN cost → lower threshold (catch more positives, accept more FP)
+- High FP cost → higher threshold (be more selective, accept more FN)
+- Use cases: medical diagnosis (FN worse), fraud detection (FN worse), spam (FP worse)
+- When cost_matrix is set, optimize_for is ignored (cost takes precedence)
 
 ---
 

@@ -103,6 +103,16 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         - XGBoost/LightGBM: n_estimators, max_depth, learning_rate
         Note: This adds computational overhead (~3x fitting time).
 
+    cost_matrix : dict or None, default=None
+        Cost-sensitive optimization. When provided, finds threshold that
+        minimizes total misclassification cost instead of maximizing F1.
+        Dict format: {'fp': <fp_cost>, 'fn': <fn_cost>}
+        Example: {'fp': 1, 'fn': 10} means false negatives cost 10x more.
+        Use cases:
+        - Medical: FN >> FP (missing disease is worse than false alarm)
+        - Fraud: FP might be acceptable to catch more fraud
+        Note: When cost_matrix is set, optimize_for is ignored.
+
     random_state : int or None, default=42
         Random state for reproducibility.
 
@@ -152,6 +162,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         calibrate: bool = False,
         skip_if_confident: bool = True,
         tune_base_model: bool = False,
+        cost_matrix: Optional[Dict[str, float]] = None,
         random_state: int = 42,
     ):
         self.base_estimator = base_estimator
@@ -163,6 +174,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         self.calibrate = calibrate
         self.skip_if_confident = skip_if_confident
         self.tune_base_model = tune_base_model
+        self.cost_matrix = cost_matrix
         self.random_state = random_state
 
     def _get_base_estimator(self, n_samples: int = None) -> BaseEstimator:
@@ -390,6 +402,31 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         preds = (probs >= threshold).astype(int)
         return self._compute_metric(true_labels, preds)
 
+    def _compute_cost_at_threshold(self, probs: np.ndarray, true_labels: np.ndarray, threshold: float) -> float:
+        """
+        Compute total misclassification cost at a given threshold.
+
+        Cost = fp_cost * FP + fn_cost * FN
+
+        Returns negative cost so we can use argmax (maximize = minimize cost).
+        """
+        if self.cost_matrix is None:
+            raise ValueError("cost_matrix must be set to use cost-based optimization")
+
+        preds = (probs >= threshold).astype(int)
+
+        # Compute confusion matrix components
+        fp = np.sum((preds == 1) & (true_labels == 0))
+        fn = np.sum((preds == 0) & (true_labels == 1))
+
+        fp_cost = self.cost_matrix.get('fp', 1)
+        fn_cost = self.cost_matrix.get('fn', 1)
+
+        total_cost = fp_cost * fp + fn_cost * fn
+
+        # Return negative so we can use argmax (maximize -cost = minimize cost)
+        return -total_cost
+
     def _analyze_threshold_sensitivity(self, probs: np.ndarray, true_labels: np.ndarray) -> Dict:
         """
         Analyze how sensitive the metric is to threshold changes.
@@ -528,10 +565,17 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         This is faster than running a separate CV loop since it reuses
         the probabilities already collected during uncertainty analysis.
 
+        When cost_matrix is set, minimizes cost instead of maximizing metric.
+
         Returns (optimal_threshold, best_score).
         """
+        # Determine scoring function based on cost_matrix
+        use_cost = self.cost_matrix is not None
+
         if threshold_range[0] == threshold_range[1]:
             # No range to search
+            if use_cost:
+                return threshold_range[0], -self._compute_cost_at_threshold(probs, true_labels, 0.5)
             return threshold_range[0], self._compute_metric_at_threshold(probs, true_labels, 0.5)
 
         thresholds = np.linspace(
@@ -541,13 +585,22 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         )
 
         best_threshold = 0.5
-        best_score = 0
+        best_score = float('-inf')
 
         for thresh in thresholds:
-            score = self._compute_metric_at_threshold(probs, true_labels, thresh)
+            if use_cost:
+                # Cost returns negative, so maximize = minimize cost
+                score = self._compute_cost_at_threshold(probs, true_labels, thresh)
+            else:
+                score = self._compute_metric_at_threshold(probs, true_labels, thresh)
+
             if score > best_score:
                 best_score = score
                 best_threshold = thresh
+
+        # For cost mode, return the actual (positive) cost for diagnostics
+        if use_cost:
+            best_score = -best_score  # Convert back to positive cost
 
         return best_threshold, best_score
 
@@ -678,7 +731,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'class1_prob_mean': uncertainty['class1_prob_mean'],
             'optimization_skipped': self.optimization_skipped_,
             'cv_best_score': best_score,
-            'optimize_for': self.optimize_for,
+            'optimize_for': self.optimize_for if self.cost_matrix is None else 'cost',
+            'cost_matrix': self.cost_matrix,
             'n_samples': len(X),
             'auto_model': auto_model_reason,
             # Sensitivity metrics (backward compat: also store as f1_range)
@@ -748,6 +802,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'calibrate': self.calibrate,
             'skip_if_confident': self.skip_if_confident,
             'tune_base_model': self.tune_base_model,
+            'cost_matrix': self.cost_matrix,
             'random_state': self.random_state,
         }
 
@@ -763,7 +818,6 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             return "Model not fitted yet. Call fit() first."
 
         d = self.diagnostics_
-        metric_name = self.optimize_for.upper()
 
         # Handle multiclass case
         if d.get('strategy') == 'multiclass':
@@ -785,6 +839,16 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
                 lines.append(f"  Base model: {d['auto_model']}")
             return "\n".join(lines)
 
+        # Check if cost mode
+        cost_mode = d.get('cost_matrix') is not None
+        if cost_mode:
+            cm = d['cost_matrix']
+            metric_name = f"COST (fp={cm.get('fp', 1)}, fn={cm.get('fn', 1)})"
+            score_label = "CV total cost"
+        else:
+            metric_name = self.optimize_for.upper()
+            score_label = f"CV {metric_name}"
+
         # Binary classification case
         lines = [
             "ThresholdOptimizedClassifier Summary",
@@ -795,7 +859,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             f"Uncertainty Analysis:",
             f"  Overlap zone: {self.overlap_pct_:.1f}%",
             f"  Class separation: {self.class_separation_:.3f}",
-            f"  {metric_name} range across thresholds: {d['metric_range']:.3f}",
+            f"  F1 range across thresholds: {d['metric_range']:.3f}",
             f"  Potential gain: {d['potential_gain']*100:+.1f}%",
             f"  Strategy: {d['strategy']}",
             "",
@@ -803,7 +867,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             f"  Skipped: {self.optimization_skipped_}",
             f"  Threshold range: {d['threshold_range_used']}",
             f"  Optimal threshold: {self.optimal_threshold_:.3f}",
-            f"  CV {metric_name}: {d['cv_best_score']:.3f}",
+            f"  {score_label}: {d['cv_best_score']:.3f}",
             "",
             f"Dataset:",
             f"  Samples: {d['n_samples']}",
