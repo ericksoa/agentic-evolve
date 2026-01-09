@@ -126,6 +126,19 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         - None or 1: Use single threshold (default behavior)
         - n > 1: Use n thresholds with majority vote
 
+    use_meta_detector : bool, default=False
+        Use trained meta-learning model to decide whether to optimize.
+        When True, uses a learned predictor instead of hard-coded rules
+        to decide if threshold optimization will help. This can find
+        more datasets that benefit compared to the heuristic rules.
+        Requires pre-trained model (run scripts/train_meta_detector.py).
+        Falls back to heuristic rules if no model is available.
+
+    meta_detector_threshold : float, default=0.5
+        Decision threshold for the meta-detector. Only used when
+        use_meta_detector=True. Higher values are more conservative
+        (fewer datasets will be optimized).
+
     random_state : int or None, default=42
         Random state for reproducibility.
 
@@ -177,6 +190,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         tune_base_model: bool = False,
         cost_matrix: Optional[Dict[str, float]] = None,
         ensemble_thresholds: Optional[int] = None,
+        use_meta_detector: bool = False,
+        meta_detector_threshold: float = 0.5,
         random_state: int = 42,
     ):
         self.base_estimator = base_estimator
@@ -190,6 +205,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         self.tune_base_model = tune_base_model
         self.cost_matrix = cost_matrix
         self.ensemble_thresholds = ensemble_thresholds
+        self.use_meta_detector = use_meta_detector
+        self.meta_detector_threshold = meta_detector_threshold
         self.random_state = random_state
 
     def _get_base_estimator(self, n_samples: int = None) -> BaseEstimator:
@@ -545,6 +562,108 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'test_thresholds': test_thresholds,
         }
 
+    def _meta_detector_strategy(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        overlap_pct: float,
+        class_separation: float,
+        sensitivity: Dict,
+    ) -> Optional[Dict]:
+        """
+        Use meta-learning detector to decide strategy.
+
+        Returns dict with 'strategy' and 'recommended_range' if meta-detector
+        is available and provides a decision. Returns None to fall back to
+        heuristic rules.
+        """
+        try:
+            from .meta_learning import MetaFeatureExtractor, MetaLearningDetector
+
+            # Try to load pretrained detector
+            if not MetaLearningDetector.is_pretrained_available():
+                # No pretrained model, use fallback
+                detector = MetaLearningDetector.create_fallback()
+            else:
+                detector = MetaLearningDetector.load_pretrained()
+
+            # Build meta-features from already-computed values
+            # This avoids running the probe model twice
+            extractor = MetaFeatureExtractor()
+            features = {
+                # Dataset features
+                'n_samples': len(X),
+                'n_features': X.shape[1],
+                'n_classes': 2,
+                'imbalance_ratio': self._compute_imbalance(y),
+                'minority_ratio': min(np.mean(y == 0), np.mean(y == 1)),
+                'log_n_samples': np.log10(len(X) + 1),
+                'log_n_features': np.log10(X.shape[1] + 1),
+                'samples_per_feature': len(X) / max(X.shape[1], 1),
+                'feature_mean_of_means': np.nanmean(X),
+                'feature_mean_of_stds': np.nanmean(np.nanstd(X, axis=0)),
+                # Probability features (from analysis)
+                'overlap_pct': overlap_pct,
+                'class_separation': class_separation,
+                'prob_mean': 0.5,  # Placeholder
+                'prob_std': 0.25,  # Placeholder
+                'prob_skewness': 0.0,
+                'prob_kurtosis': 0.0,
+                'prob_p10': 0.1,
+                'prob_p25': 0.25,
+                'prob_p50': 0.5,
+                'prob_p75': 0.75,
+                'prob_p90': 0.9,
+                'prob_iqr': 0.5,
+                # Sensitivity features
+                'best_threshold': sensitivity['best_threshold'],
+                'best_f1': sensitivity['best_metric'],
+                'f1_at_05': sensitivity['metric_at_05'],
+                'f1_range': sensitivity['metric_range'],
+                'f1_std': np.sqrt(sensitivity['metric_variance']),
+                'threshold_distance': sensitivity['threshold_distance'],
+                'potential_gain': sensitivity['potential_gain'],
+                'f1_drop_at_edges': 0.0,  # Placeholder
+                # Derived features
+                'imbalance_x_overlap': self._compute_imbalance(y) * overlap_pct / 100,
+                'separation_x_range': class_separation * sensitivity['metric_range'],
+                'distance_x_gain': sensitivity['threshold_distance'] * sensitivity['potential_gain'],
+                'overlap_per_sample': overlap_pct / np.log10(len(X) + 1),
+                'feature_density': np.log10(len(X) / max(X.shape[1], 1) + 1),
+            }
+
+            # Get prediction
+            if hasattr(detector, '_use_fallback') and detector._use_fallback:
+                prob = detector._fallback_predict(features)
+            else:
+                prob = detector.predict_proba(features)
+
+            should_optimize = prob >= self.meta_detector_threshold
+
+            if should_optimize:
+                # Determine range based on potential gain
+                if sensitivity['potential_gain'] > 0.05 and sensitivity['threshold_distance'] > 0.15:
+                    strategy = 'meta_aggressive'
+                    recommended_range = (0.05, 0.60)
+                else:
+                    strategy = 'meta_normal'
+                    recommended_range = (0.20, 0.55)
+            else:
+                strategy = 'meta_skip'
+                recommended_range = (0.50, 0.50)
+
+            return {
+                'strategy': strategy,
+                'recommended_range': recommended_range,
+                'probability': prob,
+                'should_optimize': should_optimize,
+            }
+
+        except Exception as e:
+            # If anything fails, return None to fall back to heuristics
+            warnings.warn(f"Meta-detector failed: {e}. Falling back to heuristics.")
+            return None
+
     def _analyze_uncertainty(self, X: np.ndarray, y: np.ndarray) -> Dict:
         """
         Analyze model uncertainty by examining probability distributions
@@ -590,6 +709,29 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
 
         # NEW: Analyze threshold sensitivity
         sensitivity = self._analyze_threshold_sensitivity(all_probs, all_true)
+
+        # Meta-detector based strategy selection (if enabled)
+        meta_detector_result = None
+        if self.use_meta_detector:
+            meta_detector_result = self._meta_detector_strategy(
+                X, y, overlap_pct, class_separation, sensitivity
+            )
+            if meta_detector_result is not None:
+                return {
+                    'overlap_pct': overlap_pct,
+                    'class_separation': class_separation,
+                    'recommended_range': meta_detector_result['recommended_range'],
+                    'strategy': meta_detector_result['strategy'],
+                    'probs': all_probs,
+                    'true_labels': all_true,
+                    'class0_prob_mean': class0_probs.mean(),
+                    'class1_prob_mean': class1_probs.mean(),
+                    'sensitivity': sensitivity,
+                    'best_threshold_estimate': sensitivity['best_threshold'],
+                    'metric_range': sensitivity['metric_range'],
+                    'potential_gain': sensitivity['potential_gain'],
+                    'meta_detector_prob': meta_detector_result.get('probability'),
+                }
 
         # Determine strategy based on BOTH overlap AND threshold sensitivity
         # Key insight: Only optimize if (1) optimal threshold is far from 0.5 AND (2) meaningful gain
@@ -915,6 +1057,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'tune_base_model': self.tune_base_model,
             'cost_matrix': self.cost_matrix,
             'ensemble_thresholds': self.ensemble_thresholds,
+            'use_meta_detector': self.use_meta_detector,
+            'meta_detector_threshold': self.meta_detector_threshold,
             'random_state': self.random_state,
         }
 

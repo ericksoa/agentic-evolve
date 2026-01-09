@@ -23,5 +23,20 @@ from .classifier import AdaptiveEnsembleClassifier
 from .threshold_classifier import ThresholdOptimizedClassifier
 from .analysis import DatasetAnalyzer
 
+# Meta-learning components (optional import, may not be available)
+try:
+    from .meta_learning import MetaFeatureExtractor, MetaLearningDetector
+    _HAS_META_LEARNING = True
+except ImportError:
+    _HAS_META_LEARNING = False
+    MetaFeatureExtractor = None
+    MetaLearningDetector = None
+
 __version__ = "0.1.0"
-__all__ = ["AdaptiveEnsembleClassifier", "ThresholdOptimizedClassifier", "DatasetAnalyzer"]
+__all__ = [
+    "AdaptiveEnsembleClassifier",
+    "ThresholdOptimizedClassifier",
+    "DatasetAnalyzer",
+    "MetaFeatureExtractor",
+    "MetaLearningDetector",
+]

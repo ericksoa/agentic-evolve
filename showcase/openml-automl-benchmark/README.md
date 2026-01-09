@@ -90,6 +90,7 @@ v4 adds several performance optimizations:
 | **Cost-sensitive mode** | Minimize FP/FN costs with `cost_matrix={'fp': 1, 'fn': 10}` |
 | **Calibration options** | `calibrate='isotonic'` or `calibrate='sigmoid'` (Platt scaling) |
 | **Ensemble thresholds** | `ensemble_thresholds=5` for majority-vote across bootstrap thresholds |
+| **Meta-learning detection** | `use_meta_detector=True` for learned detection instead of heuristics |
 | **Metric selection** | Optimize for F1, F2, recall, precision, or F0.5 |
 | **Bootstrap CIs** | Statistical confidence in benchmark results |
 | **Multiclass support** | Graceful fallback (no crashes on multiclass data) |
@@ -291,6 +292,26 @@ print(clf.diagnostics_['threshold_ensemble_mean'])  # Mean threshold
 print(clf.diagnostics_['threshold_ensemble_std'])   # Std dev (measure of stability)
 ```
 
+### Meta-Learning Detection
+
+```python
+# Use learned meta-model instead of hard-coded heuristics
+# This can find MORE datasets that benefit from optimization
+clf = ThresholdOptimizedClassifier(
+    use_meta_detector=True,  # Use learned predictor
+    meta_detector_threshold=0.5,  # Decision threshold (higher = more conservative)
+)
+clf.fit(X_train, y_train)
+
+# Check what strategy was selected
+print(clf.diagnostics_['strategy'])  # 'meta_aggressive', 'meta_normal', or 'meta_skip'
+print(clf.diagnostics_.get('meta_detector_prob'))  # P(will_help) from detector
+
+# Train your own meta-detector on OpenML datasets
+# python scripts/collect_training_data.py --max-datasets 50
+# python scripts/train_meta_detector.py
+```
+
 ### Get Detailed Diagnostics
 
 ```python
@@ -334,6 +355,8 @@ ThresholdOptimizedClassifier(
     cost_matrix=None,         # Cost-sensitive: {'fp': 1, 'fn': 10}
     calibrate=False,          # 'isotonic', 'sigmoid'/'platt', or False
     ensemble_thresholds=None, # None or int>1 for bootstrap voting
+    use_meta_detector=False,  # Use learned meta-model for detection
+    meta_detector_threshold=0.5,  # Decision threshold for meta-detector
     random_state=42
 )
 ```

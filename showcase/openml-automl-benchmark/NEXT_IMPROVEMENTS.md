@@ -137,7 +137,7 @@ Optimize for multiple metrics simultaneously:
 | 2 | Cost-sensitive optimization | Low | Domain-specific | ✅ Done |
 | 3 | Probability calibration options | Low | +1-2% | ✅ Done |
 | 4 | Ensemble thresholds | Medium | +1-3% stability | ✅ Done |
-| 5 | Meta-learning detection | High | Find more winners | - |
+| 5 | Meta-learning detection | High | Find more winners | ✅ Done |
 | 6 | Feature selection | Medium | +1-3% on high-dim | - |
 
 ---
@@ -189,6 +189,23 @@ Optimize for multiple metrics simultaneously:
 - Stores threshold_ensemble_, threshold_ensemble_mean, threshold_ensemble_std
 - Skipped when optimization is skipped (skip_if_confident)
 - 5 new tests (51 total passing)
+
+### Meta-Learning Detection (Completed)
+- New `use_meta_detector=True` parameter to use learned predictor instead of heuristics
+- New `meta_detector_threshold=0.5` parameter to control decision threshold
+- Creates `adaptive_ensemble/meta_learning/` module with:
+  - `MetaFeatureExtractor`: Extracts ~35 meta-features from (X, y) in ~0.5-2s
+  - `MetaLearningDetector`: Trained predictor for P(will_help)
+  - Training utilities for collecting data from OpenML
+- Features extracted include:
+  - Dataset features: n_samples, n_features, imbalance_ratio, etc.
+  - Probability distribution: overlap_pct, class_separation, prob_mean, etc.
+  - Threshold sensitivity: f1_range, potential_gain, threshold_distance, etc.
+  - Derived interactions: imbalance_x_overlap, distance_x_gain, etc.
+- Strategies: 'meta_aggressive', 'meta_normal', 'meta_skip'
+- Fallback to heuristic rules if no pretrained model available
+- Training scripts in `scripts/collect_training_data.py` and `scripts/train_meta_detector.py`
+- 17 new tests (68 total passing)
 
 ---
 
