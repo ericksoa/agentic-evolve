@@ -1,0 +1,308 @@
+{
+  "experiment": "stacking",
+  "dataset": "diabetes (OpenML 37)",
+  "baseline": 0.665,
+  "target": 0.745,
+  "best_holdout_f1": 0.6435091277890467,
+  "best_config": {
+    "config_name": "Stack-DomainBins (LR+RF+XGB+SVM) -> LogReg-Balanced",
+    "features": "domain+bins",
+    "meta_learner": "logreg_balanced",
+    "use_proba": true,
+    "cv_mean": 0.7273472870684776,
+    "cv_std": 0.0624594812472977,
+    "holdout_mean": 0.6435091277890467,
+    "holdout_std": 0.0917849898580122,
+    "gap": 0.08383815927943095,
+    "cv_scores": [
+      0.71875,
+      0.7719298245614035,
+      0.6428571428571429,
+      0.8571428571428571,
+      0.6666666666666666,
+      0.7017543859649122,
+      0.75,
+      0.7096774193548387
+    ],
+    "holdout_scores": [
+      0.7352941176470589,
+      0.5517241379310345
+    ],
+    "beats_baseline": false,
+    "timestamp": "2026-01-08T16:18:26.454705"
+  },
+  "beats_baseline": false,
+  "all_results": [
+    {
+      "config_name": "Stack-Basic (LR+RF+XGB+SVM) -> LogReg",
+      "features": "base_only",
+      "meta_learner": "logreg",
+      "use_proba": true,
+      "cv_mean": 0.6325476117871034,
+      "cv_std": 0.03885536901646328,
+      "holdout_mean": 0.6121212121212121,
+      "holdout_std": 0.0787878787878788,
+      "gap": 0.020426399665891326,
+      "cv_scores": [
+        0.6296296296296297,
+        0.6086956521739131,
+        0.5714285714285714,
+        0.7111111111111111,
+        0.6521739130434783,
+        0.6530612244897959,
+        0.6046511627906976,
+        0.6296296296296297
+      ],
+      "holdout_scores": [
+        0.6909090909090909,
+        0.5333333333333333
+      ],
+      "beats_baseline": false,
+      "timestamp": "2026-01-08T16:18:10.469803"
+    },
+    {
+      "config_name": "Stack-Basic (LR+RF+XGB+SVM) -> Ridge",
+      "features": "base_only",
+      "meta_learner": "ridge",
+      "use_proba": false,
+      "cv_mean": 0.6410973496963797,
+      "cv_std": 0.07137044194811587,
+      "holdout_mean": 0.6101190476190477,
+      "holdout_std": 0.06845238095238099,
+      "gap": 0.030978302077331987,
+      "cv_scores": [
+        0.6296296296296297,
+        0.6274509803921569,
+        0.5833333333333334,
+        0.7659574468085106,
+        0.7407407407407407,
+        0.64,
+        0.5416666666666666,
+        0.6
+      ],
+      "holdout_scores": [
+        0.6785714285714286,
+        0.5416666666666666
+      ],
+      "beats_baseline": false,
+      "timestamp": "2026-01-08T16:18:15.702636"
+    },
+    {
+      "config_name": "Stack-DomainBins (LR+RF+XGB+SVM) -> LogReg",
+      "features": "domain+bins",
+      "meta_learner": "logreg",
+      "use_proba": true,
+      "cv_mean": 0.6711223668840509,
+      "cv_std": 0.05792150495694976,
+      "holdout_mean": 0.6156609195402298,
+      "holdout_std": 0.07399425287356326,
+      "gap": 0.05546144734382108,
+      "cv_scores": [
+        0.6666666666666666,
+        0.6808510638297872,
+        0.64,
+        0.7916666666666666,
+        0.6956521739130435,
+        0.6037735849056604,
+        0.6938775510204082,
+        0.5964912280701754
+      ],
+      "holdout_scores": [
+        0.6896551724137931,
+        0.5416666666666666
+      ],
+      "beats_baseline": false,
+      "timestamp": "2026-01-08T16:18:21.057883"
+    },
+    {
+      "config_name": "Stack-DomainBins (LR+RF+XGB+SVM) -> LogReg-Balanced",
+      "features": "domain+bins",
+      "meta_learner": "logreg_balanced",
+      "use_proba": true,
+      "cv_mean": 0.7273472870684776,
+      "cv_std": 0.0624594812472977,
+      "holdout_mean": 0.6435091277890467,
+      "holdout_std": 0.0917849898580122,
+      "gap": 0.08383815927943095,
+      "cv_scores": [
+        0.71875,
+        0.7719298245614035,
+        0.6428571428571429,
+        0.8571428571428571,
+        0.6666666666666666,
+        0.7017543859649122,
+        0.75,
+        0.7096774193548387
+      ],
+      "holdout_scores": [
+        0.7352941176470589,
+        0.5517241379310345
+      ],
+      "beats_baseline": false,
+      "timestamp": "2026-01-08T16:18:26.454705"
+    },
+    {
+      "config_name": "Stack-DomainBins (LR+RF+XGB+SVM) -> Ridge",
+      "features": "domain+bins",
+      "meta_learner": "ridge",
+      "use_proba": false,
+      "cv_mean": 0.685279708312799,
+      "cv_std": 0.05232384265010125,
+      "holdout_mean": 0.6156609195402298,
+      "holdout_std": 0.07399425287356326,
+      "gap": 0.06961878877256922,
+      "cv_scores": [
+        0.6779661016949152,
+        0.7307692307692307,
+        0.6037735849056604,
+        0.7755102040816326,
+        0.6792452830188679,
+        0.6909090909090909,
+        0.7058823529411765,
+        0.6181818181818182
+      ],
+      "holdout_scores": [
+        0.6896551724137931,
+        0.5416666666666666
+      ],
+      "beats_baseline": false,
+      "timestamp": "2026-01-08T16:18:31.886323"
+    },
+    {
+      "config_name": "Stack-DomainBins (LR+RF) -> LogReg",
+      "features": "domain+bins",
+      "meta_learner": "logreg",
+      "use_proba": true,
+      "cv_mean": 0.6775628635267414,
+      "cv_std": 0.0601284549064704,
+      "holdout_mean": 0.6101337086558762,
+      "holdout_std": 0.07952146375791697,
+      "gap": 0.0674291548708652,
+      "cv_scores": [
+        0.6666666666666666,
+        0.6666666666666666,
+        0.6666666666666666,
+        0.7916666666666666,
+        0.7346938775510204,
+        0.6037735849056604,
+        0.6938775510204082,
+        0.5964912280701754
+      ],
+      "holdout_scores": [
+        0.6896551724137931,
+        0.5306122448979592
+      ],
+      "beats_baseline": false,
+      "timestamp": "2026-01-08T16:18:37.136425"
+    },
+    {
+      "config_name": "Stack-AllFE (LR+RF+XGB+SVM) -> LogReg",
+      "features": "all",
+      "meta_learner": "logreg",
+      "use_proba": true,
+      "cv_mean": 0.6583023753789866,
+      "cv_std": 0.042014062225862125,
+      "holdout_mean": 0.608534322820037,
+      "holdout_std": 0.11873840445269018,
+      "gap": 0.04976805255894956,
+      "cv_scores": [
+        0.6415094339622641,
+        0.6666666666666666,
+        0.6153846153846154,
+        0.75,
+        0.6530612244897959,
+        0.6037735849056604,
+        0.6808510638297872,
+        0.6551724137931034
+      ],
+      "holdout_scores": [
+        0.7272727272727273,
+        0.4897959183673469
+      ],
+      "beats_baseline": false,
+      "timestamp": "2026-01-08T16:18:42.666483"
+    },
+    {
+      "config_name": "Stack-DomainOnly (LR+RF+XGB+SVM) -> LogReg",
+      "features": "domain",
+      "meta_learner": "logreg",
+      "use_proba": true,
+      "cv_mean": 0.6483168186543924,
+      "cv_std": 0.05810769205182589,
+      "holdout_mean": 0.6045918367346939,
+      "holdout_std": 0.07397959183673469,
+      "gap": 0.043724981919698536,
+      "cv_scores": [
+        0.6037735849056604,
+        0.6382978723404256,
+        0.5833333333333334,
+        0.782608695652174,
+        0.6122448979591837,
+        0.6538461538461539,
+        0.6808510638297872,
+        0.631578947368421
+      ],
+      "holdout_scores": [
+        0.6785714285714286,
+        0.5306122448979592
+      ],
+      "beats_baseline": false,
+      "timestamp": "2026-01-08T16:18:47.956504"
+    },
+    {
+      "config_name": "Stack-Hard-DomainBins (LR+RF+XGB+SVM) -> LogReg",
+      "features": "domain+bins",
+      "meta_learner": "logreg",
+      "use_proba": false,
+      "cv_mean": 0.685279708312799,
+      "cv_std": 0.05232384265010125,
+      "holdout_mean": 0.6156609195402298,
+      "holdout_std": 0.07399425287356326,
+      "gap": 0.06961878877256922,
+      "cv_scores": [
+        0.6779661016949152,
+        0.7307692307692307,
+        0.6037735849056604,
+        0.7755102040816326,
+        0.6792452830188679,
+        0.6909090909090909,
+        0.7058823529411765,
+        0.6181818181818182
+      ],
+      "holdout_scores": [
+        0.6896551724137931,
+        0.5416666666666666
+      ],
+      "beats_baseline": false,
+      "timestamp": "2026-01-08T16:18:53.329968"
+    },
+    {
+      "config_name": "Stack-DomainBins (LR+RF+XGB+SVM) -> RF-Meta",
+      "features": "domain+bins",
+      "meta_learner": "rf",
+      "use_proba": true,
+      "cv_mean": 0.6448116886507566,
+      "cv_std": 0.05353579505971925,
+      "holdout_mean": 0.6025641025641025,
+      "holdout_std": 0.0641025641025641,
+      "gap": 0.04224758608665402,
+      "cv_scores": [
+        0.6779661016949152,
+        0.6382978723404256,
+        0.6274509803921569,
+        0.76,
+        0.6666666666666666,
+        0.6153846153846154,
+        0.5909090909090909,
+        0.5818181818181818
+      ],
+      "holdout_scores": [
+        0.6666666666666666,
+        0.5384615384615384
+      ],
+      "beats_baseline": false,
+      "timestamp": "2026-01-08T16:18:58.994997"
+    }
+  ],
+  "timestamp": "2026-01-08T16:18:58.995031"
+}

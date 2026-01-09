@@ -1,0 +1,415 @@
+{
+  "experiment": "Probability Calibration for Diabetes Classification",
+  "dataset": "OpenML 37 (diabetes)",
+  "baseline": 0.665,
+  "target": 0.745,
+  "timestamp": "2026-01-08T16:21:25.535865",
+  "experiments": [
+    {
+      "calibration_method": "None (uncalibrated)",
+      "classifier": "RF",
+      "thresholds_tested": [
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5
+      ],
+      "cv_scores_by_threshold": {
+        "0.3": 0.721127433870774,
+        "0.35": 0.7215506362552716,
+        "0.4": 0.7239763713670939,
+        "0.45": 0.6868377070099032,
+        "0.5": 0.6593318221813362
+      },
+      "holdout_scores_by_threshold": {
+        "0.3": 0.6146616541353384,
+        "0.35": 0.6121004566210045,
+        "0.4": 0.6190476190476191,
+        "0.45": 0.6514423076923077,
+        "0.5": 0.5942028985507246
+      },
+      "best_cv_threshold": 0.4,
+      "best_cv_f1": 0.7239763713670939,
+      "holdout_f1_at_cv_best": 0.6190476190476191,
+      "holdout_f1_default_threshold": 0.5942028985507246,
+      "cv_optimal_threshold_mean": 0.35624999999999996,
+      "holdout_optimal_threshold_mean": 0.45
+    },
+    {
+      "calibration_method": "None (uncalibrated)",
+      "classifier": "SVM",
+      "thresholds_tested": [
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5
+      ],
+      "cv_scores_by_threshold": {
+        "0.3": 0.7050624411566514,
+        "0.35": 0.6852700570797892,
+        "0.4": 0.6614899569096654,
+        "0.45": 0.6481802847898059,
+        "0.5": 0.626788943120826
+      },
+      "holdout_scores_by_threshold": {
+        "0.3": 0.5964912280701754,
+        "0.35": 0.6329365079365079,
+        "0.4": 0.6277777777777778,
+        "0.45": 0.5763965963743989,
+        "0.5": 0.5814061054579094
+      },
+      "best_cv_threshold": 0.3,
+      "best_cv_f1": 0.7050624411566514,
+      "holdout_f1_at_cv_best": 0.5964912280701754,
+      "holdout_f1_default_threshold": 0.5814061054579094,
+      "cv_optimal_threshold_mean": 0.32499999999999996,
+      "holdout_optimal_threshold_mean": 0.375
+    },
+    {
+      "calibration_method": "None (uncalibrated)",
+      "classifier": "LogReg",
+      "thresholds_tested": [
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5
+      ],
+      "cv_scores_by_threshold": {
+        "0.3": 0.6847602862532524,
+        "0.35": 0.6940982504281736,
+        "0.4": 0.7005715075683834,
+        "0.45": 0.7090843087340896,
+        "0.5": 0.7016048239770973
+      },
+      "holdout_scores_by_threshold": {
+        "0.3": 0.618968996514401,
+        "0.35": 0.6255411255411256,
+        "0.4": 0.6436590436590437,
+        "0.45": 0.6595641646489104,
+        "0.5": 0.6649471874232376
+      },
+      "best_cv_threshold": 0.45,
+      "best_cv_f1": 0.7090843087340896,
+      "holdout_f1_at_cv_best": 0.6595641646489104,
+      "holdout_f1_default_threshold": 0.6649471874232376,
+      "cv_optimal_threshold_mean": 0.40625,
+      "holdout_optimal_threshold_mean": 0.45
+    },
+    {
+      "calibration_method": "None (uncalibrated)",
+      "classifier": "XGBoost",
+      "thresholds_tested": [
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5
+      ],
+      "cv_scores_by_threshold": {
+        "0.3": 0.6883461879704469,
+        "0.35": 0.6890440369583862,
+        "0.4": 0.6801479610836105,
+        "0.45": 0.6708601031037669,
+        "0.5": 0.67275290792328
+      },
+      "holdout_scores_by_threshold": {
+        "0.3": 0.5681818181818181,
+        "0.35": 0.5372208436724566,
+        "0.4": 0.5260311020960109,
+        "0.45": 0.5356060606060606,
+        "0.5": 0.544314381270903
+      },
+      "best_cv_threshold": 0.35,
+      "best_cv_f1": 0.6890440369583862,
+      "holdout_f1_at_cv_best": 0.5372208436724566,
+      "holdout_f1_default_threshold": 0.544314381270903,
+      "cv_optimal_threshold_mean": 0.35624999999999996,
+      "holdout_optimal_threshold_mean": 0.375
+    },
+    {
+      "calibration_method": "Sigmoid (Platt scaling)",
+      "classifier": "RF",
+      "thresholds_tested": [
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5
+      ],
+      "cv_scores_by_threshold": {
+        "0.3": 0.7258450673027388,
+        "0.35": 0.7150751785055343,
+        "0.4": 0.6971267605589639,
+        "0.45": 0.6885012613297654,
+        "0.5": 0.6574568221813362
+      },
+      "holdout_scores_by_threshold": {
+        "0.3": 0.6211711711711712,
+        "0.35": 0.6264367816091954,
+        "0.4": 0.6315037164093769,
+        "0.45": 0.6328273244781784,
+        "0.5": 0.5656639765223771
+      },
+      "best_cv_threshold": 0.3,
+      "best_cv_f1": 0.7258450673027388,
+      "holdout_f1_at_cv_best": 0.6211711711711712,
+      "holdout_f1_default_threshold": 0.5656639765223771,
+      "cv_optimal_threshold_mean": 0.33749999999999997,
+      "holdout_optimal_threshold_mean": 0.42500000000000004
+    },
+    {
+      "calibration_method": "Sigmoid (Platt scaling)",
+      "classifier": "SVM",
+      "thresholds_tested": [
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5
+      ],
+      "cv_scores_by_threshold": {
+        "0.3": 0.6952694435007478,
+        "0.35": 0.7017928786796711,
+        "0.4": 0.6688225945101601,
+        "0.45": 0.6482179047508332,
+        "0.5": 0.6284164808621331
+      },
+      "holdout_scores_by_threshold": {
+        "0.3": 0.6092146096920505,
+        "0.35": 0.6016194331983806,
+        "0.4": 0.6175548589341693,
+        "0.45": 0.5800000000000001,
+        "0.5": 0.5833333333333333
+      },
+      "best_cv_threshold": 0.35,
+      "best_cv_f1": 0.7017928786796711,
+      "holdout_f1_at_cv_best": 0.6016194331983806,
+      "holdout_f1_default_threshold": 0.5833333333333333,
+      "cv_optimal_threshold_mean": 0.33749999999999997,
+      "holdout_optimal_threshold_mean": 0.4
+    },
+    {
+      "calibration_method": "Sigmoid (Platt scaling)",
+      "classifier": "LogReg",
+      "thresholds_tested": [
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5
+      ],
+      "cv_scores_by_threshold": {
+        "0.3": 0.7041891876251689,
+        "0.35": 0.7039556915925946,
+        "0.4": 0.7065969779454326,
+        "0.45": 0.6946762225345682,
+        "0.5": 0.6630483931791658
+      },
+      "holdout_scores_by_threshold": {
+        "0.3": 0.6464333185644662,
+        "0.35": 0.6649471874232376,
+        "0.4": 0.6750841750841751,
+        "0.45": 0.627444589308996,
+        "0.5": 0.5760738659173023
+      },
+      "best_cv_threshold": 0.4,
+      "best_cv_f1": 0.7065969779454326,
+      "holdout_f1_at_cv_best": 0.6750841750841751,
+      "holdout_f1_default_threshold": 0.5760738659173023,
+      "cv_optimal_threshold_mean": 0.38749999999999996,
+      "holdout_optimal_threshold_mean": 0.4
+    },
+    {
+      "calibration_method": "Sigmoid (Platt scaling)",
+      "classifier": "XGBoost",
+      "thresholds_tested": [
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5
+      ],
+      "cv_scores_by_threshold": {
+        "0.3": 0.6884691505406744,
+        "0.35": 0.6984569316357312,
+        "0.4": 0.6834627352361899,
+        "0.45": 0.6593200924437572,
+        "0.5": 0.6286083606989302
+      },
+      "holdout_scores_by_threshold": {
+        "0.3": 0.5866013071895425,
+        "0.35": 0.5718432510885341,
+        "0.4": 0.5433333333333333,
+        "0.45": 0.5410172272354389,
+        "0.5": 0.5316205533596838
+      },
+      "best_cv_threshold": 0.35,
+      "best_cv_f1": 0.6984569316357312,
+      "holdout_f1_at_cv_best": 0.5718432510885341,
+      "holdout_f1_default_threshold": 0.5316205533596838,
+      "cv_optimal_threshold_mean": 0.35624999999999996,
+      "holdout_optimal_threshold_mean": 0.3
+    },
+    {
+      "calibration_method": "Isotonic regression",
+      "classifier": "RF",
+      "thresholds_tested": [
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5
+      ],
+      "cv_scores_by_threshold": {
+        "0.3": 0.7291234245549092,
+        "0.35": 0.7272676342611949,
+        "0.4": 0.7172075669399488,
+        "0.45": 0.6944517714254557,
+        "0.5": 0.652547096834569
+      },
+      "holdout_scores_by_threshold": {
+        "0.3": 0.6327883340698188,
+        "0.35": 0.6261637622344235,
+        "0.4": 0.6467304625199362,
+        "0.45": 0.6190340909090909,
+        "0.5": 0.6274509803921569
+      },
+      "best_cv_threshold": 0.3,
+      "best_cv_f1": 0.7291234245549092,
+      "holdout_f1_at_cv_best": 0.6327883340698188,
+      "holdout_f1_default_threshold": 0.6274509803921569,
+      "cv_optimal_threshold_mean": 0.35624999999999996,
+      "holdout_optimal_threshold_mean": 0.4
+    },
+    {
+      "calibration_method": "Isotonic regression",
+      "classifier": "SVM",
+      "thresholds_tested": [
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5
+      ],
+      "cv_scores_by_threshold": {
+        "0.3": 0.7012638627327734,
+        "0.35": 0.7042524739291385,
+        "0.4": 0.6905683411635697,
+        "0.45": 0.6859001292824822,
+        "0.5": 0.6102054167601492
+      },
+      "holdout_scores_by_threshold": {
+        "0.3": 0.6076358930112166,
+        "0.35": 0.6184086629001884,
+        "0.4": 0.6120879120879121,
+        "0.45": 0.6177156177156178,
+        "0.5": 0.6140583554376657
+      },
+      "best_cv_threshold": 0.35,
+      "best_cv_f1": 0.7042524739291385,
+      "holdout_f1_at_cv_best": 0.6184086629001884,
+      "holdout_f1_default_threshold": 0.6140583554376657,
+      "cv_optimal_threshold_mean": 0.375,
+      "holdout_optimal_threshold_mean": 0.375
+    },
+    {
+      "calibration_method": "Isotonic regression",
+      "classifier": "LogReg",
+      "thresholds_tested": [
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5
+      ],
+      "cv_scores_by_threshold": {
+        "0.3": 0.7017753163701365,
+        "0.35": 0.6887081515008744,
+        "0.4": 0.6936009764487248,
+        "0.45": 0.7013380524578127,
+        "0.5": 0.6532358216539058
+      },
+      "holdout_scores_by_threshold": {
+        "0.3": 0.6442999767819828,
+        "0.35": 0.6645320197044335,
+        "0.4": 0.6640434192672999,
+        "0.45": 0.629348513598988,
+        "0.5": 0.5653679653679653
+      },
+      "best_cv_threshold": 0.3,
+      "best_cv_f1": 0.7017753163701365,
+      "holdout_f1_at_cv_best": 0.6442999767819828,
+      "holdout_f1_default_threshold": 0.5653679653679653,
+      "cv_optimal_threshold_mean": 0.375,
+      "holdout_optimal_threshold_mean": 0.375
+    },
+    {
+      "calibration_method": "Isotonic regression",
+      "classifier": "XGBoost",
+      "thresholds_tested": [
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5
+      ],
+      "cv_scores_by_threshold": {
+        "0.3": 0.6955069287330317,
+        "0.35": 0.6997021454759689,
+        "0.4": 0.6986088967787202,
+        "0.45": 0.6920762958745814,
+        "0.5": 0.6114931861231583
+      },
+      "holdout_scores_by_threshold": {
+        "0.3": 0.5810455956075435,
+        "0.35": 0.5861601085481682,
+        "0.4": 0.5926916221033869,
+        "0.45": 0.5603448275862069,
+        "0.5": 0.5437806873977087
+      },
+      "best_cv_threshold": 0.35,
+      "best_cv_f1": 0.6997021454759689,
+      "holdout_f1_at_cv_best": 0.5861601085481682,
+      "holdout_f1_default_threshold": 0.5437806873977087,
+      "cv_optimal_threshold_mean": 0.40625,
+      "holdout_optimal_threshold_mean": 0.4
+    }
+  ],
+  "best_config": {
+    "calibration_method": "Sigmoid (Platt scaling)",
+    "classifier": "LogReg",
+    "thresholds_tested": [
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5
+    ],
+    "cv_scores_by_threshold": {
+      "0.3": 0.7041891876251689,
+      "0.35": 0.7039556915925946,
+      "0.4": 0.7065969779454326,
+      "0.45": 0.6946762225345682,
+      "0.5": 0.6630483931791658
+    },
+    "holdout_scores_by_threshold": {
+      "0.3": 0.6464333185644662,
+      "0.35": 0.6649471874232376,
+      "0.4": 0.6750841750841751,
+      "0.45": 0.627444589308996,
+      "0.5": 0.5760738659173023
+    },
+    "best_cv_threshold": 0.4,
+    "best_cv_f1": 0.7065969779454326,
+    "holdout_f1_at_cv_best": 0.6750841750841751,
+    "holdout_f1_default_threshold": 0.5760738659173023,
+    "cv_optimal_threshold_mean": 0.38749999999999996,
+    "holdout_optimal_threshold_mean": 0.4
+  },
+  "best_holdout_f1": 0.6750841750841751,
+  "beat_baseline": true,
+  "improvement_over_baseline": 0.010084175084175029
+}
