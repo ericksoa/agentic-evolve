@@ -719,6 +719,60 @@ class TestThresholdOptimizedClassifier:
             assert conf['point_estimate'] == 0.5
             assert conf['confidence'] == 1.0
 
+    def test_explain_basic(self):
+        """Test that explain method returns a string."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        explanation = clf.explain()
+        assert isinstance(explanation, str)
+        assert len(explanation) > 100  # Should be a substantial explanation
+        assert "Decision:" in explanation
+        assert "Why this decision:" in explanation
+        assert "Recommendation:" in explanation
+        assert "Cautions:" in explanation
+
+    def test_explain_before_fit(self):
+        """Test explain before fitting."""
+        clf = ThresholdOptimizedClassifier()
+        explanation = clf.explain()
+        assert "not fitted" in explanation.lower()
+
+    def test_explain_shows_strategy(self):
+        """Test that explain shows the strategy name."""
+        X, y = make_classification(
+            n_samples=1000, n_features=10, n_informative=5,
+            flip_y=0.15, class_sep=0.5, weights=[0.6, 0.4],
+            random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        explanation = clf.explain()
+        strategy = clf.diagnostics_['strategy']
+        assert strategy in explanation
+
+    def test_explain_shows_confidence(self):
+        """Test that explain shows confidence level."""
+        X, y = make_classification(
+            n_samples=1000, n_features=10, n_informative=5,
+            flip_y=0.15, class_sep=0.5, weights=[0.6, 0.4],
+            random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(
+            compute_confidence=True,
+            random_state=42
+        )
+        clf.fit(X, y)
+
+        explanation = clf.explain()
+        # Should show confidence level
+        assert "Confidence:" in explanation
+        assert any(level in explanation for level in ["High", "Medium", "Low"])
+
 
 class TestAdaptiveEnsembleClassifier:
     """Tests for AdaptiveEnsembleClassifier."""

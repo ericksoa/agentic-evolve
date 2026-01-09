@@ -1324,4 +1324,144 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             lines.append(f"  Std: {d['threshold_ensemble_std']:.3f}")
             lines.append(f"  Range: [{min(d['threshold_ensemble']):.3f}, {max(d['threshold_ensemble']):.3f}]")
 
+        # Add confidence interval info if available
+        if d.get('threshold_confidence'):
+            conf = d['threshold_confidence']
+            lines.append("")
+            lines.append("Threshold Confidence:")
+            lines.append(f"  Point estimate: {conf['point_estimate']:.3f}")
+            lines.append(f"  95% CI: [{conf['ci_low']:.3f}, {conf['ci_high']:.3f}]")
+            lines.append(f"  Confidence: {conf['confidence']:.0%}")
+
+        return "\n".join(lines)
+
+    def explain(self) -> str:
+        """
+        Return a human-readable explanation of the threshold optimization decision.
+
+        This method provides actionable insights about:
+        - Whether optimization was applied and why
+        - The confidence level of the recommendation
+        - Expected improvement from the optimization
+        - Any cautions or recommendations for production use
+
+        Returns
+        -------
+        explanation : str
+            Multi-line explanation suitable for reports or documentation.
+
+        Examples
+        --------
+        >>> clf.fit(X, y)
+        >>> print(clf.explain())
+        Threshold Optimization Report
+        =============================
+        Decision: OPTIMIZE (aggressive)
+        Confidence: High (87%)
+        ...
+        """
+        if not hasattr(self, 'diagnostics_'):
+            return "Model not fitted yet. Call fit() first."
+
+        d = self.diagnostics_
+
+        # Handle multiclass case
+        if d.get('multiclass'):
+            return (
+                "Threshold Optimization Report\n"
+                "=============================\n\n"
+                f"Decision: NOT APPLICABLE (multiclass with {d['n_classes']} classes)\n\n"
+                "Threshold optimization is designed for binary classification.\n"
+                "For multiclass problems, standard argmax prediction is used."
+            )
+
+        lines = [
+            "Threshold Optimization Report",
+            "=" * 40,
+            "",
+        ]
+
+        # Decision summary
+        strategy = d['strategy']
+        if self.optimization_skipped_:
+            decision = f"SKIP ({strategy})"
+            decision_verb = "was skipped"
+        else:
+            decision = f"OPTIMIZE ({strategy})"
+            decision_verb = "was applied"
+
+        lines.append(f"Decision: {decision}")
+
+        # Confidence
+        conf = d.get('threshold_confidence')
+        if conf:
+            conf_level = conf['confidence']
+            if conf_level >= 0.8:
+                conf_desc = "High"
+            elif conf_level >= 0.5:
+                conf_desc = "Medium"
+            else:
+                conf_desc = "Low"
+            lines.append(f"Confidence: {conf_desc} ({conf_level:.0%})")
+        lines.append("")
+
+        # Explanation of WHY
+        lines.append("Why this decision:")
+
+        # Explain based on strategy
+        if strategy == 'skip_confident':
+            lines.append(f"  - Model predictions are highly confident (overlap: {d['overlap_pct']:.1f}%)")
+            lines.append("  - Few samples fall in the uncertain zone (0.3-0.7 probability)")
+            lines.append("  - Threshold changes would have minimal effect")
+        elif strategy == 'skip_flat':
+            lines.append(f"  - F1 barely varies across thresholds (range: {d['metric_range']:.3f})")
+            lines.append("  - No meaningful improvement possible from threshold tuning")
+        elif strategy == 'skip_near_default':
+            lines.append(f"  - Optimal threshold ({d['best_threshold_estimate']:.2f}) is close to default (0.50)")
+            lines.append(f"  - Distance from default: {d['threshold_distance_from_05']:.2f}")
+            lines.append("  - Optimization would likely add noise without benefit")
+        elif strategy == 'skip_marginal':
+            lines.append("  - Insufficient signal for optimization")
+            lines.append(f"  - Threshold distance: {d['threshold_distance_from_05']:.2f}")
+            lines.append(f"  - F1 range: {d['metric_range']:.3f}")
+        elif strategy == 'aggressive':
+            lines.append(f"  - Strong signal detected for threshold optimization")
+            lines.append(f"  - Optimal threshold ({d['best_threshold_estimate']:.2f}) is FAR from default")
+            lines.append(f"  - High F1 variance across thresholds (range: {d['metric_range']:.3f})")
+            lines.append(f"  - Potential gain: {d['potential_gain']*100:+.1f}%")
+        elif strategy == 'conservative':
+            lines.append(f"  - Moderate signal for threshold optimization")
+            lines.append(f"  - F1 range: {d['metric_range']:.3f}")
+            lines.append(f"  - Using narrower search range for safety")
+        else:
+            lines.append(f"  - Strategy '{strategy}' applied based on dataset characteristics")
+
+        lines.append("")
+
+        # Recommendation
+        lines.append("Recommendation:")
+        if self.optimization_skipped_:
+            lines.append(f"  - Use default threshold (0.50)")
+            lines.append(f"  - Expected {self.optimize_for.upper()}: {d['cv_best_score']:.3f}")
+        else:
+            default_f1 = d.get('threshold_confidence', {}).get('point_estimate', self.optimal_threshold_)
+            lines.append(f"  - Use threshold {self.optimal_threshold_:.2f} (vs default 0.50)")
+            lines.append(f"  - Expected {self.optimize_for.upper()}: {d['cv_best_score']:.3f}")
+            if d['potential_gain'] > 0:
+                lines.append(f"  - Estimated improvement: {d['potential_gain']*100:+.1f}%")
+
+        lines.append("")
+
+        # Cautions
+        lines.append("Cautions:")
+        if self.optimization_skipped_:
+            lines.append("  - None - using default threshold is conservative and safe")
+        else:
+            lines.append("  - Results based on cross-validation; validate on held-out data")
+            if conf and conf['confidence'] < 0.7:
+                lines.append(f"  - Threshold confidence is {conf_desc.lower()} - consider validation")
+                lines.append(f"    95% CI: [{conf['ci_low']:.2f}, {conf['ci_high']:.2f}]")
+            if d.get('n_samples', 0) < 500:
+                lines.append(f"  - Small dataset ({d['n_samples']} samples) - higher risk of overfitting")
+
         return "\n".join(lines)
