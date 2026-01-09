@@ -211,6 +211,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         meta_detector_threshold: float = 0.5,
         compute_confidence: bool = True,
         confidence_samples: int = 100,
+        safety_mode: bool = False,
+        safety_margin: float = 0.02,
         random_state: int = 42,
     ):
         self.base_estimator = base_estimator
@@ -228,6 +230,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         self.meta_detector_threshold = meta_detector_threshold
         self.compute_confidence = compute_confidence
         self.confidence_samples = confidence_samples
+        self.safety_mode = safety_mode
+        self.safety_margin = safety_margin
         self.random_state = random_state
 
     def _get_base_estimator(self, n_samples: int = None) -> BaseEstimator:
@@ -982,6 +986,107 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'bootstrap_thresholds': bootstrap_thresholds.tolist(),
         }
 
+    def _validate_on_holdout(
+        self,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
+        X_holdout: np.ndarray,
+        y_holdout: np.ndarray,
+        cv_score: float,
+    ) -> Dict:
+        """
+        Validate the optimized threshold on a holdout set.
+
+        Fits a quick model on training data, predicts on holdout, and compares
+        performance at optimal threshold vs default 0.5 threshold.
+
+        Parameters
+        ----------
+        X_train : np.ndarray
+            Training features.
+        y_train : np.ndarray
+            Training labels.
+        X_holdout : np.ndarray
+            Holdout features (20% of original data).
+        y_holdout : np.ndarray
+            Holdout labels.
+        cv_score : float
+            Best score from CV on training data.
+
+        Returns
+        -------
+        validation_info : dict
+            - 'holdout_at_optimal': Score at optimal threshold
+            - 'holdout_at_default': Score at default 0.5
+            - 'cv_score': Original CV score
+            - 'cv_holdout_gap': Difference between CV and holdout
+            - 'optimal_default_gap': Difference between optimal and default on holdout
+            - 'rejected': True if threshold was rejected (reverted to 0.5)
+            - 'rejection_reason': Why it was rejected (if applicable)
+        """
+        # Fit a quick model on training data
+        X_train_scaled = X_train.copy()
+        X_holdout_scaled = X_holdout.copy()
+        if self.scale_features:
+            scaler = StandardScaler()
+            X_train_scaled = scaler.fit_transform(X_train)
+            X_holdout_scaled = scaler.transform(X_holdout)
+
+        # Simple model for validation
+        model = LogisticRegression(
+            C=0.5,
+            class_weight='balanced',
+            max_iter=1000,
+            random_state=self.random_state,
+        )
+        model.fit(X_train_scaled, y_train)
+
+        # Predict on holdout
+        holdout_probs = model.predict_proba(X_holdout_scaled)[:, 1]
+
+        # Compute scores at optimal and default thresholds
+        holdout_at_optimal = self._compute_metric_at_threshold(
+            holdout_probs, y_holdout, self.optimal_threshold_
+        )
+        holdout_at_default = self._compute_metric_at_threshold(
+            holdout_probs, y_holdout, 0.5
+        )
+
+        # Compute gaps
+        cv_holdout_gap = cv_score - holdout_at_optimal
+        optimal_default_gap = holdout_at_optimal - holdout_at_default
+
+        # Decision: reject if holdout at optimal is significantly worse than at default
+        rejected = False
+        rejection_reason = None
+
+        # Criterion 1: Optimal significantly worse than default on holdout
+        if holdout_at_optimal < holdout_at_default - self.safety_margin:
+            rejected = True
+            rejection_reason = (
+                f"Holdout score at optimal ({holdout_at_optimal:.3f}) is worse "
+                f"than at default ({holdout_at_default:.3f}) by more than "
+                f"margin ({self.safety_margin})"
+            )
+
+        # Criterion 2: Large CV-holdout gap suggests overfitting
+        if not rejected and cv_holdout_gap > 0.10:  # >10% drop
+            rejected = True
+            rejection_reason = (
+                f"Large CV-holdout gap ({cv_holdout_gap:.3f}) suggests overfitting"
+            )
+
+        return {
+            'holdout_at_optimal': float(holdout_at_optimal),
+            'holdout_at_default': float(holdout_at_default),
+            'cv_score': float(cv_score),
+            'cv_holdout_gap': float(cv_holdout_gap),
+            'optimal_default_gap': float(optimal_default_gap),
+            'rejected': rejected,
+            'rejection_reason': rejection_reason,
+            'reverted_to_default': False,  # Will be set by caller if needed
+        }
+
     def _fit_multiclass(self, X: np.ndarray, y: np.ndarray) -> 'ThresholdOptimizedClassifier':
         """
         Fit for multiclass classification (no threshold optimization).
@@ -1070,6 +1175,15 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         if self.n_classes_ > 2:
             return self._fit_multiclass(X, y)
 
+        # Safety mode: split holdout set for validation
+        X_holdout = None
+        y_holdout = None
+        if self.safety_mode:
+            from sklearn.model_selection import train_test_split
+            X, X_holdout, y, y_holdout = train_test_split(
+                X, y, test_size=0.2, stratify=y, random_state=self.random_state
+            )
+
         # Binary classification: full threshold optimization
         # Step 1: Analyze uncertainty
         uncertainty = self._analyze_uncertainty(X, y)
@@ -1116,6 +1230,18 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             else:
                 self.threshold_confidence_ = None
 
+        # Safety mode: validate on holdout set
+        self.safety_validation_ = None
+        if self.safety_mode and X_holdout is not None and not self.optimization_skipped_:
+            self.safety_validation_ = self._validate_on_holdout(
+                X, y, X_holdout, y_holdout, best_score
+            )
+            # If validation fails, revert to default threshold
+            if self.safety_validation_['rejected']:
+                self.optimal_threshold_ = 0.5
+                self.optimization_skipped_ = True
+                self.safety_validation_['reverted_to_default'] = True
+
         # Store diagnostics (including sensitivity analysis)
         sensitivity = uncertainty['sensitivity']
         auto_model_reason = getattr(self, 'auto_model_reason_', None)
@@ -1142,7 +1268,14 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'sensitivity': sensitivity,
             # Confidence intervals (v7)
             'threshold_confidence': self.threshold_confidence_,
+            # Safety mode validation (v7)
+            'safety_validation': self.safety_validation_,
         }
+
+        # Safety mode: recombine train and holdout for final model
+        if self.safety_mode and X_holdout is not None:
+            X = np.vstack([X, X_holdout])
+            y = np.concatenate([y, y_holdout])
 
         # Step 4: Scale features
         n_samples = len(X)
@@ -1234,6 +1367,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'meta_detector_threshold': self.meta_detector_threshold,
             'compute_confidence': self.compute_confidence,
             'confidence_samples': self.confidence_samples,
+            'safety_mode': self.safety_mode,
+            'safety_margin': self.safety_margin,
             'random_state': self.random_state,
         }
 

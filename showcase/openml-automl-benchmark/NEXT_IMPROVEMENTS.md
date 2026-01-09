@@ -253,11 +253,28 @@ Goal: Give users confidence in threshold optimization decisions through confiden
 - Requires matplotlib: `pip install matplotlib`
 - 4 new tests (64 total passing)
 
-### v7.4 Safety Mode (Pending)
-- Plan: `safety_mode=True` parameter for holdout validation
-- Will fit on 80% of data, validate threshold on 20%
-- Reject threshold if holdout gain < CV gain - threshold
-- Protects against overfitting on small datasets
+### v7.4 Safety Mode (Completed)
+- New `safety_mode=True` parameter enables holdout validation
+- New `safety_margin=0.02` parameter controls rejection sensitivity
+- When enabled:
+  - Splits data 80/20 (stratified) before threshold optimization
+  - Runs all CV analysis on 80% training split
+  - Validates optimal threshold on held-out 20%
+  - Compares holdout performance at optimal vs default (0.5)
+- Rejection criteria:
+  - Criterion 1: `holdout @ optimal < holdout @ default - safety_margin`
+  - Criterion 2: CV-holdout gap > 10% (suggests overfitting)
+- If rejected:
+  - Reverts to default threshold (0.5)
+  - Sets `optimization_skipped_ = True`
+  - Records rejection reason in diagnostics
+- Final model is fit on ALL data (train + holdout) with chosen threshold
+- Stored in `safety_validation_` attribute with:
+  - `holdout_at_optimal`, `holdout_at_default`: Scores on holdout
+  - `cv_holdout_gap`: Difference between CV and holdout performance
+  - `rejected`: Whether threshold was rejected
+  - `rejection_reason`: Human-readable explanation
+- 5 new tests (69 total passing)
 
 ### v7.5 sklearn Pipeline Integration (Pending)
 - Plan: Better pipeline compatibility

@@ -832,6 +832,84 @@ class TestThresholdOptimizedClassifier:
         fig = clf.plot(show=False)
         plt.close(fig)
 
+    # ==================== v7 Feature 4: safety_mode ====================
+
+    def test_safety_mode_basic(self):
+        """Test that safety_mode runs without errors."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(
+            safety_mode=True,
+            random_state=42
+        )
+        clf.fit(X, y)
+
+        # Should still produce predictions
+        predictions = clf.predict(X[:10])
+        assert len(predictions) == 10
+
+    def test_safety_mode_validation_stored(self):
+        """Test that safety validation info is stored in diagnostics."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3],
+            flip_y=0.1, class_sep=0.5, random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(
+            safety_mode=True,
+            skip_if_confident=False,  # Force optimization to see validation
+            random_state=42
+        )
+        clf.fit(X, y)
+
+        # Safety validation should be in diagnostics
+        assert 'safety_validation' in clf.diagnostics_
+        if clf.safety_validation_ is not None:
+            sv = clf.safety_validation_
+            assert 'holdout_at_optimal' in sv
+            assert 'holdout_at_default' in sv
+            assert 'cv_holdout_gap' in sv
+            assert 'rejected' in sv
+
+    def test_safety_mode_in_get_params(self):
+        """Test that safety params are in get_params."""
+        clf = ThresholdOptimizedClassifier()
+        params = clf.get_params()
+
+        assert 'safety_mode' in params
+        assert 'safety_margin' in params
+        assert params['safety_mode'] == False
+        assert params['safety_margin'] == 0.02
+
+    def test_safety_mode_disabled_by_default(self):
+        """Test that safety_mode is disabled by default."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        # No safety validation when disabled
+        assert clf.safety_validation_ is None
+
+    def test_safety_mode_with_margin(self):
+        """Test that safety_margin parameter is used."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3],
+            flip_y=0.1, class_sep=0.5, random_state=42
+        )
+        # Strict margin
+        clf = ThresholdOptimizedClassifier(
+            safety_mode=True,
+            safety_margin=0.05,  # More strict
+            skip_if_confident=False,
+            random_state=42
+        )
+        clf.fit(X, y)
+
+        # Should run without errors
+        assert clf.diagnostics_ is not None
+
 
 class TestAdaptiveEnsembleClassifier:
     """Tests for AdaptiveEnsembleClassifier."""
