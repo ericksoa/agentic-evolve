@@ -1,0 +1,227 @@
+[
+  {
+    "generation": 0,
+    "name": "XGBoost Baseline",
+    "cv_f1": 0.4297735481456161,
+    "holdout_f1": 0.46291208791208793,
+    "gap": -0.03313853976647185,
+    "description": "XGBoost with no feature engineering (previous best)",
+    "params": {
+      "features": "base_only",
+      "n_features": 21
+    },
+    "accepted": true,
+    "reason": "Baseline",
+    "timestamp": "2026-01-08T16:07:08.244410"
+  },
+  {
+    "generation": 1,
+    "name": "Ratio Features",
+    "cv_f1": 0.4337343665735507,
+    "holdout_f1": 0.42340286831812257,
+    "gap": 0.010331498255428118,
+    "description": "Add complexity/LOC, volume/LOC, effort/LOC ratios",
+    "params": {
+      "features": "base + ratios",
+      "n_features": 25
+    },
+    "accepted": false,
+    "reason": "Holdout: 0.4234 vs best 0.4629",
+    "timestamp": "2026-01-08T16:07:08.344567"
+  },
+  {
+    "generation": 2,
+    "name": "Complexity Features",
+    "cv_f1": 0.44334694745241915,
+    "holdout_f1": 0.4394430669464047,
+    "gap": 0.0039038805060144233,
+    "description": "Add essential/design complexity ratios, complexity flags",
+    "params": {
+      "features": "base + complexity",
+      "n_features": 25
+    },
+    "accepted": false,
+    "reason": "Holdout: 0.4394 vs best 0.4629",
+    "timestamp": "2026-01-08T16:07:08.446702"
+  },
+  {
+    "generation": 3,
+    "name": "Quality Features",
+    "cv_f1": 0.44998954641287736,
+    "holdout_f1": 0.42138821630347056,
+    "gap": 0.028601330109406797,
+    "description": "Add comment ratio, blank ratio, operator repetition",
+    "params": {
+      "features": "base + quality",
+      "n_features": 26
+    },
+    "accepted": false,
+    "reason": "Holdout: 0.4214 vs best 0.4629",
+    "timestamp": "2026-01-08T16:07:08.553551"
+  },
+  {
+    "generation": 4,
+    "name": "Interaction Features",
+    "cv_f1": 0.43321535428900193,
+    "holdout_f1": 0.4106002554278416,
+    "gap": 0.02261509886116031,
+    "description": "Add complexity\u00d7LOC, log transforms",
+    "params": {
+      "features": "base + interactions",
+      "n_features": 25
+    },
+    "accepted": false,
+    "reason": "Holdout: 0.4106 vs best 0.4629",
+    "timestamp": "2026-01-08T16:07:08.660500"
+  },
+  {
+    "generation": 5,
+    "name": "Binned Features",
+    "cv_f1": 0.44839065508715464,
+    "holdout_f1": 0.4338680926916221,
+    "gap": 0.014522562395532568,
+    "description": "Discretize key metrics into bins",
+    "params": {
+      "features": "base + bins",
+      "n_features": 26
+    },
+    "accepted": false,
+    "reason": "Holdout: 0.4339 vs best 0.4629",
+    "timestamp": "2026-01-08T16:07:08.884918"
+  },
+  {
+    "generation": 6,
+    "name": "Ratios + Complexity",
+    "cv_f1": 0.4364122923951203,
+    "holdout_f1": 0.4539921231650555,
+    "gap": -0.01757983076993519,
+    "description": "Combine ratio and complexity features",
+    "params": {
+      "features": "base + ratios + complexity",
+      "n_features": 29
+    },
+    "accepted": false,
+    "reason": "Holdout: 0.4540 vs best 0.4629",
+    "timestamp": "2026-01-08T16:07:08.994657"
+  },
+  {
+    "generation": 7,
+    "name": "Ratios + Bins",
+    "cv_f1": 0.43782575227313525,
+    "holdout_f1": 0.4144029787594144,
+    "gap": 0.02342277351372085,
+    "description": "Combine ratio features with binning",
+    "params": {
+      "features": "base + ratios + bins",
+      "n_features": 30
+    },
+    "accepted": false,
+    "reason": "Holdout: 0.4144 vs best 0.4629",
+    "timestamp": "2026-01-08T16:07:09.229222"
+  },
+  {
+    "generation": 8,
+    "name": "All Features",
+    "cv_f1": 0.4427125266233601,
+    "holdout_f1": 0.4314369995785925,
+    "gap": 0.011275527044767586,
+    "description": "All feature engineering combined",
+    "params": {
+      "features": "all",
+      "n_features": 43
+    },
+    "accepted": false,
+    "reason": "Holdout: 0.4314 vs best 0.4629",
+    "timestamp": "2026-01-08T16:07:09.488203"
+  },
+  {
+    "generation": 9,
+    "name": "Ratios+Cmplx + XGB",
+    "cv_f1": 0.4436646565316298,
+    "holdout_f1": 0.45833333333333337,
+    "gap": -0.014668676801703584,
+    "description": "Ratios + Complexity features with XGBoost",
+    "params": {
+      "features": "ratios + complexity",
+      "model": "XGBoost"
+    },
+    "accepted": false,
+    "reason": "Holdout: 0.4583 vs best 0.4629",
+    "timestamp": "2026-01-08T16:07:10.859626"
+  },
+  {
+    "generation": 10,
+    "name": "Cmplx+Bins + RF",
+    "cv_f1": 0.4827302212751129,
+    "holdout_f1": 0.44572441293752774,
+    "gap": 0.037005808337585155,
+    "description": "Complexity + Bins with RandomForest",
+    "params": {
+      "features": "complexity + bins",
+      "model": "RF"
+    },
+    "accepted": false,
+    "reason": "Holdout: 0.4457 vs best 0.4629",
+    "timestamp": "2026-01-08T16:07:12.009251"
+  },
+  {
+    "generation": 11,
+    "name": "Quality+Int + LR",
+    "cv_f1": 0.426658876990276,
+    "holdout_f1": 0.4294965692699098,
+    "gap": -0.002837692279633819,
+    "description": "Quality + Interactions with strongly regularized LogReg",
+    "params": {
+      "features": "quality + interactions",
+      "model": "LogReg C=0.1"
+    },
+    "accepted": false,
+    "reason": "Holdout: 0.4295 vs best 0.4629",
+    "timestamp": "2026-01-08T16:07:12.095982"
+  },
+  {
+    "generation": 12,
+    "name": "Ratios+Bins + Ens",
+    "cv_f1": 0.45890472709477126,
+    "holdout_f1": 0.464126559714795,
+    "gap": -0.005221832620023736,
+    "description": "Ratios + Bins with LR+RF ensemble",
+    "params": {
+      "features": "ratios + bins",
+      "model": "LR+RF"
+    },
+    "accepted": true,
+    "reason": "Holdout: 0.4641 vs best 0.4629",
+    "timestamp": "2026-01-08T16:07:12.919868"
+  },
+  {
+    "generation": 13,
+    "name": "Interactions + XGB-w",
+    "cv_f1": 0.4695068941319532,
+    "holdout_f1": 0.4005270092226614,
+    "gap": 0.0689798849092918,
+    "description": "Interactions with XGBoost (class weighted)",
+    "params": {
+      "features": "interactions",
+      "model": "XGBoost weighted"
+    },
+    "accepted": false,
+    "reason": "Holdout: 0.4005 vs best 0.4641",
+    "timestamp": "2026-01-08T16:07:14.587722"
+  },
+  {
+    "generation": 14,
+    "name": "Complexity + SimpleLR",
+    "cv_f1": 0.4351543761949185,
+    "holdout_f1": 0.4458517427589592,
+    "gap": -0.010697366564040744,
+    "description": "Complexity features with very simple LogReg",
+    "params": {
+      "features": "complexity",
+      "model": "LogReg C=0.01"
+    },
+    "accepted": false,
+    "reason": "Holdout: 0.4459 vs best 0.4641",
+    "timestamp": "2026-01-08T16:07:14.649211"
+  }
+]

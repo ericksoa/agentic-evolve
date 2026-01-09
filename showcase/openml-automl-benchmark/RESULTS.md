@@ -74,11 +74,13 @@ python -m amlb.run flaml openml/s/99 -m docker
 | **diabetes** | 0.648 (CV) | **0.665** (Holdout + FE) | +2.6% vs CV | Significant progress |
 | vehicle | 0.793 | - | - | - |
 | segment | 0.987 | - | - | - |
-| **kc1** | 0.436 (CV) | **0.463** (Holdout) | +6.2% | Baseline only |
+| **kc1** | 0.436 (CV) | **0.464** (Holdout + FE) | +6.4% vs CV | Near limit |
 
-**Critical Finding**: Feature engineering with Domain + Bins pushed diabetes from 0.624 to 0.665 (+6.6%). We've closed 33% of the gap to Auto-sklearn.
+**Critical Findings**:
+- **Diabetes**: Feature engineering with Domain + Bins pushed from 0.624 to 0.665 (+6.6%). Closed 33% of gap to Auto-sklearn.
+- **KC1**: Feature engineering barely helped (+0.2%). Software metrics are already well-engineered domain features.
 
-**Key Insight**: When using proper holdout validation, the "baseline" scores (which were CV-based) are revealed to be **overestimates** of true performance.
+**Key Insight**: Feature engineering is dataset-dependent. It helps when original features lack domain knowledge, but provides diminishing returns when features are already well-crafted.
 
 ---
 
@@ -129,11 +131,80 @@ After testing **15 different mutations**, the original XGBoost Default remained 
 
 **Hypothesis**: KC1 may already be close to its information-theoretic limit. With only 326 defective samples out of 2109 (15.5%), and 21 features, there may not be much signal to extract beyond what XGBoost already captures.
 
-### Next Steps for KC1
+---
 
-1. **Feature engineering**: Add derived features before evolution
-2. **Domain knowledge**: KC1 is software metrics - domain features might help
-3. **Different evaluation**: Try different holdout strategies
+## KC1 Feature Engineering: The Contrast
+
+### The Hypothesis
+
+If feature engineering helped diabetes (+6.6%), maybe it could help KC1 too. We tested software-metrics-specific features: complexity ratios, code quality indicators, interactions, and binning.
+
+### Evolution Results (15 Generations)
+
+| Gen | Strategy | CV F1 | Holdout F1 | Gap | Status |
+|-----|----------|-------|------------|-----|--------|
+| 0 | XGBoost Baseline | 0.430 | **0.463** | -0.033 | Baseline |
+| 1 | Ratio Features | 0.434 | 0.423 | +0.010 | Rejected |
+| 2 | Complexity Features | 0.443 | 0.439 | +0.004 | Rejected |
+| 3 | Quality Features | 0.450 | 0.421 | +0.029 | Rejected |
+| 6 | Ratios + Complexity | 0.436 | 0.454 | -0.018 | Rejected |
+| 9 | Ratios+Cmplx + XGB | 0.444 | 0.458 | -0.015 | Rejected |
+| 10 | Cmplx+Bins + RF | 0.483 | 0.446 | +0.037 | Rejected (overfit!) |
+| **12** | **Ratios+Bins + Ens** | 0.459 | **0.464** | -0.005 | **BEST** |
+| 13 | Interactions + XGB-w | 0.470 | 0.401 | +0.069 | Rejected (overfit!) |
+
+### Key Visualizations
+
+![KC1 Feature Engineering Evolution](visuals/kc1_fe_evolution.png)
+*15 generations of feature engineering - minimal improvement over baseline*
+
+![KC1 vs Diabetes FE Comparison](visuals/diabetes_vs_kc1_fe.png)
+*Feature engineering helped diabetes +6.6% but KC1 only +0.2%*
+
+![KC1 FE Gap Analysis](visuals/kc1_fe_gap_analysis.png)
+*KC1 shows negative gaps (generalizes well) - but still can't beat Auto-sklearn target*
+
+### What We Learned
+
+#### Why FE Didn't Help KC1
+
+1. **Software metrics are already well-engineered**
+   - LOC, complexity, Halstead metrics ARE domain features
+   - Adding more ratios of existing metrics is redundant
+
+2. **XGBoost handles nonlinearity**
+   - Tree models automatically find feature interactions
+   - Manual interaction features add little value
+
+3. **Class imbalance is the real issue**
+   - Only 326 defective samples (15.5%)
+   - Feature engineering can't create more minority samples
+
+4. **Near information-theoretic limit**
+   - 21 features, 326 positive samples
+   - May be extracting maximum possible signal
+
+#### The Contrast with Diabetes
+
+| Aspect | Diabetes | KC1 |
+|--------|----------|-----|
+| Samples | 768 | 2109 |
+| Features | 8 | 21 |
+| Imbalance | 1.87x | 5.47x |
+| FE Improvement | **+6.6%** | **+0.2%** |
+| Best FE Strategy | Domain + Bins | Ratios + Bins + Ens |
+| Key Difference | Raw features lacked domain knowledge | Features already domain-engineered |
+
+### Remaining Gap to AutoML
+
+| Target | Score | Gap from KC1 Best |
+|--------|-------|-------------------|
+| Our Best (FE) | 0.464 | - |
+| Auto-sklearn | 0.501 | -7.4% |
+| FLAML | 0.510 | -9.0% |
+| AutoGluon | 0.536 | -13.4% |
+
+**Conclusion**: KC1 may need fundamentally different approaches (e.g., SMOTE oversampling, cost-sensitive learning, or ensemble stacking) rather than feature engineering.
 
 ---
 
@@ -301,19 +372,21 @@ The gap has narrowed significantly:
 
 ---
 
-## Combined Learnings: KC1 + Diabetes + Feature Engineering
+## Combined Learnings: All Experiments
 
 ### Summary Comparison
 
-| Aspect | KC1 | Diabetes (no FE) | Diabetes (with FE) |
-|--------|-----|------------------|-------------------|
-| Samples | 2109 | 768 | 768 |
-| Imbalance | 5.47x | 1.87x | 1.87x |
-| Baseline (CV) | 0.436 | 0.648 | 0.648 |
-| Best Holdout | 0.463 | 0.624 | **0.665** |
-| Generations | 15 | 15 | 15 |
-| Winner | XGBoost Default | LR+RF Ensemble | Domain + Bins |
-| Key Insight | Defaults already optimal | Simpler ensemble helped | Feature engineering broke through |
+| Aspect | KC1 (no FE) | KC1 (with FE) | Diabetes (no FE) | Diabetes (with FE) |
+|--------|-------------|---------------|------------------|-------------------|
+| Samples | 2109 | 2109 | 768 | 768 |
+| Features | 21 | ~30 | 8 | ~18 |
+| Imbalance | 5.47x | 5.47x | 1.87x | 1.87x |
+| Baseline (CV) | 0.436 | 0.436 | 0.648 | 0.648 |
+| Best Holdout | 0.463 | **0.464** | 0.624 | **0.665** |
+| FE Improvement | - | **+0.2%** | - | **+6.6%** |
+| Generations | 15 | 15 | 15 | 15 |
+| Winner | XGBoost Default | Ratios+Bins+Ens | LR+RF Ensemble | Domain + Bins |
+| Key Insight | Defaults optimal | FE didn't help | Ensemble helped | FE broke through |
 
 ### The Big Picture
 
@@ -324,12 +397,15 @@ The gap has narrowed significantly:
 1. **CV scores are misleading** - Both datasets showed significant CV-holdout gaps
 2. **Holdout validation works** - It correctly rejected "improvements" that were overfitting
 3. **Different datasets need different strategies**:
-   - KC1: XGBoost defaults were already tuned
+   - KC1: XGBoost defaults were already tuned; FE barely helped (+0.2%)
    - Diabetes: Simple ensembling reduced variance
    - Diabetes + FE: Domain knowledge + discretization unlocked +6.6%
-4. **Feature engineering can break through plateaus** - When model/hyperparameter evolution stalls, try feature evolution
+4. **Feature engineering is dataset-dependent**:
+   - Diabetes: Raw features lacked domain knowledge → FE helped significantly
+   - KC1: Software metrics ARE domain features → FE provided diminishing returns
 5. **Feature count matters** - Sweet spot around 12-18 features, beyond that overfitting dominates
 6. **Simpler features with simpler models** - Domain + Bins + LogReg beat complex features + complex models
+7. **Know when to stop** - KC1 may be near its information-theoretic limit with standard approaches
 
 ---
 
@@ -359,17 +435,19 @@ The gap has narrowed significantly:
 
 1. **Holdout validation** - Prevented accepting overfit "improvements"
 2. **Simple ensembles** - LR+RF beat LR+RF+XGB on diabetes
-3. **Feature engineering with discretization** - Domain + Bins achieved best result
+3. **Feature engineering with discretization** - Domain + Bins achieved best result on diabetes (+6.6%)
 4. **Moderate feature expansion** - 12-18 features hit the sweet spot
 5. **Interaction features** - Simple products (glucose×BMI) had lowest overfit gap
+6. **Knowing when features are enough** - KC1's software metrics didn't need more engineering
 
 ### What Didn't Work
 
-1. **Domain features alone** - Caused massive overfitting (gap 0.10+)
-2. **All features combined** - 29 features was too many
-3. **Complex models on complex features** - Domain + XGBoost was worst
+1. **Domain features alone** - Caused massive overfitting on diabetes (gap 0.10+)
+2. **All features combined** - Too many features caused overfitting
+3. **Complex models on complex features** - Domain + XGBoost was worst on diabetes
 4. **Threshold tuning** - Always made things worse
 5. **Class weight tuning** - Often hurt more than helped
+6. **FE on well-engineered data** - KC1 software metrics are already domain features; adding more didn't help
 
 ### MALLORN Lessons Applied
 
