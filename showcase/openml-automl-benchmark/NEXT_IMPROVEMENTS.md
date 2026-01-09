@@ -299,6 +299,62 @@ Goal: Give users confidence in threshold optimization decisions through confiden
 
 ---
 
+## v8: Operating Point Selection (Pareto Frontier)
+
+Goal: Transform from "find optimal threshold" to "explore the precision-recall tradeoff space and pick your operating point."
+
+### v8.1 Core Infrastructure (Completed)
+- New `_compute_operating_points()` method computes metrics at 50 thresholds
+- New `_find_pareto_frontier()` method identifies non-dominated points
+- Stores `operating_points_` attribute with:
+  - `thresholds`: Array of 50 threshold values (0.01 to 0.99)
+  - `precisions`, `recalls`, `f1_scores`, `f2_scores`: Metrics at each threshold
+  - `fprs`, `specificities`: Additional metrics for ROC-style analysis
+  - `pareto_mask`: Boolean mask of Pareto-optimal points
+  - `selected_index`: Currently selected operating point
+  - `selection_method`: How current point was selected
+
+### v8.2 Selection Methods (Completed)
+- New `set_operating_point(**constraints)` method with constraint options:
+  - `min_recall=0.95`: Best precision where recall >= 95%
+  - `min_precision=0.90`: Best recall where precision >= 90%
+  - `max_fpr=0.05`: Best recall where FPR <= 5%
+  - `target_f1=0.80`: Closest to F1=0.80
+  - `target_f2=0.85`: Closest to F2=0.85
+  - `threshold=0.35`: Direct threshold setting
+- New `get_operating_point()` returns current point details
+- New `list_operating_points(pareto_only=False)` returns DataFrame
+
+### v8.3 Visualization (Completed)
+- New `plot_operating_points()` method creates Pareto frontier visualization:
+  - Precision-recall scatter plot
+  - Blue line/points for Pareto frontier
+  - Gray points for dominated operating points
+  - Red star for current selected point with annotation
+  - Iso-F1 curves for reference (F1=0.2, 0.4, 0.6, 0.8)
+
+### Usage Example
+```python
+clf = ThresholdOptimizedClassifier()
+clf.fit(X, y)
+
+# Explore the tradeoff space
+clf.plot_operating_points()              # Visual Pareto frontier
+df = clf.list_operating_points()         # DataFrame of all points
+
+# Select based on business constraints
+clf.set_operating_point(min_recall=0.95)     # "Can't miss positives"
+clf.set_operating_point(min_precision=0.90)  # "Can't have false alarms"
+
+# See what you get
+print(clf.get_operating_point())
+# {'threshold': 0.28, 'precision': 0.72, 'recall': 0.96, 'f1': 0.82, ...}
+```
+
+- 12 new tests (86 total passing)
+
+---
+
 ## Research Directions
 
 1. **Why do only 2/12 datasets benefit significantly?**

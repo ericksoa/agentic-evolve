@@ -587,6 +587,161 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'test_thresholds': test_thresholds,
         }
 
+    def _compute_operating_points(
+        self,
+        probs: np.ndarray,
+        true_labels: np.ndarray,
+        n_thresholds: int = 50,
+    ) -> Dict:
+        """
+        Compute all metrics at multiple thresholds for operating point selection.
+
+        Parameters
+        ----------
+        probs : np.ndarray
+            Predicted probabilities for the positive class.
+        true_labels : np.ndarray
+            True binary labels.
+        n_thresholds : int, default=50
+            Number of thresholds to evaluate.
+
+        Returns
+        -------
+        operating_points : dict
+            - 'thresholds': Array of threshold values
+            - 'precisions': Precision at each threshold
+            - 'recalls': Recall at each threshold
+            - 'f1_scores': F1 at each threshold
+            - 'f2_scores': F2 at each threshold
+            - 'specificities': Specificity (TNR) at each threshold
+            - 'fprs': False positive rate at each threshold
+            - 'supports': Number of positive predictions at each threshold
+            - 'pareto_mask': Boolean mask of Pareto-optimal points
+            - 'n_pareto_points': Number of points on Pareto frontier
+            - 'selected_index': Currently selected operating point index
+            - 'selection_method': How the current point was selected
+        """
+        from sklearn.metrics import precision_score, recall_score, f1_score, fbeta_score
+
+        thresholds = np.linspace(0.01, 0.99, n_thresholds)
+
+        precisions = []
+        recalls = []
+        f1_scores = []
+        f2_scores = []
+        specificities = []
+        fprs = []
+        supports = []
+
+        for thresh in thresholds:
+            preds = (probs >= thresh).astype(int)
+
+            # Handle edge cases where all predictions are same class
+            if preds.sum() == 0:
+                # All negative predictions
+                precisions.append(0.0)
+                recalls.append(0.0)
+                f1_scores.append(0.0)
+                f2_scores.append(0.0)
+            elif preds.sum() == len(preds):
+                # All positive predictions
+                precisions.append(precision_score(true_labels, preds, zero_division=0))
+                recalls.append(1.0)
+                f1_scores.append(f1_score(true_labels, preds, zero_division=0))
+                f2_scores.append(fbeta_score(true_labels, preds, beta=2, zero_division=0))
+            else:
+                precisions.append(precision_score(true_labels, preds, zero_division=0))
+                recalls.append(recall_score(true_labels, preds, zero_division=0))
+                f1_scores.append(f1_score(true_labels, preds, zero_division=0))
+                f2_scores.append(fbeta_score(true_labels, preds, beta=2, zero_division=0))
+
+            # Specificity and FPR
+            tn = ((preds == 0) & (true_labels == 0)).sum()
+            fp = ((preds == 1) & (true_labels == 0)).sum()
+            n_neg = (true_labels == 0).sum()
+
+            if n_neg > 0:
+                specificity = tn / n_neg
+                fpr = fp / n_neg
+            else:
+                specificity = 1.0
+                fpr = 0.0
+
+            specificities.append(specificity)
+            fprs.append(fpr)
+            supports.append(int(preds.sum()))
+
+        # Convert to arrays
+        precisions = np.array(precisions)
+        recalls = np.array(recalls)
+        f1_scores = np.array(f1_scores)
+        f2_scores = np.array(f2_scores)
+        specificities = np.array(specificities)
+        fprs = np.array(fprs)
+        supports = np.array(supports)
+
+        # Find Pareto frontier
+        pareto_mask = self._find_pareto_frontier(precisions, recalls)
+
+        return {
+            'thresholds': thresholds,
+            'precisions': precisions,
+            'recalls': recalls,
+            'f1_scores': f1_scores,
+            'f2_scores': f2_scores,
+            'specificities': specificities,
+            'fprs': fprs,
+            'supports': supports,
+            'pareto_mask': pareto_mask,
+            'n_pareto_points': int(pareto_mask.sum()),
+            'selected_index': None,  # Will be set after optimization
+            'selection_method': None,
+        }
+
+    def _find_pareto_frontier(
+        self,
+        precisions: np.ndarray,
+        recalls: np.ndarray,
+    ) -> np.ndarray:
+        """
+        Find non-dominated points (Pareto frontier) for precision-recall tradeoff.
+
+        Point i dominates point j if:
+            precision[i] >= precision[j] AND recall[i] >= recall[j]
+            AND at least one inequality is strict.
+
+        Parameters
+        ----------
+        precisions : np.ndarray
+            Precision values for each operating point.
+        recalls : np.ndarray
+            Recall values for each operating point.
+
+        Returns
+        -------
+        pareto_mask : np.ndarray
+            Boolean mask where True indicates point is on Pareto frontier.
+        """
+        n = len(precisions)
+        is_pareto = np.ones(n, dtype=bool)
+
+        for i in range(n):
+            if not is_pareto[i]:
+                continue
+            for j in range(n):
+                if i != j and is_pareto[j]:
+                    # Check if j dominates i
+                    j_dominates = (
+                        precisions[j] >= precisions[i] and
+                        recalls[j] >= recalls[i] and
+                        (precisions[j] > precisions[i] or recalls[j] > recalls[i])
+                    )
+                    if j_dominates:
+                        is_pareto[i] = False
+                        break
+
+        return is_pareto
+
     def _meta_detector_strategy(
         self,
         X: np.ndarray,
@@ -1242,6 +1397,15 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
                 self.optimization_skipped_ = True
                 self.safety_validation_['reverted_to_default'] = True
 
+        # v8: Compute operating points for Pareto frontier
+        self.operating_points_ = self._compute_operating_points(probs, true_labels)
+        # Set selected index to match optimal threshold
+        idx = np.argmin(np.abs(
+            self.operating_points_['thresholds'] - self.optimal_threshold_
+        ))
+        self.operating_points_['selected_index'] = idx
+        self.operating_points_['selection_method'] = f'optimize_{self.optimize_for}'
+
         # Store diagnostics (including sensitivity analysis)
         sensitivity = uncertainty['sensitivity']
         auto_model_reason = getattr(self, 'auto_model_reason_', None)
@@ -1270,6 +1434,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'threshold_confidence': self.threshold_confidence_,
             # Safety mode validation (v7)
             'safety_validation': self.safety_validation_,
+            # Operating points / Pareto frontier (v8)
+            'operating_points': self.operating_points_,
         }
 
         # Safety mode: recombine train and holdout for final model
@@ -1377,6 +1543,378 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         for key, value in params.items():
             setattr(self, key, value)
         return self
+
+    # ==================== v8: Operating Point Selection ====================
+
+    def set_operating_point(
+        self,
+        min_recall: float = None,
+        min_precision: float = None,
+        max_fpr: float = None,
+        target_f1: float = None,
+        target_f2: float = None,
+        threshold: float = None,
+    ) -> 'ThresholdOptimizedClassifier':
+        """
+        Set the operating point based on constraints.
+
+        Allows selecting a threshold based on business requirements rather
+        than optimizing a single metric. Only one constraint can be specified.
+
+        Parameters
+        ----------
+        min_recall : float, optional
+            Find threshold achieving at least this recall, maximizing precision.
+        min_precision : float, optional
+            Find threshold achieving at least this precision, maximizing recall.
+        max_fpr : float, optional
+            Find threshold with FPR <= this value, maximizing recall.
+        target_f1 : float, optional
+            Find threshold closest to this F1 score.
+        target_f2 : float, optional
+            Find threshold closest to this F2 score.
+        threshold : float, optional
+            Directly set the threshold.
+
+        Returns
+        -------
+        self : ThresholdOptimizedClassifier
+            For method chaining.
+
+        Examples
+        --------
+        >>> clf.fit(X, y)
+        >>> clf.set_operating_point(min_recall=0.95)
+        >>> print(clf.get_operating_point())
+        {'threshold': 0.28, 'precision': 0.72, 'recall': 0.96, 'f1': 0.82}
+
+        >>> clf.set_operating_point(min_precision=0.90)
+        >>> # Now optimized for high precision instead
+        """
+        if not hasattr(self, 'operating_points_'):
+            raise RuntimeError("Model not fitted. Call fit() first.")
+
+        # Count constraints
+        constraints = [min_recall, min_precision, max_fpr, target_f1, target_f2, threshold]
+        n_constraints = sum(c is not None for c in constraints)
+
+        if n_constraints == 0:
+            raise ValueError("Must specify at least one constraint.")
+        if n_constraints > 1:
+            raise ValueError("Only one constraint can be specified at a time.")
+
+        ops = self.operating_points_
+
+        if threshold is not None:
+            # Direct threshold setting
+            idx = np.argmin(np.abs(ops['thresholds'] - threshold))
+            method = f'threshold={threshold:.2f}'
+
+        elif min_recall is not None:
+            # Find highest precision where recall >= min_recall
+            valid = ops['recalls'] >= min_recall
+            if not valid.any():
+                # No threshold achieves target, use lowest threshold (highest recall)
+                idx = 0
+                warnings.warn(
+                    f"No threshold achieves recall >= {min_recall:.2f}. "
+                    f"Using lowest threshold (recall={ops['recalls'][0]:.2f})"
+                )
+            else:
+                # Among valid, find highest precision
+                valid_indices = np.where(valid)[0]
+                idx = valid_indices[np.argmax(ops['precisions'][valid])]
+            method = f'min_recall={min_recall:.2f}'
+
+        elif min_precision is not None:
+            # Find highest recall where precision >= min_precision
+            valid = ops['precisions'] >= min_precision
+            if not valid.any():
+                idx = len(ops['thresholds']) - 1
+                warnings.warn(
+                    f"No threshold achieves precision >= {min_precision:.2f}. "
+                    f"Using highest threshold (precision={ops['precisions'][-1]:.2f})"
+                )
+            else:
+                valid_indices = np.where(valid)[0]
+                idx = valid_indices[np.argmax(ops['recalls'][valid])]
+            method = f'min_precision={min_precision:.2f}'
+
+        elif max_fpr is not None:
+            # Find highest recall where FPR <= max_fpr
+            valid = ops['fprs'] <= max_fpr
+            if not valid.any():
+                idx = len(ops['thresholds']) - 1
+                warnings.warn(
+                    f"No threshold achieves FPR <= {max_fpr:.2f}. "
+                    f"Using highest threshold."
+                )
+            else:
+                valid_indices = np.where(valid)[0]
+                idx = valid_indices[np.argmax(ops['recalls'][valid])]
+            method = f'max_fpr={max_fpr:.2f}'
+
+        elif target_f1 is not None:
+            idx = np.argmin(np.abs(ops['f1_scores'] - target_f1))
+            method = f'target_f1={target_f1:.2f}'
+
+        elif target_f2 is not None:
+            idx = np.argmin(np.abs(ops['f2_scores'] - target_f2))
+            method = f'target_f2={target_f2:.2f}'
+
+        # Update selection
+        self.operating_points_['selected_index'] = idx
+        self.operating_points_['selection_method'] = method
+        self.optimal_threshold_ = ops['thresholds'][idx]
+
+        return self
+
+    def get_operating_point(self) -> Dict[str, float]:
+        """
+        Get the current operating point details.
+
+        Returns
+        -------
+        point : dict
+            - 'threshold': Current decision threshold
+            - 'precision': Precision at this threshold
+            - 'recall': Recall at this threshold
+            - 'f1': F1 score at this threshold
+            - 'f2': F2 score at this threshold
+            - 'fpr': False positive rate
+            - 'specificity': True negative rate
+            - 'support': Number of positive predictions
+            - 'is_pareto': Whether this point is on the Pareto frontier
+            - 'selection_method': How this point was selected
+
+        Examples
+        --------
+        >>> clf.fit(X, y)
+        >>> point = clf.get_operating_point()
+        >>> print(f"Threshold: {point['threshold']:.2f}")
+        >>> print(f"Precision: {point['precision']:.2f}, Recall: {point['recall']:.2f}")
+        """
+        if not hasattr(self, 'operating_points_'):
+            raise RuntimeError("Model not fitted. Call fit() first.")
+
+        ops = self.operating_points_
+        idx = ops.get('selected_index', 0)
+
+        return {
+            'threshold': float(ops['thresholds'][idx]),
+            'precision': float(ops['precisions'][idx]),
+            'recall': float(ops['recalls'][idx]),
+            'f1': float(ops['f1_scores'][idx]),
+            'f2': float(ops['f2_scores'][idx]),
+            'fpr': float(ops['fprs'][idx]),
+            'specificity': float(ops['specificities'][idx]),
+            'support': int(ops['supports'][idx]),
+            'is_pareto': bool(ops['pareto_mask'][idx]),
+            'selection_method': ops.get('selection_method', 'default'),
+        }
+
+    def list_operating_points(self, pareto_only: bool = False):
+        """
+        Return all operating points as a DataFrame.
+
+        Parameters
+        ----------
+        pareto_only : bool, default=False
+            If True, only return points on the Pareto frontier.
+
+        Returns
+        -------
+        df : pd.DataFrame
+            Columns: threshold, precision, recall, f1, f2, fpr, specificity, is_pareto
+
+        Examples
+        --------
+        >>> clf.fit(X, y)
+        >>> df = clf.list_operating_points()
+        >>> print(df.head())
+
+        >>> # Only Pareto-optimal points
+        >>> pareto_df = clf.list_operating_points(pareto_only=True)
+        """
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for list_operating_points(). "
+                "Install with: pip install pandas"
+            )
+
+        if not hasattr(self, 'operating_points_'):
+            raise RuntimeError("Model not fitted. Call fit() first.")
+
+        ops = self.operating_points_
+        df = pd.DataFrame({
+            'threshold': ops['thresholds'],
+            'precision': ops['precisions'],
+            'recall': ops['recalls'],
+            'f1': ops['f1_scores'],
+            'f2': ops['f2_scores'],
+            'fpr': ops['fprs'],
+            'specificity': ops['specificities'],
+            'support': ops['supports'],
+            'is_pareto': ops['pareto_mask'],
+        })
+
+        if pareto_only:
+            df = df[df['is_pareto']].reset_index(drop=True)
+
+        return df
+
+    def plot_operating_points(
+        self,
+        show_pareto: bool = True,
+        show_current: bool = True,
+        show_iso_f1: bool = True,
+        figsize: Tuple[int, int] = (10, 8),
+        show: bool = True,
+    ):
+        """
+        Plot the precision-recall operating points with Pareto frontier.
+
+        Creates an interactive visualization showing:
+        - All operating points (gray for dominated, blue for Pareto)
+        - The Pareto frontier line
+        - Current selected operating point (red star)
+        - Iso-F1 curves for reference
+
+        Parameters
+        ----------
+        show_pareto : bool, default=True
+            Highlight the Pareto frontier.
+        show_current : bool, default=True
+            Mark the current operating point.
+        show_iso_f1 : bool, default=True
+            Show iso-F1 curves (lines of constant F1).
+        figsize : tuple, default=(10, 8)
+            Figure size in inches.
+        show : bool, default=True
+            If True, display plot. If False, return Figure.
+
+        Returns
+        -------
+        fig : Figure or None
+            Figure object if show=False.
+
+        Examples
+        --------
+        >>> clf.fit(X, y)
+        >>> clf.plot_operating_points()  # Display interactive plot
+
+        >>> # Save to file
+        >>> fig = clf.plot_operating_points(show=False)
+        >>> fig.savefig('pareto_frontier.png', dpi=150)
+        """
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            raise ImportError(
+                "matplotlib is required for plotting. "
+                "Install with: pip install matplotlib"
+            )
+
+        if not hasattr(self, 'operating_points_'):
+            raise RuntimeError("Model not fitted. Call fit() first.")
+
+        ops = self.operating_points_
+
+        fig, ax = plt.subplots(figsize=figsize)
+
+        recalls = ops['recalls']
+        precisions = ops['precisions']
+        pareto_mask = ops['pareto_mask']
+
+        # Plot iso-F1 curves first (background)
+        if show_iso_f1:
+            for f1_val in [0.2, 0.4, 0.6, 0.8]:
+                recall_range = np.linspace(0.01, 0.99, 100)
+                # F1 = 2 * P * R / (P + R) => P = F1 * R / (2R - F1)
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    precision_curve = f1_val * recall_range / (2 * recall_range - f1_val)
+                valid = (precision_curve > 0) & (precision_curve <= 1) & np.isfinite(precision_curve)
+                if valid.any():
+                    ax.plot(recall_range[valid], precision_curve[valid],
+                            '--', color='lightgray', alpha=0.5, linewidth=1)
+                    # Label at midpoint
+                    mid_idx = len(recall_range[valid]) // 2
+                    ax.annotate(f'F1={f1_val}',
+                               (recall_range[valid][mid_idx], precision_curve[valid][mid_idx]),
+                               fontsize=8, color='gray', alpha=0.7)
+
+        # Plot dominated points (gray)
+        non_pareto = ~pareto_mask
+        if non_pareto.any():
+            ax.scatter(recalls[non_pareto], precisions[non_pareto],
+                       c='lightgray', s=30, alpha=0.5, label='Dominated', zorder=2)
+
+        # Plot Pareto frontier
+        if show_pareto:
+            pareto_recalls = recalls[pareto_mask]
+            pareto_precisions = precisions[pareto_mask]
+
+            # Sort by recall for line plot
+            sort_idx = np.argsort(pareto_recalls)
+            ax.plot(pareto_recalls[sort_idx], pareto_precisions[sort_idx],
+                    'b-', linewidth=2, label='Pareto Frontier', zorder=3)
+            ax.scatter(pareto_recalls, pareto_precisions,
+                       c='blue', s=60, zorder=4, label='Pareto Points')
+
+        # Mark current operating point
+        if show_current:
+            idx = ops.get('selected_index', 0)
+            current_recall = recalls[idx]
+            current_precision = precisions[idx]
+            current_threshold = ops['thresholds'][idx]
+
+            ax.scatter([current_recall], [current_precision],
+                       c='red', s=250, marker='*', zorder=10,
+                       label=f'Current (t={current_threshold:.2f})')
+
+            # Annotation with metrics
+            point = self.get_operating_point()
+            annotation_text = (
+                f"Threshold: {point['threshold']:.2f}\n"
+                f"Precision: {point['precision']:.2f}\n"
+                f"Recall: {point['recall']:.2f}\n"
+                f"F1: {point['f1']:.2f}"
+            )
+            ax.annotate(
+                annotation_text,
+                (current_recall, current_precision),
+                xytext=(15, -15), textcoords='offset points',
+                fontsize=9, color='red',
+                bbox=dict(boxstyle='round,pad=0.4', facecolor='white', edgecolor='red', alpha=0.9),
+                zorder=11
+            )
+
+        # Labels and title
+        ax.set_xlabel('Recall', fontsize=12)
+        ax.set_ylabel('Precision', fontsize=12)
+
+        n_pareto = ops['n_pareto_points']
+        ax.set_title(f'Operating Point Selection ({n_pareto} Pareto-optimal points)',
+                     fontsize=14, fontweight='bold')
+
+        # Legend
+        ax.legend(loc='lower left', fontsize=10)
+
+        # Grid
+        ax.grid(True, alpha=0.3)
+
+        # Axis limits
+        ax.set_xlim(-0.02, 1.02)
+        ax.set_ylim(-0.02, 1.02)
+
+        plt.tight_layout()
+
+        if show:
+            plt.show()
+            return None
+        return fig
 
     def summary(self) -> str:
         """Return human-readable summary of the fitted model."""

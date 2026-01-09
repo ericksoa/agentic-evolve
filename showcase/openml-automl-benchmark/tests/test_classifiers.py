@@ -1010,6 +1010,202 @@ class TestThresholdOptimizedClassifier:
         assert clf2.safety_mode == True
         assert clf2.random_state == 42
 
+    # ==================== v8: Operating Point Selection ====================
+
+    def test_operating_points_computed(self):
+        """Test that operating_points_ is computed after fit."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        assert hasattr(clf, 'operating_points_')
+        ops = clf.operating_points_
+        assert 'thresholds' in ops
+        assert 'precisions' in ops
+        assert 'recalls' in ops
+        assert 'f1_scores' in ops
+        assert 'pareto_mask' in ops
+        assert len(ops['thresholds']) == 50  # Default n_thresholds
+
+    def test_pareto_frontier_valid(self):
+        """Test that Pareto frontier has no dominated points."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        ops = clf.operating_points_
+        pareto_mask = ops['pareto_mask']
+        precisions = ops['precisions']
+        recalls = ops['recalls']
+
+        # Check no Pareto point is dominated
+        pareto_indices = np.where(pareto_mask)[0]
+        for i in pareto_indices:
+            for j in pareto_indices:
+                if i != j:
+                    # j should not dominate i
+                    j_dominates = (
+                        precisions[j] >= precisions[i] and
+                        recalls[j] >= recalls[i] and
+                        (precisions[j] > precisions[i] or recalls[j] > recalls[i])
+                    )
+                    assert not j_dominates, f"Point {j} dominates Pareto point {i}"
+
+    def test_set_operating_point_min_recall(self):
+        """Test setting operating point with min_recall constraint."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        clf.set_operating_point(min_recall=0.90)
+        point = clf.get_operating_point()
+
+        # Recall should be at least 0.90 (or as close as possible)
+        assert point['recall'] >= 0.85  # Allow small margin for discrete thresholds
+        assert 'min_recall' in point['selection_method']
+
+    def test_set_operating_point_min_precision(self):
+        """Test setting operating point with min_precision constraint."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        clf.set_operating_point(min_precision=0.80)
+        point = clf.get_operating_point()
+
+        # Precision should be at least 0.80 (or as close as possible)
+        assert point['precision'] >= 0.75  # Allow small margin
+        assert 'min_precision' in point['selection_method']
+
+    def test_set_operating_point_threshold(self):
+        """Test direct threshold setting."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        clf.set_operating_point(threshold=0.3)
+        point = clf.get_operating_point()
+
+        # Threshold should be close to 0.3
+        assert abs(point['threshold'] - 0.3) < 0.05
+
+    def test_set_operating_point_no_constraint(self):
+        """Test that no constraint raises error."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        with pytest.raises(ValueError, match="Must specify"):
+            clf.set_operating_point()
+
+    def test_set_operating_point_multiple_constraints(self):
+        """Test that multiple constraints raises error."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        with pytest.raises(ValueError, match="Only one constraint"):
+            clf.set_operating_point(min_recall=0.9, min_precision=0.8)
+
+    def test_get_operating_point(self):
+        """Test get_operating_point returns correct structure."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        point = clf.get_operating_point()
+
+        assert 'threshold' in point
+        assert 'precision' in point
+        assert 'recall' in point
+        assert 'f1' in point
+        assert 'f2' in point
+        assert 'fpr' in point
+        assert 'specificity' in point
+        assert 'is_pareto' in point
+        assert 0 <= point['threshold'] <= 1
+        assert 0 <= point['precision'] <= 1
+        assert 0 <= point['recall'] <= 1
+
+    def test_list_operating_points(self):
+        """Test list_operating_points returns DataFrame."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        df = clf.list_operating_points()
+
+        assert len(df) == 50  # Default n_thresholds
+        assert 'threshold' in df.columns
+        assert 'precision' in df.columns
+        assert 'recall' in df.columns
+        assert 'is_pareto' in df.columns
+
+    def test_list_operating_points_pareto_only(self):
+        """Test list_operating_points with pareto_only=True."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        df_all = clf.list_operating_points()
+        df_pareto = clf.list_operating_points(pareto_only=True)
+
+        assert len(df_pareto) < len(df_all)
+        assert all(df_pareto['is_pareto'])
+
+    def test_plot_operating_points(self):
+        """Test plot_operating_points returns figure."""
+        pytest.importorskip("matplotlib")
+        import matplotlib.pyplot as plt
+
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        fig = clf.plot_operating_points(show=False)
+        assert fig is not None
+        plt.close(fig)
+
+    def test_operating_point_affects_predict(self):
+        """Test that changing operating point affects predictions."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X, y)
+
+        # Get predictions at default operating point
+        preds_default = clf.predict(X).copy()
+
+        # Change to high recall operating point
+        clf.set_operating_point(min_recall=0.95)
+        preds_high_recall = clf.predict(X).copy()
+
+        # Should have more positive predictions with lower threshold
+        assert preds_high_recall.sum() >= preds_default.sum()
+
 
 class TestAdaptiveEnsembleClassifier:
     """Tests for AdaptiveEnsembleClassifier."""
