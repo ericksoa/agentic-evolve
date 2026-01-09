@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "adaptive-ensemble"
+version = "0.1.0"
+description = "Sklearn-compatible adaptive classifier with automatic threshold optimization for imbalanced data"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Agentic Evolve Project", email = "noreply@example.com"}
+]
+keywords = [
+    "machine-learning",
+    "classification",
+    "imbalanced-data",
+    "sklearn",
+    "threshold-optimization",
+    "automl"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "numpy>=1.20.0",
+    "scikit-learn>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+benchmark = [
+    "openml>=0.14.0",
+    "pandas>=1.3.0",
+]
+all = [
+    "adaptive-ensemble[dev,benchmark]",
+]
+
+[project.urls]
+Homepage = "https://github.com/ericksoa/agentic-evolve"
+Repository = "https://github.com/ericksoa/agentic-evolve"
+Documentation = "https://github.com/ericksoa/agentic-evolve/tree/main/showcase/openml-automl-benchmark"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["adaptive_ensemble*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
