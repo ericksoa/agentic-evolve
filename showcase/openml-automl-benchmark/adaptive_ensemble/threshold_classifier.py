@@ -1,39 +1,48 @@
 """
-Threshold-Optimized Classifier
+Threshold-Optimized Classifier (v2)
 
-A simpler, more generalizable approach that focuses on the single most
-impactful optimization: decision threshold tuning for imbalanced data.
+Smart threshold optimization that adapts based on model uncertainty.
+Key insight: Threshold optimization helps most when the model is uncertain
+(high probability overlap between classes), not when it's confident.
 
-This is the most universally beneficial technique discovered through
-our evolution experiments.
+Improvements in v2:
+- Detects model uncertainty via "overlap zone" analysis
+- Skips optimization when model is already confident (saves compute)
+- Widens search range for high-uncertainty datasets
+- Optional probability calibration
 """
 
 import numpy as np
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, Dict
 from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
+from sklearn.calibration import CalibratedClassifierCV
 
 
 class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
     """
-    Classifier that automatically optimizes decision threshold for F1 score.
+    Classifier that intelligently optimizes decision threshold for F1 score.
 
-    This is a lightweight wrapper that adds threshold optimization to any
-    probabilistic classifier. It's the single most impactful optimization
-    for imbalanced classification problems.
+    This v2 implementation detects when threshold optimization will actually help
+    by analyzing the model's probability distribution. It skips optimization when
+    the model is already confident (low overlap), and searches more aggressively
+    when the model is uncertain (high overlap).
 
     Parameters
     ----------
     base_estimator : estimator or None, default=None
         Base classifier. If None, uses LogisticRegression with balanced weights.
 
-    threshold_range : tuple, default=(0.20, 0.55)
-        Range of thresholds to search.
+    threshold_range : tuple or 'auto', default='auto'
+        Range of thresholds to search. If 'auto', determined by overlap analysis:
+        - High overlap (>50%): wide range (0.05, 0.60)
+        - Medium overlap (20-50%): normal range (0.20, 0.55)
+        - Low overlap (<20%): skip optimization, use 0.50
 
-    threshold_steps : int, default=15
+    threshold_steps : int, default=20
         Number of threshold values to try.
 
     cv : int, default=3
@@ -41,6 +50,14 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
 
     scale_features : bool, default=True
         Whether to standardize features before fitting.
+
+    calibrate : bool, default=False
+        Whether to calibrate probabilities before threshold optimization.
+        Can help when model probabilities are poorly calibrated.
+
+    skip_if_confident : bool, default=True
+        If True, skip threshold optimization when model is confident
+        (overlap < 20%). Saves compute without hurting performance.
 
     random_state : int or None, default=42
         Random state for reproducibility.
@@ -50,8 +67,22 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
     optimal_threshold_ : float
         Learned optimal decision threshold.
 
+    overlap_pct_ : float
+        Percentage of samples in the "uncertain zone" (probs 0.3-0.7).
+        Higher values indicate threshold optimization will help more.
+
+    class_separation_ : float
+        Difference in mean probability between classes.
+        Lower values indicate threshold optimization will help more.
+
+    optimization_skipped_ : bool
+        Whether threshold optimization was skipped (model was confident).
+
     imbalance_ratio_ : float
         Class imbalance ratio in training data.
+
+    diagnostics_ : dict
+        Detailed diagnostics from the fitting process.
 
     classes_ : ndarray
         Unique classes.
@@ -61,17 +92,20 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
     >>> from adaptive_ensemble import ThresholdOptimizedClassifier
     >>> clf = ThresholdOptimizedClassifier()
     >>> clf.fit(X_train, y_train)
+    >>> print(f"Overlap: {clf.overlap_pct_:.1f}%")
     >>> print(f"Optimal threshold: {clf.optimal_threshold_}")
-    >>> predictions = clf.predict(X_test)
+    >>> print(f"Optimization skipped: {clf.optimization_skipped_}")
     """
 
     def __init__(
         self,
         base_estimator: Optional[BaseEstimator] = None,
-        threshold_range: Tuple[float, float] = (0.20, 0.55),
-        threshold_steps: int = 15,
+        threshold_range: Union[Tuple[float, float], str] = 'auto',
+        threshold_steps: int = 20,
         cv: int = 3,
         scale_features: bool = True,
+        calibrate: bool = False,
+        skip_if_confident: bool = True,
         random_state: int = 42,
     ):
         self.base_estimator = base_estimator
@@ -79,9 +113,12 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         self.threshold_steps = threshold_steps
         self.cv = cv
         self.scale_features = scale_features
+        self.calibrate = calibrate
+        self.skip_if_confident = skip_if_confident
         self.random_state = random_state
 
     def _get_base_estimator(self) -> BaseEstimator:
+        """Get base estimator, using default if none provided."""
         if self.base_estimator is not None:
             return clone(self.base_estimator)
         return LogisticRegression(
@@ -96,29 +133,93 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         _, counts = np.unique(y, return_counts=True)
         return counts.max() / counts.min() if counts.min() > 0 else 1.0
 
-    def _default_threshold(self, imbalance_ratio: float) -> float:
-        """Compute default threshold based on imbalance."""
-        if imbalance_ratio > 5.0:
-            return 0.25
-        elif imbalance_ratio > 3.0:
-            return 0.30
-        elif imbalance_ratio > 2.0:
-            return 0.35
-        elif imbalance_ratio > 1.5:
-            return 0.40
-        else:
-            return 0.50
+    def _analyze_uncertainty(self, X: np.ndarray, y: np.ndarray) -> Dict:
+        """
+        Analyze model uncertainty by examining probability distributions.
 
-    def _optimize_threshold(self, X: np.ndarray, y: np.ndarray) -> float:
-        """Find optimal threshold via cross-validation."""
+        Returns overlap percentage, class separation, and recommended threshold range.
+        """
+        all_probs = []
+        all_true = []
+
+        skf = StratifiedKFold(n_splits=self.cv, shuffle=True, random_state=self.random_state)
+
+        for train_idx, val_idx in skf.split(X, y):
+            X_train, X_val = X[train_idx], X[val_idx]
+            y_train, y_val = y[train_idx], y[val_idx]
+
+            # Scale if needed
+            if self.scale_features:
+                scaler = StandardScaler()
+                X_train = scaler.fit_transform(X_train)
+                X_val = scaler.transform(X_val)
+
+            model = self._get_base_estimator()
+            model.fit(X_train, y_train)
+            probs = model.predict_proba(X_val)[:, 1]
+
+            all_probs.extend(probs)
+            all_true.extend(y_val)
+
+        all_probs = np.array(all_probs)
+        all_true = np.array(all_true)
+
+        # Compute overlap: % of samples in uncertain zone (0.3-0.7)
+        in_overlap = ((all_probs >= 0.3) & (all_probs <= 0.7)).sum()
+        overlap_pct = in_overlap / len(all_probs) * 100
+
+        # Compute class separation
+        class0_probs = all_probs[all_true == 0]
+        class1_probs = all_probs[all_true == 1]
+        class_separation = abs(class1_probs.mean() - class0_probs.mean())
+
+        # Determine recommended threshold range based on uncertainty
+        if overlap_pct > 50:
+            # High uncertainty: search wide, including very low thresholds
+            recommended_range = (0.05, 0.60)
+            strategy = 'aggressive'
+        elif overlap_pct > 20:
+            # Medium uncertainty: normal search
+            recommended_range = (0.20, 0.55)
+            strategy = 'normal'
+        else:
+            # Low uncertainty: model is confident, skip optimization
+            recommended_range = (0.50, 0.50)  # Will just use 0.5
+            strategy = 'skip'
+
+        return {
+            'overlap_pct': overlap_pct,
+            'class_separation': class_separation,
+            'recommended_range': recommended_range,
+            'strategy': strategy,
+            'probs': all_probs,
+            'true_labels': all_true,
+            'class0_prob_mean': class0_probs.mean(),
+            'class1_prob_mean': class1_probs.mean(),
+        }
+
+    def _optimize_threshold(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        threshold_range: Tuple[float, float]
+    ) -> Tuple[float, float]:
+        """
+        Find optimal threshold via cross-validation.
+
+        Returns (optimal_threshold, best_f1_score).
+        """
+        if threshold_range[0] == threshold_range[1]:
+            # No range to search
+            return threshold_range[0], 0.0
+
         thresholds = np.linspace(
-            self.threshold_range[0],
-            self.threshold_range[1],
+            threshold_range[0],
+            threshold_range[1],
             self.threshold_steps
         )
 
-        default = self._default_threshold(self.imbalance_ratio_)
-        best_threshold = default
+        best_threshold = 0.5
         best_score = 0
 
         skf = StratifiedKFold(n_splits=self.cv, shuffle=True, random_state=self.random_state)
@@ -147,28 +248,75 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
                 best_score = mean_score
                 best_threshold = thresh
 
-        return best_threshold
+        return best_threshold, best_score
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> 'ThresholdOptimizedClassifier':
-        """Fit the classifier with threshold optimization."""
+        """
+        Fit the classifier with intelligent threshold optimization.
+
+        The fitting process:
+        1. Analyze model uncertainty (overlap zone analysis)
+        2. Decide whether to optimize based on uncertainty level
+        3. If optimizing, use appropriate search range
+        4. Fit final model with optimal threshold
+        """
         X = np.asarray(X)
         y = np.asarray(y)
 
         self.classes_ = np.unique(y)
         self.imbalance_ratio_ = self._compute_imbalance(y)
 
-        # Optimize threshold
-        self.optimal_threshold_ = self._optimize_threshold(X, y)
+        # Step 1: Analyze uncertainty
+        uncertainty = self._analyze_uncertainty(X, y)
+        self.overlap_pct_ = uncertainty['overlap_pct']
+        self.class_separation_ = uncertainty['class_separation']
 
-        # Scale features
+        # Step 2: Determine threshold range
+        if self.threshold_range == 'auto':
+            actual_range = uncertainty['recommended_range']
+        else:
+            actual_range = self.threshold_range
+
+        # Step 3: Decide whether to skip optimization
+        if self.skip_if_confident and uncertainty['strategy'] == 'skip':
+            self.optimization_skipped_ = True
+            self.optimal_threshold_ = 0.5
+            best_f1 = 0.0
+        else:
+            self.optimization_skipped_ = False
+            self.optimal_threshold_, best_f1 = self._optimize_threshold(X, y, actual_range)
+
+        # Store diagnostics
+        self.diagnostics_ = {
+            'strategy': uncertainty['strategy'],
+            'threshold_range_used': actual_range,
+            'overlap_pct': self.overlap_pct_,
+            'class_separation': self.class_separation_,
+            'class0_prob_mean': uncertainty['class0_prob_mean'],
+            'class1_prob_mean': uncertainty['class1_prob_mean'],
+            'optimization_skipped': self.optimization_skipped_,
+            'cv_best_f1': best_f1,
+        }
+
+        # Step 4: Scale features
         if self.scale_features:
             self.scaler_ = StandardScaler()
             X = self.scaler_.fit_transform(X)
         else:
             self.scaler_ = None
 
-        # Fit final model
-        self.model_ = self._get_base_estimator()
+        # Step 5: Fit final model (with optional calibration)
+        base_model = self._get_base_estimator()
+
+        if self.calibrate:
+            self.model_ = CalibratedClassifierCV(
+                base_model,
+                cv=self.cv,
+                method='isotonic'
+            )
+        else:
+            self.model_ = base_model
+
         self.model_.fit(X, y)
 
         return self
@@ -190,16 +338,45 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             return self.classes_[np.argmax(proba, axis=1)]
 
     def get_params(self, deep: bool = True) -> dict:
+        """Get parameters for this estimator."""
         return {
             'base_estimator': self.base_estimator,
             'threshold_range': self.threshold_range,
             'threshold_steps': self.threshold_steps,
             'cv': self.cv,
             'scale_features': self.scale_features,
+            'calibrate': self.calibrate,
+            'skip_if_confident': self.skip_if_confident,
             'random_state': self.random_state,
         }
 
     def set_params(self, **params) -> 'ThresholdOptimizedClassifier':
+        """Set parameters for this estimator."""
         for key, value in params.items():
             setattr(self, key, value)
         return self
+
+    def summary(self) -> str:
+        """Return human-readable summary of the fitted model."""
+        if not hasattr(self, 'diagnostics_'):
+            return "Model not fitted yet. Call fit() first."
+
+        d = self.diagnostics_
+        lines = [
+            "ThresholdOptimizedClassifier Summary",
+            "=" * 40,
+            "",
+            f"Uncertainty Analysis:",
+            f"  Overlap zone: {self.overlap_pct_:.1f}%",
+            f"  Class separation: {self.class_separation_:.3f}",
+            f"  Strategy: {d['strategy']}",
+            "",
+            f"Optimization:",
+            f"  Skipped: {self.optimization_skipped_}",
+            f"  Threshold range: {d['threshold_range_used']}",
+            f"  Optimal threshold: {self.optimal_threshold_:.3f}",
+            "",
+            f"Dataset:",
+            f"  Imbalance ratio: {self.imbalance_ratio_:.2f}x",
+        ]
+        return "\n".join(lines)

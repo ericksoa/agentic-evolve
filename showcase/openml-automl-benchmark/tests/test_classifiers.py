@@ -96,6 +96,80 @@ class TestThresholdOptimizedClassifier:
         clf.set_params(cv=3)
         assert clf.cv == 3
 
+    def test_overlap_detection(self, balanced_data):
+        """Test that overlap percentage is computed."""
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X_train, y_train)
+
+        assert hasattr(clf, 'overlap_pct_')
+        assert 0.0 <= clf.overlap_pct_ <= 100.0
+
+    def test_class_separation(self, balanced_data):
+        """Test that class separation is computed."""
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X_train, y_train)
+
+        assert hasattr(clf, 'class_separation_')
+        assert 0.0 <= clf.class_separation_ <= 1.0
+
+    def test_diagnostics(self, balanced_data):
+        """Test that diagnostics dict is populated."""
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X_train, y_train)
+
+        assert hasattr(clf, 'diagnostics_')
+        assert 'strategy' in clf.diagnostics_
+        assert 'overlap_pct' in clf.diagnostics_
+        assert 'threshold_range_used' in clf.diagnostics_
+
+    def test_auto_threshold_range(self, balanced_data):
+        """Test auto threshold range selection."""
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizedClassifier(threshold_range='auto', random_state=42)
+        clf.fit(X_train, y_train)
+
+        assert clf.diagnostics_['strategy'] in ['aggressive', 'normal', 'skip']
+
+    def test_skip_if_confident(self, balanced_data):
+        """Test skip_if_confident parameter."""
+        X_train, X_test, y_train, y_test = balanced_data
+
+        # With skip enabled (default)
+        clf1 = ThresholdOptimizedClassifier(skip_if_confident=True, random_state=42)
+        clf1.fit(X_train, y_train)
+
+        # With skip disabled
+        clf2 = ThresholdOptimizedClassifier(skip_if_confident=False, random_state=42)
+        clf2.fit(X_train, y_train)
+
+        assert hasattr(clf1, 'optimization_skipped_')
+        assert hasattr(clf2, 'optimization_skipped_')
+        # When skip is disabled, optimization should never be skipped
+        assert clf2.optimization_skipped_ == False
+
+    def test_calibration(self, balanced_data):
+        """Test calibration option."""
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizedClassifier(calibrate=True, random_state=42)
+        clf.fit(X_train, y_train)
+
+        predictions = clf.predict(X_test)
+        assert len(predictions) == len(y_test)
+
+    def test_summary(self, balanced_data):
+        """Test summary method."""
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X_train, y_train)
+
+        summary = clf.summary()
+        assert "ThresholdOptimizedClassifier" in summary
+        assert "Overlap zone" in summary
+        assert "Strategy" in summary
+
 
 class TestAdaptiveEnsembleClassifier:
     """Tests for AdaptiveEnsembleClassifier."""
