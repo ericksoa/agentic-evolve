@@ -139,6 +139,14 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         use_meta_detector=True. Higher values are more conservative
         (fewer datasets will be optimized).
 
+    compute_confidence : bool, default=True
+        If True, compute confidence intervals for the optimal threshold
+        using bootstrap resampling. Results stored in threshold_confidence_.
+
+    confidence_samples : int, default=100
+        Number of bootstrap samples for confidence interval estimation.
+        More samples = more accurate CI but slower fitting.
+
     random_state : int or None, default=42
         Random state for reproducibility.
 
@@ -146,6 +154,15 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
     ----------
     optimal_threshold_ : float
         Learned optimal decision threshold.
+
+    threshold_confidence_ : dict or None
+        Confidence interval information for the threshold. Contains:
+        - 'point_estimate': The optimal threshold
+        - 'ci_low': Lower bound of 95% CI
+        - 'ci_high': Upper bound of 95% CI
+        - 'std': Standard deviation across bootstrap samples
+        - 'confidence': How confident we are (0-1, based on CI width)
+        Only computed when compute_confidence=True.
 
     overlap_pct_ : float
         Percentage of samples in the "uncertain zone" (probs 0.3-0.7).
@@ -192,6 +209,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         ensemble_thresholds: Optional[int] = None,
         use_meta_detector: bool = False,
         meta_detector_threshold: float = 0.5,
+        compute_confidence: bool = True,
+        confidence_samples: int = 100,
         random_state: int = 42,
     ):
         self.base_estimator = base_estimator
@@ -207,6 +226,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         self.ensemble_thresholds = ensemble_thresholds
         self.use_meta_detector = use_meta_detector
         self.meta_detector_threshold = meta_detector_threshold
+        self.compute_confidence = compute_confidence
+        self.confidence_samples = confidence_samples
         self.random_state = random_state
 
     def _get_base_estimator(self, n_samples: int = None) -> BaseEstimator:
@@ -871,6 +892,96 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
 
         return best_threshold, best_score
 
+    def _compute_threshold_confidence(
+        self,
+        probs: np.ndarray,
+        true_labels: np.ndarray,
+        threshold_range: Tuple[float, float],
+        n_samples: int = 100,
+    ) -> Dict[str, float]:
+        """
+        Compute confidence intervals for optimal threshold using bootstrap.
+
+        Uses bootstrap resampling to estimate the distribution of optimal
+        thresholds, providing uncertainty quantification for the point estimate.
+
+        Parameters
+        ----------
+        probs : np.ndarray
+            Predicted probabilities from CV.
+        true_labels : np.ndarray
+            True labels.
+        threshold_range : tuple
+            (min_threshold, max_threshold) to search within.
+        n_samples : int
+            Number of bootstrap samples.
+
+        Returns
+        -------
+        confidence_info : dict
+            - 'point_estimate': The optimal threshold from full data
+            - 'ci_low': Lower bound of 95% CI
+            - 'ci_high': Upper bound of 95% CI
+            - 'std': Standard deviation of bootstrap thresholds
+            - 'confidence': Confidence score (0-1), based on CI tightness
+            - 'bootstrap_thresholds': All bootstrap threshold estimates
+        """
+        rng = np.random.RandomState(self.random_state)
+        n = len(probs)
+
+        # Get point estimate from full data
+        point_estimate, _ = self._optimize_from_probs(probs, true_labels, threshold_range)
+
+        # If no range to search, return high confidence at point estimate
+        if threshold_range[0] == threshold_range[1]:
+            return {
+                'point_estimate': point_estimate,
+                'ci_low': point_estimate,
+                'ci_high': point_estimate,
+                'std': 0.0,
+                'confidence': 1.0,
+                'bootstrap_thresholds': [point_estimate],
+            }
+
+        # Bootstrap resampling
+        bootstrap_thresholds = []
+        for _ in range(n_samples):
+            # Sample with replacement
+            indices = rng.choice(n, size=n, replace=True)
+            boot_probs = probs[indices]
+            boot_labels = true_labels[indices]
+
+            # Find optimal threshold for this bootstrap sample
+            boot_thresh, _ = self._optimize_from_probs(boot_probs, boot_labels, threshold_range)
+            bootstrap_thresholds.append(boot_thresh)
+
+        bootstrap_thresholds = np.array(bootstrap_thresholds)
+
+        # Compute statistics
+        ci_low = np.percentile(bootstrap_thresholds, 2.5)
+        ci_high = np.percentile(bootstrap_thresholds, 97.5)
+        std = np.std(bootstrap_thresholds)
+
+        # Confidence score: tighter CI = higher confidence
+        # Max CI width is threshold_range[1] - threshold_range[0]
+        max_width = threshold_range[1] - threshold_range[0]
+        ci_width = ci_high - ci_low
+        # Avoid division by zero
+        if max_width > 0:
+            confidence = 1.0 - (ci_width / max_width)
+            confidence = max(0.0, min(1.0, confidence))  # Clamp to [0, 1]
+        else:
+            confidence = 1.0
+
+        return {
+            'point_estimate': point_estimate,
+            'ci_low': float(ci_low),
+            'ci_high': float(ci_high),
+            'std': float(std),
+            'confidence': float(confidence),
+            'bootstrap_thresholds': bootstrap_thresholds.tolist(),
+        }
+
     def _fit_multiclass(self, X: np.ndarray, y: np.ndarray) -> 'ThresholdOptimizedClassifier':
         """
         Fit for multiclass classification (no threshold optimization).
@@ -980,12 +1091,29 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             self.optimization_skipped_ = True
             self.optimal_threshold_ = 0.5
             best_score = uncertainty['sensitivity']['metric_at_05']
+            # No confidence computation needed when skipping
+            self.threshold_confidence_ = {
+                'point_estimate': 0.5,
+                'ci_low': 0.5,
+                'ci_high': 0.5,
+                'std': 0.0,
+                'confidence': 1.0,
+                'bootstrap_thresholds': [0.5],
+            }
         else:
             self.optimization_skipped_ = False
             # Use pre-computed probabilities instead of running another CV loop
             self.optimal_threshold_, best_score = self._optimize_from_probs(
                 probs, true_labels, actual_range
             )
+
+            # Compute confidence intervals using bootstrap (if requested)
+            if self.compute_confidence:
+                self.threshold_confidence_ = self._compute_threshold_confidence(
+                    probs, true_labels, actual_range, self.confidence_samples
+                )
+            else:
+                self.threshold_confidence_ = None
 
         # Store diagnostics (including sensitivity analysis)
         sensitivity = uncertainty['sensitivity']
@@ -1009,6 +1137,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'potential_gain': sensitivity['potential_gain'],
             'best_threshold_estimate': sensitivity['best_threshold'],
             'threshold_distance_from_05': sensitivity['threshold_distance'],
+            # Confidence intervals (v7)
+            'threshold_confidence': self.threshold_confidence_,
         }
 
         # Step 4: Scale features
@@ -1099,6 +1229,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'ensemble_thresholds': self.ensemble_thresholds,
             'use_meta_detector': self.use_meta_detector,
             'meta_detector_threshold': self.meta_detector_threshold,
+            'compute_confidence': self.compute_confidence,
+            'confidence_samples': self.confidence_samples,
             'random_state': self.random_state,
         }
 

@@ -633,6 +633,92 @@ class TestThresholdOptimizedClassifier:
         if clf.optimization_skipped_:
             assert clf.threshold_ensemble_ is None
 
+    def test_confidence_intervals_basic(self):
+        """Test that confidence intervals are computed."""
+        X, y = make_classification(
+            n_samples=1000, n_features=10, n_informative=5,
+            flip_y=0.15, class_sep=0.5, weights=[0.6, 0.4],
+            random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(
+            compute_confidence=True,
+            confidence_samples=50,
+            random_state=42
+        )
+        clf.fit(X, y)
+
+        # threshold_confidence_ should exist
+        assert hasattr(clf, 'threshold_confidence_')
+        assert clf.threshold_confidence_ is not None
+
+        # Check all expected keys are present
+        conf = clf.threshold_confidence_
+        assert 'point_estimate' in conf
+        assert 'ci_low' in conf
+        assert 'ci_high' in conf
+        assert 'std' in conf
+        assert 'confidence' in conf
+        assert 'bootstrap_thresholds' in conf
+
+        # Check values are valid
+        assert 0 <= conf['ci_low'] <= conf['point_estimate'] <= conf['ci_high'] <= 1
+        assert 0 <= conf['confidence'] <= 1
+        assert conf['std'] >= 0
+        assert len(conf['bootstrap_thresholds']) == 50
+
+    def test_confidence_intervals_in_diagnostics(self):
+        """Test that confidence is in diagnostics."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(compute_confidence=True, random_state=42)
+        clf.fit(X, y)
+
+        assert 'threshold_confidence' in clf.diagnostics_
+
+    def test_confidence_intervals_disabled(self):
+        """Test that confidence can be disabled."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(compute_confidence=False, random_state=42)
+        clf.fit(X, y)
+
+        # If optimization was skipped, confidence is still set (to default 0.5)
+        # If optimization happened, confidence should be None when disabled
+        if not clf.optimization_skipped_:
+            assert clf.threshold_confidence_ is None
+
+    def test_confidence_intervals_in_get_params(self):
+        """Test that confidence params are in get_params."""
+        clf = ThresholdOptimizedClassifier()
+        params = clf.get_params()
+
+        assert 'compute_confidence' in params
+        assert 'confidence_samples' in params
+        assert params['compute_confidence'] == True
+        assert params['confidence_samples'] == 100
+
+    def test_confidence_when_skipped(self):
+        """Test confidence when optimization is skipped."""
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.5, 0.5],
+            class_sep=2.0,  # High separation -> skip
+            random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(
+            compute_confidence=True,
+            skip_if_confident=True,
+            random_state=42
+        )
+        clf.fit(X, y)
+
+        if clf.optimization_skipped_:
+            conf = clf.threshold_confidence_
+            # When skipped, threshold is 0.5 with 100% confidence
+            assert conf['point_estimate'] == 0.5
+            assert conf['confidence'] == 1.0
+
 
 class TestAdaptiveEnsembleClassifier:
     """Tests for AdaptiveEnsembleClassifier."""
