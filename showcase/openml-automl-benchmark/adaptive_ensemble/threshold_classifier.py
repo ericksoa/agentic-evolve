@@ -1,11 +1,18 @@
 """
-Threshold-Optimized Classifier (v2)
+Threshold-Optimized Classifier (v4)
 
 Smart threshold optimization that adapts based on model uncertainty.
 Key insight: Threshold optimization helps most when the model is uncertain
 (high probability overlap between classes), not when it's confident.
 
-Improvements in v2:
+v4 improvements:
+- Metric selection: optimize for f1, f2, f0.5, recall, or precision
+- Auto model selection: picks best base model based on dataset size
+
+v3 improvements:
+- Sensitivity analysis: skip optimization when it won't help
+
+v2 improvements:
 - Detects model uncertainty via "overlap zone" analysis
 - Skips optimization when model is already confident (saves compute)
 - Widens search range for high-uncertainty datasets
@@ -13,6 +20,7 @@ Improvements in v2:
 """
 
 import numpy as np
+import warnings
 from typing import Optional, Tuple, Union, Dict
 from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.preprocessing import StandardScaler
@@ -21,20 +29,33 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score, fbeta_score, precision_score, recall_score
 from sklearn.calibration import CalibratedClassifierCV
 
+# Try to import LightGBM
+try:
+    from lightgbm import LGBMClassifier
+    HAS_LIGHTGBM = True
+except ImportError:
+    HAS_LIGHTGBM = False
+
 
 class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
     """
     Classifier that intelligently optimizes decision threshold for a chosen metric.
 
-    This v3 implementation detects when threshold optimization will actually help
+    This v4 implementation detects when threshold optimization will actually help
     by analyzing the model's probability distribution. It skips optimization when
     the model is already confident (low overlap), and searches more aggressively
     when the model is uncertain (high overlap).
 
     Parameters
     ----------
-    base_estimator : estimator or None, default=None
-        Base classifier. If None, uses LogisticRegression with balanced weights.
+    base_estimator : estimator, 'auto', or None, default=None
+        Base classifier. Options:
+        - None: Uses LogisticRegression with balanced weights
+        - 'auto': Automatically selects based on dataset size:
+            * < 2000 samples: LogisticRegression
+            * 2000-10000 samples: LightGBM (or LogReg if not installed)
+            * > 10000 samples: LightGBM with more trees
+        - estimator: Any sklearn-compatible classifier with predict_proba
 
     optimize_for : str, default='f1'
         Metric to optimize. Options:
@@ -127,16 +148,95 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         self.skip_if_confident = skip_if_confident
         self.random_state = random_state
 
-    def _get_base_estimator(self) -> BaseEstimator:
-        """Get base estimator, using default if none provided."""
-        if self.base_estimator is not None:
+    def _get_base_estimator(self, n_samples: int = None) -> BaseEstimator:
+        """
+        Get base estimator, using default or auto-selection if none provided.
+
+        Parameters
+        ----------
+        n_samples : int, optional
+            Number of samples in the dataset. Used for 'auto' mode.
+
+        Returns
+        -------
+        estimator : BaseEstimator
+            The base classifier to use.
+        """
+        if self.base_estimator is not None and self.base_estimator != 'auto':
             return clone(self.base_estimator)
+
+        # Auto mode or None - select based on dataset size
+        if self.base_estimator == 'auto' and n_samples is not None:
+            return self._auto_select_model(n_samples)
+
+        # Default: LogisticRegression
         return LogisticRegression(
             C=0.5,
             class_weight='balanced',
             max_iter=1000,
             random_state=self.random_state,
         )
+
+    def _auto_select_model(self, n_samples: int) -> BaseEstimator:
+        """
+        Automatically select the best model based on dataset size.
+
+        Parameters
+        ----------
+        n_samples : int
+            Number of samples in the dataset.
+
+        Returns
+        -------
+        estimator : BaseEstimator
+            Selected model.
+        """
+        if n_samples < 2000:
+            # Small datasets: LogisticRegression is fast and works well
+            self.auto_model_reason_ = 'logreg (n < 2000)'
+            return LogisticRegression(
+                C=0.5,
+                class_weight='balanced',
+                max_iter=1000,
+                random_state=self.random_state,
+            )
+
+        if not HAS_LIGHTGBM:
+            # LightGBM not available, fall back to LogReg
+            self.auto_model_reason_ = 'logreg (lightgbm not installed)'
+            warnings.warn(
+                "LightGBM not installed. Using LogisticRegression instead. "
+                "Install lightgbm for better performance on larger datasets: pip install lightgbm"
+            )
+            return LogisticRegression(
+                C=0.5,
+                class_weight='balanced',
+                max_iter=1000,
+                random_state=self.random_state,
+            )
+
+        if n_samples < 10000:
+            # Medium datasets: LightGBM with moderate settings
+            self.auto_model_reason_ = 'lightgbm (2000 <= n < 10000)'
+            return LGBMClassifier(
+                n_estimators=100,
+                max_depth=6,
+                learning_rate=0.1,
+                class_weight='balanced',
+                random_state=self.random_state,
+                verbose=-1,
+            )
+        else:
+            # Large datasets: LightGBM with more trees
+            self.auto_model_reason_ = 'lightgbm (n >= 10000)'
+            return LGBMClassifier(
+                n_estimators=200,
+                max_depth=8,
+                learning_rate=0.05,
+                class_weight='balanced',
+                random_state=self.random_state,
+                verbose=-1,
+            )
 
     def _compute_imbalance(self, y: np.ndarray) -> float:
         """Compute class imbalance ratio."""
@@ -208,6 +308,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         """
         all_probs = []
         all_true = []
+        n_samples = len(X)
 
         skf = StratifiedKFold(n_splits=self.cv, shuffle=True, random_state=self.random_state)
 
@@ -221,7 +322,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
                 X_train = scaler.fit_transform(X_train)
                 X_val = scaler.transform(X_val)
 
-            model = self._get_base_estimator()
+            model = self._get_base_estimator(n_samples)
             model.fit(X_train, y_train)
             probs = model.predict_proba(X_val)[:, 1]
 
@@ -313,6 +414,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
 
         best_threshold = 0.5
         best_score = 0
+        n_samples = len(X)
 
         skf = StratifiedKFold(n_splits=self.cv, shuffle=True, random_state=self.random_state)
 
@@ -328,7 +430,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
                     X_train = scaler.fit_transform(X_train)
                     X_val = scaler.transform(X_val)
 
-                model = self._get_base_estimator()
+                model = self._get_base_estimator(n_samples)
                 model.fit(X_train, y_train)
 
                 proba = model.predict_proba(X_val)[:, 1]
@@ -381,6 +483,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
 
         # Store diagnostics (including sensitivity analysis)
         sensitivity = uncertainty['sensitivity']
+        auto_model_reason = getattr(self, 'auto_model_reason_', None)
         self.diagnostics_ = {
             'strategy': uncertainty['strategy'],
             'threshold_range_used': actual_range,
@@ -391,6 +494,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'optimization_skipped': self.optimization_skipped_,
             'cv_best_score': best_score,
             'optimize_for': self.optimize_for,
+            'n_samples': len(X),
+            'auto_model': auto_model_reason,
             # Sensitivity metrics (backward compat: also store as f1_range)
             'metric_range': sensitivity['metric_range'],
             'f1_range': sensitivity['metric_range'],  # backward compat
@@ -400,6 +505,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         }
 
         # Step 4: Scale features
+        n_samples = len(X)
         if self.scale_features:
             self.scaler_ = StandardScaler()
             X = self.scaler_.fit_transform(X)
@@ -407,7 +513,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             self.scaler_ = None
 
         # Step 5: Fit final model (with optional calibration)
-        base_model = self._get_base_estimator()
+        base_model = self._get_base_estimator(n_samples)
 
         if self.calibrate:
             self.model_ = CalibratedClassifierCV(
@@ -485,6 +591,12 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             f"  CV {metric_name}: {d['cv_best_score']:.3f}",
             "",
             f"Dataset:",
+            f"  Samples: {d['n_samples']}",
             f"  Imbalance ratio: {self.imbalance_ratio_:.2f}x",
         ]
+
+        # Add auto model info if applicable
+        if d.get('auto_model'):
+            lines.insert(-2, f"  Base model: {d['auto_model']}")
+
         return "\n".join(lines)

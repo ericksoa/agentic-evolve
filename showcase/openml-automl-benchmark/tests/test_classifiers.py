@@ -236,6 +236,49 @@ class TestThresholdOptimizedClassifier:
         with pytest.raises(ValueError, match="Unknown metric"):
             clf.fit(X_train, y_train)
 
+    def test_auto_model_small_dataset(self, balanced_data):
+        """Test auto model selection for small datasets."""
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizedClassifier(base_estimator='auto', random_state=42)
+        clf.fit(X_train, y_train)
+
+        # Small dataset (<2000 samples) should use LogisticRegression
+        assert 'n_samples' in clf.diagnostics_
+        assert clf.diagnostics_['n_samples'] < 2000
+        assert clf.diagnostics_['auto_model'] is not None
+        assert 'logreg' in clf.diagnostics_['auto_model']
+
+    def test_auto_model_in_summary(self, balanced_data):
+        """Test that auto model selection is shown in summary."""
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizedClassifier(base_estimator='auto', random_state=42)
+        clf.fit(X_train, y_train)
+
+        summary = clf.summary()
+        assert "Base model:" in summary
+
+    def test_auto_model_large_dataset(self):
+        """Test auto model selection for larger datasets."""
+        # Create a larger dataset (>2000 samples)
+        X, y = make_classification(
+            n_samples=3000,
+            n_features=10,
+            n_informative=5,
+            n_redundant=2,
+            n_classes=2,
+            weights=[0.7, 0.3],
+            random_state=42,
+        )
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        clf = ThresholdOptimizedClassifier(base_estimator='auto', random_state=42)
+        clf.fit(X_train, y_train)
+
+        # Dataset has 2400 samples, should use LightGBM if available
+        assert clf.diagnostics_['auto_model'] is not None
+        # Either lightgbm or logreg fallback
+        assert 'lightgbm' in clf.diagnostics_['auto_model'] or 'logreg' in clf.diagnostics_['auto_model']
+
 
 class TestAdaptiveEnsembleClassifier:
     """Tests for AdaptiveEnsembleClassifier."""

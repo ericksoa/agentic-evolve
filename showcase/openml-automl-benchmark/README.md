@@ -125,6 +125,22 @@ y_pred = clf.predict(X_test)
 print(f"F1 Score: {f1_score(y_test, y_pred):.3f}")
 ```
 
+### Auto Model Selection
+
+```python
+# Automatically pick the best base model for your dataset size
+clf = ThresholdOptimizedClassifier(base_estimator='auto')
+clf.fit(X_train, y_train)
+
+# The model selection is based on dataset size:
+# < 2000 samples: LogisticRegression (fast, good for small data)
+# 2000-10000 samples: LightGBM (if installed)
+# > 10000 samples: LightGBM with more trees
+
+print(clf.diagnostics_['auto_model'])
+# e.g., 'lightgbm (2000 <= n < 10000)'
+```
+
 ### Use Your Own Base Model
 
 ```python
@@ -196,7 +212,7 @@ The recommended classifier for most use cases.
 
 ```python
 ThresholdOptimizedClassifier(
-    base_estimator=None,      # Base classifier (default: LogisticRegression)
+    base_estimator=None,      # None, 'auto', or sklearn estimator
     optimize_for='f1',        # 'f1', 'f2', 'f0.5', 'recall', 'precision'
     threshold_range='auto',   # 'auto' or tuple like (0.20, 0.55)
     threshold_steps=20,       # Number of candidates to try
@@ -207,6 +223,11 @@ ThresholdOptimizedClassifier(
     random_state=42
 )
 ```
+
+**base_estimator options:**
+- `None`: Default LogisticRegression with balanced weights
+- `'auto'`: Auto-select based on dataset size (LogReg < 2k, LightGBM >= 2k)
+- Custom estimator: Any sklearn-compatible classifier with `predict_proba`
 
 **Attributes after fitting:**
 - `optimal_threshold_`: The learned optimal threshold

@@ -3,7 +3,7 @@
 ## Checklist
 
 - [x] **1. Optimize for other metrics** - Add `optimize_for` parameter (recall/precision/f1/f2)
-- [ ] **2. Auto-select base model** - LightGBM/XGBoost for large datasets
+- [x] **2. Auto-select base model** - LightGBM/XGBoost for large datasets
 - [ ] **3. Speed optimization** - Combine analysis + optimization CV passes
 - [ ] **4. Confidence intervals** - Bootstrap CI for benchmark results
 - [ ] **5. Deep dive kc2 vs diabetes** - Why similar profiles, different outcomes?
@@ -106,8 +106,8 @@ clf = ThresholdOptimizedClassifier(optimize_for='f2')  # Emphasize recall
 
 | Step | Status | Commit | Notes |
 |------|--------|--------|-------|
-| 1 | Done | TBD | Added optimize_for param (f1/f2/f0.5/recall/precision) |
-| 2 | Pending | - | - |
+| 1 | Done | 1112e30 | Added optimize_for param (f1/f2/f0.5/recall/precision) |
+| 2 | Done | TBD | Auto-select model: LogReg < 2k, LightGBM >= 2k |
 | 3 | Pending | - | - |
 | 4 | Pending | - | - |
 | 5 | Pending | - | - |
