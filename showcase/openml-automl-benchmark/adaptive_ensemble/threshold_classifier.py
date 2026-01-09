@@ -29,12 +29,18 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score, fbeta_score, precision_score, recall_score
 from sklearn.calibration import CalibratedClassifierCV
 
-# Try to import LightGBM
+# Try to import gradient boosting libraries
 try:
     from lightgbm import LGBMClassifier
     HAS_LIGHTGBM = True
 except ImportError:
     HAS_LIGHTGBM = False
+
+try:
+    from xgboost import XGBClassifier
+    HAS_XGBOOST = True
+except ImportError:
+    HAS_XGBOOST = False
 
 
 class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
@@ -53,8 +59,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         - None: Uses LogisticRegression with balanced weights
         - 'auto': Automatically selects based on dataset size:
             * < 2000 samples: LogisticRegression
-            * 2000-10000 samples: LightGBM (or LogReg if not installed)
-            * > 10000 samples: LightGBM with more trees
+            * 2000-10000 samples: XGBoost or LightGBM (whichever available)
+            * > 10000 samples: XGBoost/LightGBM with more trees
         - estimator: Any sklearn-compatible classifier with predict_proba
 
     optimize_for : str, default='f1'
@@ -181,6 +187,9 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         """
         Automatically select the best model based on dataset size.
 
+        Priority: XGBoost > LightGBM > LogisticRegression
+        XGBoost often has better accuracy on tabular data.
+
         Parameters
         ----------
         n_samples : int
@@ -201,12 +210,12 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
                 random_state=self.random_state,
             )
 
-        if not HAS_LIGHTGBM:
-            # LightGBM not available, fall back to LogReg
-            self.auto_model_reason_ = 'logreg (lightgbm not installed)'
+        # For larger datasets, prefer XGBoost > LightGBM > LogReg
+        if not HAS_XGBOOST and not HAS_LIGHTGBM:
+            self.auto_model_reason_ = 'logreg (no boosting libs installed)'
             warnings.warn(
-                "LightGBM not installed. Using LogisticRegression instead. "
-                "Install lightgbm for better performance on larger datasets: pip install lightgbm"
+                "Neither XGBoost nor LightGBM installed. Using LogisticRegression. "
+                "Install xgboost or lightgbm for better performance: pip install xgboost lightgbm"
             )
             return LogisticRegression(
                 C=0.5,
@@ -216,27 +225,53 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             )
 
         if n_samples < 10000:
-            # Medium datasets: LightGBM with moderate settings
-            self.auto_model_reason_ = 'lightgbm (2000 <= n < 10000)'
-            return LGBMClassifier(
-                n_estimators=100,
-                max_depth=6,
-                learning_rate=0.1,
-                class_weight='balanced',
-                random_state=self.random_state,
-                verbose=-1,
-            )
+            # Medium datasets: moderate settings
+            if HAS_XGBOOST:
+                self.auto_model_reason_ = 'xgboost (2000 <= n < 10000)'
+                return XGBClassifier(
+                    n_estimators=100,
+                    max_depth=6,
+                    learning_rate=0.1,
+                    scale_pos_weight=1,  # Will be adjusted if needed
+                    random_state=self.random_state,
+                    verbosity=0,
+                    use_label_encoder=False,
+                    eval_metric='logloss',
+                )
+            else:
+                self.auto_model_reason_ = 'lightgbm (2000 <= n < 10000)'
+                return LGBMClassifier(
+                    n_estimators=100,
+                    max_depth=6,
+                    learning_rate=0.1,
+                    class_weight='balanced',
+                    random_state=self.random_state,
+                    verbose=-1,
+                )
         else:
-            # Large datasets: LightGBM with more trees
-            self.auto_model_reason_ = 'lightgbm (n >= 10000)'
-            return LGBMClassifier(
-                n_estimators=200,
-                max_depth=8,
-                learning_rate=0.05,
-                class_weight='balanced',
-                random_state=self.random_state,
-                verbose=-1,
-            )
+            # Large datasets: more trees
+            if HAS_XGBOOST:
+                self.auto_model_reason_ = 'xgboost (n >= 10000)'
+                return XGBClassifier(
+                    n_estimators=200,
+                    max_depth=8,
+                    learning_rate=0.05,
+                    scale_pos_weight=1,
+                    random_state=self.random_state,
+                    verbosity=0,
+                    use_label_encoder=False,
+                    eval_metric='logloss',
+                )
+            else:
+                self.auto_model_reason_ = 'lightgbm (n >= 10000)'
+                return LGBMClassifier(
+                    n_estimators=200,
+                    max_depth=8,
+                    learning_rate=0.05,
+                    class_weight='balanced',
+                    random_state=self.random_state,
+                    verbose=-1,
+                )
 
     def _compute_imbalance(self, y: np.ndarray) -> float:
         """Compute class imbalance ratio."""

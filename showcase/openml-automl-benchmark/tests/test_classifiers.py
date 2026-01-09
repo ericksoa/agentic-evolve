@@ -274,10 +274,11 @@ class TestThresholdOptimizedClassifier:
         clf = ThresholdOptimizedClassifier(base_estimator='auto', random_state=42)
         clf.fit(X_train, y_train)
 
-        # Dataset has 2400 samples, should use LightGBM if available
+        # Dataset has 2400 samples, should use XGBoost/LightGBM if available
         assert clf.diagnostics_['auto_model'] is not None
-        # Either lightgbm or logreg fallback
-        assert 'lightgbm' in clf.diagnostics_['auto_model'] or 'logreg' in clf.diagnostics_['auto_model']
+        # Either xgboost, lightgbm or logreg fallback
+        auto_model = clf.diagnostics_['auto_model']
+        assert 'xgboost' in auto_model or 'lightgbm' in auto_model or 'logreg' in auto_model
 
     def test_multiclass_support(self):
         """Test that multiclass data is handled gracefully."""
