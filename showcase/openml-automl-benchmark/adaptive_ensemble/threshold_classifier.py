@@ -426,6 +426,68 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
 
         return best_threshold, best_score
 
+    def _fit_multiclass(self, X: np.ndarray, y: np.ndarray) -> 'ThresholdOptimizedClassifier':
+        """
+        Fit for multiclass classification (no threshold optimization).
+
+        Threshold optimization is designed for binary classification.
+        For multiclass, we use standard argmax prediction.
+        """
+        warnings.warn(
+            f"Multiclass detected ({self.n_classes_} classes). "
+            "Threshold optimization is designed for binary classification. "
+            "Using standard classification without threshold optimization.",
+            UserWarning
+        )
+
+        n_samples = len(X)
+
+        # Scale features
+        if self.scale_features:
+            self.scaler_ = StandardScaler()
+            X = self.scaler_.fit_transform(X)
+        else:
+            self.scaler_ = None
+
+        # Fit model
+        base_model = self._get_base_estimator(n_samples)
+
+        if self.calibrate:
+            self.model_ = CalibratedClassifierCV(
+                base_model,
+                cv=self.cv,
+                method='isotonic'
+            )
+        else:
+            self.model_ = base_model
+
+        self.model_.fit(X, y)
+
+        # Set multiclass-specific attributes
+        self.optimal_threshold_ = None  # Not applicable for multiclass
+        self.overlap_pct_ = None
+        self.class_separation_ = None
+        self.optimization_skipped_ = True
+        self.diagnostics_ = {
+            'strategy': 'multiclass',
+            'n_classes': self.n_classes_,
+            'n_samples': n_samples,
+            'threshold_range_used': None,
+            'overlap_pct': None,
+            'class_separation': None,
+            'optimization_skipped': True,
+            'cv_best_score': None,
+            'optimize_for': self.optimize_for,
+            'auto_model': getattr(self, 'auto_model_reason_', None),
+            'metric_range': None,
+            'f1_range': None,
+            'potential_gain': None,
+            'best_threshold_estimate': None,
+            'threshold_distance_from_05': None,
+        }
+
+        return self
+
     def fit(self, X: np.ndarray, y: np.ndarray) -> 'ThresholdOptimizedClassifier':
         """
         Fit the classifier with intelligent threshold optimization.
@@ -435,13 +497,22 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         2. Decide whether to optimize based on uncertainty level
         3. If optimizing, use appropriate search range
         4. Fit final model with optimal threshold
+
+        For multiclass problems, falls back to standard classification
+        without threshold optimization.
         """
         X = np.asarray(X)
         y = np.asarray(y)
 
         self.classes_ = np.unique(y)
+        self.n_classes_ = len(self.classes_)
         self.imbalance_ratio_ = self._compute_imbalance(y)
 
+        # Handle multiclass: fall back to standard classification
+        if self.n_classes_ > 2:
+            return self._fit_multiclass(X, y)
+
+        # Binary classification: full threshold optimization
         # Step 1: Analyze uncertainty
         uncertainty = self._analyze_uncertainty(X, y)
         self.overlap_pct_ = uncertainty['overlap_pct']
@@ -560,6 +631,28 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
 
         d = self.diagnostics_
         metric_name = self.optimize_for.upper()
+
+        # Handle multiclass case
+        if d.get('strategy') == 'multiclass':
+            lines = [
+                "ThresholdOptimizedClassifier Summary",
+                "=" * 40,
+                "",
+                f"Mode: Multiclass ({d['n_classes']} classes)",
+                "",
+                "Note: Threshold optimization is designed for binary",
+                "classification. Using standard argmax prediction.",
+                "",
+                f"Dataset:",
+                f"  Samples: {d['n_samples']}",
+                f"  Classes: {d['n_classes']}",
+                f"  Imbalance ratio: {self.imbalance_ratio_:.2f}x",
+            ]
+            if d.get('auto_model'):
+                lines.append(f"  Base model: {d['auto_model']}")
+            return "\n".join(lines)
+
+        # Binary classification case
         lines = [
             "ThresholdOptimizedClassifier Summary",
             "=" * 40,

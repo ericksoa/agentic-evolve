@@ -274,7 +274,11 @@ print(analyzer.summary())
 **Consider alternatives:**
 - Extremely imbalanced data (>10x) - try SMOTE or specialized methods
 - Very large datasets - XGBoost/LightGBM with custom thresholds
-- Multiclass problems - this library focuses on binary classification
+
+**Multiclass support:**
+- The classifier gracefully handles multiclass problems
+- Falls back to standard argmax prediction (no threshold optimization)
+- A warning is issued when multiclass is detected
 
 ## Origin Story
 

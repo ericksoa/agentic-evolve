@@ -279,6 +279,83 @@ class TestThresholdOptimizedClassifier:
         # Either lightgbm or logreg fallback
         assert 'lightgbm' in clf.diagnostics_['auto_model'] or 'logreg' in clf.diagnostics_['auto_model']
 
+    def test_multiclass_support(self):
+        """Test that multiclass data is handled gracefully."""
+        # Create multiclass dataset
+        X, y = make_classification(
+            n_samples=500,
+            n_features=10,
+            n_informative=5,
+            n_redundant=2,
+            n_classes=3,
+            n_clusters_per_class=1,
+            random_state=42,
+        )
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        import warnings
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            clf = ThresholdOptimizedClassifier(random_state=42)
+            clf.fit(X_train, y_train)
+
+            # Check that warning was issued
+            assert len(w) == 1
+            assert "Multiclass detected" in str(w[0].message)
+
+        # Check predictions work
+        predictions = clf.predict(X_test)
+        assert len(predictions) == len(y_test)
+        assert set(predictions).issubset({0, 1, 2})
+
+        # Check diagnostics
+        assert clf.diagnostics_['strategy'] == 'multiclass'
+        assert clf.diagnostics_['n_classes'] == 3
+        assert clf.optimal_threshold_ is None
+
+    def test_multiclass_summary(self):
+        """Test that multiclass summary is correct."""
+        X, y = make_classification(
+            n_samples=300,
+            n_features=5,
+            n_informative=3,
+            n_classes=4,
+            n_clusters_per_class=1,
+            random_state=42,
+        )
+
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            clf = ThresholdOptimizedClassifier(random_state=42)
+            clf.fit(X, y)
+
+        summary = clf.summary()
+        assert "Multiclass (4 classes)" in summary
+        assert "argmax prediction" in summary
+
+    def test_multiclass_proba(self):
+        """Test that multiclass probabilities are correct shape."""
+        X, y = make_classification(
+            n_samples=300,
+            n_features=5,
+            n_informative=3,
+            n_classes=3,
+            n_clusters_per_class=1,
+            random_state=42,
+        )
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            clf = ThresholdOptimizedClassifier(random_state=42)
+            clf.fit(X_train, y_train)
+
+        proba = clf.predict_proba(X_test)
+        assert proba.shape == (len(X_test), 3)
+        assert np.allclose(proba.sum(axis=1), 1.0)
+
 
 class TestAdaptiveEnsembleClassifier:
     """Tests for AdaptiveEnsembleClassifier."""
