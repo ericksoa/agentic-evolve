@@ -84,7 +84,9 @@ v4 adds several performance optimizations:
 | Feature | Benefit |
 |---------|---------|
 | **Single CV pass** | ~50% faster fitting (reuses probabilities from analysis) |
-| **Auto model selection** | Better accuracy on large datasets (LightGBM for n≥2000) |
+| **Auto model selection** | Better accuracy on large datasets (XGBoost/LightGBM for n≥2000) |
+| **XGBoost support** | Priority over LightGBM when available (often better accuracy) |
+| **Hyperparameter tuning** | Optional auto-tune base model with `tune_base_model=True` |
 | **Metric selection** | Optimize for F1, F2, recall, precision, or F0.5 |
 | **Bootstrap CIs** | Statistical confidence in benchmark results |
 | **Multiclass support** | Graceful fallback (no crashes on multiclass data) |
@@ -93,10 +95,16 @@ v4 adds several performance optimizations:
 - v3: ~2.1s (2 CV passes)
 - v4: ~1.1s (1 CV pass)
 
-**Accuracy on larger datasets** (with `base_estimator='auto'`):
-- Datasets ≥2000 samples automatically use LightGBM
-- LightGBM typically outperforms LogisticRegression on tabular data
-- Falls back gracefully if LightGBM not installed
+**Auto model selection** (with `base_estimator='auto'`):
+- Small datasets (<2000 samples): LogisticRegression (fast, avoids overfitting)
+- Large datasets (≥2000 samples): XGBoost > LightGBM > LogReg (priority order)
+- Falls back gracefully if XGBoost/LightGBM not installed
+
+**Hyperparameter tuning** (with `tune_base_model=True`):
+- LogisticRegression: Tunes C (regularization strength)
+- XGBoost/LightGBM: Tunes n_estimators, max_depth, learning_rate
+- Uses GridSearchCV with F1 scoring
+- Note: May not always improve results; can cause overfitting on small datasets
 
 ## How It Works
 
@@ -204,6 +212,26 @@ clf = ThresholdOptimizedClassifier(
 )
 ```
 
+### Hyperparameter Tuning
+
+```python
+# Auto-tune base model hyperparameters (uses GridSearchCV)
+clf = ThresholdOptimizedClassifier(
+    tune_base_model=True,  # Tune C for LogReg, or n_estimators/max_depth/lr for boosting
+)
+clf.fit(X_train, y_train)
+
+# See tuning results
+print(clf.diagnostics_['tuning'])
+# {'status': 'completed', 'best_params': {'C': 0.1}, 'best_score': 0.82, 'model_type': 'LogisticRegression'}
+
+# Combine with auto model selection
+clf = ThresholdOptimizedClassifier(
+    base_estimator='auto',
+    tune_base_model=True,
+)
+```
+
 ### Get Detailed Diagnostics
 
 ```python
@@ -243,6 +271,7 @@ ThresholdOptimizedClassifier(
     cv=3,                     # CV folds for optimization
     scale_features=True,      # Standardize features
     skip_if_confident=True,   # Skip when detection says it won't help
+    tune_base_model=False,    # Auto-tune hyperparameters with GridSearchCV
     calibrate=False,          # Probability calibration (usually not needed)
     random_state=42
 )
@@ -250,15 +279,19 @@ ThresholdOptimizedClassifier(
 
 **base_estimator options:**
 - `None`: Default LogisticRegression with balanced weights
-- `'auto'`: Auto-select based on dataset size (LogReg < 2k, LightGBM >= 2k)
+- `'auto'`: Auto-select based on dataset size (LogReg < 2k, XGBoost/LightGBM >= 2k)
 - Custom estimator: Any sklearn-compatible classifier with `predict_proba`
+
+**tune_base_model tuning parameters:**
+- LogisticRegression: `C` (regularization strength) from [0.01, 0.1, 0.5, 1.0, 5.0, 10.0]
+- XGBoost/LightGBM: `n_estimators`, `max_depth`, `learning_rate`
 
 **Attributes after fitting:**
 - `optimal_threshold_`: The learned optimal threshold
 - `overlap_pct_`: % of samples in uncertain zone (0.3-0.7)
 - `class_separation_`: Difference in mean prob between classes
 - `optimization_skipped_`: Whether optimization was skipped
-- `diagnostics_`: Full dict of detection metrics
+- `diagnostics_`: Full dict of detection metrics (includes `tuning` when enabled)
 - `imbalance_ratio_`: Class imbalance in training data
 
 ### AdaptiveEnsembleClassifier

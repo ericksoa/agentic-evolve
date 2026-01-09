@@ -8,6 +8,8 @@ Key insight: Threshold optimization helps most when the model is uncertain
 v4 improvements:
 - Metric selection: optimize for f1, f2, f0.5, recall, or precision
 - Auto model selection: picks best base model based on dataset size
+- XGBoost support (priority over LightGBM when available)
+- Hyperparameter tuning: auto-tune base model hyperparameters
 
 v3 improvements:
 - Sensitivity analysis: skip optimization when it won't help
@@ -25,7 +27,7 @@ from typing import Optional, Tuple, Union, Dict
 from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.metrics import f1_score, fbeta_score, precision_score, recall_score
 from sklearn.calibration import CalibratedClassifierCV
 
@@ -94,6 +96,13 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         If True, skip threshold optimization when model is confident
         (overlap < 20%). Saves compute without hurting performance.
 
+    tune_base_model : bool, default=False
+        If True, automatically tune hyperparameters of the base model using
+        cross-validation. Tuned parameters depend on model type:
+        - LogisticRegression: C (regularization strength)
+        - XGBoost/LightGBM: n_estimators, max_depth, learning_rate
+        Note: This adds computational overhead (~3x fitting time).
+
     random_state : int or None, default=42
         Random state for reproducibility.
 
@@ -142,6 +151,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         scale_features: bool = True,
         calibrate: bool = False,
         skip_if_confident: bool = True,
+        tune_base_model: bool = False,
         random_state: int = 42,
     ):
         self.base_estimator = base_estimator
@@ -152,6 +162,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         self.scale_features = scale_features
         self.calibrate = calibrate
         self.skip_if_confident = skip_if_confident
+        self.tune_base_model = tune_base_model
         self.random_state = random_state
 
     def _get_base_estimator(self, n_samples: int = None) -> BaseEstimator:
@@ -272,6 +283,85 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
                     random_state=self.random_state,
                     verbose=-1,
                 )
+
+    def _get_param_grid(self, model: BaseEstimator) -> Dict:
+        """
+        Get hyperparameter grid for tuning based on model type.
+
+        Returns a dict of parameter names -> values to try.
+        Grid is kept small to balance tuning benefit vs compute cost.
+        """
+        model_name = type(model).__name__
+
+        if model_name == 'LogisticRegression':
+            return {
+                'C': [0.01, 0.1, 0.5, 1.0, 5.0, 10.0],
+            }
+        elif model_name == 'XGBClassifier':
+            return {
+                'n_estimators': [50, 100, 200],
+                'max_depth': [4, 6, 8],
+                'learning_rate': [0.05, 0.1, 0.2],
+            }
+        elif model_name == 'LGBMClassifier':
+            return {
+                'n_estimators': [50, 100, 200],
+                'max_depth': [4, 6, 8],
+                'learning_rate': [0.05, 0.1, 0.2],
+            }
+        else:
+            # Unknown model type - try common params or return empty
+            return {}
+
+    def _tune_model(self, model: BaseEstimator, X: np.ndarray, y: np.ndarray) -> Tuple[BaseEstimator, Dict]:
+        """
+        Tune hyperparameters of the base model using GridSearchCV.
+
+        Parameters
+        ----------
+        model : BaseEstimator
+            Base model to tune.
+        X : np.ndarray
+            Training features.
+        y : np.ndarray
+            Training labels.
+
+        Returns
+        -------
+        best_model : BaseEstimator
+            Model with best hyperparameters.
+        best_params : Dict
+            Best hyperparameters found.
+        """
+        param_grid = self._get_param_grid(model)
+
+        if not param_grid:
+            # No tuning possible for this model type
+            self.tuning_info_ = {'status': 'skipped', 'reason': 'no param grid'}
+            return model, {}
+
+        # Use f1 scoring for tuning to match our optimization target
+        scoring = 'f1' if self.optimize_for in ['f1', 'f2', 'f0.5'] else self.optimize_for
+
+        grid_search = GridSearchCV(
+            model,
+            param_grid,
+            cv=min(self.cv, 3),  # Use at most 3 folds for tuning (speed)
+            scoring=scoring,
+            n_jobs=1,  # Single thread to avoid overloading system
+            refit=True,
+        )
+
+        grid_search.fit(X, y)
+
+        self.tuning_info_ = {
+            'status': 'completed',
+            'best_params': grid_search.best_params_,
+            'best_score': grid_search.best_score_,
+            'model_type': type(model).__name__,
+        }
+
+        return grid_search.best_estimator_, grid_search.best_params_
 
     def _compute_imbalance(self, y: np.ndarray) -> float:
         """Compute class imbalance ratio."""
@@ -607,9 +697,16 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         else:
             self.scaler_ = None
 
-        # Step 5: Fit final model (with optional calibration)
+        # Step 5: Get base model and optionally tune hyperparameters
         base_model = self._get_base_estimator(n_samples)
 
+        if self.tune_base_model:
+            base_model, best_params = self._tune_model(base_model, X, y)
+            self.diagnostics_['tuning'] = self.tuning_info_
+        else:
+            self.diagnostics_['tuning'] = None
+
+        # Step 6: Fit final model (with optional calibration)
         if self.calibrate:
             self.model_ = CalibratedClassifierCV(
                 base_model,
@@ -650,6 +747,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'scale_features': self.scale_features,
             'calibrate': self.calibrate,
             'skip_if_confident': self.skip_if_confident,
+            'tune_base_model': self.tune_base_model,
             'random_state': self.random_state,
         }
 
@@ -715,5 +813,14 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         # Add auto model info if applicable
         if d.get('auto_model'):
             lines.insert(-2, f"  Base model: {d['auto_model']}")
+
+        # Add tuning info if applicable
+        if d.get('tuning') and d['tuning'].get('status') == 'completed':
+            tuning = d['tuning']
+            lines.append("")
+            lines.append("Hyperparameter Tuning:")
+            lines.append(f"  Model: {tuning['model_type']}")
+            lines.append(f"  Best params: {tuning['best_params']}")
+            lines.append(f"  CV score: {tuning['best_score']:.3f}")
 
         return "\n".join(lines)

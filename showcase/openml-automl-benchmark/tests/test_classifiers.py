@@ -357,6 +357,79 @@ class TestThresholdOptimizedClassifier:
         assert proba.shape == (len(X_test), 3)
         assert np.allclose(proba.sum(axis=1), 1.0)
 
+    def test_tune_base_model(self, imbalanced_data):
+        """Test hyperparameter tuning for base model."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(tune_base_model=True, random_state=42)
+        clf.fit(X_train, y_train)
+
+        # Check tuning info is stored in diagnostics
+        assert 'tuning' in clf.diagnostics_
+        tuning = clf.diagnostics_['tuning']
+        assert tuning is not None
+        assert tuning['status'] == 'completed'
+        assert 'best_params' in tuning
+        assert 'best_score' in tuning
+        assert 'model_type' in tuning
+        assert tuning['model_type'] == 'LogisticRegression'
+
+        # Model should still work for predictions
+        predictions = clf.predict(X_test)
+        assert len(predictions) == len(y_test)
+
+    def test_tune_base_model_in_summary(self, imbalanced_data):
+        """Test that tuning info is shown in summary."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(tune_base_model=True, random_state=42)
+        clf.fit(X_train, y_train)
+
+        summary = clf.summary()
+        assert "Hyperparameter Tuning:" in summary
+        assert "Best params:" in summary
+        assert "CV score:" in summary
+
+    def test_tune_base_model_disabled(self, imbalanced_data):
+        """Test that tuning is disabled by default."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X_train, y_train)
+
+        # Tuning should be None when disabled
+        assert clf.diagnostics_['tuning'] is None
+
+    def test_tune_base_model_in_get_params(self, balanced_data):
+        """Test that tune_base_model is included in get_params."""
+        clf = ThresholdOptimizedClassifier(tune_base_model=True, random_state=42)
+        params = clf.get_params()
+
+        assert 'tune_base_model' in params
+        assert params['tune_base_model'] is True
+
+    def test_tune_base_model_with_auto(self):
+        """Test tuning with auto model selection."""
+        # Small dataset so it uses LogisticRegression
+        X, y = make_classification(
+            n_samples=400,
+            n_features=10,
+            n_informative=5,
+            n_redundant=2,
+            n_classes=2,
+            weights=[0.7, 0.3],
+            random_state=42,
+        )
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        clf = ThresholdOptimizedClassifier(
+            base_estimator='auto',
+            tune_base_model=True,
+            random_state=42
+        )
+        clf.fit(X_train, y_train)
+
+        # Check that tuning worked with auto model
+        assert clf.diagnostics_['tuning']['status'] == 'completed'
+        assert clf.diagnostics_['auto_model'] is not None
+
 
 class TestAdaptiveEnsembleClassifier:
     """Tests for AdaptiveEnsembleClassifier."""
