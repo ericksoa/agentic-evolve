@@ -1,0 +1,97 @@
+{
+  "name": "openml-benchmark-{dataset_name}",
+  "description": "Evolve classifier for OpenML dataset {dataset_name} (ID={dataset_id}) to maximize F1 score",
+  "mode": "ml",
+
+  "problem": {
+    "goal": "Maximize F1 score on OpenML {dataset_name} classification task",
+    "language": "Python",
+    "scoring": "F1 score (higher is better)",
+    "evaluation": "8-fold CV + 2-fold holdout",
+    "dataset_info": {
+      "id": "{dataset_id}",
+      "name": "{dataset_name}",
+      "n_samples": "{n_samples}",
+      "n_features": "{n_features}",
+      "n_classes": "{n_classes}",
+      "imbalance_ratio": "{imbalance_ratio}"
+    }
+  },
+
+  "evaluation": {
+    "test_command": "python python/src/evaluate_dataset.py {solution} --dataset-id {dataset_id} --json",
+    "fitness_key": "fitness",
+    "valid_key": "valid",
+    "higher_is_better": true,
+    "notes": "Fitness is holdout F1 score, penalized if CV-holdout gap > 0.10 (overfitting)"
+  },
+
+  "cwd": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/openml-automl-benchmark",
+
+  "starter_solutions": [
+    "python/src/solutions/baseline_logreg.py",
+    "python/src/solutions/baseline_rf.py",
+    "python/src/solutions/baseline_xgb.py"
+  ],
+
+  "optimization_strategies": [
+    {
+      "name": "hyperparameter_tuning",
+      "description": "Tune model hyperparameters for this specific dataset",
+      "hint": "Focus on regularization, tree depth, learning rate"
+    },
+    {
+      "name": "threshold_optimization",
+      "description": "Optimize classification threshold for imbalanced classes",
+      "hint": "Default 0.5 is rarely optimal for imbalanced data"
+    },
+    {
+      "name": "ensemble_combination",
+      "description": "Combine multiple base models",
+      "hint": "Voting or stacking, use fixed weights to avoid overfitting"
+    },
+    {
+      "name": "feature_preprocessing",
+      "description": "Try different preprocessing strategies",
+      "hint": "Scaling method, missing value handling, feature selection"
+    },
+    {
+      "name": "class_weight_tuning",
+      "description": "Adjust class weights for imbalanced datasets",
+      "hint": "balanced, or custom weights based on imbalance ratio"
+    }
+  ],
+
+  "constraints": [
+    "Solution must define get_classifier() returning sklearn-compatible classifier",
+    "Classifier must implement fit(X, y) and predict(X) methods",
+    "Must not overfit: CV-holdout gap should be < 0.10",
+    "Use simpler models on small datasets (<1000 samples)",
+    "Fixed thresholds/weights generalize better than optimized"
+  ],
+
+  "references": [
+    "CLAUDE.md - Workflow instructions",
+    "python/src/baseline_runner.py - Baseline model implementations",
+    "python/src/evaluate_dataset.py - Evaluation harness",
+    "https://docs.openml.org - OpenML documentation"
+  ],
+
+  "ml_specific": {
+    "primary_metric": "f1",
+    "holdout_validation": true,
+    "overfitting_threshold": 0.10,
+    "mallorn_lessons": [
+      "Simpler models generalize better on small data",
+      "Fixed weights/thresholds beat optimized ones",
+      "CV improvement != public improvement (Gen4 lesson)",
+      "Use holdout to detect overfitting before accepting"
+    ]
+  },
+
+  "resource_constraints": {
+    "max_local_threads": 4,
+    "prefer_cloud": true,
+    "cloud_provider": "lightning.ai"
+  }
+}

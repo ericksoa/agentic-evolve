@@ -1,0 +1,21 @@
+# OpenML AutoML Benchmark Dependencies
+
+# OpenML dataset access
+openml>=0.14.0
+
+# Core ML
+scikit-learn>=1.3.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Additional models
+xgboost>=2.0.0
+lightgbm>=4.0.0
+
+# Visualization and analysis
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Utilities
+tqdm>=4.65.0
+joblib>=1.3.0

@@ -1,0 +1,25 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.Python
+
+# Results (keep summaries, ignore raw)
+results/*.json
+!results/summary_*.json
+
+# Evolution state (can be regenerated)
+.evolve-sdk/
+
+# Generated configs
+evolve_config_*.json
+!evolve_config_template.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
