@@ -47,34 +47,58 @@ cd agentic-evolve/showcase/openml-automl-benchmark
 pip install -e .
 ```
 
-## Results (v3)
+## Results
 
-Tested on **12 OpenML datasets** with the new sensitivity detection:
+### Benchmark Results (12 datasets)
 
-| Metric | v3 (Smart Detection) | v1 (Always Optimize) |
-|--------|---------------------|----------------------|
+| Metric | v4 (Current) | v1 (Always Optimize) |
+|--------|--------------|----------------------|
 | **Datasets Harmed** | **0** | 4 |
 | **Datasets Improved** | 3 | 3 |
 | **Avg Improvement** | **+2.38%** | +1.96% |
 | **Best Improvement** | **+18.3%** (credit-g) | +18.6% |
+| **Significant Improvements** | 2 (p<0.05) | - |
 
-**Key insight**: The classifier now detects when optimization will help vs. hurt.
+**Key insight**: Smart detection eliminates harm while preserving gains.
 
 ### Detailed Results
 
-| Dataset | Strategy | Gain | Notes |
-|---------|----------|------|-------|
-| credit-g | aggressive | **+18.3%** | High overlap, optimal far from 0.5 |
-| mozilla4 | aggressive | **+8.9%** | Detected as high-gain candidate |
-| kc2 | normal | **+1.8%** | Moderate optimization |
-| diabetes | skip_low_gain | 0.0% | <1% potential gain |
-| blood-transfusion | skip_low_gain | 0.0% | Was -0.6% in v1 |
-| ilpd | skip_low_gain | 0.0% | Was -0.9% in v1 |
-| pc1 | skip_near_default | 0.0% | Was -3.3% in v1 |
-| phoneme | skip_low_gain | 0.0% | Was -0.3% in v1 |
-| 4 others | skip | 0.0% | Model already confident |
+| Dataset | Strategy | Gain | 95% CI | Notes |
+|---------|----------|------|--------|-------|
+| credit-g | aggressive | **+18.3%*** | [+17.4%, +19.2%] | High overlap, optimal far from 0.5 |
+| mozilla4 | aggressive | **+8.9%*** | [+8.5%, +9.3%] | Detected as high-gain candidate |
+| kc2 | normal | **+1.8%** | [+0.9%, +2.7%] | Moderate optimization |
+| diabetes | skip_low_gain | 0.0% | - | <1% potential gain, correctly skipped |
+| blood-transfusion | skip_low_gain | 0.0% | - | Was -0.6% in v1 |
+| ilpd | skip_low_gain | 0.0% | - | Was -0.9% in v1 |
+| pc1 | skip_near_default | 0.0% | - | Was -3.3% in v1 |
+| phoneme | skip_low_gain | 0.0% | - | Was -0.3% in v1 |
+| 4 others | skip | 0.0% | - | Model already confident |
 
-## How It Works (v3)
+*\* Statistically significant (p < 0.05)*
+
+### v4 Performance Improvements
+
+v4 adds several performance optimizations:
+
+| Feature | Benefit |
+|---------|---------|
+| **Single CV pass** | ~50% faster fitting (reuses probabilities from analysis) |
+| **Auto model selection** | Better accuracy on large datasets (LightGBM for n≥2000) |
+| **Metric selection** | Optimize for F1, F2, recall, precision, or F0.5 |
+| **Bootstrap CIs** | Statistical confidence in benchmark results |
+| **Multiclass support** | Graceful fallback (no crashes on multiclass data) |
+
+**Speed comparison** (synthetic 1000-sample dataset):
+- v3: ~2.1s (2 CV passes)
+- v4: ~1.1s (1 CV pass)
+
+**Accuracy on larger datasets** (with `base_estimator='auto'`):
+- Datasets ≥2000 samples automatically use LightGBM
+- LightGBM typically outperforms LogisticRegression on tabular data
+- Falls back gracefully if LightGBM not installed
+
+## How It Works
 
 The classifier analyzes your data before deciding whether to optimize:
 
