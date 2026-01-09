@@ -18,15 +18,15 @@ from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, fbeta_score, precision_score, recall_score
 from sklearn.calibration import CalibratedClassifierCV
 
 
 class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
     """
-    Classifier that intelligently optimizes decision threshold for F1 score.
+    Classifier that intelligently optimizes decision threshold for a chosen metric.
 
-    This v2 implementation detects when threshold optimization will actually help
+    This v3 implementation detects when threshold optimization will actually help
     by analyzing the model's probability distribution. It skips optimization when
     the model is already confident (low overlap), and searches more aggressively
     when the model is uncertain (high overlap).
@@ -35,6 +35,14 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
     ----------
     base_estimator : estimator or None, default=None
         Base classifier. If None, uses LogisticRegression with balanced weights.
+
+    optimize_for : str, default='f1'
+        Metric to optimize. Options:
+        - 'f1': F1 score (harmonic mean of precision and recall)
+        - 'f2': F2 score (emphasizes recall over precision)
+        - 'f0.5': F0.5 score (emphasizes precision over recall)
+        - 'recall': Recall (sensitivity, true positive rate)
+        - 'precision': Precision (positive predictive value)
 
     threshold_range : tuple or 'auto', default='auto'
         Range of thresholds to search. If 'auto', determined by overlap analysis:
@@ -100,6 +108,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
     def __init__(
         self,
         base_estimator: Optional[BaseEstimator] = None,
+        optimize_for: str = 'f1',
         threshold_range: Union[Tuple[float, float], str] = 'auto',
         threshold_steps: int = 20,
         cv: int = 3,
@@ -109,6 +118,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         random_state: int = 42,
     ):
         self.base_estimator = base_estimator
+        self.optimize_for = optimize_for
         self.threshold_range = threshold_range
         self.threshold_steps = threshold_steps
         self.cv = cv
@@ -133,41 +143,58 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         _, counts = np.unique(y, return_counts=True)
         return counts.max() / counts.min() if counts.min() > 0 else 1.0
 
-    def _compute_f1_at_threshold(self, probs: np.ndarray, true_labels: np.ndarray, threshold: float) -> float:
-        """Compute F1 score at a given threshold."""
+    def _compute_metric(self, true_labels: np.ndarray, preds: np.ndarray) -> float:
+        """Compute the selected optimization metric."""
+        metric = self.optimize_for.lower()
+
+        if metric == 'f1':
+            return f1_score(true_labels, preds, zero_division=0)
+        elif metric == 'f2':
+            return fbeta_score(true_labels, preds, beta=2, zero_division=0)
+        elif metric == 'f0.5':
+            return fbeta_score(true_labels, preds, beta=0.5, zero_division=0)
+        elif metric == 'recall':
+            return recall_score(true_labels, preds, zero_division=0)
+        elif metric == 'precision':
+            return precision_score(true_labels, preds, zero_division=0)
+        else:
+            raise ValueError(f"Unknown metric: {metric}. Use 'f1', 'f2', 'f0.5', 'recall', or 'precision'.")
+
+    def _compute_metric_at_threshold(self, probs: np.ndarray, true_labels: np.ndarray, threshold: float) -> float:
+        """Compute the selected metric at a given threshold."""
         preds = (probs >= threshold).astype(int)
-        return f1_score(true_labels, preds, zero_division=0)
+        return self._compute_metric(true_labels, preds)
 
     def _analyze_threshold_sensitivity(self, probs: np.ndarray, true_labels: np.ndarray) -> Dict:
         """
-        Analyze how sensitive F1 is to threshold changes.
+        Analyze how sensitive the metric is to threshold changes.
 
-        Returns best threshold, F1 variance, and whether optimization is worthwhile.
+        Returns best threshold, metric variance, and whether optimization is worthwhile.
         """
         # Test thresholds across the range
         test_thresholds = np.linspace(0.1, 0.7, 13)
-        f1_scores = [self._compute_f1_at_threshold(probs, true_labels, t) for t in test_thresholds]
+        metric_scores = [self._compute_metric_at_threshold(probs, true_labels, t) for t in test_thresholds]
 
-        best_idx = np.argmax(f1_scores)
+        best_idx = np.argmax(metric_scores)
         best_threshold = test_thresholds[best_idx]
-        best_f1 = f1_scores[best_idx]
-        f1_at_05 = self._compute_f1_at_threshold(probs, true_labels, 0.5)
+        best_metric = metric_scores[best_idx]
+        metric_at_05 = self._compute_metric_at_threshold(probs, true_labels, 0.5)
 
         # Compute sensitivity metrics
-        f1_variance = np.var(f1_scores)
-        f1_range = max(f1_scores) - min(f1_scores)
+        metric_variance = np.var(metric_scores)
+        metric_range = max(metric_scores) - min(metric_scores)
         threshold_distance = abs(best_threshold - 0.5)
-        potential_gain = (best_f1 - f1_at_05) / f1_at_05 if f1_at_05 > 0 else 0
+        potential_gain = (best_metric - metric_at_05) / metric_at_05 if metric_at_05 > 0 else 0
 
         return {
             'best_threshold': best_threshold,
-            'best_f1': best_f1,
-            'f1_at_05': f1_at_05,
-            'f1_variance': f1_variance,
-            'f1_range': f1_range,
+            'best_metric': best_metric,
+            'metric_at_05': metric_at_05,
+            'metric_variance': metric_variance,
+            'metric_range': metric_range,
             'threshold_distance': threshold_distance,
             'potential_gain': potential_gain,
-            'f1_scores': f1_scores,
+            'metric_scores': metric_scores,
             'test_thresholds': test_thresholds,
         }
 
@@ -222,8 +249,8 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             # Low uncertainty: model is confident, skip optimization
             recommended_range = (0.50, 0.50)
             strategy = 'skip'
-        elif sensitivity['f1_range'] < 0.02:
-            # F1 is flat across thresholds - optimization won't help
+        elif sensitivity['metric_range'] < 0.02:
+            # Metric is flat across thresholds - optimization won't help
             recommended_range = (0.50, 0.50)
             strategy = 'skip_flat'
         elif sensitivity['potential_gain'] < 0.01:
@@ -259,7 +286,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             # Sensitivity metrics
             'sensitivity': sensitivity,
             'best_threshold_estimate': sensitivity['best_threshold'],
-            'f1_range': sensitivity['f1_range'],
+            'metric_range': sensitivity['metric_range'],
             'potential_gain': sensitivity['potential_gain'],
         }
 
@@ -306,7 +333,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
 
                 proba = model.predict_proba(X_val)[:, 1]
                 pred = (proba >= thresh).astype(int)
-                scores.append(f1_score(y_val, pred, zero_division=0))
+                scores.append(self._compute_metric(y_val, pred))
 
             mean_score = np.mean(scores)
             if mean_score > best_score:
@@ -347,10 +374,10 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         if self.skip_if_confident and uncertainty['strategy'] in skip_strategies:
             self.optimization_skipped_ = True
             self.optimal_threshold_ = 0.5
-            best_f1 = uncertainty['sensitivity']['f1_at_05']
+            best_score = uncertainty['sensitivity']['metric_at_05']
         else:
             self.optimization_skipped_ = False
-            self.optimal_threshold_, best_f1 = self._optimize_threshold(X, y, actual_range)
+            self.optimal_threshold_, best_score = self._optimize_threshold(X, y, actual_range)
 
         # Store diagnostics (including sensitivity analysis)
         sensitivity = uncertainty['sensitivity']
@@ -362,9 +389,11 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'class0_prob_mean': uncertainty['class0_prob_mean'],
             'class1_prob_mean': uncertainty['class1_prob_mean'],
             'optimization_skipped': self.optimization_skipped_,
-            'cv_best_f1': best_f1,
-            # Sensitivity metrics
-            'f1_range': sensitivity['f1_range'],
+            'cv_best_score': best_score,
+            'optimize_for': self.optimize_for,
+            # Sensitivity metrics (backward compat: also store as f1_range)
+            'metric_range': sensitivity['metric_range'],
+            'f1_range': sensitivity['metric_range'],  # backward compat
             'potential_gain': sensitivity['potential_gain'],
             'best_threshold_estimate': sensitivity['best_threshold'],
             'threshold_distance_from_05': sensitivity['threshold_distance'],
@@ -413,6 +442,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         """Get parameters for this estimator."""
         return {
             'base_estimator': self.base_estimator,
+            'optimize_for': self.optimize_for,
             'threshold_range': self.threshold_range,
             'threshold_steps': self.threshold_steps,
             'cv': self.cv,
@@ -434,14 +464,17 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             return "Model not fitted yet. Call fit() first."
 
         d = self.diagnostics_
+        metric_name = self.optimize_for.upper()
         lines = [
             "ThresholdOptimizedClassifier Summary",
             "=" * 40,
             "",
+            f"Optimizing for: {metric_name}",
+            "",
             f"Uncertainty Analysis:",
             f"  Overlap zone: {self.overlap_pct_:.1f}%",
             f"  Class separation: {self.class_separation_:.3f}",
-            f"  F1 range across thresholds: {d['f1_range']:.3f}",
+            f"  {metric_name} range across thresholds: {d['metric_range']:.3f}",
             f"  Potential gain: {d['potential_gain']*100:+.1f}%",
             f"  Strategy: {d['strategy']}",
             "",
@@ -449,7 +482,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             f"  Skipped: {self.optimization_skipped_}",
             f"  Threshold range: {d['threshold_range_used']}",
             f"  Optimal threshold: {self.optimal_threshold_:.3f}",
-            f"  CV F1: {d['cv_best_f1']:.3f}",
+            f"  CV {metric_name}: {d['cv_best_score']:.3f}",
             "",
             f"Dataset:",
             f"  Imbalance ratio: {self.imbalance_ratio_:.2f}x",

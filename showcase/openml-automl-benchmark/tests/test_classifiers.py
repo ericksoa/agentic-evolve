@@ -180,6 +180,62 @@ class TestThresholdOptimizedClassifier:
         assert "Overlap zone" in summary
         assert "Strategy" in summary
 
+    def test_optimize_for_f1(self, imbalanced_data):
+        """Test optimize_for='f1' (default)."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(optimize_for='f1', random_state=42)
+        clf.fit(X_train, y_train)
+
+        assert clf.optimize_for == 'f1'
+        assert clf.diagnostics_['optimize_for'] == 'f1'
+        assert 'Optimizing for: F1' in clf.summary()
+
+    def test_optimize_for_f2(self, imbalanced_data):
+        """Test optimize_for='f2' (emphasizes recall)."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(optimize_for='f2', random_state=42)
+        clf.fit(X_train, y_train)
+
+        assert clf.optimize_for == 'f2'
+        assert clf.diagnostics_['optimize_for'] == 'f2'
+        assert 'Optimizing for: F2' in clf.summary()
+
+    def test_optimize_for_recall(self, imbalanced_data):
+        """Test optimize_for='recall'."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(optimize_for='recall', random_state=42)
+        clf.fit(X_train, y_train)
+
+        assert clf.optimize_for == 'recall'
+        assert clf.diagnostics_['optimize_for'] == 'recall'
+        assert 'Optimizing for: RECALL' in clf.summary()
+
+    def test_optimize_for_precision(self, imbalanced_data):
+        """Test optimize_for='precision'."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(optimize_for='precision', random_state=42)
+        clf.fit(X_train, y_train)
+
+        assert clf.optimize_for == 'precision'
+        assert clf.diagnostics_['optimize_for'] == 'precision'
+        assert 'Optimizing for: PRECISION' in clf.summary()
+
+    def test_optimize_for_in_get_params(self, balanced_data):
+        """Test that optimize_for is included in get_params."""
+        clf = ThresholdOptimizedClassifier(optimize_for='f2', random_state=42)
+        params = clf.get_params()
+
+        assert 'optimize_for' in params
+        assert params['optimize_for'] == 'f2'
+
+    def test_optimize_for_invalid(self, balanced_data):
+        """Test that invalid optimize_for raises ValueError."""
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizedClassifier(optimize_for='invalid_metric', random_state=42)
+
+        with pytest.raises(ValueError, match="Unknown metric"):
+            clf.fit(X_train, y_train)
+
 
 class TestAdaptiveEnsembleClassifier:
     """Tests for AdaptiveEnsembleClassifier."""

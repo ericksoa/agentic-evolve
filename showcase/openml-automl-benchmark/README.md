@@ -138,6 +138,22 @@ clf = ThresholdOptimizedClassifier(
 clf.fit(X_train, y_train)
 ```
 
+### Optimize for Different Metrics
+
+```python
+# Emphasize recall (catch more positives, accept lower precision)
+clf = ThresholdOptimizedClassifier(optimize_for='f2')
+
+# Emphasize precision (fewer false positives)
+clf = ThresholdOptimizedClassifier(optimize_for='f0.5')
+
+# Pure recall optimization
+clf = ThresholdOptimizedClassifier(optimize_for='recall')
+
+# Pure precision optimization
+clf = ThresholdOptimizedClassifier(optimize_for='precision')
+```
+
 ### Force Optimization (Skip Smart Detection)
 
 ```python
@@ -181,6 +197,7 @@ The recommended classifier for most use cases.
 ```python
 ThresholdOptimizedClassifier(
     base_estimator=None,      # Base classifier (default: LogisticRegression)
+    optimize_for='f1',        # 'f1', 'f2', 'f0.5', 'recall', 'precision'
     threshold_range='auto',   # 'auto' or tuple like (0.20, 0.55)
     threshold_steps=20,       # Number of candidates to try
     cv=3,                     # CV folds for optimization
