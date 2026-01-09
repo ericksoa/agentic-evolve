@@ -21,6 +21,7 @@ Usage:
 
 from .classifier import AdaptiveEnsembleClassifier
 from .threshold_classifier import ThresholdOptimizedClassifier
+from .threshold_optimizer import ThresholdOptimizer
 from .analysis import DatasetAnalyzer
 
 # Meta-learning components (optional import, may not be available)
@@ -36,6 +37,7 @@ __version__ = "0.1.0"
 __all__ = [
     "AdaptiveEnsembleClassifier",
     "ThresholdOptimizedClassifier",
+    "ThresholdOptimizer",
     "DatasetAnalyzer",
     "MetaFeatureExtractor",
     "MetaLearningDetector",

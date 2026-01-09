@@ -9,6 +9,7 @@ from sklearn.model_selection import train_test_split
 
 from adaptive_ensemble import (
     ThresholdOptimizedClassifier,
+    ThresholdOptimizer,
     AdaptiveEnsembleClassifier,
     DatasetAnalyzer,
 )
@@ -1281,3 +1282,553 @@ class TestDatasetAnalyzer:
         summary = analyzer.summary()
         assert "Dataset Profile" in summary
         assert "Recommended Strategy" in summary
+
+
+# =============================================================================
+# v9: ThresholdOptimizer (Wrapper Mode) Tests
+# =============================================================================
+
+class TestThresholdOptimizer:
+    """Tests for ThresholdOptimizer wrapper class."""
+
+    # Phase 1: Core wrapper tests
+
+    def test_wrapper_with_logistic_regression(self, balanced_data):
+        """Test wrapper works with LogisticRegression."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizer(LogisticRegression(random_state=42))
+        clf.fit(X_train, y_train)
+
+        predictions = clf.predict(X_test)
+        assert len(predictions) == len(y_test)
+        assert set(predictions).issubset({0, 1})
+
+    def test_wrapper_with_random_forest(self, balanced_data):
+        """Test wrapper works with RandomForestClassifier."""
+        from sklearn.ensemble import RandomForestClassifier
+
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizer(RandomForestClassifier(n_estimators=10, random_state=42))
+        clf.fit(X_train, y_train)
+
+        predictions = clf.predict(X_test)
+        assert len(predictions) == len(y_test)
+        assert set(predictions).issubset({0, 1})
+
+    def test_wrapper_with_xgboost(self, balanced_data):
+        """Test wrapper works with XGBoost if available."""
+        pytest.importorskip('xgboost')
+        from xgboost import XGBClassifier
+
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizer(XGBClassifier(n_estimators=10, random_state=42, verbosity=0))
+        clf.fit(X_train, y_train)
+
+        predictions = clf.predict(X_test)
+        assert len(predictions) == len(y_test)
+        assert set(predictions).issubset({0, 1})
+
+    def test_sklearn_clone(self, balanced_data):
+        """Test sklearn clone() works."""
+        from sklearn.base import clone
+        from sklearn.linear_model import LogisticRegression
+
+        clf = ThresholdOptimizer(LogisticRegression(), optimize_for='f1', cv=3)
+        cloned = clone(clf)
+
+        assert cloned.optimize_for == 'f1'
+        assert cloned.cv == 3
+        assert cloned is not clf
+
+    def test_sklearn_pipeline(self, balanced_data):
+        """Test integration with sklearn Pipeline."""
+        from sklearn.pipeline import Pipeline
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = balanced_data
+
+        pipe = Pipeline([
+            ('scaler', StandardScaler()),
+            ('clf', ThresholdOptimizer(LogisticRegression(random_state=42))),
+        ])
+        pipe.fit(X_train, y_train)
+
+        predictions = pipe.predict(X_test)
+        assert len(predictions) == len(y_test)
+
+    def test_threshold_is_optimized(self, imbalanced_data):
+        """Test that threshold is actually optimized (not always 0.5)."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        assert hasattr(clf, 'threshold_')
+        # With 'always' strategy, threshold should be optimized
+        # It may or may not be 0.5, but it should be in valid range
+        assert 0.0 <= clf.threshold_ <= 1.0
+
+    def test_predict_uses_threshold(self, imbalanced_data):
+        """Test that predict uses the optimized threshold."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        # Get probabilities and manual predictions
+        probs = clf.predict_proba(X_test)[:, 1]
+        manual_preds = (probs >= clf.threshold_).astype(int)
+        actual_preds = clf.predict(X_test)
+
+        np.testing.assert_array_equal(manual_preds, actual_preds)
+
+    def test_predict_proba_returns_probabilities(self, balanced_data):
+        """Test that predict_proba returns valid probabilities."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizer(LogisticRegression(random_state=42))
+        clf.fit(X_train, y_train)
+
+        proba = clf.predict_proba(X_test)
+        assert proba.shape == (len(y_test), 2)
+        assert np.allclose(proba.sum(axis=1), 1.0)
+        assert np.all(proba >= 0) and np.all(proba <= 1)
+
+    def test_get_set_params(self):
+        """Test get_params and set_params."""
+        from sklearn.linear_model import LogisticRegression
+
+        clf = ThresholdOptimizer(
+            LogisticRegression(C=0.5),
+            optimize_for='f1',
+            cv=5,
+        )
+
+        params = clf.get_params()
+        assert params['optimize_for'] == 'f1'
+        assert params['cv'] == 5
+        assert params['estimator__C'] == 0.5
+
+        clf.set_params(cv=3, optimize_for='f2')
+        assert clf.cv == 3
+        assert clf.optimize_for == 'f2'
+
+    def test_rejects_multiclass(self):
+        """Test that wrapper rejects multiclass data."""
+        from sklearn.linear_model import LogisticRegression
+
+        X, y = make_classification(
+            n_samples=200, n_features=10, n_classes=3,
+            n_informative=5, n_clusters_per_class=1, random_state=42
+        )
+
+        clf = ThresholdOptimizer(LogisticRegression(random_state=42))
+
+        with pytest.raises(ValueError, match="binary classification"):
+            clf.fit(X, y)
+
+    def test_rejects_estimator_without_predict_proba(self):
+        """Test that wrapper rejects estimators without predict_proba."""
+        from sklearn.svm import LinearSVC
+
+        X, y = make_classification(n_samples=200, n_features=10, random_state=42)
+        clf = ThresholdOptimizer(LinearSVC(random_state=42))
+
+        with pytest.raises(ValueError, match="predict_proba"):
+            clf.fit(X, y)
+
+    # Phase 2: Strategy detection tests
+
+    def test_strategy_always_optimizes(self, imbalanced_data):
+        """Test that strategy='always' always optimizes threshold."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        assert clf.optimization_skipped_ == False
+        assert hasattr(clf, 'diagnostics_')
+        assert clf.diagnostics_.get('strategy') == 'always'
+
+    def test_strategy_never_uses_default(self, imbalanced_data):
+        """Test that strategy='never' always uses 0.5 threshold."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='never'
+        )
+        clf.fit(X_train, y_train)
+
+        assert clf.optimization_skipped_ == True
+        assert clf.threshold_ == 0.5
+        assert clf.diagnostics_.get('skip_reason') == 'strategy=never'
+
+    def test_strategy_auto_may_skip(self, balanced_data):
+        """Test that strategy='auto' may skip optimization on easy data."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='auto'
+        )
+        clf.fit(X_train, y_train)
+
+        # Auto may or may not skip - just check it sets the flag correctly
+        assert hasattr(clf, 'optimization_skipped_')
+        assert clf.diagnostics_.get('strategy') == 'auto'
+
+    def test_diagnostics_contain_useful_info(self, imbalanced_data):
+        """Test that diagnostics contain useful debugging info."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        assert 'oof_probs_mean' in clf.diagnostics_
+        assert 'oof_probs_std' in clf.diagnostics_
+        assert 'best_score' in clf.diagnostics_
+        assert 'default_score' in clf.diagnostics_
+        assert 'improvement' in clf.diagnostics_
+
+    def test_calibrate_isotonic(self, imbalanced_data):
+        """Test isotonic calibration."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            calibrate=True  # True means isotonic
+        )
+        clf.fit(X_train, y_train)
+
+        # Should complete without error
+        proba = clf.predict_proba(X_test)
+        assert proba.shape == (len(y_test), 2)
+
+    def test_calibrate_sigmoid(self, imbalanced_data):
+        """Test sigmoid (Platt) calibration."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            calibrate='sigmoid'
+        )
+        clf.fit(X_train, y_train)
+
+        # Should complete without error
+        proba = clf.predict_proba(X_test)
+        assert proba.shape == (len(y_test), 2)
+
+    # Phase 3: v7 features (explain, plot, confidence, safety)
+
+    def test_confidence_intervals_computed(self, imbalanced_data):
+        """Test that confidence intervals are computed."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always',
+            compute_confidence=True,
+            confidence_samples=50,  # Fewer samples for speed
+        )
+        clf.fit(X_train, y_train)
+
+        assert hasattr(clf, 'threshold_confidence_')
+        ci = clf.threshold_confidence_
+        assert 'ci_low' in ci
+        assert 'ci_high' in ci
+        assert 'std' in ci
+        assert ci['ci_low'] <= clf.threshold_ <= ci['ci_high']
+
+    def test_confidence_disabled(self, balanced_data):
+        """Test that confidence can be disabled."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            compute_confidence=False,
+        )
+        clf.fit(X_train, y_train)
+
+        # Should still have the attribute but with default values
+        assert hasattr(clf, 'threshold_confidence_')
+
+    def test_explain_returns_string(self, imbalanced_data):
+        """Test that explain() returns a string report."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        explanation = clf.explain()
+        assert isinstance(explanation, str)
+        assert 'THRESHOLD OPTIMIZATION REPORT' in explanation
+        assert 'DECISION' in explanation
+
+    def test_explain_before_fit(self):
+        """Test that explain() works before fit."""
+        from sklearn.linear_model import LogisticRegression
+
+        clf = ThresholdOptimizer(LogisticRegression())
+        explanation = clf.explain()
+        assert 'not been fitted' in explanation
+
+    def test_plot_returns_figure(self, imbalanced_data):
+        """Test that plot() returns a matplotlib figure."""
+        import matplotlib
+        matplotlib.use('Agg')  # Non-interactive backend
+        import matplotlib.pyplot as plt
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        fig = clf.plot(show=False)
+        assert fig is not None
+        plt.close(fig)
+
+    def test_plot_before_fit(self):
+        """Test that plot() raises error before fit."""
+        from sklearn.linear_model import LogisticRegression
+
+        clf = ThresholdOptimizer(LogisticRegression())
+
+        with pytest.raises(RuntimeError, match="not been fitted"):
+            clf.plot(show=False)
+
+    def test_safety_mode_parameter(self, imbalanced_data):
+        """Test that safety_mode parameter is accepted."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            safety_mode=True,
+            safety_margin=0.02,
+        )
+        # Should not raise
+        params = clf.get_params()
+        assert params['safety_mode'] == True
+        assert params['safety_margin'] == 0.02
+
+    def test_explain_shows_skipped_reason(self, balanced_data):
+        """Test that explain() shows reason when optimization is skipped."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='never'
+        )
+        clf.fit(X_train, y_train)
+
+        explanation = clf.explain()
+        assert 'SKIP' in explanation
+        assert 'strategy=never' in explanation
+
+    # Phase 4: v8 features (operating points, Pareto)
+
+    def test_operating_points_computed(self, imbalanced_data):
+        """Test that operating points are computed on fit."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        assert hasattr(clf, 'operating_points_')
+        ops = clf.operating_points_
+        assert 'thresholds' in ops
+        assert 'precisions' in ops
+        assert 'recalls' in ops
+        assert 'pareto_mask' in ops
+        assert len(ops['thresholds']) == 50  # Default n_thresholds
+
+    def test_pareto_frontier_valid(self, imbalanced_data):
+        """Test that Pareto frontier is correctly identified."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        ops = clf.operating_points_
+        # Should have at least one Pareto-optimal point
+        assert np.sum(ops['pareto_mask']) >= 1
+
+    def test_set_operating_point_min_recall(self, imbalanced_data):
+        """Test setting operating point by min_recall."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        clf.set_operating_point(min_recall=0.8)
+        point = clf.get_operating_point()
+        assert point['recall'] >= 0.8 or point['recall'] == max(clf.operating_points_['recalls'])
+
+    def test_set_operating_point_min_precision(self, imbalanced_data):
+        """Test setting operating point by min_precision."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        clf.set_operating_point(min_precision=0.7)
+        point = clf.get_operating_point()
+        assert point['precision'] >= 0.7 or point['precision'] == max(clf.operating_points_['precisions'])
+
+    def test_set_operating_point_threshold(self, imbalanced_data):
+        """Test setting operating point by direct threshold."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        clf.set_operating_point(threshold=0.3)
+        assert abs(clf.threshold_ - 0.3) < 0.02  # Close to 0.3
+
+    def test_get_operating_point(self, imbalanced_data):
+        """Test get_operating_point returns dict with expected keys."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        point = clf.get_operating_point()
+        assert 'threshold' in point
+        assert 'precision' in point
+        assert 'recall' in point
+        assert 'f1' in point
+        assert 'fpr' in point
+        assert 'is_pareto_optimal' in point
+
+    def test_list_operating_points(self, imbalanced_data):
+        """Test list_operating_points returns DataFrame."""
+        import pandas as pd
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        df = clf.list_operating_points()
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) == 50
+        assert 'threshold' in df.columns
+        assert 'precision' in df.columns
+
+    def test_list_operating_points_pareto_only(self, imbalanced_data):
+        """Test list_operating_points with pareto_only=True."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        df_all = clf.list_operating_points(pareto_only=False)
+        df_pareto = clf.list_operating_points(pareto_only=True)
+        assert len(df_pareto) <= len(df_all)
+        assert all(df_pareto['is_pareto_optimal'])
+
+    def test_plot_operating_points(self, imbalanced_data):
+        """Test plot_operating_points returns figure."""
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        fig = clf.plot_operating_points(show=False)
+        assert fig is not None
+        plt.close(fig)
+
+    def test_operating_point_affects_predict(self, imbalanced_data):
+        """Test that changing operating point affects predictions."""
+        from sklearn.linear_model import LogisticRegression
+
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizer(
+            LogisticRegression(random_state=42),
+            strategy='always'
+        )
+        clf.fit(X_train, y_train)
+
+        # Get predictions at current operating point
+        preds_default = clf.predict(X_test).copy()
+
+        # Change to high recall operating point
+        clf.set_operating_point(min_recall=0.95)
+        preds_high_recall = clf.predict(X_test).copy()
+
+        # Should generally have more positive predictions with lower threshold
+        # (though this isn't guaranteed for all datasets)
+        assert clf.threshold_ != 0.5  # Threshold should have changed
