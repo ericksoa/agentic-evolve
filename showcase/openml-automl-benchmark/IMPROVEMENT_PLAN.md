@@ -7,7 +7,7 @@
 - [x] **3. Speed optimization** - Combine analysis + optimization CV passes
 - [x] **4. Confidence intervals** - Bootstrap CI for benchmark results
 - [x] **5. Deep dive kc2 vs diabetes** - Why similar profiles, different outcomes?
-- [ ] **6. Test on 50+ datasets** - Validate detection generalizes
+- [x] **6. Test on 50+ datasets** - Validate detection generalizes (CC-18 suite script)
 - [ ] **7. Multiclass support** - Extend beyond binary classification
 
 ---
@@ -110,6 +110,6 @@ clf = ThresholdOptimizedClassifier(optimize_for='f2')  # Emphasize recall
 | 2 | Done | 9f2c096 | Auto-select model: LogReg < 2k, LightGBM >= 2k |
 | 3 | Done | ec01f21 | Single CV pass: reuse probs from analysis |
 | 4 | Done | c6afc9b | benchmark_v4.py with bootstrap CIs + sig tests |
-| 5 | Done | TBD | kc2 gains (thresh 0.15 from 0.5), diabetes skipped (thresh 0.10) |
-| 6 | Pending | - | - |
+| 5 | Done | 12944b7 | kc2 gains (thresh 0.15 from 0.5), diabetes skipped (thresh 0.10) |
+| 6 | Done | TBD | benchmark_cc18.py for CC-18 suite (binary datasets) |
 | 7 | Pending | - | - |
