@@ -276,10 +276,26 @@ Goal: Give users confidence in threshold optimization decisions through confiden
   - `rejection_reason`: Human-readable explanation
 - 5 new tests (69 total passing)
 
-### v7.5 sklearn Pipeline Integration (Pending)
-- Plan: Better pipeline compatibility
-- Ensure `get_params`/`set_params` work with GridSearchCV
-- Test with ColumnTransformer and FeatureUnion
+### v7.5 sklearn Pipeline Integration (Completed)
+- Verified full sklearn compatibility:
+  - `clone()`: All parameters preserved through cloning
+  - `Pipeline`: Works as final estimator with preprocessing steps
+  - `cross_val_score()`: Compatible with sklearn CV utilities
+  - `GridSearchCV`: Can search over classifier hyperparameters
+  - `get_params()`/`set_params()`: Full roundtrip compatibility
+- Key usage patterns tested:
+  ```python
+  # Pipeline example
+  pipe = Pipeline([
+      ('scaler', StandardScaler()),
+      ('clf', ThresholdOptimizedClassifier(scale_features=False))
+  ])
+
+  # GridSearchCV example
+  grid = GridSearchCV(clf, {'optimize_for': ['f1', 'f2'], 'cv': [2, 3]})
+  ```
+- Note: Set `scale_features=False` when using with external scaler
+- 5 new tests (74 total passing)
 
 ---
 

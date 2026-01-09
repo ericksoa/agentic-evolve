@@ -910,6 +910,106 @@ class TestThresholdOptimizedClassifier:
         # Should run without errors
         assert clf.diagnostics_ is not None
 
+    # ==================== v7 Feature 5: sklearn integration ====================
+
+    def test_sklearn_clone(self):
+        """Test that sklearn clone works correctly."""
+        from sklearn.base import clone
+
+        clf = ThresholdOptimizedClassifier(
+            optimize_for='f2',
+            cv=5,
+            safety_mode=True,
+            safety_margin=0.05,
+            random_state=42
+        )
+        cloned = clone(clf)
+
+        # Check params are preserved
+        assert cloned.optimize_for == 'f2'
+        assert cloned.cv == 5
+        assert cloned.safety_mode == True
+        assert cloned.safety_margin == 0.05
+        assert cloned.random_state == 42
+
+    def test_sklearn_pipeline(self):
+        """Test classifier works in sklearn Pipeline."""
+        from sklearn.pipeline import Pipeline
+        from sklearn.preprocessing import StandardScaler
+
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+
+        pipe = Pipeline([
+            ('scaler', StandardScaler()),
+            ('clf', ThresholdOptimizedClassifier(
+                scale_features=False,  # Already scaled by pipeline
+                random_state=42
+            ))
+        ])
+
+        pipe.fit(X, y)
+        predictions = pipe.predict(X[:10])
+        assert len(predictions) == 10
+
+        # Proba should also work
+        proba = pipe.predict_proba(X[:10])
+        assert proba.shape == (10, 2)
+
+    def test_sklearn_cross_val_score(self):
+        """Test with cross_val_score."""
+        from sklearn.model_selection import cross_val_score
+
+        X, y = make_classification(
+            n_samples=500, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+        clf = ThresholdOptimizedClassifier(random_state=42)
+
+        scores = cross_val_score(clf, X, y, cv=3, scoring='f1')
+        assert len(scores) == 3
+        assert all(0 <= s <= 1 for s in scores)
+
+    def test_sklearn_grid_search(self):
+        """Test with GridSearchCV."""
+        from sklearn.model_selection import GridSearchCV
+
+        X, y = make_classification(
+            n_samples=300, n_features=10, weights=[0.7, 0.3], random_state=42
+        )
+
+        param_grid = {
+            'optimize_for': ['f1', 'f2'],
+            'cv': [2, 3],
+        }
+
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        grid = GridSearchCV(clf, param_grid, cv=2, scoring='f1', n_jobs=1)
+        grid.fit(X, y)
+
+        # Should find best params
+        assert 'optimize_for' in grid.best_params_
+        assert 'cv' in grid.best_params_
+
+    def test_get_set_params_roundtrip(self):
+        """Test get_params/set_params roundtrip."""
+        clf = ThresholdOptimizedClassifier(
+            optimize_for='f2',
+            cv=5,
+            safety_mode=True,
+            random_state=42
+        )
+
+        params = clf.get_params()
+        clf2 = ThresholdOptimizedClassifier()
+        clf2.set_params(**params)
+
+        # Should match
+        assert clf2.optimize_for == 'f2'
+        assert clf2.cv == 5
+        assert clf2.safety_mode == True
+        assert clf2.random_state == 42
+
 
 class TestAdaptiveEnsembleClassifier:
     """Tests for AdaptiveEnsembleClassifier."""
