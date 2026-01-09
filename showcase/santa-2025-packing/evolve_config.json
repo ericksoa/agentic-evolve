@@ -1,0 +1,88 @@
+{
+  "name": "santa-2025-packing",
+  "description": "Evolve better Christmas tree packing algorithms",
+  "mode": "perf",
+
+  "problem": {
+    "goal": "Pack n Christmas tree-shaped polygons into the smallest square box",
+    "language": "Rust (primary) + Python (refinement)",
+    "scoring": "sum(side²/n) for n=1..200 (lower is better)",
+    "current_best": {
+      "score": 85.10,
+      "generation": "Gen120",
+      "algorithm": "Greedy + SA + CMA-ES"
+    },
+    "target": {
+      "score": 69.02,
+      "gap": "23.3%"
+    }
+  },
+
+  "evaluation": {
+    "test_command": "python evaluate_santa.py {solution} --json",
+    "fitness_key": "fitness",
+    "valid_key": "valid",
+    "higher_is_better": true,
+    "notes": "Fitness = 1/(score + 1) to make lower score = higher fitness"
+  },
+
+  "cwd": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/santa-2025-packing",
+
+  "starter_solutions": [
+    "python/gen120_full_sa.py",
+    "rust/src/evolved.rs"
+  ],
+
+  "optimization_strategies": [
+    {
+      "name": "hierarchical_packing",
+      "description": "Solve small groups, then merge clusters",
+      "hint": "Pack 5 trees optimally, then pack groups of 5"
+    },
+    {
+      "name": "genetic_crossover",
+      "description": "Combine good packings from different runs",
+      "hint": "Keep relative positions of subsets of trees"
+    },
+    {
+      "name": "constraint_programming",
+      "description": "Use OR-Tools CP-SAT for exact small n solutions",
+      "hint": "Model overlaps as constraints, minimize bounding box"
+    },
+    {
+      "name": "learned_initialization",
+      "description": "Train model to predict good initial placements",
+      "hint": "Use best solutions as training data for placement heuristics"
+    },
+    {
+      "name": "tree_shape_exploitation",
+      "description": "Exploit the specific tree polygon shape",
+      "hint": "Trees have concave regions that other trees could fit into"
+    },
+    {
+      "name": "nfp_optimization",
+      "description": "Use No-Fit Polygons for tighter packing",
+      "hint": "Compute NFP between tree shapes for boundary placement"
+    }
+  ],
+
+  "constraints": [
+    "No overlaps between trees (strict segment intersection check)",
+    "All trees must fit within bounding square",
+    "Trees can rotate to any angle (0-360 degrees)",
+    "Must validate with python/validate_submission.py before accepting"
+  ],
+
+  "references": [
+    "GEN120_RESULTS.md - What we've tried and learned",
+    "README.md - Full evolution history and algorithm details",
+    "rust/src/evolved.rs - Current best Rust algorithm",
+    "https://www.kaggle.com/competitions/santa-2025"
+  ],
+
+  "resource_constraints": {
+    "max_local_threads": 4,
+    "prefer_cloud": true,
+    "cloud_provider": "lightning.ai"
+  }
+}
