@@ -131,7 +131,17 @@ class TestThresholdOptimizedClassifier:
         clf = ThresholdOptimizedClassifier(threshold_range='auto', random_state=42)
         clf.fit(X_train, y_train)
 
-        assert clf.diagnostics_['strategy'] in ['aggressive', 'normal', 'skip']
+        assert clf.diagnostics_['strategy'] in ['aggressive', 'normal', 'skip', 'skip_flat', 'skip_low_gain', 'skip_near_default']
+
+    def test_sensitivity_metrics(self, balanced_data):
+        """Test that sensitivity metrics are computed."""
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X_train, y_train)
+
+        assert 'f1_range' in clf.diagnostics_
+        assert 'potential_gain' in clf.diagnostics_
+        assert 'threshold_distance_from_05' in clf.diagnostics_
 
     def test_skip_if_confident(self, balanced_data):
         """Test skip_if_confident parameter."""

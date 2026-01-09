@@ -133,11 +133,51 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         _, counts = np.unique(y, return_counts=True)
         return counts.max() / counts.min() if counts.min() > 0 else 1.0
 
+    def _compute_f1_at_threshold(self, probs: np.ndarray, true_labels: np.ndarray, threshold: float) -> float:
+        """Compute F1 score at a given threshold."""
+        preds = (probs >= threshold).astype(int)
+        return f1_score(true_labels, preds, zero_division=0)
+
+    def _analyze_threshold_sensitivity(self, probs: np.ndarray, true_labels: np.ndarray) -> Dict:
+        """
+        Analyze how sensitive F1 is to threshold changes.
+
+        Returns best threshold, F1 variance, and whether optimization is worthwhile.
+        """
+        # Test thresholds across the range
+        test_thresholds = np.linspace(0.1, 0.7, 13)
+        f1_scores = [self._compute_f1_at_threshold(probs, true_labels, t) for t in test_thresholds]
+
+        best_idx = np.argmax(f1_scores)
+        best_threshold = test_thresholds[best_idx]
+        best_f1 = f1_scores[best_idx]
+        f1_at_05 = self._compute_f1_at_threshold(probs, true_labels, 0.5)
+
+        # Compute sensitivity metrics
+        f1_variance = np.var(f1_scores)
+        f1_range = max(f1_scores) - min(f1_scores)
+        threshold_distance = abs(best_threshold - 0.5)
+        potential_gain = (best_f1 - f1_at_05) / f1_at_05 if f1_at_05 > 0 else 0
+
+        return {
+            'best_threshold': best_threshold,
+            'best_f1': best_f1,
+            'f1_at_05': f1_at_05,
+            'f1_variance': f1_variance,
+            'f1_range': f1_range,
+            'threshold_distance': threshold_distance,
+            'potential_gain': potential_gain,
+            'f1_scores': f1_scores,
+            'test_thresholds': test_thresholds,
+        }
+
     def _analyze_uncertainty(self, X: np.ndarray, y: np.ndarray) -> Dict:
         """
-        Analyze model uncertainty by examining probability distributions.
+        Analyze model uncertainty by examining probability distributions
+        AND threshold sensitivity.
 
-        Returns overlap percentage, class separation, and recommended threshold range.
+        Key insight: High overlap alone doesn't mean optimization helps.
+        We also need the optimal threshold to be FAR from 0.5.
         """
         all_probs = []
         all_true = []
@@ -173,9 +213,30 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         class1_probs = all_probs[all_true == 1]
         class_separation = abs(class1_probs.mean() - class0_probs.mean())
 
-        # Determine recommended threshold range based on uncertainty
-        if overlap_pct > 50:
-            # High uncertainty: search wide, including very low thresholds
+        # NEW: Analyze threshold sensitivity
+        sensitivity = self._analyze_threshold_sensitivity(all_probs, all_true)
+
+        # Determine strategy based on BOTH overlap AND threshold sensitivity
+        # Key insight: Only optimize if (1) optimal threshold is far from 0.5 AND (2) meaningful gain
+        if overlap_pct < 20:
+            # Low uncertainty: model is confident, skip optimization
+            recommended_range = (0.50, 0.50)
+            strategy = 'skip'
+        elif sensitivity['f1_range'] < 0.02:
+            # F1 is flat across thresholds - optimization won't help
+            recommended_range = (0.50, 0.50)
+            strategy = 'skip_flat'
+        elif sensitivity['potential_gain'] < 0.01:
+            # Less than 1% potential gain - not worth optimizing
+            recommended_range = (0.50, 0.50)
+            strategy = 'skip_low_gain'
+        elif sensitivity['threshold_distance'] < 0.10:
+            # Optimal threshold too close to 0.5 - not worth shifting
+            recommended_range = (0.50, 0.50)
+            strategy = 'skip_near_default'
+        elif sensitivity['threshold_distance'] > 0.15 and sensitivity['potential_gain'] > 0.05:
+            # High uncertainty AND optimal threshold far from 0.5 AND meaningful gain
+            # This is the credit-g pattern
             recommended_range = (0.05, 0.60)
             strategy = 'aggressive'
         elif overlap_pct > 20:
@@ -183,8 +244,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             recommended_range = (0.20, 0.55)
             strategy = 'normal'
         else:
-            # Low uncertainty: model is confident, skip optimization
-            recommended_range = (0.50, 0.50)  # Will just use 0.5
+            recommended_range = (0.50, 0.50)
             strategy = 'skip'
 
         return {
@@ -196,6 +256,11 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'true_labels': all_true,
             'class0_prob_mean': class0_probs.mean(),
             'class1_prob_mean': class1_probs.mean(),
+            # Sensitivity metrics
+            'sensitivity': sensitivity,
+            'best_threshold_estimate': sensitivity['best_threshold'],
+            'f1_range': sensitivity['f1_range'],
+            'potential_gain': sensitivity['potential_gain'],
         }
 
     def _optimize_threshold(
@@ -278,15 +343,17 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             actual_range = self.threshold_range
 
         # Step 3: Decide whether to skip optimization
-        if self.skip_if_confident and uncertainty['strategy'] == 'skip':
+        skip_strategies = ['skip', 'skip_flat', 'skip_low_gain', 'skip_near_default']
+        if self.skip_if_confident and uncertainty['strategy'] in skip_strategies:
             self.optimization_skipped_ = True
             self.optimal_threshold_ = 0.5
-            best_f1 = 0.0
+            best_f1 = uncertainty['sensitivity']['f1_at_05']
         else:
             self.optimization_skipped_ = False
             self.optimal_threshold_, best_f1 = self._optimize_threshold(X, y, actual_range)
 
-        # Store diagnostics
+        # Store diagnostics (including sensitivity analysis)
+        sensitivity = uncertainty['sensitivity']
         self.diagnostics_ = {
             'strategy': uncertainty['strategy'],
             'threshold_range_used': actual_range,
@@ -296,6 +363,11 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'class1_prob_mean': uncertainty['class1_prob_mean'],
             'optimization_skipped': self.optimization_skipped_,
             'cv_best_f1': best_f1,
+            # Sensitivity metrics
+            'f1_range': sensitivity['f1_range'],
+            'potential_gain': sensitivity['potential_gain'],
+            'best_threshold_estimate': sensitivity['best_threshold'],
+            'threshold_distance_from_05': sensitivity['threshold_distance'],
         }
 
         # Step 4: Scale features
@@ -369,12 +441,15 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             f"Uncertainty Analysis:",
             f"  Overlap zone: {self.overlap_pct_:.1f}%",
             f"  Class separation: {self.class_separation_:.3f}",
+            f"  F1 range across thresholds: {d['f1_range']:.3f}",
+            f"  Potential gain: {d['potential_gain']*100:+.1f}%",
             f"  Strategy: {d['strategy']}",
             "",
             f"Optimization:",
             f"  Skipped: {self.optimization_skipped_}",
             f"  Threshold range: {d['threshold_range_used']}",
             f"  Optimal threshold: {self.optimal_threshold_:.3f}",
+            f"  CV F1: {d['cv_best_f1']:.3f}",
             "",
             f"Dataset:",
             f"  Imbalance ratio: {self.imbalance_ratio_:.2f}x",
