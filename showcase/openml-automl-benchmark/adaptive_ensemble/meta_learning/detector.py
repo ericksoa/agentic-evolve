@@ -160,9 +160,14 @@ class MetaLearningDetector:
         if self.model_ is None:
             raise RuntimeError("Detector not trained. Call fit() or load_pretrained().")
 
-        # Convert dict to array if needed
+        # Convert dict to array if needed, filtering to expected features
         if isinstance(features, dict):
-            X = self.extractor.to_array(features).reshape(1, -1)
+            # Filter to only the features the model was trained on
+            if hasattr(self, 'feature_names_') and self.feature_names_:
+                filtered_features = {k: features[k] for k in self.feature_names_ if k in features}
+                X = np.array([filtered_features[k] for k in self.feature_names_]).reshape(1, -1)
+            else:
+                X = self.extractor.to_array(features).reshape(1, -1)
         else:
             X = np.asarray(features).reshape(1, -1)
 

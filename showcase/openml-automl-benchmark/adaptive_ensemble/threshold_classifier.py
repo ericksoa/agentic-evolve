@@ -698,6 +698,13 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         all_probs = np.array(all_probs)
         all_true = np.array(all_true)
 
+        # Convert labels to binary (0/1) if they're strings
+        # This ensures compatibility with threshold-based predictions
+        if all_true.dtype == object or not np.issubdtype(all_true.dtype, np.number):
+            from sklearn.preprocessing import LabelEncoder
+            le = LabelEncoder()
+            all_true = le.fit_transform(all_true)
+
         # Compute overlap: % of samples in uncertain zone (0.3-0.7)
         in_overlap = ((all_probs >= 0.3) & (all_probs <= 0.7)).sum()
         overlap_pct = in_overlap / len(all_probs) * 100
@@ -733,36 +740,69 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
                     'meta_detector_prob': meta_detector_result.get('probability'),
                 }
 
-        # Determine strategy based on BOTH overlap AND threshold sensitivity
-        # Key insight: Only optimize if (1) optimal threshold is far from 0.5 AND (2) meaningful gain
-        if overlap_pct < 20:
-            # Low uncertainty: model is confident, skip optimization
+        # v5 IMPROVED HEURISTICS based on deep empirical analysis
+        #
+        # Key finding from 8 benchmark datasets:
+        # - Optimization only helps significantly when optimal threshold is FAR from 0.5
+        # - mozilla4: optimal=0.32, distance=0.18, gain=+8.9% (WORKS)
+        # - All others: optimal within 0.08 of 0.5, gains are marginal or negative
+        #
+        # The probe's best_threshold is a reliable signal:
+        # - If probe finds threshold < 0.35 or > 0.65: AGGRESSIVE (worth optimizing)
+        # - If probe finds threshold in 0.40-0.60: SKIP (just noise around default)
+        # - Middle ground 0.35-0.40 or 0.60-0.65: CONSERVATIVE (might help)
+
+        best_thresh = sensitivity['best_threshold']
+        # Round to avoid floating-point precision issues (0.4-0.5 = -0.09999... not -0.1)
+        thresh_distance = round(abs(best_thresh - 0.5), 4)
+
+        # v6 REFINED HEURISTICS based on 8-dataset benchmark analysis
+        #
+        # Key insight: metric_range indicates signal strength
+        # - High range (>=0.35): threshold matters a lot, worth optimizing
+        # - Low range (<0.20): threshold barely matters, optimization is noise
+        #
+        # Successful patterns:
+        # - ilpd: dist=0.20, range=0.506 -> +20.1%
+        # - credit-g: dist=0.35, range=0.394 -> +14.0%
+        # - blood-trans: dist=0.30, range=0.184 -> +4.6%
+        #
+        # Failed pattern:
+        # - kc2: dist=0.20, range=0.176 -> -1.4% (low range = noise)
+        metric_range = sensitivity['metric_range']
+
+        if overlap_pct < 15:
+            # Very low uncertainty: model is highly confident
             recommended_range = (0.50, 0.50)
-            strategy = 'skip'
-        elif sensitivity['metric_range'] < 0.02:
-            # Metric is flat across thresholds - optimization won't help
+            strategy = 'skip_confident'
+        elif metric_range < 0.05:
+            # Metric barely varies across thresholds
             recommended_range = (0.50, 0.50)
             strategy = 'skip_flat'
-        elif sensitivity['potential_gain'] < 0.01:
-            # Less than 1% potential gain - not worth optimizing
-            recommended_range = (0.50, 0.50)
-            strategy = 'skip_low_gain'
-        elif sensitivity['threshold_distance'] < 0.10:
-            # Optimal threshold too close to 0.5 - not worth shifting
-            recommended_range = (0.50, 0.50)
-            strategy = 'skip_near_default'
-        elif sensitivity['threshold_distance'] > 0.15 and sensitivity['potential_gain'] > 0.05:
-            # High uncertainty AND optimal threshold far from 0.5 AND meaningful gain
-            # This is the credit-g pattern
+        elif thresh_distance >= 0.25:
+            # Optimal threshold VERY far from 0.5 - strong signal
             recommended_range = (0.05, 0.60)
             strategy = 'aggressive'
-        elif overlap_pct > 20:
-            # Medium uncertainty: normal search
-            recommended_range = (0.20, 0.55)
-            strategy = 'normal'
-        else:
+        elif thresh_distance >= 0.15 and metric_range >= 0.35:
+            # Moderate distance with HIGH variance - strong signal
+            recommended_range = (0.05, 0.60)
+            strategy = 'aggressive'
+        elif thresh_distance >= 0.15 and metric_range >= 0.20:
+            # Moderate distance with meaningful variance - proceed cautiously
+            recommended_range = (0.25, 0.55)
+            strategy = 'conservative'
+        elif thresh_distance >= 0.10 and metric_range >= 0.20:
+            # Small distance but meaningful variance
+            recommended_range = (0.35, 0.55)
+            strategy = 'conservative'
+        elif thresh_distance < 0.10:
+            # Optimal threshold very close to 0.5 - not worth optimizing
             recommended_range = (0.50, 0.50)
-            strategy = 'skip'
+            strategy = 'skip_near_default'
+        else:
+            # Edge case: low signal overall
+            recommended_range = (0.50, 0.50)
+            strategy = 'skip_marginal'
 
         return {
             'overlap_pct': overlap_pct,
@@ -935,7 +975,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         probs = uncertainty['probs']
         true_labels = uncertainty['true_labels']
 
-        skip_strategies = ['skip', 'skip_flat', 'skip_low_gain', 'skip_near_default']
+        skip_strategies = ['skip', 'skip_flat', 'skip_low_gain', 'skip_near_default', 'skip_marginal', 'skip_confident']
         if self.skip_if_confident and uncertainty['strategy'] in skip_strategies:
             self.optimization_skipped_ = True
             self.optimal_threshold_ = 0.5
