@@ -1,7 +1,10 @@
 """
-Gen 7b: Ensemble with threshold 0.35
+Gen 7a: Optimized Voting Ensemble
 
-Same as Gen7a but with threshold 0.35 (our original winning threshold).
+Building on Gen6c success with:
+1. Lower threshold (0.35 was our winning value)
+2. Add RFE variant with different feature counts
+3. Better diversity in base models
 """
 
 import numpy as np
@@ -56,8 +59,12 @@ class DiabetesFeatureEngineer(BaseEstimator, TransformerMixin):
         return np.nan_to_num(result, nan=0, posinf=0, neginf=0)
 
 
-class EnsembleClassifier(BaseEstimator, ClassifierMixin):
-    def __init__(self, threshold=0.35):
+class OptimizedVotingEnsemble(BaseEstimator, ClassifierMixin):
+    """
+    Optimized voting ensemble with diverse models and tuned threshold.
+    """
+
+    def __init__(self, threshold=0.36):
         self.threshold = threshold
         self.models_ = []
         self.feature_engineers_ = []
@@ -68,19 +75,20 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
     def fit(self, X, y):
         self.classes_ = np.unique(y)
 
-        # Model 1: Full features
+        # Model 1: Full features, C=0.5
         fe1 = DiabetesFeatureEngineer(n_bins=4)
         X1 = fe1.fit_transform(X)
         scaler1 = StandardScaler()
         X1_scaled = scaler1.fit_transform(X1)
         model1 = LogisticRegression(C=0.5, class_weight='balanced', max_iter=1000, random_state=42)
         model1.fit(X1_scaled, y)
+
         self.feature_engineers_.append(fe1)
         self.scalers_.append(scaler1)
         self.rfes_.append(None)
         self.models_.append(model1)
 
-        # Model 2: RFE 8
+        # Model 2: RFE to 8 features
         fe2 = DiabetesFeatureEngineer(n_bins=4)
         X2 = fe2.fit_transform(X)
         scaler2 = StandardScaler()
@@ -89,12 +97,13 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
         X2_rfe = rfe2.fit_transform(X2_scaled, y)
         model2 = LogisticRegression(C=0.5, class_weight='balanced', max_iter=1000, random_state=42)
         model2.fit(X2_rfe, y)
+
         self.feature_engineers_.append(fe2)
         self.scalers_.append(scaler2)
         self.rfes_.append(rfe2)
         self.models_.append(model2)
 
-        # Model 3: RFE 10
+        # Model 3: RFE to 10 features
         fe3 = DiabetesFeatureEngineer(n_bins=4)
         X3 = fe3.fit_transform(X)
         scaler3 = StandardScaler()
@@ -103,10 +112,24 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
         X3_rfe = rfe3.fit_transform(X3_scaled, y)
         model3 = LogisticRegression(C=0.5, class_weight='balanced', max_iter=1000, random_state=42)
         model3.fit(X3_rfe, y)
+
         self.feature_engineers_.append(fe3)
         self.scalers_.append(scaler3)
         self.rfes_.append(rfe3)
         self.models_.append(model3)
+
+        # Model 4: C=1.0 (less regularization)
+        fe4 = DiabetesFeatureEngineer(n_bins=4)
+        X4 = fe4.fit_transform(X)
+        scaler4 = StandardScaler()
+        X4_scaled = scaler4.fit_transform(X4)
+        model4 = LogisticRegression(C=1.0, class_weight='balanced', max_iter=1000, random_state=42)
+        model4.fit(X4_scaled, y)
+
+        self.feature_engineers_.append(fe4)
+        self.scalers_.append(scaler4)
+        self.rfes_.append(None)
+        self.models_.append(model4)
 
         return self
 
@@ -118,15 +141,22 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
         return X_scaled
 
     def predict_proba(self, X):
-        probas = [self.models_[i].predict_proba(self._transform_for_model(X, i)) for i in range(len(self.models_))]
-        return np.mean(probas, axis=0)
+        probas = []
+        for i in range(len(self.models_)):
+            X_transformed = self._transform_for_model(X, i)
+            probas.append(self.models_[i].predict_proba(X_transformed))
+
+        # Equal weight average
+        avg_proba = np.mean(probas, axis=0)
+        return avg_proba
 
     def predict(self, X):
-        return (self.predict_proba(X)[:, 1] >= self.threshold).astype(int)
+        proba = self.predict_proba(X)
+        return (proba[:, 1] >= self.threshold).astype(int)
 
 
 def create_pipeline():
     return Pipeline([
         ('imputer', SimpleImputer(strategy='median')),
-        ('classifier', EnsembleClassifier(threshold=0.35))
+        ('classifier', OptimizedVotingEnsemble(threshold=0.36))
     ])

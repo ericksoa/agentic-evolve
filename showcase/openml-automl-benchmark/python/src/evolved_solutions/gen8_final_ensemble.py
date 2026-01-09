@@ -1,7 +1,10 @@
 """
-Gen 7b: Ensemble with threshold 0.35
+Gen 8: Final Optimized Ensemble
 
-Same as Gen7a but with threshold 0.35 (our original winning threshold).
+Building on Gen7b with:
+1. 5 diverse models instead of 3
+2. Include RFE variants from 6 to 12 features
+3. Threshold 0.35 (proven winner)
 """
 
 import numpy as np
@@ -56,7 +59,16 @@ class DiabetesFeatureEngineer(BaseEstimator, TransformerMixin):
         return np.nan_to_num(result, nan=0, posinf=0, neginf=0)
 
 
-class EnsembleClassifier(BaseEstimator, ClassifierMixin):
+class FinalEnsembleClassifier(BaseEstimator, ClassifierMixin):
+    """
+    5-model ensemble for maximum diversity:
+    1. Full features, C=0.5
+    2. RFE 6 features
+    3. RFE 8 features
+    4. RFE 10 features
+    5. Full features, C=1.0
+    """
+
     def __init__(self, threshold=0.35):
         self.threshold = threshold
         self.models_ = []
@@ -65,48 +77,38 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
         self.rfes_ = []
         self.classes_ = None
 
+    def _add_model(self, X, y, n_features=None, C=0.5):
+        fe = DiabetesFeatureEngineer(n_bins=4)
+        X_fe = fe.fit_transform(X)
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X_fe)
+
+        rfe = None
+        if n_features is not None:
+            rfe = RFE(LogisticRegression(C=1.0, max_iter=1000, random_state=42), n_features_to_select=n_features)
+            X_scaled = rfe.fit_transform(X_scaled, y)
+
+        model = LogisticRegression(C=C, class_weight='balanced', max_iter=1000, random_state=42)
+        model.fit(X_scaled, y)
+
+        self.feature_engineers_.append(fe)
+        self.scalers_.append(scaler)
+        self.rfes_.append(rfe)
+        self.models_.append(model)
+
     def fit(self, X, y):
         self.classes_ = np.unique(y)
+        self.models_ = []
+        self.feature_engineers_ = []
+        self.scalers_ = []
+        self.rfes_ = []
 
-        # Model 1: Full features
-        fe1 = DiabetesFeatureEngineer(n_bins=4)
-        X1 = fe1.fit_transform(X)
-        scaler1 = StandardScaler()
-        X1_scaled = scaler1.fit_transform(X1)
-        model1 = LogisticRegression(C=0.5, class_weight='balanced', max_iter=1000, random_state=42)
-        model1.fit(X1_scaled, y)
-        self.feature_engineers_.append(fe1)
-        self.scalers_.append(scaler1)
-        self.rfes_.append(None)
-        self.models_.append(model1)
-
-        # Model 2: RFE 8
-        fe2 = DiabetesFeatureEngineer(n_bins=4)
-        X2 = fe2.fit_transform(X)
-        scaler2 = StandardScaler()
-        X2_scaled = scaler2.fit_transform(X2)
-        rfe2 = RFE(LogisticRegression(C=1.0, max_iter=1000, random_state=42), n_features_to_select=8)
-        X2_rfe = rfe2.fit_transform(X2_scaled, y)
-        model2 = LogisticRegression(C=0.5, class_weight='balanced', max_iter=1000, random_state=42)
-        model2.fit(X2_rfe, y)
-        self.feature_engineers_.append(fe2)
-        self.scalers_.append(scaler2)
-        self.rfes_.append(rfe2)
-        self.models_.append(model2)
-
-        # Model 3: RFE 10
-        fe3 = DiabetesFeatureEngineer(n_bins=4)
-        X3 = fe3.fit_transform(X)
-        scaler3 = StandardScaler()
-        X3_scaled = scaler3.fit_transform(X3)
-        rfe3 = RFE(LogisticRegression(C=1.0, max_iter=1000, random_state=42), n_features_to_select=10)
-        X3_rfe = rfe3.fit_transform(X3_scaled, y)
-        model3 = LogisticRegression(C=0.5, class_weight='balanced', max_iter=1000, random_state=42)
-        model3.fit(X3_rfe, y)
-        self.feature_engineers_.append(fe3)
-        self.scalers_.append(scaler3)
-        self.rfes_.append(rfe3)
-        self.models_.append(model3)
+        # 5 diverse models
+        self._add_model(X, y, n_features=None, C=0.5)   # Full features
+        self._add_model(X, y, n_features=6, C=0.5)      # RFE 6
+        self._add_model(X, y, n_features=8, C=0.5)      # RFE 8 (previous winner)
+        self._add_model(X, y, n_features=10, C=0.5)     # RFE 10
+        self._add_model(X, y, n_features=None, C=1.0)   # Full features, different C
 
         return self
 
@@ -128,5 +130,5 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
 def create_pipeline():
     return Pipeline([
         ('imputer', SimpleImputer(strategy='median')),
-        ('classifier', EnsembleClassifier(threshold=0.35))
+        ('classifier', FinalEnsembleClassifier(threshold=0.35))
     ])
