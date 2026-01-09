@@ -136,7 +136,7 @@ Optimize for multiple metrics simultaneously:
 | 1 | Hyperparameter tuning | Medium | +2-5% | ✅ Done |
 | 2 | Cost-sensitive optimization | Low | Domain-specific | ✅ Done |
 | 3 | Probability calibration options | Low | +1-2% | ✅ Done |
-| 4 | Ensemble thresholds | Medium | +1-3% stability | Pending |
+| 4 | Ensemble thresholds | Medium | +1-3% stability | ✅ Done |
 | 5 | Meta-learning detection | High | Find more winners | - |
 | 6 | Feature selection | Medium | +1-3% on high-dim | - |
 
@@ -180,6 +180,15 @@ Optimize for multiple metrics simultaneously:
 - Sigmoid (Platt): Logistic regression, stable, assumes sigmoid shape
 - True is backward-compatible alias for 'isotonic'
 - Raises ValueError for unknown methods
+
+### Ensemble Thresholds (Completed)
+- New `ensemble_thresholds=5` parameter for bootstrap-based voting
+- Each bootstrap sample produces its own optimal threshold
+- Final predictions use majority vote across all thresholds
+- More robust to threshold variance, especially on small datasets
+- Stores threshold_ensemble_, threshold_ensemble_mean, threshold_ensemble_std
+- Skipped when optimization is skipped (skip_if_confident)
+- 5 new tests (51 total passing)
 
 ---
 

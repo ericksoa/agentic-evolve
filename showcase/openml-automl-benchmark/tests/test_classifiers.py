@@ -565,6 +565,74 @@ class TestThresholdOptimizedClassifier:
         with pytest.raises(ValueError, match="Unknown calibration method"):
             clf.fit(X_train, y_train)
 
+    def test_ensemble_thresholds_basic(self, imbalanced_data):
+        """Test ensemble threshold optimization."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(
+            ensemble_thresholds=5,
+            skip_if_confident=False,
+            random_state=42
+        )
+        clf.fit(X_train, y_train)
+
+        # Check that ensemble was created
+        assert clf.threshold_ensemble_ is not None
+        assert len(clf.threshold_ensemble_) == 5
+        assert clf.diagnostics_['threshold_ensemble'] is not None
+
+        # Should still produce predictions
+        predictions = clf.predict(X_test)
+        assert len(predictions) == len(y_test)
+
+    def test_ensemble_thresholds_in_summary(self, imbalanced_data):
+        """Test that ensemble thresholds are shown in summary."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(
+            ensemble_thresholds=3,
+            skip_if_confident=False,
+            random_state=42
+        )
+        clf.fit(X_train, y_train)
+
+        summary = clf.summary()
+        assert "Ensemble Thresholds:" in summary
+        assert "Count: 3" in summary
+        assert "Mean:" in summary
+        assert "Std:" in summary
+
+    def test_ensemble_thresholds_none(self, imbalanced_data):
+        """Test that ensemble is None by default."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(random_state=42)
+        clf.fit(X_train, y_train)
+
+        assert clf.threshold_ensemble_ is None
+
+    def test_ensemble_thresholds_in_get_params(self, balanced_data):
+        """Test that ensemble_thresholds is included in get_params."""
+        clf = ThresholdOptimizedClassifier(
+            ensemble_thresholds=5,
+            random_state=42
+        )
+        params = clf.get_params()
+
+        assert 'ensemble_thresholds' in params
+        assert params['ensemble_thresholds'] == 5
+
+    def test_ensemble_thresholds_skipped_when_confident(self, balanced_data):
+        """Test that ensemble is skipped when optimization is skipped."""
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizedClassifier(
+            ensemble_thresholds=5,
+            skip_if_confident=True,
+            random_state=42
+        )
+        clf.fit(X_train, y_train)
+
+        # If optimization was skipped, ensemble should be None
+        if clf.optimization_skipped_:
+            assert clf.threshold_ensemble_ is None
+
 
 class TestAdaptiveEnsembleClassifier:
     """Tests for AdaptiveEnsembleClassifier."""

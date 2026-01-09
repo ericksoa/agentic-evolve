@@ -89,6 +89,7 @@ v4 adds several performance optimizations:
 | **Hyperparameter tuning** | Optional auto-tune base model with `tune_base_model=True` |
 | **Cost-sensitive mode** | Minimize FP/FN costs with `cost_matrix={'fp': 1, 'fn': 10}` |
 | **Calibration options** | `calibrate='isotonic'` or `calibrate='sigmoid'` (Platt scaling) |
+| **Ensemble thresholds** | `ensemble_thresholds=5` for majority-vote across bootstrap thresholds |
 | **Metric selection** | Optimize for F1, F2, recall, precision, or F0.5 |
 | **Bootstrap CIs** | Statistical confidence in benchmark results |
 | **Multiclass support** | Graceful fallback (no crashes on multiclass data) |
@@ -272,6 +273,24 @@ clf = ThresholdOptimizedClassifier(calibrate='platt')
 clf = ThresholdOptimizedClassifier(calibrate=True)  # Same as 'isotonic'
 ```
 
+### Ensemble Thresholds
+
+```python
+# Use multiple bootstrap-derived thresholds for robust predictions
+clf = ThresholdOptimizedClassifier(
+    ensemble_thresholds=5,  # Find 5 thresholds from bootstrap samples
+)
+clf.fit(X_train, y_train)
+
+# Predictions use majority vote across all thresholds
+predictions = clf.predict(X_test)
+
+# See ensemble stats
+print(clf.diagnostics_['threshold_ensemble'])       # List of 5 thresholds
+print(clf.diagnostics_['threshold_ensemble_mean'])  # Mean threshold
+print(clf.diagnostics_['threshold_ensemble_std'])   # Std dev (measure of stability)
+```
+
 ### Get Detailed Diagnostics
 
 ```python
@@ -314,6 +333,7 @@ ThresholdOptimizedClassifier(
     tune_base_model=False,    # Auto-tune hyperparameters with GridSearchCV
     cost_matrix=None,         # Cost-sensitive: {'fp': 1, 'fn': 10}
     calibrate=False,          # 'isotonic', 'sigmoid'/'platt', or False
+    ensemble_thresholds=None, # None or int>1 for bootstrap voting
     random_state=42
 )
 ```

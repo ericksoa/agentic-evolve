@@ -118,6 +118,14 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         - Fraud: FP might be acceptable to catch more fraud
         Note: When cost_matrix is set, optimize_for is ignored.
 
+    ensemble_thresholds : int or None, default=None
+        Number of bootstrap-derived thresholds for ensemble prediction.
+        When set to n > 1, trains on n bootstrap samples and finds optimal
+        threshold for each. Final prediction uses majority vote across
+        all thresholds. More robust but slower fitting.
+        - None or 1: Use single threshold (default behavior)
+        - n > 1: Use n thresholds with majority vote
+
     random_state : int or None, default=42
         Random state for reproducibility.
 
@@ -168,6 +176,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         skip_if_confident: bool = True,
         tune_base_model: bool = False,
         cost_matrix: Optional[Dict[str, float]] = None,
+        ensemble_thresholds: Optional[int] = None,
         random_state: int = 42,
     ):
         self.base_estimator = base_estimator
@@ -180,6 +189,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         self.skip_if_confident = skip_if_confident
         self.tune_base_model = tune_base_model
         self.cost_matrix = cost_matrix
+        self.ensemble_thresholds = ensemble_thresholds
         self.random_state = random_state
 
     def _get_base_estimator(self, n_samples: int = None) -> BaseEstimator:
@@ -397,6 +407,58 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
                 f"Unknown calibration method: {self.calibrate}. "
                 "Use False, True, 'isotonic', 'sigmoid', or 'platt'."
             )
+
+    def _find_ensemble_thresholds(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        threshold_range: Tuple[float, float],
+        n_thresholds: int
+    ) -> list:
+        """
+        Find optimal thresholds from bootstrap samples.
+
+        Each bootstrap sample produces its own optimal threshold, and
+        the ensemble of thresholds will be used for majority voting.
+        """
+        rng = np.random.RandomState(self.random_state)
+        n_samples = len(X)
+        thresholds = []
+
+        for i in range(n_thresholds):
+            # Bootstrap sample
+            indices = rng.choice(n_samples, size=n_samples, replace=True)
+            X_boot = X[indices]
+            y_boot = y[indices]
+
+            # Get out-of-bag indices for validation
+            oob_mask = np.ones(n_samples, dtype=bool)
+            oob_mask[indices] = False
+
+            if not oob_mask.any():
+                # All samples were in bootstrap, use a holdout
+                holdout = rng.choice(n_samples, size=n_samples // 5, replace=False)
+                oob_mask[holdout] = True
+
+            X_oob = X[oob_mask]
+            y_oob = y[oob_mask]
+
+            if len(y_oob) < 10:
+                # Not enough OOB samples, use full sample
+                X_oob, y_oob = X_boot, y_boot
+
+            # Train model on bootstrap
+            model = self._get_base_estimator(n_samples)
+            model.fit(X_boot, y_boot)
+
+            # Get probabilities on OOB
+            probs = model.predict_proba(X_oob)[:, 1]
+
+            # Find optimal threshold
+            best_thresh, _ = self._optimize_from_probs(probs, y_oob, threshold_range)
+            thresholds.append(best_thresh)
+
+        return thresholds
 
     def _compute_imbalance(self, y: np.ndarray) -> float:
         """Compute class imbalance ratio."""
@@ -775,6 +837,18 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         else:
             self.scaler_ = None
 
+        # Step 4.5: Ensemble thresholds (if requested)
+        if self.ensemble_thresholds and self.ensemble_thresholds > 1 and not self.optimization_skipped_:
+            self.threshold_ensemble_ = self._find_ensemble_thresholds(
+                X, y, actual_range, self.ensemble_thresholds
+            )
+            self.diagnostics_['threshold_ensemble'] = self.threshold_ensemble_
+            self.diagnostics_['threshold_ensemble_mean'] = np.mean(self.threshold_ensemble_)
+            self.diagnostics_['threshold_ensemble_std'] = np.std(self.threshold_ensemble_)
+        else:
+            self.threshold_ensemble_ = None
+            self.diagnostics_['threshold_ensemble'] = None
+
         # Step 5: Get base model and optionally tune hyperparameters
         base_model = self._get_base_estimator(n_samples)
 
@@ -807,11 +881,23 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         return self.model_.predict_proba(X)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        """Predict class labels using optimized threshold."""
+        """Predict class labels using optimized threshold.
+
+        If ensemble_thresholds was used during fitting, predictions are
+        made by majority vote across all thresholds.
+        """
         proba = self.predict_proba(X)
 
         if len(self.classes_) == 2:
-            return (proba[:, 1] >= self.optimal_threshold_).astype(int)
+            if self.threshold_ensemble_ is not None:
+                # Majority vote across ensemble thresholds
+                votes = np.zeros(len(proba), dtype=int)
+                for thresh in self.threshold_ensemble_:
+                    votes += (proba[:, 1] >= thresh).astype(int)
+                # Majority vote: class 1 if more than half of thresholds agree
+                return (votes > len(self.threshold_ensemble_) / 2).astype(int)
+            else:
+                return (proba[:, 1] >= self.optimal_threshold_).astype(int)
         else:
             return self.classes_[np.argmax(proba, axis=1)]
 
@@ -828,6 +914,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             'skip_if_confident': self.skip_if_confident,
             'tune_base_model': self.tune_base_model,
             'cost_matrix': self.cost_matrix,
+            'ensemble_thresholds': self.ensemble_thresholds,
             'random_state': self.random_state,
         }
 
@@ -911,5 +998,14 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             lines.append(f"  Model: {tuning['model_type']}")
             lines.append(f"  Best params: {tuning['best_params']}")
             lines.append(f"  CV score: {tuning['best_score']:.3f}")
+
+        # Add ensemble threshold info if applicable
+        if d.get('threshold_ensemble'):
+            lines.append("")
+            lines.append("Ensemble Thresholds:")
+            lines.append(f"  Count: {len(d['threshold_ensemble'])}")
+            lines.append(f"  Mean: {d['threshold_ensemble_mean']:.3f}")
+            lines.append(f"  Std: {d['threshold_ensemble_std']:.3f}")
+            lines.append(f"  Range: [{min(d['threshold_ensemble']):.3f}, {max(d['threshold_ensemble']):.3f}]")
 
         return "\n".join(lines)
