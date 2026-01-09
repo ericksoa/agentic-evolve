@@ -87,6 +87,8 @@ v4 adds several performance optimizations:
 | **Auto model selection** | Better accuracy on large datasets (XGBoost/LightGBM for n≥2000) |
 | **XGBoost support** | Priority over LightGBM when available (often better accuracy) |
 | **Hyperparameter tuning** | Optional auto-tune base model with `tune_base_model=True` |
+| **Cost-sensitive mode** | Minimize FP/FN costs with `cost_matrix={'fp': 1, 'fn': 10}` |
+| **Calibration options** | `calibrate='isotonic'` or `calibrate='sigmoid'` (Platt scaling) |
 | **Metric selection** | Optimize for F1, F2, recall, precision, or F0.5 |
 | **Bootstrap CIs** | Statistical confidence in benchmark results |
 | **Multiclass support** | Graceful fallback (no crashes on multiclass data) |
@@ -255,6 +257,21 @@ print(clf.diagnostics_['cv_best_score'])  # Total cost at optimal threshold
 print(clf.diagnostics_['cost_matrix'])    # The cost matrix used
 ```
 
+### Probability Calibration
+
+```python
+# Isotonic calibration (non-parametric, more flexible)
+clf = ThresholdOptimizedClassifier(calibrate='isotonic')
+
+# Platt scaling (logistic, more stable on small datasets)
+clf = ThresholdOptimizedClassifier(calibrate='sigmoid')
+# or equivalently:
+clf = ThresholdOptimizedClassifier(calibrate='platt')
+
+# For backward compatibility, True = isotonic
+clf = ThresholdOptimizedClassifier(calibrate=True)  # Same as 'isotonic'
+```
+
 ### Get Detailed Diagnostics
 
 ```python
@@ -296,7 +313,7 @@ ThresholdOptimizedClassifier(
     skip_if_confident=True,   # Skip when detection says it won't help
     tune_base_model=False,    # Auto-tune hyperparameters with GridSearchCV
     cost_matrix=None,         # Cost-sensitive: {'fp': 1, 'fn': 10}
-    calibrate=False,          # Probability calibration (usually not needed)
+    calibrate=False,          # 'isotonic', 'sigmoid'/'platt', or False
     random_state=42
 )
 ```

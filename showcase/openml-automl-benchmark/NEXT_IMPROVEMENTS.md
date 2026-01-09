@@ -135,7 +135,7 @@ Optimize for multiple metrics simultaneously:
 |----------|---------|--------|---------------|--------|
 | 1 | Hyperparameter tuning | Medium | +2-5% | ✅ Done |
 | 2 | Cost-sensitive optimization | Low | Domain-specific | ✅ Done |
-| 3 | Probability calibration options | Low | +1-2% | Pending |
+| 3 | Probability calibration options | Low | +1-2% | ✅ Done |
 | 4 | Ensemble thresholds | Medium | +1-3% stability | Pending |
 | 5 | Meta-learning detection | High | Find more winners | - |
 | 6 | Feature selection | Medium | +1-3% on high-dim | - |
@@ -172,6 +172,14 @@ Optimize for multiple metrics simultaneously:
 - High FP cost → higher threshold (be more selective, accept more FN)
 - Use cases: medical diagnosis (FN worse), fraud detection (FN worse), spam (FP worse)
 - When cost_matrix is set, optimize_for is ignored (cost takes precedence)
+
+### Probability Calibration Options (Completed)
+- Extended `calibrate` parameter to accept method names
+- Options: False, True/'isotonic', 'sigmoid'/'platt'
+- Isotonic: Non-parametric, flexible, can overfit on small data
+- Sigmoid (Platt): Logistic regression, stable, assumes sigmoid shape
+- True is backward-compatible alias for 'isotonic'
+- Raises ValueError for unknown methods
 
 ---
 

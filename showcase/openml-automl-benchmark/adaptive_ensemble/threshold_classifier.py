@@ -88,9 +88,14 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
     scale_features : bool, default=True
         Whether to standardize features before fitting.
 
-    calibrate : bool, default=False
-        Whether to calibrate probabilities before threshold optimization.
-        Can help when model probabilities are poorly calibrated.
+    calibrate : bool or str, default=False
+        Probability calibration method. Options:
+        - False: No calibration (default)
+        - True or 'isotonic': Isotonic calibration (non-parametric)
+        - 'sigmoid' or 'platt': Platt scaling (logistic regression)
+        Calibration can help when model probabilities are poorly calibrated.
+        Isotonic is more flexible but can overfit on small datasets.
+        Platt scaling is more stable but assumes sigmoid-shaped probabilities.
 
     skip_if_confident : bool, default=True
         If True, skip threshold optimization when model is confident
@@ -159,7 +164,7 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         threshold_steps: int = 20,
         cv: int = 3,
         scale_features: bool = True,
-        calibrate: bool = False,
+        calibrate: Union[bool, str] = False,
         skip_if_confident: bool = True,
         tune_base_model: bool = False,
         cost_matrix: Optional[Dict[str, float]] = None,
@@ -374,6 +379,24 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         }
 
         return grid_search.best_estimator_, grid_search.best_params_
+
+    def _get_calibration_method(self) -> Optional[str]:
+        """
+        Get the calibration method to use based on the calibrate parameter.
+
+        Returns None if no calibration, or 'isotonic'/'sigmoid' for CalibratedClassifierCV.
+        """
+        if self.calibrate is False or self.calibrate is None:
+            return None
+        elif self.calibrate is True or self.calibrate == 'isotonic':
+            return 'isotonic'
+        elif self.calibrate in ('sigmoid', 'platt'):
+            return 'sigmoid'
+        else:
+            raise ValueError(
+                f"Unknown calibration method: {self.calibrate}. "
+                "Use False, True, 'isotonic', 'sigmoid', or 'platt'."
+            )
 
     def _compute_imbalance(self, y: np.ndarray) -> float:
         """Compute class imbalance ratio."""
@@ -630,11 +653,12 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
         # Fit model
         base_model = self._get_base_estimator(n_samples)
 
-        if self.calibrate:
+        calibration_method = self._get_calibration_method()
+        if calibration_method:
             self.model_ = CalibratedClassifierCV(
                 base_model,
                 cv=self.cv,
-                method='isotonic'
+                method=calibration_method
             )
         else:
             self.model_ = base_model
@@ -761,11 +785,12 @@ class ThresholdOptimizedClassifier(BaseEstimator, ClassifierMixin):
             self.diagnostics_['tuning'] = None
 
         # Step 6: Fit final model (with optional calibration)
-        if self.calibrate:
+        calibration_method = self._get_calibration_method()
+        if calibration_method:
             self.model_ = CalibratedClassifierCV(
                 base_model,
                 cv=self.cv,
-                method='isotonic'
+                method=calibration_method
             )
         else:
             self.model_ = base_model

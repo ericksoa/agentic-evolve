@@ -498,6 +498,73 @@ class TestThresholdOptimizedClassifier:
         assert 'cost_matrix' in params
         assert params['cost_matrix'] == {'fp': 2, 'fn': 3}
 
+    def test_calibration_isotonic(self, imbalanced_data):
+        """Test isotonic calibration."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(
+            calibrate='isotonic',
+            random_state=42
+        )
+        clf.fit(X_train, y_train)
+
+        # Should work and produce predictions
+        predictions = clf.predict(X_test)
+        assert len(predictions) == len(y_test)
+
+        # Probabilities should be in [0, 1]
+        proba = clf.predict_proba(X_test)
+        assert np.all(proba >= 0) and np.all(proba <= 1)
+
+    def test_calibration_sigmoid(self, imbalanced_data):
+        """Test sigmoid (Platt) calibration."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(
+            calibrate='sigmoid',
+            random_state=42
+        )
+        clf.fit(X_train, y_train)
+
+        predictions = clf.predict(X_test)
+        assert len(predictions) == len(y_test)
+
+    def test_calibration_platt_alias(self, imbalanced_data):
+        """Test that 'platt' is an alias for 'sigmoid'."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+        clf = ThresholdOptimizedClassifier(
+            calibrate='platt',
+            random_state=42
+        )
+        clf.fit(X_train, y_train)
+
+        predictions = clf.predict(X_test)
+        assert len(predictions) == len(y_test)
+
+    def test_calibration_true_defaults_to_isotonic(self, imbalanced_data):
+        """Test that calibrate=True defaults to isotonic."""
+        X_train, X_test, y_train, y_test = imbalanced_data
+
+        clf_true = ThresholdOptimizedClassifier(calibrate=True, random_state=42)
+        clf_isotonic = ThresholdOptimizedClassifier(calibrate='isotonic', random_state=42)
+
+        clf_true.fit(X_train, y_train)
+        clf_isotonic.fit(X_train, y_train)
+
+        # Both should produce predictions
+        pred_true = clf_true.predict(X_test)
+        pred_isotonic = clf_isotonic.predict(X_test)
+        assert len(pred_true) == len(pred_isotonic)
+
+    def test_calibration_invalid(self, balanced_data):
+        """Test that invalid calibration method raises ValueError."""
+        X_train, X_test, y_train, y_test = balanced_data
+        clf = ThresholdOptimizedClassifier(
+            calibrate='invalid_method',
+            random_state=42
+        )
+
+        with pytest.raises(ValueError, match="Unknown calibration method"):
+            clf.fit(X_train, y_train)
+
 
 class TestAdaptiveEnsembleClassifier:
     """Tests for AdaptiveEnsembleClassifier."""
