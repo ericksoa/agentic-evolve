@@ -1,16 +1,17 @@
 # Evolve SDK
 
-Agent SDK-powered evolutionary algorithm discovery with hierarchical agents, clean context per generation, and fine-grained control.
+Python SDK for evolutionary algorithm discovery using the Claude Agent SDK. Powers the `/evolve` family of skills with hierarchical agents, clean context per generation, and fine-grained control.
 
 ## Overview
 
-This is an alternative implementation of `/evolve` that uses the [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-python) for:
+The SDK orchestrates evolution through specialized subagents:
 
-- **Hierarchical agents**: Dedicated subagents for mutation, crossover, and evaluation
-- **Clean context**: Each subagent starts fresh, avoiding context bloat
-- **Parallel mutations**: Run multiple mutation attempts concurrently
-- **Validation hooks**: Block unsafe code before it executes
-- **Structured logging**: Full audit trail of all tool usage
+- **Initializer**: Creates diverse initial population
+- **Mutators**: Generate variants of promising solutions (parallel)
+- **Crossover**: Combines innovations from multiple parents
+- **Evaluator**: Measures fitness against benchmarks
+
+Each agent runs with **clean context**—they only see their specific task, not the full evolution history. This prevents context bloat and keeps agents focused.
 
 ## Installation
 
@@ -18,11 +19,8 @@ This is an alternative implementation of `/evolve` that uses the [Claude Agent S
 # From the sdk/ directory
 pip install -e .
 
-# With Agent SDK (required for actual evolution)
-pip install -e ".[sdk]"
-
-# For development
-pip install -e ".[dev]"
+# Claude Agent SDK is required for actual evolution
+pip install claude-agent-sdk
 ```
 
 ## Usage
@@ -30,14 +28,20 @@ pip install -e ".[dev]"
 ### As CLI
 
 ```bash
-# Basic usage
+# Performance optimization
+python -m evolve_sdk "faster sorting algorithm" --mode=perf
+
+# Size optimization (code golf)
 python -m evolve_sdk "shortest Python sort" --mode=size
+
+# ML optimization
+python -m evolve_sdk "improve F1 for classification" --mode=ml
 
 # With options
 python -m evolve_sdk "faster string search" \
     --mode=perf \
-    --max-generations=100 \
-    --population-size=20
+    --max-generations=20 \
+    --population-size=10
 
 # Resume previous evolution
 python -m evolve_sdk --resume
@@ -56,18 +60,20 @@ async def main():
         max_generations=50,
         parallel_mutations=True,
     )
-
     result = await runner.run()
     print(f"Champion: {result['champion']}")
 
 asyncio.run(main())
 ```
 
-### Via Skill (once integrated)
+### Via Skills
 
-```bash
-# Uses SDK under the hood
-/evolve-sdk shortest Python sort
+The `/evolve` skills are thin wrappers that call this SDK:
+
+```
+/evolve faster sorting algorithm      # Detects perf mode
+/evolve shortest Python solution      # Detects size mode
+/evolve improve accuracy              # Detects ml mode
 ```
 
 ## Architecture
@@ -86,67 +92,79 @@ EvolutionRunner (orchestrator)
         └── Measures fitness of all new solutions
 ```
 
-Each agent runs with **clean context** - they only see their specific task, not the full evolution history. This prevents context bloat and keeps agents focused.
-
 ## Configuration
 
-```python
-from evolve_sdk import EvolutionConfig
+### CLI Flags
 
-config = EvolutionConfig(
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--mode` | size | Optimization mode (size, perf, ml) |
+| `--max-generations` | 50 | Maximum generations |
+| `--population-size` | 10 | Population size |
+| `--plateau` | 5 | Stop after N gens without improvement |
+| `--no-parallel` | false | Run mutations sequentially |
+| `--model` | sonnet | Model for subagents |
+| `--config` | - | Path to evolve_config.json |
+
+### Config File
+
+```json
+{
+  "problem": "optimize sorting",
+  "mode": "perf",
+  "test_command": "python benchmark.py {solution}",
+  "starter_solutions": ["baseline.py"],
+  "max_generations": 20,
+  "population_size": 10
+}
+```
+
+### Programmatic
+
+```python
+from evolve_sdk import EvolutionRunner
+
+runner = EvolutionRunner(
     problem="...",
-    mode="size",                    # size, perf, or ml
-    max_generations=50,             # max generations
-    plateau_threshold=5,            # stop after N gens without improvement
-    population_size=10,             # solutions to maintain
-    elite_count=3,                  # top N to mutate each gen
-    mutation_variants=4,            # mutations per generation
-    parallel_mutations=True,        # run mutations concurrently
-    enable_validation_hooks=True,   # block unsafe code
-    blocked_imports=["os.system"],  # patterns to block
+    mode="size",
+    max_generations=50,
+    plateau_threshold=5,
+    population_size=10,
+    parallel_mutations=True,
+    test_command="python eval.py {solution}",
 )
 ```
 
-## Comparison with Standard `/evolve`
-
-| Feature | `/evolve` (skill) | `/evolve-sdk` |
-|---------|-------------------|---------------|
-| Context management | Shared context | Clean per-agent |
-| Parallel mutations | Sequential | Concurrent |
-| Validation hooks | None | Pre-execution blocking |
-| Structured logging | Basic | Full audit trail |
-| Programmatic control | Limited | Full Python control |
-| Distribution | Skill file | pip package |
-
 ## Directory Structure
+
+Evolution state is stored in `.evolve-sdk/<problem>/`:
 
 ```
 .evolve-sdk/<problem>/
 ├── evolution.json      # Full state (population, history)
-├── champion.json       # Best solution
-├── tool_usage.jsonl    # Audit log of all tool calls
+├── champion.json       # Best solution manifest
+├── benchmark.py        # Auto-generated evaluation harness
+├── generations.jsonl   # Per-generation log
 └── mutations/
     ├── gen0_a.py       # Initial population
     ├── gen0_b.py
     ├── gen1a.py        # Generation 1 mutations
-    ├── gen1b.py
     ├── gen1x.py        # Crossover
     └── ...
 ```
 
+## Mode-Specific Guidance
+
+The SDK reads mode-specific guidance from skill files in `.claude/commands/`:
+
+- `evolve-perf.md` - Evaluation contract, acceptance criteria for performance
+- `evolve-size.md` - Golf tricks, byte counting for size
+- `evolve-ml.md` - Overfitting detection, holdout validation for ML
+
+This allows domain expertise to be maintained separately from the SDK code.
+
 ## Requirements
 
 - Python 3.10+
-- Claude Code CLI installed (`brew install claude-code`)
 - Claude Agent SDK (`pip install claude-agent-sdk`)
 - Authenticated with Claude (`claude auth login`)
-
-## Coexistence with `/evolve`
-
-This SDK version is completely separate from the standard `/evolve` skill:
-
-- Different directory: `.evolve-sdk/` vs `.evolve/`
-- Different skill name: `/evolve-sdk` vs `/evolve`
-- No shared code or state
-
-You can use both in the same project without conflicts.

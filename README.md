@@ -1,207 +1,171 @@
-# /evolve
+# Agentic Evolve
 
-**Genetic algorithm optimization for any algorithmic problem.** Uses parallel Claude Code agents to evolve faster solutions through mutation, crossover, and selection—with Rust benchmarks for precise fitness measurement.
+**Evolutionary algorithm discovery powered by Claude.** Evolves novel solutions through LLM-driven mutation, crossover, and selection—optimizing for speed, size, or ML accuracy.
 
-Works on: sorting, searching, parsing, hashing, compression, numeric algorithms, data structures, and any problem where performance can be measured.
+## Features
 
-## How It Works
-
-The `/evolve` skill uses **parallel Claude Code agents** for true genetic algorithm evolution:
-
-### Agent-Based Architecture
-- **Dynamic agent scaling**: Analyzes problem to spawn 10-32 agents based on viable strategies
-- **Semantic crossover**: Agents combine innovations from parent solutions
-- **Adaptive stopping**: Runs until plateau (3 gens without >0.5% improvement)
-- **Smart budget**: Recommends budget based on problem complexity
-
-### Generation 1: Divergent Exploration
-- Analyze problem → determine viable algorithm families and optimization dimensions
-- Spawn N agents in parallel (one per viable strategy, typically 10-32)
-- Extract **innovations** from each solution (what makes it fast?)
-- Select top 4 with **diversity pressure** (max 2 from same algorithm family)
-
-### Generation 2+: Crossover + Mutation
-- **N/2 crossover agents**: Combine innovations from parent pairs
-- **N/2 mutation agents**: Refine top performers
-- Elitism: Never lose the champion
-- Checkpoint state to `evolution.json` for resume
-
-### Sandboxed & Autonomous
-
-Evolution runs unattended with full isolation:
-- **Isolated workspaces**: Each mutation runs in its own directory—no result stomping
-- **Security scanning**: Blocks dangerous patterns (shell exec, network, FFI) before execution
-- **Timeout enforcement**: Kills runaway mutations automatically
-- **Atomic results**: Aggregates results only after all parallel evals complete
-
-### Why Genetic Algorithms?
-
-Unlike "make it faster" prompting, true genetic algorithms:
-- **Explore diverse solutions** in parallel (not just refining one approach)
-- **Combine innovations** from different algorithm families via crossover
-- **Maintain population diversity** to avoid local optima
-- **Preserve winners** while still exploring new territory
-
-```
-Gen 1: Discovers lookup tables (O(1)) + fast doubling (O(log n))
-Gen 2: Crossover → hybrid with table for small n, doubling for large
-Gen 3: Mutation adds unsafe access to eliminate bounds checks
-```
+- **Three optimization modes**: Performance (ops/sec), Size (bytes), ML (F1/accuracy)
+- **Hierarchical agents**: Dedicated subagents for mutation, crossover, and evaluation
+- **Clean context**: Each agent starts fresh, avoiding context bloat
+- **Parallel mutations**: Run multiple mutation attempts concurrently
+- **Validation hooks**: Block unsafe code patterns before execution
+- **Resume support**: Checkpoint and continue evolution across sessions
 
 ## Quick Start
 
-### 1. Install the Skill
+### 1. Install the SDK
 
 ```bash
-# Copy the skill to your Claude commands directory
-cp .claude/commands/evolve.md ~/.claude/commands/
+# Create virtual environment (recommended)
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install the SDK and dependencies
+pip install -e sdk/
+pip install claude-agent-sdk
 ```
 
-### 2. Use It
+### 2. Install the Skills (optional)
 
 ```bash
-claude
-> /evolve fibonacci sequence
-> /evolve integer sorting
-> /evolve substring search
-> /evolve hash function for strings
-> /evolve JSON parser
-> /evolve LRU cache
+# Copy skills to your Claude commands directory
+cp .claude/commands/evolve*.md ~/.claude/commands/
 ```
 
-The system will:
-1. Analyze the problem → estimate viable algorithm families
-2. Generate Rust benchmarks with baselines to beat
-3. Spawn 10-32 agents in parallel (scales with problem complexity)
-4. Run evolution until plateau or budget exhausted
-5. Report champion with full innovation lineage
+### 3. Use It
 
-## Architecture
+**Via CLI:**
+```bash
+# Activate venv first
+source .venv/bin/activate
+
+# Performance optimization
+python -m evolve_sdk "faster sorting algorithm" --mode=perf
+
+# Size optimization (code golf)
+python -m evolve_sdk "shortest Python prime checker" --mode=size
+
+# ML optimization
+python -m evolve_sdk "improve F1 for classification" --mode=ml
+
+# Resume previous evolution
+python -m evolve_sdk --resume
+```
+
+**Via Claude Code skill:**
+```
+/evolve faster sorting algorithm
+/evolve shortest Python solution for ARC task
+/evolve improve accuracy on this classifier
+/evolve --resume
+```
+
+## How It Works
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         /evolve <problem>                        │
+│                    /evolve <problem>                             │
 │                                                                  │
-│  1. Analyze problem → identify algorithm families & optimizations│
-│  2. Scale agents: 10-32 based on viable strategies              │
-│  3. Generate Rust benchmark with trait + baselines              │
+│  1. Detect mode (perf/size/ml) from intent                      │
+│  2. Run: python -m evolve_sdk "<problem>" --mode=<mode>         │
 └─────────────────────────────────┬───────────────────────────────┘
                                   │
                                   ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    GENERATION 1: Exploration                     │
+│                    EvolutionRunner (SDK)                         │
 │                                                                  │
-│  Spawn N agents in parallel (one per viable strategy)           │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────┐       │
-│  │ algo_1  │ │ algo_2  │ │ algo_3  │ │ algo_4  │ │ ... │       │
-│  └────┬────┘ └────┬────┘ └────┬────┘ └────┬────┘ └──┬──┘       │
-│       └───────────┴───────────┴───────────┴─────────┘           │
-│                               │                                  │
-│                    [Evaluate all in parallel]                   │
-│                    [Extract innovations from each]               │
-│                    [Select top 4 with diversity]                │
-└─────────────────────────────────┬───────────────────────────────┘
-                                  │
-                                  ▼
-┌─────────────────────────────────────────────────────────────────┐
-│               GENERATION 2+: Crossover + Mutation                │
+│  ┌─────────────┐                                                │
+│  │ Initializer │ → Creates diverse initial population           │
+│  └──────┬──────┘                                                │
+│         │                                                        │
+│         ▼                                                        │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │              Generation Loop                             │    │
+│  │                                                          │    │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐               │    │
+│  │  │ Mutator  │  │ Mutator  │  │ Crossover│  (parallel)   │    │
+│  │  └────┬─────┘  └────┬─────┘  └────┬─────┘               │    │
+│  │       └─────────────┴─────────────┘                      │    │
+│  │                     │                                    │    │
+│  │                     ▼                                    │    │
+│  │              ┌───────────┐                               │    │
+│  │              │ Evaluator │ → Measure fitness             │    │
+│  │              └───────────┘                               │    │
+│  │                     │                                    │    │
+│  │              Select top solutions, repeat                │    │
+│  └─────────────────────────────────────────────────────────┘    │
 │                                                                  │
-│  CROSSOVER (N/2 agents):           MUTATION (N/2 agents):       │
-│  ┌──────────────────┐              ┌──────────────────┐         │
-│  │ parent1 × parent2│              │ tweak(best)      │         │
-│  │ parent1 × parent3│              │ specialize(best) │         │
-│  │ parent2 × parent4│              │ vectorize(best)  │         │
-│  │       ...        │              │       ...        │         │
-│  └────────┬─────────┘              └────────┬─────────┘         │
-│           └──────────────┬──────────────────┘                   │
-│                          ▼                                       │
-│              [Evaluate N offspring]                             │
-│              [Extract innovations]                               │
-│              [Select top 4 + elitism]                           │
-│                                                                  │
-│  Repeat until: plateau (3 gens) OR budget exhausted             │
-└─────────────────────────────────┬───────────────────────────────┘
-                                  │
-                                  ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     Rust Evaluator                               │
-│                                                                  │
-│  cargo build --release → benchmark → JSON fitness score         │
-│  Correctness gate: tests fail = fitness 0                       │
+│  Stop when: plateau OR max generations OR budget exhausted      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## Example Results
+## Optimization Modes
 
-| Problem | What Evolved | Improvement |
-|---------|--------------|-------------|
-| **Fibonacci** | Lookup table + unsafe access | **834M ops/sec** (30x vs iterative) |
-| **Sorting** | Radix + insertion hybrid | **71x** vs bubble sort |
-| **Integer parsing** | SWAR + lookup | +51% vs std |
-| **String search** | Rare-byte + memchr | +27% vs Boyer-Moore |
-
-### Fibonacci Evolution (2 generations)
-
-```
-Baselines:
-  naive (recursive):  4.6M ops/sec
-  iterative:         27.4M ops/sec
-  matrix exp:        94.8M ops/sec
-  lookup table:     810.4M ops/sec
-
-Gen 1: 10 agents → discovered lookup, matrix, fast-doubling
-Gen 2: crossover → unsafe lookup with get_unchecked
-
-Champion: 834.5M ops/sec (+3% vs lookup baseline, +18,142% vs naive)
-Innovation: bounds-free array access via unsafe
-```
-
-## Fitness Function
-
-```python
-# Base: speed ratio to best baseline
-speed_ratio = evolved_speed / best_baseline_speed
-
-# Scale to 0-1, cap at 2x improvement
-fitness = min(speed_ratio, 2.0) / 2.0
-
-# Bonus for beating all baselines
-if evolved_speed > best_baseline_speed:
-    fitness = min(fitness + 0.1, 1.0)
-
-# Correctness gate: 0 if tests fail
-if not correctness:
-    fitness = 0.0
-```
-
-## Why Rust Benchmarks?
-
-- **No JIT warmup**: Consistent timing from first run
-- **No GC pauses**: Predictable performance
-- **Native speed**: Measure algorithmic improvements, not runtime overhead
-- **LTO + codegen-units=1**: Maximum optimization for fair comparison
+| Mode | Metric | Use Case |
+|------|--------|----------|
+| **perf** | ops/sec, latency | Algorithm optimization, benchmarks |
+| **size** | bytes, characters | Code golf, minimal implementations |
+| **ml** | F1, accuracy, AUC | Feature engineering, model tuning |
 
 ## Project Structure
 
 ```
-.evolve/<problem>/           # Created per evolution
-├── rust/                    # Template/champion code (READ-ONLY during eval)
-│   ├── Cargo.toml
-│   └── src/
-│       ├── lib.rs           # Trait definition
-│       ├── baselines.rs     # Known algorithms to beat
-│       ├── evolved.rs       # Champion code
-│       └── benchmark.rs     # Performance measurement
-├── workspace/               # Ephemeral mutation workspaces (isolated)
-│   ├── gen3_mut0_abc123/   # Each mutation gets unique workspace
-│   ├── gen3_mut1_def456/
+agentic-evolve/
+├── .claude/commands/        # Skill files (thin SDK wrappers)
+│   ├── evolve.md           # Master dispatcher
+│   ├── evolve-perf.md      # Performance mode
+│   ├── evolve-size.md      # Size mode
+│   └── evolve-ml.md        # ML mode
+├── sdk/                     # Python SDK
+│   └── evolve_sdk/
+│       ├── runner.py       # EvolutionRunner orchestrator
+│       ├── agents/         # Subagent prompts
+│       └── hooks/          # Validation hooks
+├── showcase/                # Example evolution runs
+│   ├── santa-2025-packing/ # Kaggle bin packing
+│   ├── code-golf/          # ARC-AGI solutions
 │   └── ...
-├── results/                 # Aggregated results per generation
-│   └── gen3_results.json
-├── evaluator.py             # Fitness evaluation
-├── evolution.json           # Checkpoint for resume
-└── mutations/               # All tested mutations (archive)
+└── .evolve-sdk/             # Evolution state (created per run)
+    └── <problem>/
+        ├── evolution.json   # Full state
+        ├── champion.json    # Best solution
+        └── mutations/       # All tested variants
 ```
+
+## Example Results
+
+| Problem | Mode | Result | Improvement |
+|---------|------|--------|-------------|
+| Fibonacci | perf | 834M ops/sec | 30x vs iterative |
+| Prime checker | perf | 9.5M ops/sec | Sieve + 6k±1 |
+| ARC task 0520fde7 | size | 57 bytes | -29% from baseline |
+| TDE classification | ml | 0.76 F1 | +12% from baseline |
+
+## Configuration
+
+Use `evolve_config.json` for custom evaluation:
+
+```json
+{
+  "problem": "optimize sorting",
+  "mode": "perf",
+  "test_command": "python benchmark.py {solution}",
+  "max_generations": 20,
+  "population_size": 10
+}
+```
+
+Then run:
+```bash
+python -m evolve_sdk --config=evolve_config.json
+```
+
+## Requirements
+
+- Python 3.10+
+- Claude Code CLI (`brew install claude-code`)
+- Claude Agent SDK (`pip install claude-agent-sdk`)
+- Authenticated with Claude (`claude auth login`)
 
 ## License
 
