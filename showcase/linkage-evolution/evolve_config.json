@@ -1,0 +1,71 @@
+{
+  "description": "Evolve a 4-bar linkage mechanism to trace a figure-8 shape. The linkage can be 3D printed and demonstrated physically.",
+
+  "mode": "perf",
+
+  "evaluation": {
+    "test_command": "python3 evaluate.py {solution} --json --target=figure8",
+    "fitness_key": "fitness",
+    "valid_key": "valid",
+    "higher_is_better": true
+  },
+
+  "starter_solutions": [
+    "baseline.py"
+  ],
+
+  "target_file": "evolved_linkage.py",
+
+  "solution_format": {
+    "description": "Solution files must ONLY define 6 numeric variables - nothing else!",
+    "required_variables": ["L1", "L2", "L3", "L4", "Px", "Py"],
+    "example": "L1 = 4.0\nL2 = 1.5\nL3 = 3.5\nL4 = 3.0\nPx = 1.75\nPy = 1.0",
+    "CRITICAL": "Do NOT create classes, functions, or imports. Just 6 variable assignments."
+  },
+
+  "optimization_strategies": [
+    {
+      "name": "link_length_tuning",
+      "description": "Adjust individual link lengths (L1, L2, L3, L4)",
+      "hint": "Small changes to link lengths dramatically affect the coupler curve shape"
+    },
+    {
+      "name": "tracer_position",
+      "description": "Move the tracer point position (Px, Py) on the coupler",
+      "hint": "The tracer point location has huge impact on the curve - try different offsets"
+    },
+    {
+      "name": "grashof_optimization",
+      "description": "Adjust links to satisfy Grashof condition for full rotation",
+      "hint": "For full rotation: shortest + longest <= sum of other two"
+    },
+    {
+      "name": "proportional_scaling",
+      "description": "Scale link lengths while adjusting ratios",
+      "hint": "The shape depends on ratios between links, not absolute sizes"
+    }
+  ],
+
+  "constraints": [
+    "CRITICAL: Solution must ONLY contain 6 variable assignments: L1, L2, L3, L4, Px, Py",
+    "NO imports, NO classes, NO functions - just the 6 numbers",
+    "All link lengths (L1, L2, L3, L4) must be positive floats",
+    "Px can be any float (position along coupler)",
+    "Py can be any float (perpendicular offset)",
+    "Example valid solution: L1=4.0, L2=1.0, L3=3.0, L4=2.5, Px=1.5, Py=0.8"
+  ],
+
+  "linkage_physics": {
+    "L1": "Ground link - distance between the two fixed pivot points",
+    "L2": "Crank - the input link that rotates (typically shortest for full rotation)",
+    "L3": "Coupler - connects crank tip to follower tip",
+    "L4": "Follower - the output rocker pivoting at the second fixed point",
+    "Px": "Tracer X - distance along coupler from crank-coupler joint",
+    "Py": "Tracer Y - perpendicular offset from coupler line",
+    "grashof": "For full rotation: shortest + longest <= sum of other two links"
+  },
+
+  "resource_constraints": {
+    "max_local_threads": 4
+  }
+}

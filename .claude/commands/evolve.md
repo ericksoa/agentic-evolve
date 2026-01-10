@@ -158,6 +158,46 @@ After completion:
 
 ---
 
+## Baseline Selection: The Fitness Landscape
+
+**Critical insight**: Starting with a near-optimal solution can be counterproductive.
+
+### Why Suboptimal Baselines Often Work Better
+
+Evolution navigates a "fitness landscape" - imagine terrain where height = fitness:
+
+**Near-optimal start (local peak)**:
+- Small mutations either break correctness or don't improve
+- Remaining optimizations require simultaneous changes
+- Evolution gets stuck at a "local maximum"
+
+**Suboptimal start (valley with uphill paths)**:
+- Many single mutations can improve fitness
+- Diverse population emerges from different improvement paths
+- Crossover combines independently-discovered optimizations
+- Broader exploration of the search space
+
+### Guidelines for Baseline Selection
+
+| Scenario | Recommendation |
+|----------|----------------|
+| Known optimal exists | Start 20-50% worse to allow exploration |
+| Competing algorithms | Start with the simpler/worse one |
+| Hitting plateau quickly | Try a more naive baseline |
+| Many invalid mutations | Baseline may be too optimized already |
+
+**Example**: For sorting networks (n=16), starting from:
+- Odd-even mergesort (63 comparators, near-optimal) → Plateau quickly
+- Bubble sort (120 comparators, 2x optimal) → Rich optimization landscape
+
+### When to Use Near-Optimal Baselines
+
+- When you need to find **alternative** optimal solutions (not better ones)
+- When exploring minor variations on a known-good approach
+- When the fitness function rewards diversity, not just the metric
+
+---
+
 ## Directory Structure
 
 All modes use `.evolve-sdk/<problem>/`:

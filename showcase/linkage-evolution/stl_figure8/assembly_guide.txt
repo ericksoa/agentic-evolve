@@ -1,0 +1,32 @@
+4-BAR LINKAGE ASSEMBLY GUIDE
+========================================
+
+Evolved Linkage Parameters:
+  L1 (Ground):   4.480 units = 89.6 mm
+  L2 (Crank):    1.230 units = 24.6 mm
+  L3 (Coupler):  4.310 units = 86.2 mm
+  L4 (Follower): 2.780 units = 55.6 mm
+  Tracer Point:  (2.618, 1.500) on coupler
+
+Parts List:
+  - ground_plate.stl (1x) - Base with fixed pivot mounts
+  - crank.stl (1x) - Input link, attach to pivot A
+  - coupler.stl (1x) - With tracer point marker
+  - follower.stl (1x) - Attach to pivot D
+
+Hardware Needed:
+  - 4x M5 bolts (for pivots)
+  - 4x M5 nuts
+  - 8x M5 washers
+  - Optional: bearings for smoother motion
+
+Assembly:
+  1. Mount ground plate to a stable surface
+  2. Attach crank to pivot A (left fixed pivot)
+  3. Attach follower to pivot D (right fixed pivot)
+  4. Connect coupler between crank and follower
+  5. The tracer point marker shows where to attach a pen
+
+Operation:
+  - Rotate the crank (L2) to trace the evolved curve
+  - Attach a pen to the tracer point for drawing
