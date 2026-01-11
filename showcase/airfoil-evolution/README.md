@@ -47,27 +47,31 @@ python3 export_stl.py evolved_airfoil.json wing_section.stl --chord=100 --span=5
 
 ## Results
 
-**Evolution achieved 29% improvement over baseline!**
+**Evolution achieved 40% improvement over baseline!**
 
 ![Airfoil Comparison](images/airfoil_comparison.png)
 
 | Metric | Baseline | Evolved | Improvement |
 |--------|----------|---------|-------------|
-| **L/D max** | 83 | **107** | +29% |
-| **Cl max** | 1.40 | **1.75** | +25% |
-| **Max thickness** | 10.8% | 9.5% | -12% |
-| **Max camber** | 0.65% | **3.5%** | +438% |
+| **L/D max** | 83 | **117** | +40% |
+| **Cl max** | 1.40 | **2.02** | +44% |
+| **Max thickness** | 10.8% | 11.9% | +10% |
+| **Max camber** | 0.65% | **5.6%** | +760% |
 
 ### Key Discovery
 
-The evolution discovered that **dramatically increasing camber** (from 0.65% to 3.5%) while slightly reducing thickness yields much higher L/D ratios. This high-camber design trades structural depth for aerodynamic efficiency—ideal for low-speed drone applications.
+The evolution discovered an extreme **high-camber, flat-bottom** design:
+- Upper surface: maximum curvature (all coefficients at 0.3)
+- Lower surface: nearly flat (all coefficients at -0.01)
+
+This creates a highly asymmetric airfoil optimized purely for lift efficiency at low Reynolds numbers—ideal for slow-flying drones where structural constraints are less critical.
 
 ### Evolved CST Coefficients
 
 ```json
 {
-  "upper_coeffs": [0.193, 0.250, 0.200, 0.150, 0.100],
-  "lower_coeffs": [-0.045, -0.034, -0.023, -0.013, -0.010]
+  "upper_coeffs": [0.3, 0.3, 0.3, 0.3, 0.3],
+  "lower_coeffs": [-0.01, -0.01, -0.01, -0.01, -0.01]
 }
 ```
 
@@ -158,7 +162,7 @@ Where:
 | NACA 2412 | Cambered | ~55 | 1.2 | General purpose |
 | SD7003 | Low-Re | ~75 | 1.0 | Optimized for drones |
 | E387 | Sailplane | ~85 | 1.1 | High performance |
-| **Evolved** | **High-camber** | **107** | **1.75** | **+26% vs E387!** |
+| **Evolved** | **Extreme camber** | **117** | **2.02** | **+38% vs E387!** |
 
 ---
 
@@ -274,8 +278,8 @@ python3 evaluate.py baseline.json
 
 | Metric | Baseline | Target | Stretch | **Achieved** |
 |--------|----------|--------|---------|--------------|
-| L/D max | ~83 | >75 | >85 | **107 ✅** |
-| Cl_max | ~1.4 | >1.1 | >1.3 | **1.75 ✅** |
+| L/D max | ~83 | >75 | >85 | **117 ✅** |
+| Cl_max | ~1.4 | >1.1 | >1.3 | **2.02 ✅** |
 | Valid geometry | ✓ | ✓ | ✓ | **✅** |
 | 3D printable | ✓ | ✓ | ✓ | **✅** |
 
