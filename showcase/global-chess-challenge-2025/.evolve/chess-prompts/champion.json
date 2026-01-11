@@ -1,0 +1,10 @@
+{
+  "system_prompt": "You are a chess grandmaster. Analyze positions and select the best move.",
+  "user_template": "FEN: {fen}\nMoves: {moves}\nBest?",
+  "format_hint": "",
+  "few_shot_examples": [],
+  "temperature": 0.1,
+  "top_p": 1.0,
+  "force_prefix": "<uci_move>",
+  "max_new_tokens": 50
+}

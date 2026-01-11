@@ -1,0 +1,59 @@
+============================================================
+Checkpoint-1000 Test Results
+============================================================
+Tested: 2026-01-10 12:25
+
+Training Progress: Step 1000/5064 (20% complete)
+Metrics at step 1000:
+  - Loss: ~0.49
+  - Token Accuracy: ~85.5%
+
+Test Results:
+============================================================
+
+Position 1: After 1.e4 (Black to move)
+  FEN: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
+  Response: Outputs FEN strings, no <uci_move> tag
+  Result: NO VALID MOVE
+
+Position 2: Sicilian Defense (White to move)
+  FEN: rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2
+  Response: Outputs move-like strings (b2b3, b2b4, c2c3...) but wrong format
+  Result: NO VALID MOVE
+
+Position 3: Italian Game (White to move)
+  FEN: r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4
+  Response: Outputs f3g5 (a chess move!) but not in <uci_move> tags
+  Result: NO VALID MOVE
+
+============================================================
+SUMMARY
+============================================================
+Correct format (<uci_move>): 0/3
+Legal moves: 0/3
+
+ANALYSIS:
+---------
+Progress from checkpoint-500 to checkpoint-1000:
+- checkpoint-500: Output garbage tokens ("ISP ISP ISP...")
+- checkpoint-1000: Output chess-related content (FEN strings, UCI moves)
+
+The model IS learning:
+  - It knows about FEN position strings
+  - It outputs valid UCI move patterns (b2b3, f3g5)
+  - It just hasn't learned the exact output FORMAT yet
+
+The model needs to learn:
+  - Use <uci_move>MOVE</uci_move> tags
+  - Use <rationale>EXPLANATION</rationale> tags
+  - Stop after producing one move
+
+NEXT STEPS:
+-----------
+1. Training is at 20% - needs more epochs
+2. Check again at checkpoint-1500 or checkpoint-2000
+3. Final model should be ready in ~6-7 more hours
+4. Final model path: ~/chess-training/models-v2/final/
+
+Training should continue improving. The transition from garbage to chess-related
+output is a good sign the model is learning the domain.

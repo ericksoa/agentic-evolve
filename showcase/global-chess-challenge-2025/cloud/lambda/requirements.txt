@@ -1,0 +1,37 @@
+# Global Chess Challenge 2025 - Cloud Training Requirements
+# For Lambda Labs GPU instances (A10, A100, H100)
+
+# Core ML frameworks
+torch>=2.1.0
+transformers>=4.36.0
+accelerate>=0.25.0
+peft>=0.7.0
+bitsandbytes>=0.41.0
+datasets>=2.16.0
+
+# Chess libraries
+python-chess>=1.10.0
+
+# Training utilities
+trl>=0.7.0
+wandb>=0.16.0
+tensorboard>=2.15.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+tqdm>=4.66.0
+
+# Evaluation
+stockfish>=3.28.0
+
+# Utilities
+python-dotenv>=1.0.0
+requests>=2.31.0
+huggingface_hub>=0.20.0
+
+# Flash Attention 2 (optional but recommended for speed)
+# Install separately: pip install flash-attn --no-build-isolation
+
+# DeepSpeed for multi-GPU training (optional)
+# deepspeed>=0.12.0

@@ -1,0 +1,39 @@
+# Model files (too large for git)
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.h5
+
+# Data files (large)
+data/*.pgn
+data/*.jsonl
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# Environment
+.env
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Results (can be regenerated)
+results/
+
+# Temp files
+*.tmp
+*.log
