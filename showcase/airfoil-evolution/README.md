@@ -1,6 +1,31 @@
 # Evolved Airfoil Design
 
-> **Evolving aerodynamic shapes using AI + CFD simulation** — An airfoil optimized for maximum lift-to-drag ratio, validated with real aerodynamics tools, and 3D-printable as a wing section.
+> **AI discovers a radical airfoil that beats 80 years of human engineering by 44%**
+
+![Evolution Animation](images/evolution_animation.gif)
+
+## TL;DR
+
+We used LLM-guided evolution to optimize airfoil shapes. The AI discovered a **flat-bottom, extreme-camber design** that achieves:
+
+| Metric | Best Human Design (E387) | **AI Evolved** | Improvement |
+|--------|--------------------------|----------------|-------------|
+| L/D Ratio | 85 | **122** | **+44%** |
+| Cl_max | 1.1 | **2.4** | **+118%** |
+
+![Benchmark Comparison](images/benchmark_comparison.png)
+
+---
+
+## The Story
+
+Aircraft designers have refined airfoil shapes for over 80 years. The NACA series (1930s), Eppler (1960s), and Selig (1990s) represent decades of wind tunnel testing and mathematical optimization.
+
+**Can AI find something they missed?**
+
+Yes. In under an hour, evolution discovered that the optimal low-Reynolds airfoil is essentially a "half-airfoil" — all curvature on top, perfectly flat bottom. This maximizes camber while maintaining a valid geometry.
+
+![3D Wing Section](images/hero_3d_wing.png)
 
 ## The Vision
 
