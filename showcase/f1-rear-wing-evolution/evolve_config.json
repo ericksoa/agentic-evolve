@@ -10,6 +10,15 @@
     "higher_is_better": true
   },
 
+  "trust": {
+    "enabled": true,
+    "accept_threshold": 0.7,
+    "suspicious_jump_pct": 15.0,
+    "max_escalation_level": 2,
+    "require_adversary_for_champion": true,
+    "extended_test_command": "python3 evaluate_physics.py {solution} --json --circuit=monaco && python3 evaluate_physics.py {solution} --json --circuit=monza"
+  },
+
   "starter_solutions": [
     "baseline_physics.json"
   ],

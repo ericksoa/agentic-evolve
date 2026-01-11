@@ -1,32 +1,16 @@
 {
-  "main_upper": [
-    0.20381093440442047,
-    0.18382706639268379,
-    0.17803115332967417,
-    0.2179753042973404
-  ],
-  "main_lower": [
-    -0.1,
-    -0.08,
-    -0.05,
-    -0.02
-  ],
-  "main_angle": 15.242646317693328,
-  "flap_upper": [
-    0.1801840828728323,
-    0.22337225024019483,
-    0.18922699441415902,
-    0.10568168739446455
-  ],
-  "flap_lower": [
-    -0.08,
-    -0.06,
-    -0.03,
-    -0.01
-  ],
-  "flap_angle": 14.176639484786701,
+  "main_upper": [0.24, 0.22, 0.20, 0.25],
+  "main_lower": [-0.12, -0.09, -0.06, -0.03],
+  "main_angle": 15.5,
+  "flap_upper": [0.20, 0.26, 0.22, 0.14],
+  "flap_lower": [-0.09, -0.07, -0.04, -0.02],
+  "flap_angle": 14.5,
   "flap_gap": 0.02183776513038328,
-  "_fitness": 61.9648,
-  "_improvement": "+0.4% from extended evolution",
-  "_confidence": 0.975
+  "_fitness": 62.38,
+  "_improvement": "+0.68% from trust-aware evolution",
+  "_confidence": 0.977,
+  "_trust_score": 0.95,
+  "_adversary_validated": true,
+  "_mutation_path": "high_camber_plus_angles",
+  "_circuits_tested": ["silverstone", "monaco", "monza"]
 }
