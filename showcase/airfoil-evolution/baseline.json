@@ -1,0 +1,7 @@
+{
+  "upper_coeffs": [0.18, 0.16, 0.14, 0.12, 0.10],
+  "lower_coeffs": [-0.14, -0.13, -0.11, -0.09, -0.08],
+  "zte": 0.001,
+  "_description": "Baseline cambered airfoil similar to NACA 2412",
+  "_notes": "Upper and lower coefficients define CST shape functions. Evolution should adjust these to optimize L/D ratio."
+}

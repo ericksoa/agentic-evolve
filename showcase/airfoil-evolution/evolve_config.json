@@ -1,0 +1,88 @@
+{
+  "description": "Evolve an airfoil shape optimized for maximum lift-to-drag ratio at Re=200,000 (typical drone/RC aircraft). Uses CST parameterization evaluated with XFOIL.",
+
+  "mode": "perf",
+
+  "evaluation": {
+    "test_command": "python3 evaluate.py {solution} --json --objective=max_ld --reynolds=200000",
+    "fitness_key": "fitness",
+    "valid_key": "valid",
+    "higher_is_better": true
+  },
+
+  "starter_solutions": [
+    "baseline.json"
+  ],
+
+  "target_file": "evolved_airfoil.json",
+
+  "solution_format": {
+    "description": "JSON file with CST airfoil parameters",
+    "required_fields": ["upper_coeffs", "lower_coeffs"],
+    "optional_fields": ["zte"],
+    "example": {
+      "upper_coeffs": [0.18, 0.16, 0.14, 0.12, 0.10],
+      "lower_coeffs": [-0.14, -0.13, -0.11, -0.09, -0.08],
+      "zte": 0.001
+    },
+    "constraints": {
+      "coefficients": "Typically -0.3 to 0.3, 4-6 values each",
+      "zte": "Trailing edge thickness, typically 0 to 0.01"
+    }
+  },
+
+  "optimization_strategies": [
+    {
+      "name": "camber_adjustment",
+      "description": "Modify difference between upper and lower coefficients to change camber",
+      "hint": "More camber = higher Cl but also higher Cd. Find the sweet spot."
+    },
+    {
+      "name": "thickness_distribution",
+      "description": "Adjust where maximum thickness occurs along chord",
+      "hint": "Earlier max thickness = more leading edge suction. Later = lower drag."
+    },
+    {
+      "name": "leading_edge_shape",
+      "description": "Tune first coefficients to modify leading edge radius",
+      "hint": "Sharper LE = lower drag but earlier stall. Rounder = delayed stall."
+    },
+    {
+      "name": "trailing_edge_shape",
+      "description": "Tune last coefficients for trailing edge closure",
+      "hint": "Cusp vs reflexed trailing edge affects Cm and Cd."
+    },
+    {
+      "name": "symmetry_breaking",
+      "description": "Experiment with asymmetric upper/lower shapes",
+      "hint": "Nature isn't symmetric - try unconventional combinations."
+    }
+  ],
+
+  "constraints": [
+    "Airfoil must not self-intersect (upper above lower everywhere)",
+    "Maximum thickness must be 6-18% of chord",
+    "Maximum camber should be less than 10% of chord",
+    "Coefficients should stay within -0.4 to 0.4 range",
+    "Use 4-6 coefficients per surface (more = finer control but harder to optimize)"
+  ],
+
+  "physics_background": {
+    "reynolds_number": "Re=200,000 is typical for small drones (50cm chord at 10m/s)",
+    "lift_coefficient": "Cl is dimensionless lift force. Typical cruise: 0.4-0.8",
+    "drag_coefficient": "Cd is dimensionless drag. Good airfoils: 0.005-0.020",
+    "L_D_ratio": "Lift/Drag ratio. Higher = more efficient. Target: 50-100+",
+    "stall": "At high angle of attack, flow separates and lift drops. Higher Cl_max = later stall."
+  },
+
+  "known_benchmarks": {
+    "NACA_0012": {"type": "symmetric", "L_D_max": "~40 at Re=200k"},
+    "NACA_2412": {"type": "cambered", "L_D_max": "~50-60 at Re=200k"},
+    "SD7003": {"type": "low_Re_optimized", "L_D_max": "~70-80 at Re=200k"},
+    "E387": {"type": "low_Re_sailplane", "L_D_max": "~80-90 at Re=200k"}
+  },
+
+  "resource_constraints": {
+    "max_local_threads": 4
+  }
+}

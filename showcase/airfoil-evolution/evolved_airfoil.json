@@ -1,0 +1,24 @@
+{
+  "upper_coeffs": [
+    0.193,
+    0.25,
+    0.2,
+    0.15,
+    0.1
+  ],
+  "lower_coeffs": [
+    -0.045,
+    -0.034,
+    -0.023,
+    -0.013,
+    -0.01
+  ],
+  "zte": 0.0,
+  "_description": "Evolved airfoil optimized for max L/D at Re=200,000",
+  "_evolution": "Sobol quasi-random search with adaptive refinement",
+  "_fitness": 107.43,
+  "_L_D_max": 107.43,
+  "_Cl_max": 1.75,
+  "_max_thickness": 0.095,
+  "_max_camber": 0.035
+}
