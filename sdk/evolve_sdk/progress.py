@@ -196,6 +196,8 @@ class ProgressDisplay:
             fitness = r.get("fitness", 0)
             decision = r.get("decision", "?")
             error = r.get("error", "")
+            trust_score = r.get("trust_score")
+            original_fitness = r.get("original_fitness")
 
             if old_champion:
                 delta = ((fitness / old_champion.get("fitness", 1)) - 1) * 100
@@ -206,10 +208,17 @@ class ProgressDisplay:
             is_new_champ = new_champion and r.get("file") == new_champion.get("file")
             champ_marker = " ← NEW CHAMPION" if is_new_champ else ""
 
+            # Add trust indicator if present
+            trust_str = ""
+            if trust_score is not None and original_fitness is not None:
+                trust_str = f" [T:{trust_score:.1f}]"
+                if trust_score < 1.0:
+                    champ_marker = f"{champ_marker} (adj:{original_fitness:.2f}→{fitness:.2f})"
+
             if error:
                 line = f"    [{variant.upper()}] {mutation_type:<18} FAIL   {error[:25]}"
             else:
-                line = f"    [{variant.upper()}] {mutation_type:<18} {fitness:.2f}x {delta_str:>7} {decision}{champ_marker}"
+                line = f"    [{variant.upper()}] {mutation_type:<16} {fitness:.2f}x {delta_str:>7}{trust_str} {decision}{champ_marker}"
 
             print(self._box_line(self.BOX_V_LIGHT, " ", self.BOX_V_LIGHT, line))
 

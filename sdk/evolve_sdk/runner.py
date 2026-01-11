@@ -24,12 +24,13 @@ except ImportError:
     ClaudeAgentOptions = dict
     HookMatcher = dict
 
-from .config import EvolutionConfig
+from .config import EvolutionConfig, TrustConfig
 from .agents import (
     INITIALIZER_SYSTEM, get_initializer_prompt,
     MUTATOR_SYSTEM, get_mutator_prompt,
     CROSSOVER_SYSTEM, get_crossover_prompt,
     EVALUATOR_SYSTEM, get_evaluator_prompt,
+    ADVERSARY_SYSTEM, get_adversary_prompt, get_escalation_prompt,
 )
 from .hooks import create_validation_hook, create_logging_hook, set_log_context
 from .progress import (
@@ -282,9 +283,27 @@ class EvolutionRunner:
         # Evaluate all new solutions
         old_champion = self.champion.copy() if self.champion else None
 
+        # Build parent map for adversary (maps output file -> parent solution)
+        parent_map = {}
+        for i, parent in enumerate(top_n):
+            if i >= self.config.mutation_variants:
+                break
+            variant = chr(ord("a") + i)
+            output_file = str(self.mutations_dir / f"gen{self.generation}{variant}.py")
+            parent_map[output_file] = parent
+
         if valid_mutations:
             files_to_eval = [m["file"] for m in valid_mutations]
             evaluations = await self._spawn_evaluator(files_to_eval)
+
+            # Run adversary challenge on evaluations (if trust system enabled)
+            if self.config.trust.enabled:
+                print("\n  [TRUST] Running adversary validation...")
+                evaluations = await self._challenge_candidates(
+                    candidates=valid_mutations,
+                    parent_map=parent_map,
+                    evaluations=evaluations,
+                )
 
             # Match evaluations back to mutations and build results
             eval_by_file = {e.get("file"): e for e in evaluations}
@@ -293,9 +312,15 @@ class EvolutionRunner:
                 fitness = eval_result.get("fitness", 0)
                 is_valid = eval_result.get("valid", False)
 
+                # Check adversary recommendation
+                adversary_rejected = (
+                    eval_result.get("adversary_reviewed", False)
+                    and eval_result.get("adversary_recommendation") == "reject"
+                )
+
                 # Determine decision
                 champion_fitness = old_champion.get("fitness", 0) if old_champion else 0
-                if is_valid and fitness > 0:
+                if is_valid and fitness > 0 and not adversary_rejected:
                     decision = "KEEP"
                     # Add to population
                     combined = {**m, **eval_result}
@@ -303,14 +328,24 @@ class EvolutionRunner:
                 else:
                     decision = "DROP"
 
-                gen_results.append({
+                # Build result entry with trust info
+                result_entry = {
                     "variant": m.get("variant", "?"),
                     "mutation_type": m.get("mutation_type", "unknown"),
                     "fitness": fitness,
                     "decision": decision,
                     "file": m.get("file"),
                     "error": eval_result.get("error", "") if not is_valid else "",
-                })
+                }
+
+                # Add trust info if reviewed
+                if eval_result.get("adversary_reviewed"):
+                    result_entry["trust_score"] = eval_result.get("trust_score", 1.0)
+                    result_entry["original_fitness"] = eval_result.get("original_fitness", fitness)
+                    if adversary_rejected:
+                        result_entry["error"] = "Adversary rejected"
+
+                gen_results.append(result_entry)
 
         # Selection: keep top N
         self.population.sort(key=lambda x: x.get("fitness", 0), reverse=True)
@@ -411,6 +446,212 @@ class EvolutionRunner:
         if parsed and "evaluations" in parsed:
             return parsed["evaluations"]
         return []
+
+    async def _spawn_adversary(
+        self,
+        candidate: dict,
+        parent: dict | None,
+        evaluation_result: dict,
+    ) -> dict[str, Any]:
+        """
+        Spawn an adversary agent to challenge a candidate solution.
+
+        The adversary reviews the candidate and returns:
+        - trust_score: 0.0 to 1.0
+        - escalation_level: 0-3
+        - recommendation: accept/challenge/reject
+        - adjusted_fitness: raw_fitness * trust_factor
+        """
+        population_best = self.champion.get("fitness", 0) if self.champion else 0
+
+        prompt = get_adversary_prompt(
+            candidate=candidate,
+            parent=parent,
+            evaluation_result=evaluation_result,
+            mode=self.config.mode,
+            generation=self.generation,
+            population_best=population_best,
+        )
+
+        result = await self._run_agent(
+            system=ADVERSARY_SYSTEM,
+            prompt=prompt,
+            tools=["Read", "Bash", "Glob"],
+            max_turns=self.config.max_turns_per_agent,
+        )
+
+        parsed = self._parse_json_from_result(result)
+        if parsed:
+            return parsed
+
+        # Default response if parsing fails
+        return {
+            "trust_score": 0.5,
+            "escalation_level": 0,
+            "flags": ["Could not parse adversary response"],
+            "recommendation": "accept",
+            "adjusted_fitness": evaluation_result.get("fitness", 0) * 0.5,
+            "analysis": "Adversary response parsing failed, applying default trust penalty",
+        }
+
+    async def _run_escalation(
+        self,
+        candidate: dict,
+        trust_result: dict,
+        escalation_level: int,
+    ) -> dict[str, Any]:
+        """
+        Run escalated validation for a candidate flagged by the adversary.
+
+        Higher escalation levels run more comprehensive tests.
+        """
+        prompt = get_escalation_prompt(
+            candidate=candidate,
+            trust_result=trust_result,
+            escalation_level=escalation_level,
+            mode=self.config.mode,
+            extended_test_command=self.config.trust.extended_test_command,
+        )
+
+        result = await self._run_agent(
+            system=ADVERSARY_SYSTEM,  # Reuse adversary system for escalation
+            prompt=prompt,
+            tools=["Read", "Bash", "Glob"],
+            max_turns=self.config.max_turns_per_agent + 5,  # Extra turns for thorough testing
+        )
+
+        parsed = self._parse_json_from_result(result)
+        if parsed:
+            return parsed
+
+        # Default to rejection if parsing fails during escalation
+        return {
+            "escalation_passed": False,
+            "revised_fitness": 0,
+            "revised_trust": 0.0,
+            "tests_run": [],
+            "failures": ["Could not parse escalation response"],
+            "final_recommendation": "reject",
+        }
+
+    async def _challenge_candidates(
+        self,
+        candidates: list[dict],
+        parent_map: dict[str, dict],
+        evaluations: list[dict],
+    ) -> list[dict]:
+        """
+        Run adversary challenge on candidates that need trust verification.
+
+        Returns updated evaluations with trust scores and adjusted fitness.
+
+        Args:
+            candidates: List of candidate solutions with mutation info
+            parent_map: Map from candidate file to parent solution
+            evaluations: List of evaluator results with fitness scores
+        """
+        if not self.config.trust.enabled:
+            # Trust system disabled - return evaluations unchanged
+            return evaluations
+
+        trust_cfg = self.config.trust
+        updated_evals = []
+        population_best = self.champion.get("fitness", 0) if self.champion else 0
+
+        for eval_result in evaluations:
+            file_path = eval_result.get("file", "")
+            fitness = eval_result.get("fitness", 0)
+            valid = eval_result.get("valid", False)
+
+            # Find the corresponding candidate
+            candidate = next((c for c in candidates if c.get("file") == file_path), None)
+            parent = parent_map.get(file_path)
+
+            # Check if this candidate needs adversary review
+            needs_review = False
+
+            if not valid or fitness <= 0:
+                # Invalid solutions don't need adversary
+                updated_evals.append(eval_result)
+                continue
+
+            # Check for suspicious fitness jump
+            if parent and parent.get("fitness", 0) > 0:
+                jump_pct = ((fitness - parent["fitness"]) / parent["fitness"]) * 100
+                if jump_pct > trust_cfg.suspicious_jump_pct:
+                    needs_review = True
+                    print(f"  [!] Suspicious jump: {jump_pct:.1f}% > {trust_cfg.suspicious_jump_pct}%")
+
+            # Check if this would be a new champion
+            if trust_cfg.require_adversary_for_champion and fitness > population_best:
+                needs_review = True
+                print(f"  [!] New champion candidate: {fitness:.4f} > {population_best:.4f}")
+
+            if not needs_review:
+                # No review needed - keep original fitness
+                eval_result["trust_score"] = 1.0
+                eval_result["adversary_reviewed"] = False
+                updated_evals.append(eval_result)
+                continue
+
+            # Run adversary challenge
+            print(f"  [ADVERSARY] Challenging: {file_path.split('/')[-1]}")
+            trust_result = await self._spawn_adversary(
+                candidate=candidate or {"file": file_path},
+                parent=parent,
+                evaluation_result=eval_result,
+            )
+
+            trust_score = trust_result.get("trust_score", 0.5)
+            escalation_level = trust_result.get("escalation_level", 0)
+            recommendation = trust_result.get("recommendation", "accept")
+            flags = trust_result.get("flags", [])
+
+            print(f"  [ADVERSARY] Trust: {trust_score:.2f}, Rec: {recommendation}, Flags: {len(flags)}")
+
+            # Handle escalation if needed
+            if (
+                recommendation == "challenge"
+                and escalation_level > 0
+                and escalation_level <= trust_cfg.max_escalation_level
+            ):
+                print(f"  [ESCALATION] Level {escalation_level} validation...")
+                escalation_result = await self._run_escalation(
+                    candidate=candidate or {"file": file_path},
+                    trust_result=trust_result,
+                    escalation_level=escalation_level,
+                )
+
+                if escalation_result.get("escalation_passed"):
+                    trust_score = escalation_result.get("revised_trust", trust_score)
+                    fitness = escalation_result.get("revised_fitness", fitness)
+                    recommendation = escalation_result.get("final_recommendation", "accept")
+                    print(f"  [ESCALATION] Passed! Revised trust: {trust_score:.2f}")
+                else:
+                    recommendation = "reject"
+                    trust_score = 0.0
+                    print(f"  [ESCALATION] Failed: {escalation_result.get('failures', [])}")
+
+            # Apply trust adjustment
+            if recommendation == "reject" or trust_score < trust_cfg.reject_threshold:
+                adjusted_fitness = 0
+            elif trust_cfg.apply_trust_adjustment:
+                adjusted_fitness = fitness * trust_score
+            else:
+                adjusted_fitness = fitness
+
+            # Update evaluation with trust info
+            eval_result["trust_score"] = trust_score
+            eval_result["original_fitness"] = fitness
+            eval_result["fitness"] = adjusted_fitness
+            eval_result["adversary_reviewed"] = True
+            eval_result["adversary_recommendation"] = recommendation
+            eval_result["adversary_flags"] = flags
+            eval_result["adversary_analysis"] = trust_result.get("analysis", "")
+
+            updated_evals.append(eval_result)
+
+        return updated_evals
 
     async def _run_agent(
         self,

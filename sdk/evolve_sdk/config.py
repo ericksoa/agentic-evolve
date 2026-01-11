@@ -7,6 +7,32 @@ from typing import Literal
 
 
 @dataclass
+class TrustConfig:
+    """Configuration for trust-aware evolution with Adversary agent."""
+
+    # Enable/disable adversary
+    enabled: bool = True
+
+    # Trust thresholds
+    accept_threshold: float = 0.7  # Trust >= this: accept without escalation
+    challenge_threshold: float = 0.4  # Trust < accept but >= this: escalate
+    reject_threshold: float = 0.4  # Trust < this: reject outright
+
+    # Fitness jump that triggers automatic suspicion
+    suspicious_jump_pct: float = 20.0  # >20% improvement triggers review
+
+    # Escalation settings
+    max_escalation_level: int = 2  # Maximum escalation (0-3)
+    extended_test_command: str | None = None  # Command for Level 1+ validation
+
+    # Trust adjustment
+    apply_trust_adjustment: bool = True  # Multiply fitness by trust_score
+
+    # Champion gating
+    require_adversary_for_champion: bool = True  # New champions must pass adversary
+
+
+@dataclass
 class EvolutionConfig:
     """Configuration for an evolution run."""
 
@@ -37,6 +63,9 @@ class EvolutionConfig:
     optimization_strategies: list[dict] = field(default_factory=list)
     constraints: list[str] = field(default_factory=list)
     references: list[str] = field(default_factory=list)
+
+    # Trust-aware evolution (Adversary agent)
+    trust: TrustConfig = field(default_factory=TrustConfig)
 
     # Safety
     enable_validation_hooks: bool = True
@@ -73,6 +102,20 @@ class EvolutionConfig:
         # Extract cwd for working directory
         cwd = data.get("cwd", overrides.get("cwd"))
 
+        # Extract trust config if present
+        trust_data = data.get("trust", {})
+        trust_config = TrustConfig(
+            enabled=trust_data.get("enabled", True),
+            accept_threshold=trust_data.get("accept_threshold", 0.7),
+            challenge_threshold=trust_data.get("challenge_threshold", 0.4),
+            reject_threshold=trust_data.get("reject_threshold", 0.4),
+            suspicious_jump_pct=trust_data.get("suspicious_jump_pct", 20.0),
+            max_escalation_level=trust_data.get("max_escalation_level", 2),
+            extended_test_command=trust_data.get("extended_test_command"),
+            apply_trust_adjustment=trust_data.get("apply_trust_adjustment", True),
+            require_adversary_for_champion=trust_data.get("require_adversary_for_champion", True),
+        )
+
         # Build config with file data and overrides
         config = cls(
             problem=overrides.get("problem", problem),
@@ -87,6 +130,7 @@ class EvolutionConfig:
             constraints=data.get("constraints", []),
             references=data.get("references", []),
             model=overrides.get("model", "claude-sonnet-4-20250514"),
+            trust=trust_config,
         )
         # Store cwd as extra attribute for runner
         config.cwd = cwd

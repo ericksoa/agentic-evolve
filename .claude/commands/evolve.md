@@ -155,6 +155,81 @@ After completion:
 4. **Budget control**: User sets token/generation limits
 5. **Checkpointing**: Resume evolution from where you left off
 6. **Correctness first**: Invalid solutions get fitness 0
+7. **Trust-aware validation**: Adversary agent challenges suspicious improvements
+
+---
+
+## Trust-Aware Evolution
+
+The evolution system includes an **Adversary agent** that challenges candidate solutions before they're promoted. This prevents the evolution from exploiting evaluator blind spots or claiming false improvements.
+
+### How It Works
+
+```
+Mutation → Evaluation → ADVERSARY CHALLENGE → Selection
+                             │
+                             ├── Trust score (0.0-1.0)
+                             ├── Recommendation (accept/challenge/reject)
+                             └── Escalation level (0-3 for deeper validation)
+```
+
+### Trust Triggers
+
+The Adversary reviews candidates when:
+- **Suspicious jump**: Fitness improves >20% in a single generation
+- **New champion**: Any candidate that would become the new best solution
+
+### Escalation Levels
+
+| Level | Validation | Use Case |
+|-------|------------|----------|
+| 0 | Basic evaluator | Normal mutations |
+| 1 | Extended tests | Edge cases, boundary conditions |
+| 2 | Out-of-distribution | Unseen data patterns |
+| 3 | Gold standard | Full reference validation |
+
+### Configuration
+
+Add `trust` section to `evolve_config.json`:
+
+```json
+{
+  "description": "...",
+  "mode": "perf",
+  "trust": {
+    "enabled": true,
+    "accept_threshold": 0.7,
+    "suspicious_jump_pct": 20.0,
+    "max_escalation_level": 2,
+    "extended_test_command": "python validate.py {solution} --thorough"
+  }
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `enabled` | true | Enable/disable adversary |
+| `accept_threshold` | 0.7 | Trust >= this: accept without escalation |
+| `challenge_threshold` | 0.4 | Trust >= this: escalate before decision |
+| `reject_threshold` | 0.4 | Trust < this: reject outright |
+| `suspicious_jump_pct` | 20.0 | Improvement threshold triggering review |
+| `apply_trust_adjustment` | true | Multiply fitness by trust_score |
+| `require_adversary_for_champion` | true | New champions must pass adversary |
+
+### Red Flags (Lower Trust)
+
+- Fitness jump >20% in a single mutation
+- Hardcoded constants matching test cases
+- Pattern matching instead of algorithms
+- Suspiciously fast execution (cached results)
+- No clear algorithmic improvement
+
+### Green Flags (Higher Trust)
+
+- Incremental improvements (<10% per generation)
+- Clear algorithmic innovation in diff
+- Performance scales correctly with input size
+- Improvement consistent across test cases
 
 ---
 
