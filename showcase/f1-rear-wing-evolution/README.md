@@ -4,9 +4,9 @@
 
 ![F1 Evolution Animation](images/f1_evolution.gif)
 
-## For Bogie 🏁
+## Overview
 
-Hey Bogie! We used AI evolution to optimize an F1 rear wing—but this time with **real physics validation**. The algorithm tested configurations using NeuralFoil (a neural network trained on XFOIL data) and found an optimal setup with **96.9% prediction confidence**.
+AI evolution optimized an F1 rear wing using **real physics validation**. The algorithm tested 265+ configurations using NeuralFoil (a neural network trained on XFOIL data) and found an optimal setup with **97.6% prediction confidence**.
 
 ---
 
@@ -99,21 +99,34 @@ Cl:        2.66  → 2.83  → 2.92  → 3.05   (+14.6%)
 
 ---
 
-## Physics Engine: NeuralFoil
+## Multi-Method Validation
 
-This showcase uses [AeroSandbox](https://github.com/peterdsharpe/AeroSandbox) with NeuralFoil for aerodynamic evaluation:
+We validated with **two independent physics methods**:
 
-- **What it is:** Neural network trained on 500,000+ XFOIL simulations
-- **Accuracy:** Validated against experimental data
-- **Speed:** ~1ms per evaluation (vs hours for CFD)
-- **Confidence:** Returns prediction confidence for each analysis
+### 1. NeuralFoil (2D Viscous)
+- Neural network trained on 500,000+ XFOIL simulations
+- Includes boundary layer and viscous drag
+- ~1ms per evaluation
 
-### Why This Matters
+### 2. Vortex Lattice Method (3D Inviscid)
+- Full 3D wing analysis with tip effects
+- Inviscid (no friction drag)
+- Validates 3D downforce production
+
+| Method | CL | CD | L/D | Notes |
+|--------|-----|-----|-----|-------|
+| NeuralFoil (2D) | 3.07 | 1.65 | 1.86 | Includes viscous drag |
+| VLM (3D) | 1.48 | 0.19 | 7.8 | Inviscid, 3D effects |
+
+Both methods confirm strong downforce production. The difference in CD is expected—VLM doesn't include skin friction.
+
+### Validation Hierarchy
 
 | Method | Time | Accuracy | Our Use |
 |--------|------|----------|---------|
 | Simplified thin airfoil | μs | Low | ❌ Initial (wrong) |
-| **NeuralFoil** | ms | Good | ✅ **Validation** |
+| **NeuralFoil** | ms | Good | ✅ Primary validation |
+| **VLM 3D** | ms | Good | ✅ Cross-validation |
 | XFOIL | seconds | Good | Reference |
 | CFD | hours | High | Future work |
 | Wind tunnel | weeks | Highest | Gold standard |
@@ -229,4 +242,4 @@ fitness = (
 
 ---
 
-*Built for Bogie with [Agentic Evolve](../../) — Because physics doesn't lie* 🏁
+*Built with [Agentic Evolve](../../) — Because physics doesn't lie* 🏁

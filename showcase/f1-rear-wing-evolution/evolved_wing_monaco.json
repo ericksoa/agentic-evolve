@@ -11,7 +11,7 @@
     -0.05,
     -0.02
   ],
-  "main_angle": 15.242646317693328,
+  "main_angle": 15,
   "flap_upper": [
     0.1801840828728323,
     0.22337225024019483,
@@ -24,9 +24,9 @@
     -0.03,
     -0.01
   ],
-  "flap_angle": 14.176639484786701,
-  "flap_gap": 0.02183776513038328,
-  "_fitness": 61.9648,
-  "_improvement": "+0.4% from extended evolution",
-  "_confidence": 0.975
+  "flap_angle": 14,
+  "flap_gap": 0.02,
+  "_circuit": "monaco",
+  "_focus": "maximum downforce",
+  "_fitness": 86.15
 }
