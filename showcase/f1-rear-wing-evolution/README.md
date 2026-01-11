@@ -29,10 +29,12 @@ The simplified model was wrong. Real physics showed our "optimized" wing was act
 
 | Metric | Stalling Baseline | **Physics-Evolved** | Improvement |
 |--------|-------------------|---------------------|-------------|
-| Fitness | 0.71 | **55.99** | 79x |
-| Downforce (Cl) | 2.36 | **2.66** | +12.7% |
-| Drag (Cd) | 1.31 | **1.24** | -5.3% |
-| **Confidence** | 1.4% | **96.9%** | Trustworthy |
+| Fitness | 0.71 | **61.72** | 87x |
+| Downforce (Cl) | 2.36 | **3.05** | +29% |
+| Drag (Cd) | 1.31 | **1.63** | +24% |
+| **Confidence** | 1.4% | **97.6%** | Trustworthy |
+
+The evolution tested **91 configurations** and found that for Silverstone's high-speed corners, **maximum downforce** wins over low drag.
 
 ### What We Discovered
 
@@ -40,13 +42,60 @@ The original baseline had a **25° flap angle** that was completely stalling:
 
 ```
 STALLING BASELINE → PHYSICS-EVOLVED
-Main element:  12° → 12°   (unchanged)
-Flap:          25° → 10°   (avoid stall!)
-Slot gap:      3%  → 2%    (optimal interaction)
-Camber:        Medium → High (more lift)
+Main element:  12° → 15.2°  (more aggressive)
+Flap:          25° → 13.8°  (avoid stall, but push limits)
+Slot gap:      3%  → 2.3%   (optimal interaction)
+Camber:        Medium → High+ (maximum lift)
 ```
 
-**Key insight:** High flap angles (>15°) cause massive flow separation. NeuralFoil showed the 25° flap had L/D = 2 (terrible). At 10°, the same flap achieves L/D > 50.
+**Key insight:** The evolution pushed angles higher than our manual optimization because Silverstone rewards downforce. But it stayed below the stall threshold where the original baseline failed.
+
+---
+
+## Evolution Story
+
+The evolution ran through 5 phases, testing 91 configurations:
+
+### Phase 1: Angle Optimization
+Starting from our physics-informed baseline (fitness 55.99), we swept through angle combinations:
+
+| Generation | Main | Flap | Fitness | Discovery |
+|------------|------|------|---------|-----------|
+| Start | 12° | 10° | 55.99 | Baseline |
+| Gen 1 | 10° | 12° | 56.30 | Lower main helps |
+| Gen 2 | 11° | 11° | 56.35 | Balance matters |
+| Gen 3 | 11° | 12° | 57.19 | Flap can go higher |
+| Gen 4 | 12° | 12° | 57.94 | Push both up |
+| Gen 5 | 13° | 12° | 58.56 | More main angle |
+| Gen 6 | 14° | 12° | **59.02** | Even more! |
+
+**Insight:** Unlike our initial stalling 25° flap, the evolution found that 12-14° is the sweet spot—high enough for good lift, low enough to avoid separation.
+
+### Phase 2-3: Camber Optimization
+With optimal angles locked, we explored airfoil shape:
+
+| Phase | Component | Change | Fitness | Result |
+|-------|-----------|--------|---------|--------|
+| 2 | Main camber | Tested 6 profiles | 59.02 | No improvement (already optimal) |
+| 3 | Flap camber | Increased 3 steps | **60.28** | Higher flap camber = +2.1% |
+
+### Phase 4-5: Fine-Tuning & Random Search
+| Phase | Method | Configs | Best | Improvement |
+|-------|--------|---------|------|-------------|
+| 4 | Gap sweep | 5 | 60.28 | Gap at 2% is optimal |
+| 5 | Random mutations | 50 | **61.72** | +2.4% from random search |
+
+**Final breakthrough:** Random mutation #26 found the winning combination—slightly higher angles (15.2°/13.8°) with perturbed CST coefficients that increased camber beyond our grid search.
+
+### The Winning Formula
+
+```
+EVOLUTION PROGRESSION:
+Fitness:   55.99 → 59.02 → 60.28 → 61.72  (+10.2% total)
+Main:      12°   → 14°   → 14°   → 15.2°
+Flap:      10°   → 12°   → 12°   → 13.8°
+Cl:        2.66  → 2.83  → 2.92  → 3.05   (+14.6%)
+```
 
 ---
 
@@ -131,11 +180,11 @@ f1-rear-wing-evolution/
 
 ```
          ┌─────────────┐
-         │    FLAP     │  ← 10° (was 25° - stalling!)
+         │    FLAP     │  ← 13.8° (evolved from 25° stalling)
          └─────────────┘
-              ╲ 2% gap (slot effect)
+              ╲ 2.3% gap (slot effect)
          ┌─────────────────────┐
-         │    MAIN ELEMENT     │  ← 12° (optimal)
+         │    MAIN ELEMENT     │  ← 15.2° (evolved for Silverstone)
          └─────────────────────┘
 ```
 
