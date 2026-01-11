@@ -1,0 +1,20 @@
+{
+  "upper_coeffs": [
+    0.01,
+    0.3,
+    0.3,
+    0.3,
+    0.3
+  ],
+  "lower_coeffs": [
+    -0.01,
+    -0.01,
+    -0.01,
+    -0.01,
+    -0.01
+  ],
+  "zte": 0.0,
+  "branchless_rank": 9,
+  "fitness": 115.2503,
+  "generation": "25c"
+}

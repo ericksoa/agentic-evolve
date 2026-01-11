@@ -1,0 +1,14 @@
+{
+  "optimization_quality": {
+    "mean_fitness": 88.22777666666666,
+    "std_fitness": 9.191365817954127,
+    "max_fitness": 107.2667,
+    "min_fitness": 68.7778,
+    "valid_fraction": 1.0,
+    "coefficient_diversity": 0.24757515542911918,
+    "optimization_effectiveness": 1.215792835735524
+  },
+  "population_size": 60,
+  "best_fitness": 107.2667,
+  "cache_optimized": true
+}

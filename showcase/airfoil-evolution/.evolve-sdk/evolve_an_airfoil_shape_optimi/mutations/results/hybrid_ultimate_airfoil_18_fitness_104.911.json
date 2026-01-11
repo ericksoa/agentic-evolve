@@ -1,0 +1,27 @@
+{
+  "upper_coeffs": [
+    0.065625,
+    0.236875,
+    0.18937500000000002,
+    0.141875,
+    0.094375
+  ],
+  "lower_coeffs": [
+    -0.053125000000000006,
+    -0.040624999999999994,
+    -0.028124999999999983,
+    -0.016875,
+    -0.010937500000000003
+  ],
+  "zte": 0.0,
+  "hybrid_rank": 18,
+  "fitness": 104.9114,
+  "generation": "25x",
+  "hybrid_features": [
+    "PSO_optimization_from_gen13c",
+    "lookup_tables_from_gen14a",
+    "SIMD_vectorization_from_gen20a",
+    "enhanced_multi_strategy_gaussian",
+    "hybrid_adaptive_refinement"
+  ]
+}

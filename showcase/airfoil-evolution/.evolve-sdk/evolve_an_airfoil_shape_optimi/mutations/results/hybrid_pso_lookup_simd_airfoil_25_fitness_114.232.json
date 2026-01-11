@@ -1,0 +1,21 @@
+{
+  "upper_coeffs": [
+    0.01,
+    0.2772,
+    0.2772,
+    0.2772,
+    0.2772
+  ],
+  "lower_coeffs": [
+    -0.01076,
+    -0.01076,
+    -0.01076,
+    -0.01076,
+    -0.01076
+  ],
+  "zte": 0.0,
+  "hybrid_rank": 25,
+  "fitness": 114.2317,
+  "generation": "18x",
+  "hybrid_type": "PSO-Lookup-SIMD"
+}

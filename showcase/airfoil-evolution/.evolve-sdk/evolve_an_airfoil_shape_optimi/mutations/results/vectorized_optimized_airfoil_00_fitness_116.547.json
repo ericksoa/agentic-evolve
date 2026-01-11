@@ -1,0 +1,20 @@
+{
+  "upper_coeffs": [
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3
+  ],
+  "lower_coeffs": [
+    -0.01,
+    -0.01,
+    -0.01,
+    -0.01,
+    -0.01
+  ],
+  "zte": 0.0,
+  "vectorized_rank": 0,
+  "fitness": 116.5472,
+  "generation": "16b"
+}
