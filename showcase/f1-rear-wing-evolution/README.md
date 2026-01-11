@@ -1,25 +1,29 @@
 # F1 Rear Wing Evolution 🏎️
 
-> **AI discovers aerodynamic edge worth +57ms per lap at Silverstone**
+> **AI evolution finds optimal rear wing configuration through 2,880 parameter combinations**
 
 ![F1 Evolution Animation](images/f1_evolution.gif)
 
 ## For Bogie 🏁
 
-Hey Bogie! We used AI evolution to optimize an F1 rear wing. The algorithm tested **2,880 configurations** and found a setup that gains **+57 milliseconds per lap** at Silverstone. In F1 terms, that's the difference between pole position and P3.
+Hey Bogie! We used AI evolution to optimize an F1 rear wing. The algorithm tested **2,880 configurations** and found what our model predicts is the optimal balance of downforce and drag.
+
+⚠️ **Important caveat:** This uses a simplified aerodynamic model based on thin airfoil theory, not CFD or wind tunnel data. The numbers show *relative improvement within our model*, not validated real-world performance. Real F1 teams spend $100M+ on CFD and wind tunnels for a reason!
 
 ---
 
-## The Results
+## The Results (Model Predictions)
 
 ![F1 Hero Dashboard](images/f1_hero.png)
 
-| Metric | Baseline | **AI Evolved** | Advantage |
-|--------|----------|----------------|-----------|
-| Lap Time | Reference | **-57ms** | 🏆 |
+| Metric | Baseline | **AI Evolved** | Delta |
+|--------|----------|----------------|-------|
+| Lap Time | Reference | **-57ms** | Model estimate |
 | Downforce (Cl) | 3.00 | **3.00** | Maintained |
-| Drag (Cd) | 1.64 | **1.62** | -1.7% |
+| Drag (Cd) | 1.64 | **1.62** | -1.2% |
 | Efficiency (L/D) | 1.83 | **1.86** | +1.6% |
+
+*Note: Cl/Cd values are from our simplified model. Real F1 rear wings typically have Cl ~1.5-2.5 and Cd ~0.3-0.7.*
 
 ### What Changed?
 
@@ -32,20 +36,22 @@ Flap:          25° → 12°  (surprisingly flat!)
 Slot gap:      3.0% → 5.0% (wider for flow attachment)
 ```
 
-**The insight:** Instead of a steep flap (traditional approach), the AI found that a flatter flap with a wider slot maintains downforce while reducing drag. It's counterintuitive, but the numbers don't lie.
+**The insight:** Instead of a steep flap (traditional approach), the AI found that a flatter flap with a wider slot maintains downforce while reducing drag. Whether this holds up in real physics would need CFD validation—but it's an interesting direction to explore.
 
 ---
 
-## Circuit-Specific Gains
+## Circuit-Specific Optimization
 
 ![Circuit Requirements](images/circuit_requirements.png)
 
-| Circuit | Lap Time Gain | Setup Focus |
-|---------|---------------|-------------|
-| Monaco | +42ms | Max downforce for hairpins |
-| Silverstone | +57ms | Balance for Maggots-Becketts |
-| Spa | +45ms | Efficiency for Kemmel straight |
-| Monza | +31ms | Low drag for Temple of Speed |
+| Circuit | Model Prediction | Setup Focus |
+|---------|------------------|-------------|
+| Monaco | Lower drag | Max downforce for hairpins |
+| Silverstone | -1.2% Cd | Balance for Maggots-Becketts |
+| Spa | Better L/D | Efficiency for Kemmel straight |
+| Monza | Min drag config | Low drag for Temple of Speed |
+
+*Lap time gains would require CFD/wind tunnel validation.*
 
 ---
 
@@ -102,7 +108,7 @@ MORE DOWNFORCE → Faster corners, slower straights
 LESS DRAG      → Faster straights, slower corners
 ```
 
-Teams spend **$100M+** annually finding the perfect balance. AI found a better one in minutes.
+Teams spend **$100M+** annually on CFD and wind tunnels to find the perfect balance. This demo shows how AI can quickly explore a parameter space—but would need real validation before making performance claims.
 
 ---
 
@@ -128,9 +134,9 @@ python3 evaluate.py evolved_wing.json --circuit=monza
 ## The Tech Stack
 
 - **CST Parameterization** - Industry-standard airfoil shape representation
-- **Multi-element Aero Model** - Simplified but calibrated to F1 data
+- **Multi-element Aero Model** - Simplified thin airfoil theory (not CFD-validated)
 - **Circuit Profiles** - Downforce/drag weightings per track
-- **Lap Time Model** - Corner speed × downforce, straight speed × drag
+- **Lap Time Model** - Simplified corner/straight speed estimation
 
 ---
 
@@ -165,13 +171,24 @@ f1-rear-wing-evolution/
 
 ---
 
+## How to Actually Validate This
+
+To make real performance claims, you'd need:
+
+1. **XFOIL** - Panel method for 2D airfoil analysis (free, quick)
+2. **OpenFOAM CFD** - Full 3D simulation with turbulence modeling
+3. **Wind Tunnel** - Scale model testing (gold standard)
+4. **Track Testing** - Real car, real driver, real data
+
+This showcase demonstrates **the optimization technique**, not validated aerodynamics. The interesting part is how AI can efficiently search a large parameter space—the physics model would need to be upgraded for real predictions.
+
 ## Next Steps
 
-1. **3D Print** - Export wing for scale model testing
-2. **CFD Validation** - Run in OpenFOAM for real aero numbers
+1. **Validate with XFOIL** - Get real 2D lift/drag coefficients
+2. **CFD in OpenFOAM** - 3D simulation with proper boundary conditions
 3. **DRS Optimization** - Evolve for open/closed configurations
 4. **Full Car** - Optimize front wing, floor, and sidepods together
 
 ---
 
-*Built for Bogie with [Agentic Evolve](../../) — Because 57ms matters* 🏁
+*Built for Bogie with [Agentic Evolve](../../) — Because finding optimal parameters matters* 🏁
