@@ -4,14 +4,14 @@
   "mode": "perf",
 
   "evaluation": {
-    "test_command": "python3 evaluate.py {solution} --json --circuit=silverstone",
+    "test_command": "python3 evaluate_physics.py {solution} --json --circuit=silverstone",
     "fitness_key": "fitness",
     "valid_key": "valid",
     "higher_is_better": true
   },
 
   "starter_solutions": [
-    "baseline.json"
+    "baseline_physics.json"
   ],
 
   "target_file": "evolved_wing.json",
@@ -29,41 +29,41 @@
       "flap_gap": 0.025
     },
     "constraints": {
-      "main_upper": "4 CST coefficients, typically 0.08-0.30",
-      "main_lower": "4 CST coefficients, typically -0.12 to -0.01",
-      "main_angle": "8-20 degrees",
-      "flap_upper": "4 CST coefficients, typically 0.06-0.25",
-      "flap_lower": "4 CST coefficients, typically -0.10 to -0.01",
-      "flap_angle": "15-40 degrees",
-      "flap_gap": "0.015-0.06 (1.5-6% chord)"
+      "main_upper": "4 CST coefficients, typically 0.10-0.25 (standard cambered airfoil)",
+      "main_lower": "4 CST coefficients, typically -0.08 to -0.02",
+      "main_angle": "6-14 degrees (avoid stall above 15°)",
+      "flap_upper": "4 CST coefficients, typically 0.08-0.20",
+      "flap_lower": "4 CST coefficients, typically -0.06 to -0.02",
+      "flap_angle": "8-18 degrees (CRITICAL: high angles stall, 25°+ has terrible L/D)",
+      "flap_gap": "0.02-0.04 (2-4% chord is optimal for slot effect)"
     }
   },
 
   "optimization_strategies": [
     {
-      "name": "angle_optimization",
-      "description": "Adjust main and flap angles for optimal attack",
-      "hint": "Higher angles = more downforce but risk of stall. Find the sweet spot."
+      "name": "reduce_flap_angle",
+      "description": "Lower flap angle to avoid stall",
+      "hint": "Physics shows 25° flap stalls badly (L/D=2). Try 10-15° for L/D >20. This is the biggest lever!"
     },
     {
-      "name": "camber_tuning",
-      "description": "Modify CST coefficients to increase camber",
-      "hint": "More camber = more lift. Upper coefficients control upper surface curvature."
+      "name": "optimize_main_angle",
+      "description": "Fine-tune main element angle of attack",
+      "hint": "10-12° gives best L/D. Above 15° drag increases rapidly."
     },
     {
       "name": "slot_gap_tuning",
       "description": "Optimize gap between main element and flap",
-      "hint": "Slot energizes boundary layer. Too small = interference, too large = no benefit."
+      "hint": "2-4% chord is optimal. Gap energizes boundary layer and delays separation."
     },
     {
-      "name": "thickness_distribution",
-      "description": "Adjust thickness for structural and aero balance",
-      "hint": "Thinner = less drag but may stall earlier."
+      "name": "camber_optimization",
+      "description": "Adjust CST coefficients for optimal camber",
+      "hint": "Higher upper coefficients = more camber = more lift, but watch for stall."
     },
     {
-      "name": "multi_element_interaction",
-      "description": "Optimize how elements work together",
-      "hint": "Flap should extend main element's lift without causing separation."
+      "name": "balance_elements",
+      "description": "Balance main and flap contributions",
+      "hint": "Main element should do most lifting. Flap extends lift without killing L/D."
     }
   ],
 
