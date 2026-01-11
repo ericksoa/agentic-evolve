@@ -135,6 +135,26 @@ We validated with **two independent physics methods**:
 
 The difference is expected—VLM shows lower CL due to 3D tip losses, lower CD because it's inviscid.
 
+### Evolution with Different Physics
+
+We evolved the wing using four different approaches to see how physics models affect the optimal design:
+
+![Method Comparison](images/method_comparison.png)
+
+| Method | Main° | Flap° | CL | L/D | Issue |
+|--------|-------|-------|-----|-----|-------|
+| 2D only | 15.2 | 14.2 | 3.07 | 1.9 | Ignores 3D induced drag |
+| 3D only (VLM) | 18.8 | 27.1 | 2.09 | 5.6 | **Flap stalling!** (0.4% conf) |
+| Hybrid (efficiency) | 7.4 | 8.5 | 0.77 | 13.3 | Not enough downforce |
+| **Hybrid F1** | **21.3** | **17.0** | **1.81** | **4.0** | **Optimal balance** |
+
+**Key insight:** Each physics model finds a different optimum because they capture different effects. The hybrid F1 approach combines:
+- NeuralFoil: Detects stall (prevents 27° flap disaster)
+- VLM: Captures 3D induced drag (CL² effect)
+- F1 fitness: Prioritizes downforce for cornering
+
+**The hybrid F1 wing produces 166 kg of downforce at 250 km/h** with 97% prediction confidence.
+
 ### Validation Hierarchy
 
 | Method | Time | Accuracy | Our Use |
