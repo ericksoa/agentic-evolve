@@ -103,22 +103,37 @@ Cl:        2.66  → 2.83  → 2.92  → 3.05   (+14.6%)
 
 We validated with **two independent physics methods**:
 
+![3D Wing Geometry](images/f1_wing_3d.png)
+
+### What We Simulate vs Reality
+
+| Aspect | Our Analysis | Full CFD | Impact |
+|--------|--------------|----------|--------|
+| Airfoil section | ✅ NeuralFoil 2D | ✅ | Primary lift/drag |
+| 3D span effects | ✅ VLM (simplified) | ✅ | Tip losses |
+| Endplates | ❌ | ✅ | +30% efficiency |
+| Ground effect | ❌ | ✅ | Variable |
+| Turbulent wake | ❌ | ✅ | Multi-element interaction |
+
+**Honest assessment:** Our analysis is primarily 2D section-based. We optimize the airfoil profiles and angles, which is the most important factor. But real F1 CFD captures 3D effects we can't model here.
+
 ### 1. NeuralFoil (2D Viscous)
 - Neural network trained on 500,000+ XFOIL simulations
 - Includes boundary layer and viscous drag
+- Analyzes airfoil cross-section (2D)
 - ~1ms per evaluation
 
 ### 2. Vortex Lattice Method (3D Inviscid)
-- Full 3D wing analysis with tip effects
+- Full 3D wing with span and tip effects
 - Inviscid (no friction drag)
-- Validates 3D downforce production
+- Used simplified NACA profiles (not our CST shapes)
 
 | Method | CL | CD | L/D | Notes |
 |--------|-----|-----|-----|-------|
-| NeuralFoil (2D) | 3.07 | 1.65 | 1.86 | Includes viscous drag |
+| NeuralFoil (2D) | 3.07 | 1.65 | 1.86 | Viscous, 2D section |
 | VLM (3D) | 1.48 | 0.19 | 7.8 | Inviscid, 3D effects |
 
-Both methods confirm strong downforce production. The difference in CD is expected—VLM doesn't include skin friction.
+The difference is expected—VLM shows lower CL due to 3D tip losses, lower CD because it's inviscid.
 
 ### Validation Hierarchy
 
