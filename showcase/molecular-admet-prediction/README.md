@@ -167,6 +167,47 @@ TPSA (polar surface)      Affects how molecule interacts          Balance needed
 The gain is real: 6-model ensemble with FP+descriptors achieves best performance.
 ```
 
+### SDK-Powered Evolution Results
+
+The Agentic Evolve SDK was used to automatically discover solutions through evolutionary optimization with trust-based validation.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    EVOLUTION RUN SUMMARY                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   Generations:        4 (stopped at plateau threshold)                      │
+│   Candidates Tried:   12                                                    │
+│   Candidates Accepted: 1 (8% - trust system is conservative)                │
+│                                                                             │
+│   Champion: gen1a.py                                                        │
+│   ├── ROC-AUC:     0.859                                                    │
+│   ├── Trust Score: 0.85                                                     │
+│   ├── Approach:    RF + Morgan FP + 8 molecular descriptors                 │
+│   └── Inference:   1.8ms (fastest of all solutions)                         │
+│                                                                             │
+│   Key Discovery: Evolution independently found the hybrid FP+descriptor     │
+│   approach - validating this as the optimal strategy for hERG prediction.   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Trust System in Action:**
+
+The adversary validation system caught multiple issues in candidate solutions:
+
+```
+Candidate    Raw Score   Trust    Status    Flags
+─────────────────────────────────────────────────────────────────────────────
+gen1a.py     0.859       0.85     ACCEPT    Clean implementation
+gen3a.py     0.865       0.00     REJECT    "large_performance_jump"
+gen3c.py     0.815       0.00     REJECT    "overconfident model", "fitness discrepancy"
+gen2b.py     0.825       0.00     REJECT    "duplicate_implementation"
+gen4x.py     0.834       0.00     REJECT    "empty_input_handling" bug
+```
+
+The trust system prioritizes reliability over raw performance - a feature critical for drug discovery where false confidence can be costly.
+
 ### What These Numbers Mean
 
 ```
@@ -277,11 +318,19 @@ molecular-admet-prediction/
 ├── baseline_fingerprint.py   # Baseline: Morgan fingerprints + RF (0.828)
 ├── baseline_descriptors.py   # Baseline: Molecular descriptors + GBM (0.843)
 ├── evolved_ensemble.py       # RF+GBM+ET ensemble (0.8711)
-├── dual_ensemble.py          # RF+GBM+ET+SVM 6-model ensemble (0.8714 BEST)
+├── dual_ensemble.py          # RF+GBM+ET+SVM 6-model ensemble (0.8714 BEST manual)
 ├── triple_ensemble_svm.py    # RF+GBM+SVM variant (0.8711)
 ├── hybrid_fp_maccs.py        # Morgan + MACCS fingerprints (0.857)
 ├── hybrid_fp_desc_light.py   # FP + top-10 descriptors (0.857)
-└── meta_ensemble.py          # Complex 5-model ensemble (0.853)
+├── meta_ensemble.py          # Complex 5-model ensemble (0.853)
+│
+├── .evolve-sdk/              # SDK evolution artifacts
+│   └── evolve_molecular_property_pred/
+│       ├── mutations/        # All evolved solutions (gen0-gen4)
+│       │   └── gen1a.py      # SDK champion (0.859, trusted)
+│       ├── evolution.json    # Evolution state
+│       └── trust_dossier.md  # Full trust audit trail
+└── EVOLUTION_PLAN.md         # 6-phase improvement roadmap
 ```
 
 ## For the ML Engineer: Technical Details
