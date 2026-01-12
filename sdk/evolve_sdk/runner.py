@@ -39,6 +39,7 @@ from .agents import (
     CROSSOVER_SYSTEM, get_crossover_prompt,
     EVALUATOR_SYSTEM, get_evaluator_prompt,
     ADVERSARY_SYSTEM, get_adversary_prompt, get_escalation_prompt,
+    ARBITRATOR_SYSTEM, get_arbitrator_prompt,
 )
 from .hooks import create_validation_hook, create_logging_hook, set_log_context
 from .progress import (
@@ -597,6 +598,53 @@ class EvolutionRunner:
             "final_recommendation": "reject",
         }
 
+    async def _spawn_arbitrator(
+        self,
+        candidate_file: str,
+        fitness: float,
+        champion_fitness: float,
+        trust_score: float,
+        flags: list[str],
+        adversary_analysis: str,
+    ) -> str:
+        """
+        Spawn an arbitrator agent to provide balanced analysis for human escalation.
+
+        The arbitrator reviews the situation neutrally and helps the human
+        understand the tradeoffs of accepting vs rejecting the candidate.
+
+        Returns:
+            Formatted arbitrator analysis text for display to human.
+        """
+        # Try to read candidate code for context
+        candidate_code = None
+        try:
+            with open(candidate_file, 'r') as f:
+                candidate_code = f.read()
+        except Exception:
+            pass  # Code reading is optional
+
+        prompt = get_arbitrator_prompt(
+            candidate_file=candidate_file,
+            fitness=fitness,
+            champion_fitness=champion_fitness,
+            trust_score=trust_score,
+            flags=flags,
+            adversary_analysis=adversary_analysis,
+            mode=self.config.mode,
+            generation=self.generation,
+            candidate_code=candidate_code,
+        )
+
+        result = await self._run_agent(
+            system=ARBITRATOR_SYSTEM,
+            prompt=prompt,
+            tools=["Read"],  # Read-only access for code review
+            max_turns=5,  # Quick analysis, not deep investigation
+        )
+
+        return result
+
     def _ask_human_escalation(
         self,
         candidate_file: str,
@@ -605,9 +653,19 @@ class EvolutionRunner:
         trust_score: float,
         flags: list[str],
         analysis: str,
+        arbitrator_analysis: str | None = None,
     ) -> dict[str, Any]:
         """
         Ask human to make final decision on borderline candidate.
+
+        Args:
+            candidate_file: Path to the candidate solution
+            fitness: Candidate's fitness score
+            champion_fitness: Current champion's fitness
+            trust_score: Trust score from adversary
+            flags: Flags raised by adversary
+            analysis: Adversary's detailed analysis
+            arbitrator_analysis: Optional neutral analysis from arbitrator agent
 
         Returns:
             dict with:
@@ -640,8 +698,18 @@ class EvolutionRunner:
             if len(flags) > 5:
                 print(f"    ... and {len(flags) - 5} more")
 
-        if analysis:
-            print(f"\n  Analysis (truncated):")
+        # Show arbitrator analysis prominently if available
+        if arbitrator_analysis:
+            print("\n" + "-" * 70)
+            print("  ARBITRATOR ANALYSIS (Neutral Assessment)")
+            print("-" * 70)
+            # Show the arbitrator's analysis - it's already formatted
+            for line in arbitrator_analysis.split('\n'):
+                print(f"  {line}")
+            print("-" * 70)
+        elif analysis:
+            # Fall back to adversary analysis if no arbitrator
+            print(f"\n  Adversary Analysis (truncated):")
             analysis_preview = analysis[:300] + "..." if len(analysis) > 300 else analysis
             for line in analysis_preview.split('\n')[:5]:
                 print(f"    {line}")
@@ -651,7 +719,7 @@ class EvolutionRunner:
         print("    [A] Accept - Trust this candidate (override rejection)")
         print("    [R] Reject - Confirm rejection (default)")
         print("    [T] Adjust Trust - Enter custom trust score (0.0-1.0)")
-        print("    [V] View Full - Show full analysis and code diff")
+        print("    [V] View Full - Show adversary analysis, arbitrator analysis, and flags")
         print("-" * 70)
 
         # Handle timeout
@@ -692,8 +760,11 @@ class EvolutionRunner:
                         print("  Invalid: enter a decimal number")
 
                 elif response == 'V':
-                    print("\n  === FULL ANALYSIS ===")
-                    print(analysis if analysis else "(No analysis available)")
+                    if arbitrator_analysis:
+                        print("\n  === ARBITRATOR ANALYSIS ===")
+                        print(arbitrator_analysis)
+                    print("\n  === ADVERSARY ANALYSIS ===")
+                    print(analysis if analysis else "(No adversary analysis available)")
                     print("\n  === FLAGS ===")
                     for flag in flags:
                         print(f"    - {flag}")
@@ -924,6 +995,18 @@ class EvolutionRunner:
 
                     if should_escalate:
                         print(f"  [HUMAN] Escalating to human review...")
+
+                        # Spawn arbitrator agent for neutral analysis
+                        print(f"  [ARBITRATOR] Getting neutral assessment...")
+                        arbitrator_analysis = await self._spawn_arbitrator(
+                            candidate_file=file_path,
+                            fitness=fitness,
+                            champion_fitness=population_best,
+                            trust_score=trust_score,
+                            flags=all_flags,
+                            adversary_analysis=trust_result.get("analysis", ""),
+                        )
+
                         human_result = self._ask_human_escalation(
                             candidate_file=file_path,
                             fitness=fitness,
@@ -931,6 +1014,7 @@ class EvolutionRunner:
                             trust_score=trust_score,
                             flags=all_flags,
                             analysis=trust_result.get("analysis", ""),
+                            arbitrator_analysis=arbitrator_analysis,
                         )
 
                         if human_result["decision"] == "accept":
