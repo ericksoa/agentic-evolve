@@ -1,0 +1,10 @@
+# Core dependencies for hERG toxicity prediction
+PyTDC>=1.0.0
+rdkit>=2023.9.0
+scikit-learn>=1.2.0
+numpy>=1.26.0
+setuptools
+
+# Optional: For more advanced models
+# torch>=2.0.0
+# torch-geometric>=2.0.0

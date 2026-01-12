@@ -1,0 +1,69 @@
+{
+  "description": "Evolve molecular property prediction models for ADMET (Absorption, Distribution, Metabolism, Excretion, Toxicity) endpoints critical to drug discovery. Focus on hERG cardiac toxicity, a major cause of drug candidate attrition.",
+  "mode": "ml",
+  "problem": {
+    "goal": "Maximize ROC-AUC for predicting hERG channel inhibition (cardiac toxicity) from molecular structure",
+    "metric": "roc_auc",
+    "current_best": 0.8434,
+    "target": 0.90,
+    "constraints": [
+      "Must use only molecular structure as input (SMILES)",
+      "Model must be interpretable or provide feature importance",
+      "Inference time < 100ms per molecule",
+      "No data leakage between train/validation/test splits"
+    ]
+  },
+  "evaluation": {
+    "test_command": "./venv/bin/python evaluate.py {solution} --json",
+    "fitness_key": "roc_auc",
+    "valid_key": "valid",
+    "cv_splits": 5,
+    "holdout_ratio": 0.2,
+    "acceptance_criteria": {
+      "min_roc_auc": 0.70,
+      "max_inference_ms": 100
+    }
+  },
+  "starter_solutions": [
+    "baseline_fingerprint.py",
+    "baseline_descriptors.py"
+  ],
+  "solution_format": {
+    "type": "python",
+    "required_interface": {
+      "class": "HERGPredictor",
+      "methods": ["fit(X_smiles, y)", "predict_proba(X_smiles)"],
+      "optional_methods": ["get_feature_importance()"]
+    }
+  },
+  "optimization_strategies": [
+    "Explore different molecular fingerprints (Morgan, MACCS, RDKit)",
+    "Try graph neural network approaches (if dependencies allow)",
+    "Combine multiple fingerprint types as ensemble features",
+    "Engineer pharmacophore-based features",
+    "Use molecular descriptors (Lipinski, topological)",
+    "Ensemble methods combining multiple base learners",
+    "Feature selection to identify predictive substructures"
+  ],
+  "resource_constraints": {
+    "max_local_threads": 4,
+    "prefer_cloud": false,
+    "timeout_seconds": 300
+  },
+  "domain_context": {
+    "background": "hERG (human Ether-a-go-go Related Gene) encodes a potassium ion channel. Drug-induced hERG inhibition causes cardiac arrhythmias (QT prolongation), leading to ~40% of drug withdrawals. Predicting hERG liability early saves billions in failed drug development.",
+    "data_source": "Therapeutics Data Commons (TDC) hERG benchmark",
+    "known_approaches": [
+      "Morgan fingerprints + Random Forest (baseline)",
+      "Graph Neural Networks (state-of-art)",
+      "Pharmacophore modeling",
+      "3D conformer-based methods"
+    ],
+    "key_molecular_features": [
+      "Basic nitrogen (positive charge at physiological pH)",
+      "Hydrophobic aromatic groups",
+      "Molecular flexibility",
+      "Lipophilicity (logP)"
+    ]
+  }
+}
