@@ -112,6 +112,30 @@ class TrustDossier:
         }
         self.entries.append(entry)
 
+    def record_human_escalation(
+        self,
+        candidate_file: str,
+        generation: int,
+        fitness: float,
+        original_trust: float,
+        decision: str,  # "accept" | "reject" | "adjust"
+        adjusted_trust: float | None = None,
+        reason: str = "",
+    ):
+        """Record a human escalation decision."""
+        entry = {
+            "timestamp": datetime.now().isoformat(),
+            "type": "human_escalation",
+            "candidate_file": candidate_file,
+            "generation": generation,
+            "fitness": fitness,
+            "original_trust": original_trust,
+            "decision": decision,
+            "adjusted_trust": adjusted_trust,
+            "reason": reason,
+        }
+        self.entries.append(entry)
+
     def generate(self, include_history: bool = True) -> str:
         """
         Generate the markdown dossier.
@@ -133,10 +157,16 @@ class TrustDossier:
         ]
 
         # Summary statistics
-        total_evals = len([e for e in self.entries if e.get("type") != "champion_decision" and e.get("type") != "canary_test"])
+        excluded_types = ("champion_decision", "canary_test", "human_escalation")
+        total_evals = len([e for e in self.entries if e.get("type") not in excluded_types])
         rejections = len([e for e in self.entries if e.get("recommendation") == "reject"])
         acceptances = len([e for e in self.entries if e.get("recommendation") == "accept"])
         challenges = len([e for e in self.entries if e.get("recommendation") == "challenge"])
+
+        # Human escalation stats
+        human_escalations = [e for e in self.entries if e.get("type") == "human_escalation"]
+        human_accepts = len([e for e in human_escalations if e.get("decision") == "accept"])
+        human_rejects = len([e for e in human_escalations if e.get("decision") == "reject"])
 
         lines.extend([
             f"## Summary",
@@ -147,8 +177,16 @@ class TrustDossier:
             f"| Accepted | {acceptances} |",
             f"| Challenged | {challenges} |",
             f"| Rejected | {rejections} |",
-            f"",
         ])
+
+        if human_escalations:
+            lines.extend([
+                f"| Human Escalations | {len(human_escalations)} |",
+                f"| Human Accepts | {human_accepts} |",
+                f"| Human Rejects | {human_rejects} |",
+            ])
+
+        lines.append("")
 
         # Canary test results
         canary_entries = [e for e in self.entries if e.get("type") == "canary_test"]
@@ -183,9 +221,27 @@ class TrustDossier:
                 lines.append(f"| {time} | {decision} | {reason} |")
             lines.append("")
 
+        # Human escalation decisions
+        if human_escalations:
+            lines.extend([
+                f"## Human Escalations",
+                f"",
+                f"| Candidate | Fitness | Original Trust | Decision | Adjusted Trust |",
+                f"|-----------|---------|----------------|----------|----------------|",
+            ])
+            for he in human_escalations:
+                candidate = he.get("candidate_file", "").split("/")[-1]
+                fitness = he.get("fitness", 0)
+                orig_trust = he.get("original_trust", 0)
+                decision = he.get("decision", "")
+                adj_trust = he.get("adjusted_trust")
+                adj_str = f"{adj_trust:.2f}" if adj_trust is not None else "-"
+                lines.append(f"| {candidate} | {fitness:.4f} | {orig_trust:.2f} | {decision} | {adj_str} |")
+            lines.append("")
+
         # Trust history
         if include_history:
-            eval_entries = [e for e in self.entries if e.get("type") not in ("champion_decision", "canary_test")]
+            eval_entries = [e for e in self.entries if e.get("type") not in ("champion_decision", "canary_test", "human_escalation")]
             if eval_entries:
                 lines.extend([
                     f"## Trust History",

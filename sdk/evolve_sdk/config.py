@@ -59,6 +59,13 @@ class TrustConfig:
     # Pluggable validators for escalation
     validators: list[str] = field(default_factory=lambda: ["default"])  # Validator chain
 
+    # === NEW: Human-in-the-Loop Escalation ===
+    # Allow human to override trust decisions on borderline cases
+    human_escalation_enabled: bool = True  # Enable human escalation prompts
+    human_escalation_on_champion_reject: bool = True  # Ask human when rejecting a potential champion
+    human_escalation_min_fitness: float = 0.0  # Only ask for candidates with fitness > this
+    human_escalation_timeout: int = 300  # Timeout in seconds (0 = no timeout)
+
 
 @dataclass
 class EvolutionConfig:
@@ -160,6 +167,11 @@ class EvolutionConfig:
             dossier_include_history=trust_data.get("dossier_include_history", True),
             # Validator Interface (C)
             validators=trust_data.get("validators", ["default"]),
+            # Human-in-the-Loop Escalation
+            human_escalation_enabled=trust_data.get("human_escalation_enabled", True),
+            human_escalation_on_champion_reject=trust_data.get("human_escalation_on_champion_reject", True),
+            human_escalation_min_fitness=trust_data.get("human_escalation_min_fitness", 0.0),
+            human_escalation_timeout=trust_data.get("human_escalation_timeout", 300),
         )
 
         # Build config with file data and overrides

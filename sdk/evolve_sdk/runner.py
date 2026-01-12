@@ -597,6 +597,115 @@ class EvolutionRunner:
             "final_recommendation": "reject",
         }
 
+    def _ask_human_escalation(
+        self,
+        candidate_file: str,
+        fitness: float,
+        champion_fitness: float,
+        trust_score: float,
+        flags: list[str],
+        analysis: str,
+    ) -> dict[str, Any]:
+        """
+        Ask human to make final decision on borderline candidate.
+
+        Returns:
+            dict with:
+            - decision: "accept" | "reject" | "adjust"
+            - adjusted_trust: float (if decision is "adjust")
+        """
+        import sys
+        import select
+
+        trust_cfg = self.config.trust
+
+        # Build summary display
+        print("\n" + "=" * 70)
+        print("  HUMAN ESCALATION - Trust System Needs Your Input")
+        print("=" * 70)
+        print(f"\n  Candidate: {candidate_file}")
+        print(f"  Fitness:   {fitness:.4f}  (current champion: {champion_fitness:.4f})")
+        print(f"  Trust:     {trust_score:.2f}  (threshold: {trust_cfg.reject_threshold})")
+
+        if fitness > champion_fitness:
+            improvement = ((fitness - champion_fitness) / champion_fitness * 100) if champion_fitness > 0 else 100
+            print(f"  Status:    POTENTIAL NEW CHAMPION (+{improvement:.1f}%)")
+        else:
+            print(f"  Status:    Below champion")
+
+        if flags:
+            print(f"\n  Flags ({len(flags)}):")
+            for flag in flags[:5]:  # Show first 5 flags
+                print(f"    - {flag[:60]}{'...' if len(flag) > 60 else ''}")
+            if len(flags) > 5:
+                print(f"    ... and {len(flags) - 5} more")
+
+        if analysis:
+            print(f"\n  Analysis (truncated):")
+            analysis_preview = analysis[:300] + "..." if len(analysis) > 300 else analysis
+            for line in analysis_preview.split('\n')[:5]:
+                print(f"    {line}")
+
+        print("\n" + "-" * 70)
+        print("  Options:")
+        print("    [A] Accept - Trust this candidate (override rejection)")
+        print("    [R] Reject - Confirm rejection (default)")
+        print("    [T] Adjust Trust - Enter custom trust score (0.0-1.0)")
+        print("    [V] View Full - Show full analysis and code diff")
+        print("-" * 70)
+
+        # Handle timeout
+        timeout = trust_cfg.human_escalation_timeout
+        if timeout > 0:
+            print(f"  (Auto-reject in {timeout}s if no response)")
+
+        try:
+            while True:
+                if timeout > 0:
+                    # Use select for timeout on Unix
+                    if sys.platform != 'win32':
+                        ready, _, _ = select.select([sys.stdin], [], [], timeout)
+                        if not ready:
+                            print("\n  [TIMEOUT] No response - rejecting candidate")
+                            return {"decision": "reject", "reason": "timeout"}
+
+                response = input("\n  Your choice [A/R/T/V]: ").strip().upper()
+
+                if response == 'A':
+                    print("  [ACCEPTED] Human override - accepting candidate")
+                    return {"decision": "accept", "adjusted_trust": 0.8}
+
+                elif response == 'R' or response == '':
+                    print("  [REJECTED] Human confirmed rejection")
+                    return {"decision": "reject", "reason": "human_confirmed"}
+
+                elif response == 'T':
+                    try:
+                        new_trust = float(input("  Enter trust score (0.0-1.0): ").strip())
+                        if 0.0 <= new_trust <= 1.0:
+                            decision = "accept" if new_trust >= trust_cfg.reject_threshold else "reject"
+                            print(f"  [ADJUSTED] Trust set to {new_trust:.2f} -> {decision}")
+                            return {"decision": decision, "adjusted_trust": new_trust}
+                        else:
+                            print("  Invalid: must be between 0.0 and 1.0")
+                    except ValueError:
+                        print("  Invalid: enter a decimal number")
+
+                elif response == 'V':
+                    print("\n  === FULL ANALYSIS ===")
+                    print(analysis if analysis else "(No analysis available)")
+                    print("\n  === FLAGS ===")
+                    for flag in flags:
+                        print(f"    - {flag}")
+                    print()
+
+                else:
+                    print("  Invalid choice. Enter A, R, T, or V.")
+
+        except (KeyboardInterrupt, EOFError):
+            print("\n  [INTERRUPTED] Rejecting candidate")
+            return {"decision": "reject", "reason": "interrupted"}
+
     async def _challenge_candidates(
         self,
         candidates: list[dict],
@@ -796,7 +905,62 @@ class EvolutionRunner:
 
             # Apply trust adjustment
             if recommendation == "reject" or trust_score < trust_cfg.reject_threshold:
-                adjusted_fitness = 0
+                # === HUMAN-IN-THE-LOOP ESCALATION ===
+                # Before rejecting, check if human should review borderline cases
+                human_overrode = False
+
+                if (
+                    trust_cfg.human_escalation_enabled
+                    and fitness > trust_cfg.human_escalation_min_fitness
+                ):
+                    # Check if this is a potential champion being rejected
+                    is_potential_champion = fitness > population_best
+                    is_borderline = trust_score >= (trust_cfg.reject_threshold * 0.5)  # Within 50% of threshold
+
+                    should_escalate = (
+                        (is_potential_champion and trust_cfg.human_escalation_on_champion_reject)
+                        or (is_borderline and not is_potential_champion)
+                    )
+
+                    if should_escalate:
+                        print(f"  [HUMAN] Escalating to human review...")
+                        human_result = self._ask_human_escalation(
+                            candidate_file=file_path,
+                            fitness=fitness,
+                            champion_fitness=population_best,
+                            trust_score=trust_score,
+                            flags=all_flags,
+                            analysis=trust_result.get("analysis", ""),
+                        )
+
+                        if human_result["decision"] == "accept":
+                            human_overrode = True
+                            # Use adjusted trust if provided, otherwise use a passing value
+                            trust_score = human_result.get("adjusted_trust", trust_cfg.accept_threshold)
+                            recommendation = "accept"
+                            all_flags.append(f"human_override: accepted with trust {trust_score:.2f}")
+                            print(f"  [HUMAN] Override accepted - trust adjusted to {trust_score:.2f}")
+                        elif human_result["decision"] == "reject":
+                            all_flags.append(f"human_confirmed_rejection: {human_result.get('reason', 'explicit')}")
+                        # If decision is "adjust", trust_score was already set above
+
+                        # Record in dossier
+                        self.dossier.record_human_escalation(
+                            candidate_file=file_path,
+                            generation=self.generation,
+                            fitness=fitness,
+                            original_trust=eval_result.get("trust_score", trust_score),
+                            decision=human_result["decision"],
+                            adjusted_trust=human_result.get("adjusted_trust"),
+                            reason=human_result.get("reason", ""),
+                        )
+
+                if not human_overrode:
+                    adjusted_fitness = 0
+                elif trust_cfg.apply_trust_adjustment:
+                    adjusted_fitness = fitness * trust_score
+                else:
+                    adjusted_fitness = fitness
             elif trust_cfg.apply_trust_adjustment:
                 adjusted_fitness = fitness * trust_score
             else:
