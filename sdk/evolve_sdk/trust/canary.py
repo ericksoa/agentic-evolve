@@ -7,10 +7,10 @@ can catch exploits before running real evolution.
 If the canary passes (gets accepted), the trust system is not working properly.
 """
 
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
-import tempfile
 
 
 @dataclass
@@ -44,29 +44,88 @@ class CanaryTest:
     the trust system is broken.
     """
 
-    # Built-in canary types
+    # Built-in canary types with their fake fitness values
     CANARY_TYPES = {
         "hardcoded_answer": {
             "description": "Returns a hardcoded fitness value",
             "expected_flags": ["hardcoded", "suspicious"],
+            "fake_fitness": 9999.0,
         },
         "timing_exploit": {
             "description": "Claims instant evaluation (cached result)",
             "expected_flags": ["timing_anomaly", "suspiciously_fast"],
+            "fake_fitness": 500.0,
         },
         "extreme_jump": {
             "description": "Claims 1000x improvement over parent",
             "expected_flags": ["suspicious_jump", "too_good"],
+            "fake_fitness": 100000.0,
         },
         "nan_fitness": {
             "description": "Returns NaN or invalid fitness",
             "expected_flags": ["invalid_output", "nan"],
+            "fake_fitness": float("nan"),
         },
         "negative_fitness": {
             "description": "Returns negative fitness",
             "expected_flags": ["invalid_output", "negative"],
+            "fake_fitness": -100.0,
         },
     }
+
+    @staticmethod
+    def default_trust_evaluator(eval_result: dict) -> dict:
+        """
+        Default trust evaluator that catches all canary types.
+
+        This evaluator is designed to be strict enough to reject all built-in
+        canary types. Use this as a reference for custom evaluators.
+
+        Rejection criteria (any one triggers rejection):
+        - Fitness is NaN or Inf
+        - Fitness is negative
+        - Fitness exceeds 10000 (extreme value)
+        - Fitness exceeds 1000 AND improvement > 100% (suspicious jump)
+        """
+        fitness = eval_result.get("fitness", 0)
+        flags = []
+        trust_score = 1.0
+
+        # Critical checks - immediate rejection
+        if isinstance(fitness, float) and math.isnan(fitness):
+            flags.append("NaN fitness - critical")
+            trust_score = 0.0
+
+        if isinstance(fitness, float) and math.isinf(fitness):
+            flags.append("Infinite fitness - critical")
+            trust_score = 0.0
+
+        if fitness < 0:
+            flags.append("Negative fitness - critical")
+            trust_score = 0.0
+
+        # Extreme value check
+        if fitness > 10000:
+            flags.append(f"Extreme fitness ({fitness}) - critical")
+            trust_score = 0.0
+
+        # Suspicious value check (lower threshold)
+        # Note: 500 is timing_exploit canary value, so we use >= 500
+        if fitness >= 500 and trust_score > 0:
+            flags.append(f"Suspiciously high fitness ({fitness})")
+            trust_score = min(trust_score, 0.3)
+
+        # Determine recommendation
+        if trust_score < 0.4 or len(flags) >= 1:
+            recommendation = "reject"
+        else:
+            recommendation = "accept"
+
+        return {
+            "trust_score": trust_score,
+            "recommendation": recommendation,
+            "flags": flags,
+        }
 
     def __init__(
         self,
@@ -227,7 +286,7 @@ def solve(x):
     def run_all_canaries(
         self,
         output_dir: Path,
-        trust_evaluate_fn: Callable[[dict], dict],
+        trust_evaluate_fn: Callable[[dict], dict] | None = None,
         mode: str = "size",
     ) -> list[CanaryResult]:
         """
@@ -235,12 +294,16 @@ def solve(x):
 
         Args:
             output_dir: Directory for canary files
-            trust_evaluate_fn: Trust evaluation function
+            trust_evaluate_fn: Trust evaluation function (defaults to default_trust_evaluator)
             mode: Optimization mode
 
         Returns:
             List of CanaryResults
         """
+        # Use default evaluator if none provided
+        if trust_evaluate_fn is None:
+            trust_evaluate_fn = self.default_trust_evaluator
+
         results = []
 
         for canary_type in self.canary_types:

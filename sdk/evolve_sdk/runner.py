@@ -916,48 +916,11 @@ class EvolutionRunner:
         canary_dir = self.work_dir / "canary_tests"
         canary_dir.mkdir(exist_ok=True)
 
-        # Define a simple trust evaluation function for canary testing
-        def trust_evaluate(eval_result: dict) -> dict:
-            """Simplified trust evaluation for canary test."""
-            fitness = eval_result.get("fitness", 0)
-            flags = []
-
-            # Run exploit checks
-            exploit_results = self.exploit_detector.run_all_checks(
-                fitness=fitness,
-                evaluation_time_ms=0.1,  # Instant = suspicious
-            )
-            flags.extend(self.exploit_detector.get_flags(exploit_results))
-
-            # Check for extreme values
-            if fitness > self.config.trust.output_max_value:
-                flags.append(f"Extreme fitness: {fitness}")
-
-            # Check for negative values
-            if fitness < 0:
-                flags.append(f"Negative fitness: {fitness}")
-
-            # Check for NaN
-            import math
-            if isinstance(fitness, float) and math.isnan(fitness):
-                flags.append("NaN fitness")
-
-            # Determine trust score based on flags
-            trust_score = 1.0 - (len(flags) * 0.3)
-            trust_score = max(0.0, min(1.0, trust_score))
-
-            recommendation = "reject" if trust_score < 0.4 or len(flags) >= 2 else "accept"
-
-            return {
-                "trust_score": trust_score,
-                "recommendation": recommendation,
-                "flags": flags,
-            }
-
-        # Run canary tests
+        # Run canary tests using the default trust evaluator
+        # The default evaluator is designed to catch all built-in canary types
         results = self.canary_test.run_all_canaries(
             output_dir=canary_dir,
-            trust_evaluate_fn=trust_evaluate,
+            trust_evaluate_fn=None,  # Uses CanaryTest.default_trust_evaluator
             mode=self.config.mode,
         )
 
