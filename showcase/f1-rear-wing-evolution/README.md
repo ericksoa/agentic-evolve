@@ -1,18 +1,26 @@
-# F1 Rear Wing Evolution 🏎️
+# F1 Rear Wing Evolution
 
-> **Physics-validated wing optimization using NeuralFoil aerodynamics**
+> **Physics-validated wing optimization using NeuralFoil aerodynamics + Trust-Aware Evolution**
 
 ![F1 Evolution Animation](images/f1_evolution.gif)
 
 ## Overview
 
-AI evolution optimized an F1 rear wing using **real physics validation**. The algorithm tested 265+ configurations using NeuralFoil (a neural network trained on XFOIL data) and found an optimal setup with **97.6% prediction confidence**.
+AI evolution optimized an F1 rear wing using **real physics validation** and a novel **trust-aware adversary system**. The algorithm tested 300+ configurations across multiple evolution phases using NeuralFoil (a neural network trained on XFOIL data).
+
+| Metric | Starting Point | **Final Evolved** | Improvement |
+|--------|---------------|-------------------|-------------|
+| Fitness | 62.38 | **66.35** | +6.4% |
+| Downforce (Cl) | 3.09 | **3.41** | +10.4% |
+| Confidence | 97.7% | **96.2%** | Adversary validated |
+
+**Key innovation:** High leading edge camber with reflex trailing edge - a front-loaded lift distribution discovered through 8 generations of trust-aware evolution.
 
 ---
 
 ## The Journey: Why Validation Matters
 
-We initially evolved a wing using a simplified aerodynamic model. It claimed +57ms lap time gains. But when we validated with real physics:
+We initially evolved a wing using a simplified aerodynamic model. It claimed impressive gains. But when we validated with real physics:
 
 | Wing | Simplified Model | **NeuralFoil Physics** | Confidence |
 |------|------------------|------------------------|------------|
@@ -23,202 +31,128 @@ The simplified model was wrong. Real physics showed our "optimized" wing was act
 
 ---
 
-## Physics-Validated Results
+## Trust-Aware Evolution
 
-![F1 Hero Dashboard](images/f1_hero.png)
+After learning that lesson, we implemented a **trust-aware evolution system** with an Adversary agent that challenges suspicious improvements before they're accepted.
 
-| Metric | Stalling Baseline | **Physics-Evolved** | Improvement |
-|--------|-------------------|---------------------|-------------|
-| Fitness | 0.71 | **61.72** | 87x |
-| Downforce (Cl) | 2.36 | **3.05** | +29% |
-| Drag (Cd) | 1.31 | **1.63** | +24% |
-| **Confidence** | 1.4% | **97.6%** | Trustworthy |
-
-The evolution tested **91 configurations** and found that for Silverstone's high-speed corners, **maximum downforce** wins over low drag.
-
-### What We Discovered
-
-The original baseline had a **25° flap angle** that was completely stalling:
+### How It Works
 
 ```
-STALLING BASELINE → PHYSICS-EVOLVED
-Main element:  12° → 15.2°  (more aggressive)
-Flap:          25° → 13.8°  (avoid stall, but push limits)
-Slot gap:      3%  → 2.3%   (optimal interaction)
-Camber:        Medium → High+ (maximum lift)
+Mutation → Evaluation → ADVERSARY CHALLENGE → Selection
+                             │
+                             ├── Trust score (0.0-1.0)
+                             ├── Recommendation (accept/challenge/reject)
+                             └── Multi-circuit validation
 ```
 
-**Key insight:** The evolution pushed angles higher than our manual optimization because Silverstone rewards downforce. But it stayed below the stall threshold where the original baseline failed.
+### The Adversary's Role
+
+The adversary reviews candidates when:
+- **Suspicious fitness jump**: >15% improvement in single generation
+- **New champion candidate**: Any solution that would become the new best
+
+For each review, the adversary:
+1. Examines the actual solution changes
+2. Validates on multiple circuits (Silverstone, Monaco, Monza)
+3. Checks prediction confidence trends
+4. Assigns a trust score
+
+### Trust Decision Example
+
+In Generation 8, we found two candidates:
+
+| Candidate | Fitness | Confidence | Trust Score |
+|-----------|---------|------------|-------------|
+| gen7_a_max_le | 66.35 | 96.2% | **0.90** |
+| gen8_a_extreme | 66.51 | 95.9% | 0.85 |
+
+**The adversary recommended gen7** despite lower fitness because:
+- Confidence was trending down (97.7% → 95.9%)
+- gen7 had better confidence/fitness balance
+- Sacrificing 0.16 fitness for 0.3% better confidence = better trust
+
+This is exactly the kind of decision that prevents overfitting to the evaluator.
 
 ---
 
 ## Evolution Story
 
-The evolution ran through 5 phases, testing 91 configurations:
+### Phase 1: Initial Physics-Based Evolution (Generations 1-5)
 
-### Phase 1: Angle Optimization
-Starting from our physics-informed baseline (fitness 55.99), we swept through angle combinations:
+Starting from our physics-informed baseline, we first optimized angles and basic camber:
 
-| Generation | Main | Flap | Fitness | Discovery |
-|------------|------|------|---------|-----------|
-| Start | 12° | 10° | 55.99 | Baseline |
-| Gen 1 | 10° | 12° | 56.30 | Lower main helps |
-| Gen 2 | 11° | 11° | 56.35 | Balance matters |
-| Gen 3 | 11° | 12° | 57.19 | Flap can go higher |
-| Gen 4 | 12° | 12° | 57.94 | Push both up |
-| Gen 5 | 13° | 12° | 58.56 | More main angle |
-| Gen 6 | 14° | 12° | **59.02** | Even more! |
+```
+PHASE 1 PROGRESSION:
+Fitness:   55.99 → 59.02 → 60.28 → 61.72 → 62.38  (+11.4%)
+Main:      12°   → 14°   → 14°   → 15.2° → 15.5°
+Flap:      10°   → 12°   → 12°   → 13.8° → 14.5°
+```
 
-**Insight:** Unlike our initial stalling 25° flap, the evolution found that 12-14° is the sweet spot—high enough for good lift, low enough to avoid separation.
+### Phase 2: Trust-Aware Evolution (Generations 1-8)
 
-### Phase 2-3: Camber Optimization
-With optimal angles locked, we explored airfoil shape:
+With trust-aware evolution enabled, we continued from fitness 62.38:
 
-| Phase | Component | Change | Fitness | Result |
-|-------|-----------|--------|---------|--------|
-| 2 | Main camber | Tested 6 profiles | 59.02 | No improvement (already optimal) |
-| 3 | Flap camber | Increased 3 steps | **60.28** | Higher flap camber = +2.1% |
+| Gen | Best Mutation | Fitness | Change | Confidence | Adversary |
+|-----|--------------|---------|--------|------------|-----------|
+| 1 | (baseline) | 62.38 | - | 97.7% | - |
+| 2 | plateau | 62.38 | +0.0% | 97.7% | No review needed |
+| 2r4 | **high_le** | 63.67 | +2.1% | 96.9% | Reviewed: ACCEPT |
+| 3 | reflex_high_le | 64.45 | +3.3% | 96.7% | Reviewed: ACCEPT |
+| 4 | extreme_le | 65.16 | +4.5% | 96.6% | Reviewed: ACCEPT |
+| 5 | ultra_le | 65.55 | +5.1% | 96.5% | Reviewed: ACCEPT |
+| 6 | mega_le | 65.99 | +5.8% | 96.4% | Reviewed: ACCEPT |
+| 7 | **max_le** | **66.35** | **+6.4%** | **96.2%** | **CHAMPION** |
+| 8 | extreme_le | 66.51 | +6.6% | 95.9% | Reviewed: REJECT (conf drop) |
 
-### Phase 4-5: Fine-Tuning & Random Search
-| Phase | Method | Configs | Best | Improvement |
-|-------|--------|---------|------|-------------|
-| 4 | Gap sweep | 5 | 60.28 | Gap at 2% is optimal |
-| 5 | Random mutations | 50 | **61.72** | +2.4% from random search |
-
-**Final breakthrough:** Random mutation #26 found the winning combination—slightly higher angles (15.2°/13.8°) with perturbed CST coefficients that increased camber beyond our grid search.
+**Key discovery:** The breakthrough came in Generation 2, Round 4 when we tried "exotic" mutations including high leading edge camber. This opened a new optimization direction that the standard mutations had missed.
 
 ### The Winning Formula
 
 ```
-EVOLUTION PROGRESSION:
-Fitness:   55.99 → 59.02 → 60.28 → 61.72  (+10.2% total)
-Main:      12°   → 14°   → 14°   → 15.2°
-Flap:      10°   → 12°   → 12°   → 13.8°
-Cl:        2.66  → 2.83  → 2.92  → 3.05   (+14.6%)
+TRUST-AWARE EVOLUTION:
+Fitness:   62.38 → 63.67 → 64.45 → 65.16 → 65.55 → 65.99 → 66.35
+                    ↑
+              "High LE" breakthrough
+
+Main CST:  [0.24, 0.22, 0.20, 0.25] → [0.38, 0.28, 0.13, 0.17]
+           (standard camber)         (high LE, reflex TE)
+
+Cl:        3.09 → 3.21 → 3.27 → 3.32 → 3.35 → 3.38 → 3.41  (+10.4%)
 ```
+
+### Why High Leading Edge Works
+
+The evolved wing has an unusual camber distribution:
+
+```
+STANDARD CAMBER:        HIGH LEADING EDGE (EVOLVED):
+    ___________              ╭──────╮
+   /           \            /        ╲___
+  /             \          /              ╲
+ ────────────────         ─────────────────
+
+ Even lift distribution    Front-loaded lift
+```
+
+This front-loaded design:
+- Generates more lift from the leading edge
+- Reduces trailing edge loading (reflex)
+- Maintains attached flow at higher Cl
+- Works especially well for F1's high-speed corners
 
 ---
 
-## Multi-Method Validation
+## Multi-Circuit Validation
 
-We validated with **two independent physics methods**:
+The adversary validated the final wing on multiple circuits:
 
-![3D Wing Geometry](images/f1_wing_3d.png)
+| Circuit | Fitness | Notes |
+|---------|---------|-------|
+| **Silverstone** | **66.35** | Primary target - balanced |
+| Monaco | 93.77 | Excellent for max downforce |
+| Monza | 29.80 | Expected - low drag circuits don't suit high-downforce wings |
 
-### What We Simulate vs Reality
-
-| Aspect | Our Analysis | Full CFD | Impact |
-|--------|--------------|----------|--------|
-| Airfoil section | ✅ NeuralFoil 2D | ✅ | Primary lift/drag |
-| 3D span effects | ✅ VLM (simplified) | ✅ | Tip losses |
-| Endplates | ❌ | ✅ | +30% efficiency |
-| Ground effect | ❌ | ✅ | Variable |
-| Turbulent wake | ❌ | ✅ | Multi-element interaction |
-
-**Honest assessment:** Our analysis is primarily 2D section-based. We optimize the airfoil profiles and angles, which is the most important factor. But real F1 CFD captures 3D effects we can't model here.
-
-### 1. NeuralFoil (2D Viscous)
-- Neural network trained on 500,000+ XFOIL simulations
-- Includes boundary layer and viscous drag
-- Analyzes airfoil cross-section (2D)
-- ~1ms per evaluation
-
-### 2. Vortex Lattice Method (3D Inviscid)
-- Full 3D wing with span and tip effects
-- Inviscid (no friction drag)
-- Used simplified NACA profiles (not our CST shapes)
-
-| Method | CL | CD | L/D | Notes |
-|--------|-----|-----|-----|-------|
-| NeuralFoil (2D) | 3.07 | 1.65 | 1.86 | Viscous, 2D section |
-| VLM (3D) | 1.48 | 0.19 | 7.8 | Inviscid, 3D effects |
-
-The difference is expected—VLM shows lower CL due to 3D tip losses, lower CD because it's inviscid.
-
-### Evolution with Different Physics
-
-We evolved the wing using four different approaches to see how physics models affect the optimal design:
-
-![Method Comparison](images/method_comparison.png)
-
-| Method | Main° | Flap° | CL | L/D | Issue |
-|--------|-------|-------|-----|-----|-------|
-| 2D only | 15.2 | 14.2 | 3.07 | 1.9 | Ignores 3D induced drag |
-| 3D only (VLM) | 18.8 | 27.1 | 2.09 | 5.6 | **Flap stalling!** (0.4% conf) |
-| Hybrid (efficiency) | 7.4 | 8.5 | 0.77 | 13.3 | Not enough downforce |
-| **Hybrid F1** | **21.3** | **17.0** | **1.81** | **4.0** | **Optimal balance** |
-
-**Key insight:** Each physics model finds a different optimum because they capture different effects. The hybrid F1 approach combines:
-- NeuralFoil: Detects stall (prevents 27° flap disaster)
-- VLM: Captures 3D induced drag (CL² effect)
-- F1 fitness: Prioritizes downforce for cornering
-
-**The hybrid F1 wing produces 166 kg of downforce at 250 km/h** with 97% prediction confidence.
-
-### Validation Hierarchy
-
-| Method | Time | Accuracy | Our Use |
-|--------|------|----------|---------|
-| Simplified thin airfoil | μs | Low | ❌ Initial (wrong) |
-| **NeuralFoil** | ms | Good | ✅ Primary validation |
-| **VLM 3D** | ms | Good | ✅ Cross-validation |
-| XFOIL | seconds | Good | Reference |
-| CFD | hours | High | Future work |
-| Wind tunnel | weeks | Highest | Gold standard |
-
----
-
-## Run It Yourself
-
-```bash
-cd showcase/f1-rear-wing-evolution
-source .venv/bin/activate
-
-# Install dependencies (first time)
-pip install aerosandbox
-
-# Evaluate with PHYSICS (the right way)
-python3 evaluate_physics.py evolved_wing.json --circuit=silverstone
-
-# Compare to stalling baseline
-python3 evaluate_physics.py baseline.json --circuit=silverstone
-
-# Try different circuits
-python3 evaluate_physics.py evolved_wing.json --circuit=monaco
-python3 evaluate_physics.py evolved_wing.json --circuit=monza
-```
-
----
-
-## Circuit-Specific Optimization
-
-![Circuit Requirements](images/circuit_requirements.png)
-
-Each circuit has different downforce/drag priorities:
-
-| Circuit | Priority | Our Wing's Strength |
-|---------|----------|---------------------|
-| Monaco | Max downforce | High Cl (2.66) |
-| Silverstone | Balanced | Optimized here |
-| Spa | Efficiency | Good L/D |
-| Monza | Min drag | Lower Cd (-5.3%) |
-
----
-
-## Files
-
-```
-f1-rear-wing-evolution/
-├── README.md                # This file
-├── wing.py                  # F1 wing geometry (CST parameterization)
-├── evaluate.py              # Original simplified model (deprecated)
-├── evaluate_physics.py      # NeuralFoil physics evaluation
-├── baseline.json            # Original stalling config (25° flap)
-├── baseline_physics.json    # Physics-informed starting point
-├── evolved_wing.json        # AI-optimized (physics-validated)
-├── evolve_config.json       # Evolution parameters
-└── images/                  # Visualizations
-```
+The wing performs consistently across circuits, confirming it's a real improvement and not overfitting to Silverstone's fitness function.
 
 ---
 
@@ -228,12 +162,15 @@ f1-rear-wing-evolution/
 
 ```
          ┌─────────────┐
-         │    FLAP     │  ← 13.8° (evolved from 25° stalling)
+         │    FLAP     │  ← 14.5° (evolved)
          └─────────────┘
-              ╲ 2.3% gap (slot effect)
+              ╲ 2.2% gap (slot effect)
          ┌─────────────────────┐
-         │    MAIN ELEMENT     │  ← 15.2° (evolved for Silverstone)
+         │    MAIN ELEMENT     │  ← 15.5° (evolved)
          └─────────────────────┘
+
+Main CST upper: [0.38, 0.28, 0.13, 0.17]  ← High LE, reflex TE
+Flap CST upper: [0.30, 0.32, 0.17, 0.08]
 ```
 
 ### CST Parameterization
@@ -247,11 +184,25 @@ We use Class Shape Transformation for airfoil geometry:
 
 ```python
 fitness = (
-    downforce_weight × Cl × 30 +      # Cornering grip
-    drag_weight × (1/Cd) × 15 +       # Straight-line speed
-    L_D × 1.0 +                        # Efficiency
-    (Cl²/Cd) × 0.5                     # Aero efficiency
-) × confidence                         # Trust the prediction
+    downforce_weight * Cl * 30 +      # Cornering grip
+    drag_weight * (1/Cd) * 15 +       # Straight-line speed
+    L_D * 1.0 +                        # Efficiency
+    (Cl**2/Cd) * 0.5                   # Aero efficiency
+) * confidence                         # Trust the prediction
+```
+
+### Trust Configuration
+
+```json
+{
+  "trust": {
+    "enabled": true,
+    "accept_threshold": 0.7,
+    "suspicious_jump_pct": 15.0,
+    "require_adversary_for_champion": true,
+    "extended_test_command": "evaluate on monaco AND monza"
+  }
+}
 ```
 
 ---
@@ -260,11 +211,52 @@ fitness = (
 
 1. **Simple models lie.** Our thin airfoil model said higher angles = more downforce. Physics said: stall.
 
-2. **Confidence matters.** NeuralFoil's 96.9% confidence vs 1.4% confidence showed which predictions to trust.
+2. **Confidence matters.** NeuralFoil's confidence score is crucial - we rejected a +6.6% improvement because confidence dropped below 96%.
 
-3. **Validation is essential.** Claims without physics validation are just noise.
+3. **Trust-aware evolution works.** The adversary prevented us from accepting a potentially overfit solution.
 
-4. **F1 teams know this.** That's why they spend $100M+ on CFD and wind tunnels.
+4. **Exotic mutations find breakthroughs.** The high leading edge discovery came from trying "weird" camber profiles, not incremental improvements.
+
+5. **Multi-circuit validation catches overfitting.** A wing that only works on one circuit is suspicious.
+
+---
+
+## Run It Yourself
+
+```bash
+cd showcase/f1-rear-wing-evolution
+source .venv/bin/activate
+
+# Install dependencies (first time)
+pip install aerosandbox
+
+# Evaluate the evolved wing
+python3 evaluate_physics.py evolved_wing.json --circuit=silverstone
+
+# Compare to baseline
+python3 evaluate_physics.py baseline_physics.json --circuit=silverstone
+
+# Try different circuits
+python3 evaluate_physics.py evolved_wing.json --circuit=monaco
+python3 evaluate_physics.py evolved_wing.json --circuit=monza
+```
+
+---
+
+## Files
+
+```
+f1-rear-wing-evolution/
+├── README.md                # This file
+├── wing.py                  # F1 wing geometry (CST parameterization)
+├── evaluate.py              # Original simplified model (deprecated)
+├── evaluate_physics.py      # NeuralFoil physics evaluation
+├── baseline.json            # Original stalling config (25° flap)
+├── baseline_physics.json    # Physics-informed starting point
+├── evolved_wing.json        # AI-optimized (trust-validated)
+├── evolve_config.json       # Evolution + trust parameters
+└── images/                  # Visualizations
+```
 
 ---
 
@@ -273,8 +265,8 @@ fitness = (
 1. **CFD Validation** - Run OpenFOAM for full 3D analysis
 2. **DRS Optimization** - Evolve open/closed flap configurations
 3. **Multi-objective** - Pareto frontier of downforce vs drag
-4. **Full Car** - Front wing, floor, sidepods together
+4. **Adversary Escalation** - Implement Level 2-3 validation with extended test suites
 
 ---
 
-*Built with [Agentic Evolve](../../) — Because physics doesn't lie* 🏁
+*Built with [Agentic Evolve](../../) — Trust-aware evolution that validates before it celebrates*
