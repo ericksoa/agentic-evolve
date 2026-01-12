@@ -4,7 +4,7 @@
   "problem": {
     "goal": "Maximize ROC-AUC for predicting hERG channel inhibition (cardiac toxicity) from molecular structure",
     "metric": "roc_auc",
-    "current_best": 0.8434,
+    "current_best": 0.8711,
     "target": 0.90,
     "constraints": [
       "Must use only molecular structure as input (SMILES)",
@@ -14,6 +14,7 @@
     ]
   },
   "evaluation": {
+    "pre_validation": "./venv/bin/python validate_solution.py {solution}",
     "test_command": "./venv/bin/python evaluate.py {solution} --json",
     "fitness_key": "roc_auc",
     "valid_key": "valid",
@@ -26,7 +27,8 @@
   },
   "starter_solutions": [
     "baseline_fingerprint.py",
-    "baseline_descriptors.py"
+    "baseline_descriptors.py",
+    "evolved_ensemble.py"
   ],
   "solution_format": {
     "type": "python",
@@ -34,36 +36,62 @@
       "class": "HERGPredictor",
       "methods": ["fit(X_smiles, y)", "predict_proba(X_smiles)"],
       "optional_methods": ["get_feature_importance()"]
-    }
+    },
+    "code_requirements": [
+      "ALL imports must be at module level (top of file), not inside methods",
+      "Use 'from rdkit import Chem' and 'from rdkit.Chem import AllChem, Descriptors' at top",
+      "AVOID CalcPBF - it requires 3D conformers which we don't generate",
+      "AVOID RDKFingerprint module - use Chem.RDKFingerprint(mol) instead",
+      "Handle invalid SMILES gracefully (Chem.MolFromSmiles returns None)",
+      "Use numpy arrays, not lists, for feature matrices",
+      "Ensure predict_proba returns values in [0, 1] range"
+    ]
   },
   "optimization_strategies": [
-    "Explore different molecular fingerprints (Morgan, MACCS, RDKit)",
-    "Try graph neural network approaches (if dependencies allow)",
-    "Combine multiple fingerprint types as ensemble features",
-    "Engineer pharmacophore-based features",
-    "Use molecular descriptors (Lipinski, topological)",
-    "Ensemble methods combining multiple base learners",
-    "Feature selection to identify predictive substructures"
+    "Combine Morgan fingerprints with molecular descriptors (hybrid features)",
+    "Try different fingerprint radii (1, 2, 3) and bit sizes (1024, 2048, 4096)",
+    "Use MACCS keys (MACCSkeys.GenMACCSKeys) for pharmacophore patterns",
+    "Engineer hERG-specific features: basic nitrogen count, aromatic ring count, logP",
+    "Ensemble multiple tree models (RF, GBM, ExtraTrees) with weighted voting",
+    "Feature selection with mutual_info_classif or SelectKBest",
+    "Hyperparameter tuning: n_estimators, max_depth, learning_rate",
+    "Add class_weight='balanced' to handle imbalanced data"
   ],
+  "known_working_rdkit": {
+    "fingerprints": [
+      "AllChem.GetMorganFingerprintAsBitVect(mol, radius, nBits=2048)",
+      "MACCSkeys.GenMACCSKeys(mol)",
+      "Chem.RDKFingerprint(mol, fpSize=2048)"
+    ],
+    "descriptors": [
+      "Descriptors.MolLogP(mol)",
+      "Descriptors.MolWt(mol)",
+      "Descriptors.NumAromaticRings(mol)",
+      "Descriptors.NumHDonors(mol)",
+      "Descriptors.NumHAcceptors(mol)",
+      "Descriptors.TPSA(mol)",
+      "Descriptors.NumRotatableBonds(mol)",
+      "rdMolDescriptors.CalcFractionCSP3(mol)"
+    ],
+    "avoid": [
+      "CalcPBF (needs 3D conformers)",
+      "GetConformer (we don't generate 3D)",
+      "EmbedMolecule (slow, not needed)"
+    ]
+  },
   "resource_constraints": {
     "max_local_threads": 4,
     "prefer_cloud": false,
     "timeout_seconds": 300
   },
   "domain_context": {
-    "background": "hERG (human Ether-a-go-go Related Gene) encodes a potassium ion channel. Drug-induced hERG inhibition causes cardiac arrhythmias (QT prolongation), leading to ~40% of drug withdrawals. Predicting hERG liability early saves billions in failed drug development.",
+    "background": "hERG (human Ether-a-go-go Related Gene) encodes a potassium ion channel. Drug-induced hERG inhibition causes cardiac arrhythmias (QT prolongation), leading to drug withdrawals. Predicting hERG liability early saves billions in failed drug development.",
     "data_source": "Therapeutics Data Commons (TDC) hERG benchmark",
-    "known_approaches": [
-      "Morgan fingerprints + Random Forest (baseline)",
-      "Graph Neural Networks (state-of-art)",
-      "Pharmacophore modeling",
-      "3D conformer-based methods"
-    ],
     "key_molecular_features": [
-      "Basic nitrogen (positive charge at physiological pH)",
-      "Hydrophobic aromatic groups",
-      "Molecular flexibility",
-      "Lipophilicity (logP)"
+      "Basic nitrogen (positive charge at physiological pH) - count sp3 N with H",
+      "Hydrophobic aromatic groups - NumAromaticRings, aromatic atom count",
+      "Molecular flexibility - NumRotatableBonds, FractionCSP3",
+      "Lipophilicity - MolLogP (optimal range 2-5 for hERG binding)"
     ]
   }
 }
