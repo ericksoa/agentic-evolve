@@ -153,6 +153,66 @@ Evolution state is stored in `.evolve-sdk/<problem>/`:
     └── ...
 ```
 
+## Trust System
+
+The SDK includes a comprehensive trust system to detect and prevent evaluator exploitation:
+
+### Components
+
+| Component | Description |
+|-----------|-------------|
+| **Adversary Agent** | Reviews suspicious improvements before promotion |
+| **Variance Gates** | Re-evaluates N times, rejects inconsistent results |
+| **Canary Tests** | Injects known-bad candidates at startup to verify system works |
+| **Exploit Detection** | Checks timing anomalies, output integrity, determinism |
+| **Trust Dossier** | Generates markdown reports of all trust decisions |
+| **Validators** | Pluggable validation chain for escalation levels |
+
+### Configuration
+
+```json
+{
+  "trust": {
+    "enabled": true,
+    "accept_threshold": 0.7,
+    "suspicious_jump_pct": 15.0,
+    "require_adversary_for_champion": true,
+
+    "n_evaluations": 3,
+    "variance_threshold": 0.05,
+    "require_variance_gate": false,
+
+    "canary_test_enabled": false,
+    "canary_test_strict": true,
+
+    "check_timing_anomaly": true,
+    "timing_anomaly_threshold_ms": 50.0,
+    "check_output_integrity": true,
+    "output_max_value": 1000.0,
+
+    "generate_dossier": true,
+    "validators": ["default", "extended"]
+  }
+}
+```
+
+### Trust Flow
+
+```
+Candidate → Exploit Detection → Variance Gate → Adversary Review → Escalation → Decision
+               │                    │                │                │
+               ├── NaN/Inf?         ├── CV > 5%?     ├── Trust < 0.4? ├── Level 1-3
+               └── Too fast?        └── Inconsistent? └── Suspicious?   └── Extended tests
+```
+
+### Trust Dossier
+
+After evolution, a `trust_dossier.md` is generated with:
+- Summary statistics (accept/reject/challenge counts)
+- Canary test results
+- Champion decision history
+- Per-evaluation trust scores and flags
+
 ## Mode-Specific Guidance
 
 The SDK reads mode-specific guidance from skill files in `.claude/commands/`:

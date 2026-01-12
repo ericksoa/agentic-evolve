@@ -31,6 +31,34 @@ class TrustConfig:
     # Champion gating
     require_adversary_for_champion: bool = True  # New champions must pass adversary
 
+    # === NEW: Variance Gates (A) ===
+    # Re-evaluate N times and check consistency
+    n_evaluations: int = 1  # Number of evaluation runs (1 = disabled, 3+ recommended)
+    variance_threshold: float = 0.05  # Max acceptable coefficient of variation
+    require_variance_gate: bool = False  # Reject if variance exceeds threshold
+
+    # === NEW: Canary Test (D) ===
+    # Inject known-bad candidate at startup to verify trust system works
+    canary_test_enabled: bool = False  # Run canary test before evolution
+    canary_test_strict: bool = True  # Fail evolution if canary passes (it shouldn't)
+
+    # === NEW: Exploit Detection (B) - non-sandboxing checks ===
+    # Basic exploit detection without sandboxing
+    check_timing_anomaly: bool = True  # Flag suspiciously fast evaluations
+    timing_anomaly_threshold_ms: float = 10.0  # Below this is suspicious
+    check_output_integrity: bool = True  # Check for NaN, extreme values
+    output_max_value: float = 1e10  # Fitness above this is rejected
+    check_eval_determinism: bool = True  # Compare N evals for consistency
+
+    # === NEW: Trust Dossier (E) ===
+    # Generate markdown reports for trust decisions
+    generate_dossier: bool = True  # Create trust_dossier.md after champion decisions
+    dossier_include_history: bool = True  # Include full trust history in dossier
+
+    # === NEW: Validator Interface (C) ===
+    # Pluggable validators for escalation
+    validators: list[str] = field(default_factory=lambda: ["default"])  # Validator chain
+
 
 @dataclass
 class EvolutionConfig:
@@ -114,6 +142,24 @@ class EvolutionConfig:
             extended_test_command=trust_data.get("extended_test_command"),
             apply_trust_adjustment=trust_data.get("apply_trust_adjustment", True),
             require_adversary_for_champion=trust_data.get("require_adversary_for_champion", True),
+            # Variance Gates (A)
+            n_evaluations=trust_data.get("n_evaluations", 1),
+            variance_threshold=trust_data.get("variance_threshold", 0.05),
+            require_variance_gate=trust_data.get("require_variance_gate", False),
+            # Canary Test (D)
+            canary_test_enabled=trust_data.get("canary_test_enabled", False),
+            canary_test_strict=trust_data.get("canary_test_strict", True),
+            # Exploit Detection (B)
+            check_timing_anomaly=trust_data.get("check_timing_anomaly", True),
+            timing_anomaly_threshold_ms=trust_data.get("timing_anomaly_threshold_ms", 10.0),
+            check_output_integrity=trust_data.get("check_output_integrity", True),
+            output_max_value=trust_data.get("output_max_value", 1e10),
+            check_eval_determinism=trust_data.get("check_eval_determinism", True),
+            # Trust Dossier (E)
+            generate_dossier=trust_data.get("generate_dossier", True),
+            dossier_include_history=trust_data.get("dossier_include_history", True),
+            # Validator Interface (C)
+            validators=trust_data.get("validators", ["default"]),
         )
 
         # Build config with file data and overrides

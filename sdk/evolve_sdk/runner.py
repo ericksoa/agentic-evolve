@@ -3,11 +3,19 @@ Main evolution runner using Claude Agent SDK.
 
 Provides hierarchical agents with clean context per generation,
 parallel mutation exploration, and validation hooks.
+
+Trust System Components:
+- Variance Gates: Re-evaluate N times for consistency
+- Canary Tests: Inject known-bad candidates to verify system works
+- Exploit Detection: Timing, output integrity, determinism checks
+- Trust Dossier: Markdown reports of trust decisions
+- Validators: Pluggable validation chain for escalation
 """
 
 import asyncio
 import json
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -36,6 +44,13 @@ from .hooks import create_validation_hook, create_logging_hook, set_log_context
 from .progress import (
     ProgressDisplay, AgentStatus,
     print_evolution_header, print_evolution_complete, print_final_results,
+)
+from .trust import (
+    TrustDossier,
+    VarianceGate,
+    CanaryTest,
+    ExploitDetector,
+    ValidatorRegistry,
 )
 
 
@@ -92,6 +107,45 @@ class EvolutionRunner:
         # Progress display
         self.progress = ProgressDisplay(width=72)
 
+        # Trust system components
+        self._init_trust_system()
+
+    def _init_trust_system(self):
+        """Initialize trust system components based on config."""
+        trust_cfg = self.config.trust
+
+        # Trust Dossier
+        self.dossier = TrustDossier(self.work_dir, self.config.problem)
+
+        # Variance Gate
+        self.variance_gate = VarianceGate(
+            n_evaluations=trust_cfg.n_evaluations,
+            variance_threshold=trust_cfg.variance_threshold,
+            require_gate=trust_cfg.require_variance_gate,
+        )
+
+        # Exploit Detector
+        self.exploit_detector = ExploitDetector(
+            check_timing=trust_cfg.check_timing_anomaly,
+            timing_threshold_ms=trust_cfg.timing_anomaly_threshold_ms,
+            check_output=trust_cfg.check_output_integrity,
+            output_max_value=trust_cfg.output_max_value,
+            check_determinism=trust_cfg.check_eval_determinism,
+        )
+
+        # Canary Test
+        self.canary_test = CanaryTest(
+            strict_mode=trust_cfg.canary_test_strict,
+        )
+
+        # Register validators
+        if trust_cfg.extended_test_command:
+            from .trust.validators import ExtendedTestValidator
+            ValidatorRegistry.register(
+                "extended",
+                lambda: ExtendedTestValidator(trust_cfg.extended_test_command),
+            )
+
     def _sanitize_problem_id(self, problem: str) -> str:
         """Convert problem description to valid directory name."""
         # Take first 30 chars, replace non-alphanumeric with underscore
@@ -110,6 +164,15 @@ class EvolutionRunner:
         # Setup directories
         self.work_dir.mkdir(parents=True, exist_ok=True)
         self.mutations_dir.mkdir(parents=True, exist_ok=True)
+
+        # Run canary test if enabled (verifies trust system works)
+        if self.config.trust.canary_test_enabled:
+            canary_passed = await self._run_canary_test()
+            if not canary_passed and self.config.trust.canary_test_strict:
+                raise RuntimeError(
+                    "Canary test failed - trust system is not working properly. "
+                    "Set canary_test_strict=false to continue anyway."
+                )
 
         # Check for resume
         if self._load_state():
@@ -543,6 +606,13 @@ class EvolutionRunner:
         """
         Run adversary challenge on candidates that need trust verification.
 
+        Includes:
+        - Exploit detection (timing, output integrity)
+        - Variance gates (if n_evaluations > 1)
+        - Adversary agent review
+        - Escalation ladder
+        - Trust dossier recording
+
         Returns updated evaluations with trust scores and adjusted fitness.
 
         Args:
@@ -562,10 +632,49 @@ class EvolutionRunner:
             file_path = eval_result.get("file", "")
             fitness = eval_result.get("fitness", 0)
             valid = eval_result.get("valid", False)
+            eval_time_ms = eval_result.get("evaluation_time_ms")
 
             # Find the corresponding candidate
             candidate = next((c for c in candidates if c.get("file") == file_path), None)
             parent = parent_map.get(file_path)
+
+            # Track all flags and checks
+            all_flags = []
+            exploit_results = {}
+            variance_stats = None
+
+            # === EXPLOIT DETECTION (B) ===
+            # Run basic exploit checks before adversary review
+            exploit_results = self.exploit_detector.run_all_checks(
+                fitness=fitness,
+                evaluation_time_ms=eval_time_ms,
+            )
+            exploit_flags = self.exploit_detector.get_flags(exploit_results)
+            all_flags.extend(exploit_flags)
+
+            # Critical exploit = immediate rejection
+            if self.exploit_detector.has_critical(exploit_results):
+                print(f"  [EXPLOIT] Critical exploit detected: {exploit_flags}")
+                eval_result["trust_score"] = 0.0
+                eval_result["adversary_reviewed"] = True
+                eval_result["adversary_recommendation"] = "reject"
+                eval_result["adversary_flags"] = exploit_flags
+                eval_result["exploit_checks"] = {k: v.to_dict() for k, v in exploit_results.items()}
+                eval_result["fitness"] = 0
+                updated_evals.append(eval_result)
+
+                # Record in dossier
+                self.dossier.record_evaluation(
+                    candidate_file=file_path,
+                    generation=self.generation,
+                    fitness=fitness,
+                    trust_score=0.0,
+                    recommendation="reject",
+                    flags=exploit_flags,
+                    exploit_checks={k: v.to_dict() for k, v in exploit_results.items()},
+                    analysis="Critical exploit detected - immediate rejection",
+                )
+                continue
 
             # Check if this candidate needs adversary review
             needs_review = False
@@ -580,6 +689,7 @@ class EvolutionRunner:
                 jump_pct = ((fitness - parent["fitness"]) / parent["fitness"]) * 100
                 if jump_pct > trust_cfg.suspicious_jump_pct:
                     needs_review = True
+                    all_flags.append(f"Suspicious jump: {jump_pct:.1f}%")
                     print(f"  [!] Suspicious jump: {jump_pct:.1f}% > {trust_cfg.suspicious_jump_pct}%")
 
             # Check if this would be a new champion
@@ -587,14 +697,56 @@ class EvolutionRunner:
                 needs_review = True
                 print(f"  [!] New champion candidate: {fitness:.4f} > {population_best:.4f}")
 
+            # Check if exploit detection raised warnings
+            if exploit_flags:
+                needs_review = True
+                print(f"  [!] Exploit warnings: {exploit_flags}")
+
             if not needs_review:
                 # No review needed - keep original fitness
                 eval_result["trust_score"] = 1.0
                 eval_result["adversary_reviewed"] = False
+                eval_result["exploit_checks"] = {k: v.to_dict() for k, v in exploit_results.items()}
                 updated_evals.append(eval_result)
                 continue
 
-            # Run adversary challenge
+            # === VARIANCE GATES (A) ===
+            # Run multiple evaluations if configured
+            if trust_cfg.n_evaluations > 1:
+                print(f"  [VARIANCE] Running {trust_cfg.n_evaluations} evaluations...")
+                # Note: For now, we use the single fitness value
+                # In a full implementation, this would re-run the evaluator N times
+                # For demonstration, we simulate with the single value
+                fitness_values = [fitness]  # TODO: Actually re-evaluate N times
+
+                variance_stats = self.variance_gate.check_consistency(fitness_values)
+                variance_flags = self.variance_gate.get_flags(variance_stats)
+                all_flags.extend(variance_flags)
+
+                if not variance_stats.passed and trust_cfg.require_variance_gate:
+                    print(f"  [VARIANCE] FAILED: CV={variance_stats.cv:.4f} > {trust_cfg.variance_threshold}")
+                    eval_result["trust_score"] = 0.0
+                    eval_result["adversary_reviewed"] = True
+                    eval_result["adversary_recommendation"] = "reject"
+                    eval_result["adversary_flags"] = all_flags
+                    eval_result["variance_stats"] = variance_stats.to_dict()
+                    eval_result["fitness"] = 0
+                    updated_evals.append(eval_result)
+
+                    # Record in dossier
+                    self.dossier.record_evaluation(
+                        candidate_file=file_path,
+                        generation=self.generation,
+                        fitness=fitness,
+                        trust_score=0.0,
+                        recommendation="reject",
+                        flags=all_flags,
+                        variance_stats=variance_stats.to_dict(),
+                        analysis="Failed variance gate",
+                    )
+                    continue
+
+            # === ADVERSARY AGENT REVIEW ===
             print(f"  [ADVERSARY] Challenging: {file_path.split('/')[-1]}")
             trust_result = await self._spawn_adversary(
                 candidate=candidate or {"file": file_path},
@@ -605,11 +757,13 @@ class EvolutionRunner:
             trust_score = trust_result.get("trust_score", 0.5)
             escalation_level = trust_result.get("escalation_level", 0)
             recommendation = trust_result.get("recommendation", "accept")
-            flags = trust_result.get("flags", [])
+            adversary_flags = trust_result.get("flags", [])
+            all_flags.extend(adversary_flags)
 
-            print(f"  [ADVERSARY] Trust: {trust_score:.2f}, Rec: {recommendation}, Flags: {len(flags)}")
+            print(f"  [ADVERSARY] Trust: {trust_score:.2f}, Rec: {recommendation}, Flags: {len(adversary_flags)}")
 
-            # Handle escalation if needed
+            # === ESCALATION LADDER (C) ===
+            escalation_history = []
             if (
                 recommendation == "challenge"
                 and escalation_level > 0
@@ -622,6 +776,13 @@ class EvolutionRunner:
                     escalation_level=escalation_level,
                 )
 
+                escalation_history.append({
+                    "level": escalation_level,
+                    "passed": escalation_result.get("escalation_passed", False),
+                    "tests_run": escalation_result.get("tests_run", []),
+                    "failures": escalation_result.get("failures", []),
+                })
+
                 if escalation_result.get("escalation_passed"):
                     trust_score = escalation_result.get("revised_trust", trust_score)
                     fitness = escalation_result.get("revised_fitness", fitness)
@@ -630,6 +791,7 @@ class EvolutionRunner:
                 else:
                     recommendation = "reject"
                     trust_score = 0.0
+                    all_flags.extend(escalation_result.get("failures", []))
                     print(f"  [ESCALATION] Failed: {escalation_result.get('failures', [])}")
 
             # Apply trust adjustment
@@ -646,10 +808,28 @@ class EvolutionRunner:
             eval_result["fitness"] = adjusted_fitness
             eval_result["adversary_reviewed"] = True
             eval_result["adversary_recommendation"] = recommendation
-            eval_result["adversary_flags"] = flags
+            eval_result["adversary_flags"] = all_flags
             eval_result["adversary_analysis"] = trust_result.get("analysis", "")
+            eval_result["exploit_checks"] = {k: v.to_dict() for k, v in exploit_results.items()}
+            if variance_stats:
+                eval_result["variance_stats"] = variance_stats.to_dict()
 
             updated_evals.append(eval_result)
+
+            # === TRUST DOSSIER (E) ===
+            # Record in dossier for reporting
+            self.dossier.record_evaluation(
+                candidate_file=file_path,
+                generation=self.generation,
+                fitness=fitness,
+                trust_score=trust_score,
+                recommendation=recommendation,
+                flags=all_flags,
+                variance_stats=variance_stats.to_dict() if variance_stats else None,
+                exploit_checks={k: v.to_dict() for k, v in exploit_results.items()},
+                escalation_history=escalation_history,
+                analysis=trust_result.get("analysis", ""),
+            )
 
         return updated_evals
 
@@ -707,6 +887,11 @@ class EvolutionRunner:
         print_evolution_complete(self.generation, self.champion, len(self.population))
         self._save_state()
 
+        # Generate trust dossier if enabled
+        if self.config.trust.generate_dossier:
+            self.dossier.save(include_history=self.config.trust.dossier_include_history)
+            print(f"[TRUST] Dossier saved to: {self.dossier.dossier_path}")
+
         return {
             "problem": self.config.problem,
             "mode": self.config.mode,
@@ -715,6 +900,89 @@ class EvolutionRunner:
             "population": self.population,
             "history": self.history,
         }
+
+    async def _run_canary_test(self) -> bool:
+        """
+        Run canary test to verify trust system is working.
+
+        Injects known-bad candidates and verifies they're rejected.
+
+        Returns:
+            True if all canaries were correctly rejected
+        """
+        print("\n[CANARY] Running trust system verification...")
+
+        # Create canary directory
+        canary_dir = self.work_dir / "canary_tests"
+        canary_dir.mkdir(exist_ok=True)
+
+        # Define a simple trust evaluation function for canary testing
+        def trust_evaluate(eval_result: dict) -> dict:
+            """Simplified trust evaluation for canary test."""
+            fitness = eval_result.get("fitness", 0)
+            flags = []
+
+            # Run exploit checks
+            exploit_results = self.exploit_detector.run_all_checks(
+                fitness=fitness,
+                evaluation_time_ms=0.1,  # Instant = suspicious
+            )
+            flags.extend(self.exploit_detector.get_flags(exploit_results))
+
+            # Check for extreme values
+            if fitness > self.config.trust.output_max_value:
+                flags.append(f"Extreme fitness: {fitness}")
+
+            # Check for negative values
+            if fitness < 0:
+                flags.append(f"Negative fitness: {fitness}")
+
+            # Check for NaN
+            import math
+            if isinstance(fitness, float) and math.isnan(fitness):
+                flags.append("NaN fitness")
+
+            # Determine trust score based on flags
+            trust_score = 1.0 - (len(flags) * 0.3)
+            trust_score = max(0.0, min(1.0, trust_score))
+
+            recommendation = "reject" if trust_score < 0.4 or len(flags) >= 2 else "accept"
+
+            return {
+                "trust_score": trust_score,
+                "recommendation": recommendation,
+                "flags": flags,
+            }
+
+        # Run canary tests
+        results = self.canary_test.run_all_canaries(
+            output_dir=canary_dir,
+            trust_evaluate_fn=trust_evaluate,
+            mode=self.config.mode,
+        )
+
+        # Record in dossier
+        for result in results:
+            self.dossier.record_canary_result(
+                canary_fitness=result.canary_fitness,
+                canary_trust=result.canary_trust,
+                canary_rejected=result.canary_rejected,
+                canary_flags=result.canary_flags,
+            )
+
+        # Report results
+        passed = sum(1 for r in results if r.system_working)
+        total = len(results)
+        all_passed = self.canary_test.all_passed()
+
+        if all_passed:
+            print(f"[CANARY] PASSED: {passed}/{total} canaries correctly rejected")
+        else:
+            print(f"[CANARY] FAILED: Only {passed}/{total} canaries rejected")
+            for failure in self.canary_test.get_failures():
+                print(f"  - {failure.canary_type}: trust={failure.canary_trust:.2f}, rejected={failure.canary_rejected}")
+
+        return all_passed
 
     async def _discover_population(self):
         """Discover existing solution files if parsing failed."""

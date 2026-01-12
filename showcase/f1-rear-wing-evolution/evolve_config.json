@@ -16,7 +16,30 @@
     "suspicious_jump_pct": 15.0,
     "max_escalation_level": 2,
     "require_adversary_for_champion": true,
-    "extended_test_command": "python3 evaluate_physics.py {solution} --json --circuit=monaco && python3 evaluate_physics.py {solution} --json --circuit=monza"
+    "extended_test_command": "python3 evaluate_physics.py {solution} --json --circuit=monaco && python3 evaluate_physics.py {solution} --json --circuit=monza",
+
+    "_comment_variance": "Variance Gates - re-evaluate N times for consistency",
+    "n_evaluations": 3,
+    "variance_threshold": 0.05,
+    "require_variance_gate": false,
+
+    "_comment_canary": "Canary Test - verify trust system works at startup",
+    "canary_test_enabled": false,
+    "canary_test_strict": true,
+
+    "_comment_exploit": "Exploit Detection - basic non-sandboxing checks",
+    "check_timing_anomaly": true,
+    "timing_anomaly_threshold_ms": 50.0,
+    "check_output_integrity": true,
+    "output_max_value": 1000.0,
+    "check_eval_determinism": true,
+
+    "_comment_dossier": "Trust Dossier - markdown report of trust decisions",
+    "generate_dossier": true,
+    "dossier_include_history": true,
+
+    "_comment_validators": "Pluggable validators for escalation ladder",
+    "validators": ["default", "extended"]
   },
 
   "starter_solutions": [
