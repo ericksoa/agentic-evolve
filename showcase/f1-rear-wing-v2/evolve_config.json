@@ -1,0 +1,83 @@
+{
+  "description": "F1 rear wing evolution v2 - with full trust pipeline enabled",
+
+  "mode": "perf",
+
+  "cwd": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/f1-rear-wing-v2",
+
+  "evaluation": {
+    "test_command": "/Users/aerickson/Documents/Claude\\ Code\\ Projects/agentic-evolve/showcase/f1-rear-wing-evolution/.venv/bin/python3 evaluate_physics.py {solution} --json --circuit=silverstone",
+    "fitness_key": "fitness",
+    "valid_key": "valid",
+    "higher_is_better": true
+  },
+
+  "trust": {
+    "enabled": true,
+    "accept_threshold": 0.7,
+    "suspicious_jump_pct": 15.0,
+    "max_escalation_level": 2,
+    "require_adversary_for_champion": true,
+    "extended_test_command": "/Users/aerickson/Documents/Claude\\ Code\\ Projects/agentic-evolve/showcase/f1-rear-wing-evolution/.venv/bin/python3 evaluate_physics.py {solution} --json --circuit=monaco && /Users/aerickson/Documents/Claude\\ Code\\ Projects/agentic-evolve/showcase/f1-rear-wing-evolution/.venv/bin/python3 evaluate_physics.py {solution} --json --circuit=monza",
+
+    "n_evaluations": 3,
+    "variance_threshold": 0.05,
+    "require_variance_gate": false,
+
+    "canary_test_enabled": true,
+    "canary_test_strict": false,
+
+    "check_timing_anomaly": true,
+    "timing_anomaly_threshold_ms": 50.0,
+    "check_output_integrity": true,
+    "output_max_value": 1000.0,
+    "check_eval_determinism": true,
+
+    "generate_dossier": true,
+    "dossier_include_history": true,
+
+    "validators": ["default", "extended"]
+  },
+
+  "starter_solutions": [
+    "baseline_physics.json"
+  ],
+
+  "target_file": "evolved_wing.json",
+
+  "solution_format": {
+    "description": "JSON file with F1 rear wing parameters",
+    "required_fields": ["main_upper", "main_lower", "main_angle", "flap_upper", "flap_lower", "flap_angle", "flap_gap"],
+    "example": {
+      "main_upper": [0.18, 0.25, 0.22, 0.15],
+      "main_lower": [-0.10, -0.08, -0.05, -0.02],
+      "main_angle": 15.0,
+      "flap_upper": [0.15, 0.20, 0.15, 0.10],
+      "flap_lower": [-0.08, -0.05, -0.03, -0.01],
+      "flap_angle": 30.0,
+      "flap_gap": 0.025
+    }
+  },
+
+  "optimization_strategies": [
+    {
+      "name": "high_leading_edge",
+      "description": "Increase leading edge camber for front-loaded lift",
+      "hint": "v1 discovered this works well - try main_upper[0] > 0.30"
+    },
+    {
+      "name": "reflex_trailing_edge",
+      "description": "Add reflex (negative camber) at trailing edge",
+      "hint": "Reduces trailing edge loading, maintains attached flow"
+    },
+    {
+      "name": "optimize_angles",
+      "description": "Fine-tune main and flap angles",
+      "hint": "Main: 14-16°, Flap: 12-15° worked well in v1"
+    }
+  ],
+
+  "resource_constraints": {
+    "max_local_threads": 4
+  }
+}
