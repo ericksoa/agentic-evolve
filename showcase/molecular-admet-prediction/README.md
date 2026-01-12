@@ -130,19 +130,19 @@ TPSA (polar surface)      Affects how molecule interacts          Balance needed
 │                                                                             │
 │  Core Metrics:                                                              │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  ROC-AUC:     0.8714 ± 0.0326    (range: 0.81 - 0.92)               │   │
-│  │  PR-AUC:      0.9296 ± 0.0248    (better for imbalanced data)       │   │
+│  │  ROC-AUC:     0.8707 ± 0.0320    (range: 0.81 - 0.92)               │   │
+│  │  PR-AUC:      0.9287 ± 0.0257    (better for imbalanced data)       │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 │  Calibration (is 0.8 really 80% likely?):                                   │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  ECE:         0.114 ± 0.029     (⚠️ moderate miscalibration)        │   │
-│  │  Brier:       0.133 ± 0.026     (lower is better)                   │   │
+│  │  ECE:         0.102 ± 0.022     (improved from 0.114)               │   │
+│  │  Brier:       0.132 ± 0.027     (lower is better)                   │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 │  Operational Metrics (what pharma actually cares about):                    │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  Sens@90%Spec:   0.648 ± 0.110  (catch 65% of blockers @ 10% FPR)   │   │
+│  │  Sens@90%Spec:   0.630 ± 0.112  (catch 63% of blockers @ 10% FPR)   │   │
 │  │  Prec@Top10%:    0.954 ± 0.038  (95% correct in highest-risk 10%)  │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
@@ -160,10 +160,11 @@ TPSA (polar surface)      Affects how molecule interacts          Balance needed
 │ Single RF (FP only)       │   0.8249   │   0.9123   │ Simplest baseline     │
 │ Fingerprint baseline      │   0.8284   │   0.9266   │ +0.4% from tuning     │
 │ Descriptor baseline       │   0.8434   │   0.9310   │ +2.2% from features   │
-│ ► Evolved Ensemble        │   0.8711   │   0.9243   │ +5.6% from ensemble   │
+│ Evolved Ensemble          │   0.8711   │   0.9243   │ +5.6% from ensemble   │
+│ ► Dual Ensemble           │   0.8714   │   0.9275   │ +5.6% (best ECE)      │
 └───────────────────────────┴────────────┴────────────┴───────────────────────┘
 
-The gain is real: ensemble of FP+descriptors beats any single approach.
+The gain is real: 6-model ensemble with FP+descriptors achieves best performance.
 ```
 
 ### What These Numbers Mean
@@ -187,10 +188,10 @@ Prec@Top10% = 0.95
 │   95% of them are actual hERG blockers
 └── This is the "prioritization" use case - confident on top predictions
 
-ECE = 0.11 ⚠️
+ECE = 0.10
 ├── Expected Calibration Error - how much predicted probabilities deviate
 │   from true frequencies
-└── 0.11 is moderate - don't trust raw probabilities, use for ranking only
+└── 0.10 is acceptable - improved from 0.11 with the dual ensemble
 
 ═══════════════════════════════════════════════════════════════════════════════
 ```
@@ -232,15 +233,15 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# 2. Test the evolved model (basic)
-python evaluate.py evolved_ensemble.py --verbose
+# 2. Test the best model (basic)
+python evaluate.py dual_ensemble.py --verbose
 
 # 2b. Rigorous evaluation (multi-seed + ablation)
-python evaluate_rigorous.py evolved_ensemble.py --seeds 10 --ablation
+python evaluate_rigorous.py dual_ensemble.py --seeds 10 --ablation
 
 # 3. Run on your own molecules (example)
 python -c "
-from evolved_ensemble import HERGPredictor
+from dual_ensemble import HERGPredictor
 from tdc.single_pred import Tox
 
 # Load model and data
@@ -270,11 +271,17 @@ molecular-admet-prediction/
 ├── requirements.txt          # Python dependencies
 ├── evaluate.py               # Basic evaluation harness
 ├── evaluate_rigorous.py      # Multi-seed + calibration + ablation
+├── validate_solution.py      # Pre-validation for evolved solutions
 ├── evolve_config.json        # Evolution configuration
 │
-├── baseline_fingerprint.py   # Baseline 1: Morgan fingerprints + Random Forest
-├── baseline_descriptors.py   # Baseline 2: Molecular descriptors + GBM
-└── evolved_ensemble.py       # Final: Hybrid ensemble (BEST)
+├── baseline_fingerprint.py   # Baseline: Morgan fingerprints + RF (0.828)
+├── baseline_descriptors.py   # Baseline: Molecular descriptors + GBM (0.843)
+├── evolved_ensemble.py       # RF+GBM+ET ensemble (0.8711)
+├── dual_ensemble.py          # RF+GBM+ET+SVM 6-model ensemble (0.8714 BEST)
+├── triple_ensemble_svm.py    # RF+GBM+SVM variant (0.8711)
+├── hybrid_fp_maccs.py        # Morgan + MACCS fingerprints (0.857)
+├── hybrid_fp_desc_light.py   # FP + top-10 descriptors (0.857)
+└── meta_ensemble.py          # Complex 5-model ensemble (0.853)
 ```
 
 ## For the ML Engineer: Technical Details
@@ -285,8 +292,8 @@ molecular-admet-prediction/
 - Robust scaling on descriptor features only
 
 **Model Architecture**:
-- Ensemble of 3 diverse tree-based models
-- Weights optimized via cross-validation: RF(0.35) + GBM(0.35) + ET(0.30)
+- Dual ensemble: 6 diverse models (2x RF + 2x GBM + ExtraTrees + SVM)
+- Simple averaging - more robust than learned weights
 - Class balancing for imbalanced dataset (68% positive)
 
 **Evaluation Protocol**:

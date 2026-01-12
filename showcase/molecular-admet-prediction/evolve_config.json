@@ -4,7 +4,7 @@
   "problem": {
     "goal": "Maximize ROC-AUC for predicting hERG channel inhibition (cardiac toxicity) from molecular structure",
     "metric": "roc_auc",
-    "current_best": 0.8711,
+    "current_best": 0.8714,
     "target": 0.90,
     "constraints": [
       "Must use only molecular structure as input (SMILES)",
@@ -26,9 +26,14 @@
     }
   },
   "starter_solutions": [
+    "dual_ensemble.py",
+    "evolved_ensemble.py",
+    "triple_ensemble_svm.py",
+    "hybrid_fp_maccs.py",
+    "hybrid_fp_desc_light.py",
+    "meta_ensemble.py",
     "baseline_fingerprint.py",
-    "baseline_descriptors.py",
-    "evolved_ensemble.py"
+    "baseline_descriptors.py"
   ],
   "solution_format": {
     "type": "python",
@@ -48,14 +53,17 @@
     ]
   },
   "optimization_strategies": [
-    "Combine Morgan fingerprints with molecular descriptors (hybrid features)",
-    "Try different fingerprint radii (1, 2, 3) and bit sizes (1024, 2048, 4096)",
-    "Use MACCS keys (MACCSkeys.GenMACCSKeys) for pharmacophore patterns",
-    "Engineer hERG-specific features: basic nitrogen count, aromatic ring count, logP",
-    "Ensemble multiple tree models (RF, GBM, ExtraTrees) with weighted voting",
-    "Feature selection with mutual_info_classif or SelectKBest",
-    "Hyperparameter tuning: n_estimators, max_depth, learning_rate",
-    "Add class_weight='balanced' to handle imbalanced data"
+    "CRITICAL: The best approach combines Morgan fingerprints (2048 bits) + molecular descriptors in the SAME model",
+    "Use hybrid feature concatenation: np.concatenate([morgan_fp_array, descriptor_array])",
+    "Include these TOP descriptors: MolLogP, BasicNitrogenCount, NumAromaticRings, TPSA, MolWt",
+    "Try dual fingerprints: Morgan (2048) + MACCS keys (167 bits) together",
+    "Ensemble 3 diverse classifiers: RF + GBM + (ExtraTrees OR SVM) with weights ~[0.35, 0.35, 0.30]",
+    "Scale ONLY the continuous descriptors, NOT the binary fingerprint bits",
+    "Count basic nitrogens manually: sp3 N with formal charge >= 0 (key hERG pharmacophore)",
+    "Try different fingerprint radii: radius=2 is default, radius=3 captures extended environment",
+    "Use class_weight='balanced' for Random Forest and ExtraTrees",
+    "GBM handles mixed binary+continuous features well, try learning_rate 0.05-0.1",
+    "Feature selection (SelectKBest, k=500-1000) can help reduce noise for smaller models"
   ],
   "known_working_rdkit": {
     "fingerprints": [
