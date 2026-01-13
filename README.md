@@ -2,14 +2,18 @@
 
 **Evolutionary algorithm discovery powered by Claude.** Evolves novel solutions through LLM-driven mutation, crossover, and selection—optimizing for speed, size, or ML accuracy.
 
+![Evolution Factory](showcase/nqueens-evolution/evolution-factory.svg)
+
 ## Features
 
 - **Three optimization modes**: Performance (ops/sec), Size (bytes), ML (F1/accuracy)
-- **Hierarchical agents**: Dedicated subagents for mutation, crossover, and evaluation
+- **Hierarchical agents**: Dedicated subagents for mutation, crossover, evaluation, and adversary review
+- **Evolution Memory**: Persistent storage of mutation patterns, failures, and checkpoints for cross-problem learning
+- **Trust System**: Adversary agent reviews suspicious improvements, prevents evaluator exploitation
 - **Clean context**: Each agent starts fresh, avoiding context bloat
 - **Parallel mutations**: Run multiple mutation attempts concurrently
+- **Crash recovery**: Checkpoint system enables resuming from any generation
 - **Validation hooks**: Block unsafe code patterns before execution
-- **Resume support**: Checkpoint and continue evolution across sessions
 
 ## Quick Start
 
@@ -48,6 +52,9 @@ python -m evolve_sdk "shortest Python prime checker" --mode=size
 # ML optimization
 python -m evolve_sdk "improve F1 for classification" --mode=ml
 
+# With memory enabled (default)
+python -m evolve_sdk "faster N-Queens solver" --mode=perf --config=evolve_config.json
+
 # Resume previous evolution
 python -m evolve_sdk --resume
 ```
@@ -60,44 +67,78 @@ python -m evolve_sdk --resume
 /evolve --resume
 ```
 
-## How It Works
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    /evolve <problem>                             │
-│                                                                  │
-│  1. Detect mode (perf/size/ml) from intent                      │
-│  2. Run: python -m evolve_sdk "<problem>" --mode=<mode>         │
-└─────────────────────────────────┬───────────────────────────────┘
-                                  │
-                                  ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    EvolutionRunner (SDK)                         │
-│                                                                  │
-│  ┌─────────────┐                                                │
-│  │ Initializer │ → Creates diverse initial population           │
-│  └──────┬──────┘                                                │
-│         │                                                        │
-│         ▼                                                        │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │              Generation Loop                             │    │
-│  │                                                          │    │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐               │    │
-│  │  │ Mutator  │  │ Mutator  │  │ Crossover│  (parallel)   │    │
-│  │  └────┬─────┘  └────┬─────┘  └────┬─────┘               │    │
-│  │       └─────────────┴─────────────┘                      │    │
-│  │                     │                                    │    │
-│  │                     ▼                                    │    │
-│  │              ┌───────────┐                               │    │
-│  │              │ Evaluator │ → Measure fitness             │    │
-│  │              └───────────┘                               │    │
-│  │                     │                                    │    │
-│  │              Select top solutions, repeat                │    │
-│  └─────────────────────────────────────────────────────────┘    │
-│                                                                  │
-│  Stop when: plateau OR max generations OR budget exhausted      │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                      Evolution Factory                               │
+│                                                                      │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐      │
+│  │ Mutator  │    │ Evaluator│    │ Adversary│    │ Crossover│      │
+│  │  Agent   │    │  Agent   │    │  Agent   │    │  Agent   │      │
+│  │          │    │          │    │          │    │          │      │
+│  │ Creates  │    │ Measures │    │ Validates│    │ Combines │      │
+│  │ variants │    │ fitness  │    │  trust   │    │ parents  │      │
+│  └────┬─────┘    └────┬─────┘    └────┬─────┘    └────┬─────┘      │
+│       │               │               │               │             │
+│       └───────────────┴───────────────┴───────────────┘             │
+│                               │                                      │
+│                               ▼                                      │
+│                    ┌──────────────────┐                             │
+│                    │  Population Pool │                             │
+│                    │                  │                             │
+│                    │ gen0_a, gen1a,   │                             │
+│                    │ gen2b, gen3x...  │                             │
+│                    └────────┬─────────┘                             │
+│                             │                                        │
+│                             ▼                                        │
+│                    ┌──────────────────┐                             │
+│                    │  Memory Store    │                             │
+│                    │                  │                             │
+│                    │ Mutations, fails,│                             │
+│                    │ checkpoints      │                             │
+│                    └──────────────────┘                             │
+│                                                                      │
+│  Stop when: plateau OR max generations OR budget exhausted          │
+└─────────────────────────────────────────────────────────────────────┘
 ```
+
+## Evolution Memory System
+
+The memory system provides persistent storage for evolution runs, enabling:
+
+### What Memory Captures
+
+| Frame Type | Purpose |
+|------------|---------|
+| **mutation** | Tracks all mutation attempts with fitness deltas and tags |
+| **failed_mutation** | Records rejected mutations and reasons for future avoidance |
+| **checkpoint** | Enables crash recovery from any generation |
+| **generation** | Summarizes each generation's progress |
+| **champion** | Records winning solutions with full lineage |
+| **trust_decision** | Logs adversary reviews and trust scores |
+
+### Memory Configuration
+
+```json
+{
+  "memory": {
+    "enabled": true,
+    "inject_mutation_context": true,
+    "store_successful_mutations": true,
+    "store_failed_mutations": true,
+    "max_similar_mutations": 5,
+    "max_failed_mutations": 5
+  }
+}
+```
+
+### Benefits
+
+- **Pattern Learning**: Mutators receive context about what worked before
+- **Failure Avoidance**: Don't repeat mutations that already failed
+- **Crash Recovery**: Resume from any checkpoint after system failure
+- **Cross-Problem Learning**: Transfer patterns between similar problems
 
 ## Optimization Modes
 
@@ -107,39 +148,88 @@ python -m evolve_sdk --resume
 | **size** | bytes, characters | Code golf, minimal implementations |
 | **ml** | F1, accuracy, AUC | Feature engineering, model tuning |
 
-## Project Structure
-
-```
-agentic-evolve/
-├── .claude/commands/        # Skill files (thin SDK wrappers)
-│   ├── evolve.md           # Master dispatcher
-│   ├── evolve-perf.md      # Performance mode
-│   ├── evolve-size.md      # Size mode
-│   └── evolve-ml.md        # ML mode
-├── sdk/                     # Python SDK
-│   └── evolve_sdk/
-│       ├── runner.py       # EvolutionRunner orchestrator
-│       ├── agents/         # Subagent prompts
-│       └── hooks/          # Validation hooks
-├── showcase/                # Example evolution runs
-│   ├── santa-2025-packing/ # Kaggle bin packing
-│   ├── code-golf/          # ARC-AGI solutions
-│   └── ...
-└── .evolve-sdk/             # Evolution state (created per run)
-    └── <problem>/
-        ├── evolution.json   # Full state
-        ├── champion.json    # Best solution
-        └── mutations/       # All tested variants
-```
-
 ## Example Results
 
 | Problem | Mode | Result | Improvement |
 |---------|------|--------|-------------|
-| Fibonacci | perf | 834M ops/sec | 30x vs iterative |
-| Prime checker | perf | 9.5M ops/sec | Sieve + 6k±1 |
+| **N-Queens** | perf | 20,407 sol/sec | **14,000x** vs baseline |
+| KV-Cache Eviction | perf | 6.65% error reduction | Layer-aware scoring |
+| hERG Toxicity | ml | 0.890 ROC-AUC | +4.5% from baseline |
 | ARC task 0520fde7 | size | 57 bytes | -29% from baseline |
-| TDE classification | ml | 0.76 F1 | +12% from baseline |
+| Bin Packing | perf | Weibull 5K benchmark | Novel heuristics |
+
+## Showcases
+
+| Showcase | Description | Key Result |
+|----------|-------------|------------|
+| [nqueens-evolution](showcase/nqueens-evolution/) | N-Queens solver with memory demo | 14,000x speedup |
+| [kv-cache-eviction](showcase/kv-cache-eviction/) | LLM KV-cache eviction policy | 6.65% improvement |
+| [molecular-admet-prediction](showcase/molecular-admet-prediction/) | hERG cardiac toxicity | 0.890 ROC-AUC |
+| [code-golf](showcase/code-golf/) | ARC-AGI minimal solutions | 75+ tasks solved |
+| [santa-2025-packing](showcase/santa-2025-packing/) | Kaggle bin packing | Competition entry |
+| [kernelbench-triton-evolution](showcase/kernelbench-triton-evolution/) | GPU kernel optimization | Triton kernels |
+
+## Project Structure
+
+```
+agentic-evolve/
+├── .claude/commands/           # Skill files (thin SDK wrappers)
+│   ├── evolve.md              # Master dispatcher
+│   ├── evolve-perf.md         # Performance mode
+│   ├── evolve-size.md         # Size mode
+│   └── evolve-ml.md           # ML mode
+├── sdk/                        # Python SDK
+│   └── evolve_sdk/
+│       ├── runner.py          # EvolutionRunner orchestrator
+│       ├── config.py          # Configuration handling
+│       ├── agents/            # Subagent prompts
+│       │   ├── mutator.py     # Mutation specialist
+│       │   ├── evaluator.py   # Fitness measurement
+│       │   ├── crossover.py   # Parent combination
+│       │   └── adversary.py   # Trust validation
+│       ├── memory/            # Evolution memory system
+│       │   ├── store.py       # Persistent storage engine
+│       │   ├── schemas.py     # Frame type definitions
+│       │   ├── queries.py     # Pre-built query patterns
+│       │   └── embeddings.py  # Code similarity matching
+│       └── hooks/             # Validation hooks
+├── showcase/                   # Example evolution runs
+│   ├── nqueens-evolution/     # Memory system demo (14,000x speedup)
+│   ├── kv-cache-eviction/     # KV-cache scoring (6.65% improvement)
+│   ├── molecular-admet-prediction/ # hERG toxicity (0.890 ROC-AUC)
+│   ├── code-golf/             # ARC-AGI solutions (75+ tasks)
+│   └── ...
+└── .evolve-sdk/                # Evolution state (created per run)
+    └── <problem>/
+        ├── evolution.json      # Full state + memory frames
+        ├── champion.json       # Best solution
+        ├── trust_dossier.md    # Trust decision report
+        └── mutations/          # All tested variants
+```
+
+## Trust System
+
+The SDK includes adversarial validation to prevent evaluator gaming:
+
+| Component | Purpose |
+|-----------|---------|
+| **Adversary Agent** | Reviews suspicious improvements (>15% jumps) |
+| **Variance Gates** | Re-evaluates N times, rejects inconsistent results |
+| **Exploit Detection** | Checks timing anomalies, output integrity |
+| **Trust Dossier** | Generates markdown reports of all decisions |
+| **Escalation Levels** | Extended validation for high-stakes promotions |
+
+```json
+{
+  "trust": {
+    "enabled": true,
+    "suspicious_jump_pct": 15.0,
+    "require_adversary_for_champion": true,
+    "n_evaluations": 3,
+    "variance_threshold": 0.05
+  }
+}
+```
 
 ## Configuration
 
@@ -147,9 +237,20 @@ Use `evolve_config.json` for custom evaluation:
 
 ```json
 {
-  "problem": "optimize sorting",
+  "description": "Evolve fast N-Queens solvers",
   "mode": "perf",
-  "test_command": "python benchmark.py {solution}",
+  "evaluation": {
+    "test_command": "python evaluate.py {solution} --json"
+  },
+  "memory": {
+    "enabled": true,
+    "inject_mutation_context": true
+  },
+  "trust": {
+    "enabled": true,
+    "require_adversary_for_champion": true
+  },
+  "starter_solutions": ["baseline.py"],
   "max_generations": 20,
   "population_size": 10
 }
