@@ -164,6 +164,146 @@ calibration = get_trust_calibration(memory)
 | **Cross-Problem Transfer** | Apply patterns from one problem to another |
 | **Trust Calibration** | Tune thresholds based on historical decisions |
 
+## Inter-Agent Messaging
+
+The SDK includes a messaging system that enables agents to communicate with each other and keep the human operator informed in real-time.
+
+### How It Works
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Mutator   │     │  Adversary  │     │   Runner    │
+│     🧬      │     │     🛡️      │     │     🎯      │
+└──────┬──────┘     └──────┬──────┘     └──────┬──────┘
+       │                   │                   │
+       └───────────┬───────┴───────────────────┘
+                   ▼
+         ┌─────────────────┐
+         │  Memory Store   │
+         │  (MessageFrame) │
+         └────────┬────────┘
+                  │
+                  ▼
+         ┌─────────────────┐
+         │ Reporter Agent  │  ◄── Polls every 2s
+         │       📢        │
+         └────────┬────────┘
+                  │
+                  ▼
+         ┌─────────────────┐
+         │    Terminal     │  ◄── Live output to operator
+         │   (stdout)      │
+         └─────────────────┘
+```
+
+1. **Agents post messages** to the memory store using `broadcast()`, `notify_human()`, etc.
+2. **ReporterAgent** runs as a background task, polling the message queue
+3. **Important messages** are printed to the terminal in real-time with colors and emojis
+
+### Message Types
+
+| Type | Emoji | Description |
+|------|-------|-------------|
+| `milestone` | 🏆 | Significant events (evolution start, new champion, completion) |
+| `discovery` | 💡 | Useful findings to share across agents |
+| `warning` | ⚠️ | Alert about issues (suspicious jumps, trust failures) |
+| `status` | 📊 | Progress updates |
+| `strategy` | 🎯 | Agent claiming a mutation strategy |
+| `error` | ❌ | Something went wrong |
+
+### Priority Levels
+
+| Priority | Displayed | Description |
+|----------|-----------|-------------|
+| `critical` | Always | Evolution-stopping issues |
+| `urgent` | Always | Needs immediate attention |
+| `important` | Always | Should be noticed |
+| `info` | Default | Normal updates |
+| `debug` | Hidden | Verbose logging |
+
+### Example Output
+
+During evolution, operators see messages like:
+
+```
+  📢 [REPORTER] Reporter agent started - monitoring message queue
+
+  🏆 [MILESTONE] Evolution started: N-Queens optimization
+     Mode: perf, Max generations: 10
+
+  🧬 [MUTATOR] Trying bitwise optimization on gen1b.py
+     [Gen 2]
+
+  🛡️ [ADVERSARY] Warning: Suspicious fitness jump detected
+     +75% exceeds 20% threshold
+     [Gen 2 | Fitness: 892.45]
+
+  🏆 [MILESTONE] New champion: gen3a.py
+     Fitness: 542.99
+
+  📢 [REPORTER] Reporter agent stopped - displayed 5 messages, filtered 2
+```
+
+### Using the Messaging API
+
+```python
+from evolve_sdk.memory import EvolutionMemory
+
+memory = EvolutionMemory(store_path=".evolve-sdk/problem/memory.json")
+
+# Broadcast a message to all agents and human
+memory.broadcast(
+    from_agent="mutator_a",
+    message_type="discovery",
+    title="Inlining gave +26% improvement",
+    content="Function call overhead dominates. Inline hot functions.",
+    priority="important",
+    generation=3,
+)
+
+# Announce a significant milestone
+memory.announce_milestone(
+    title="New champion crowned!",
+    content="gen5b.py achieves 20,407 solutions/sec",
+    generation=5,
+    related_fitness=20407.0,
+)
+
+# Warn about issues
+memory.warn(
+    title="Timing anomaly detected",
+    content="Solution runs in 0.1ms - suspiciously fast",
+    generation=4,
+)
+
+# Get recent messages for display
+messages = memory.get_human_messages(limit=20, min_priority="info")
+```
+
+### Reporter Agent Integration
+
+The reporter agent starts automatically when memory is enabled:
+
+```python
+from evolve_sdk.agents import ReporterAgent
+
+# Manually control the reporter
+reporter = ReporterAgent(
+    memory=memory,
+    poll_interval=2.0,      # Check every 2 seconds
+    min_priority="info",    # Filter out debug messages
+)
+
+await reporter.start()
+# ... evolution runs, messages auto-display ...
+await reporter.stop()
+
+# Pause during human interaction (e.g., escalation prompts)
+reporter.pause()
+# ... get user input ...
+reporter.resume()
+```
+
 ## Trust System
 
 The SDK includes a comprehensive trust system to detect and prevent evaluator exploitation:
