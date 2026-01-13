@@ -258,8 +258,8 @@
   <text x="950" y="705" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">📊 status (progress updates)</text>
   <text x="950" y="725" font-family="Arial, sans-serif" font-size="10" fill="#95a5a6">→ Filtered by priority level</text>
 
-  <!-- Champion output (top right, above diagnostic section) -->
-  <g transform="translate(1030, 90)">
+  <!-- Champion output (far right, clear of all sections) -->
+  <g transform="translate(1090, 250)">
     <rect x="0" y="0" width="100" height="100" rx="50" fill="#f1c40f" filter="url(#shadow)"/>
     <text x="50" y="45" text-anchor="middle" font-size="36" fill="#fff">🏆</text>
     <text x="50" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#fff">Champion</text>
@@ -267,9 +267,9 @@
   </g>
 
   <!-- Arrow from Evaluator to Champion -->
-  <path d="M820 410 Q 920 200 1030 140" stroke="#f1c40f" stroke-width="2" fill="none" marker-end="url(#arrowGray)"/>
-  <text x="840" y="280" font-family="Arial, sans-serif" font-size="10" fill="#f1c40f">Promoted after</text>
-  <text x="840" y="293" font-family="Arial, sans-serif" font-size="10" fill="#f1c40f">trust validation</text>
+  <path d="M820 430 L1090 300" stroke="#f1c40f" stroke-width="2" fill="none" marker-end="url(#arrowGray)"/>
+  <text x="920" y="340" font-family="Arial, sans-serif" font-size="10" fill="#f1c40f">Promoted after</text>
+  <text x="920" y="353" font-family="Arial, sans-serif" font-size="10" fill="#f1c40f">trust validation</text>
 
   <!-- Data flow arrows -->
   <!-- Pool to Memory -->
