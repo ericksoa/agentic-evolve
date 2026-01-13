@@ -8,6 +8,12 @@ from .adversary import ADVERSARY_SYSTEM, get_adversary_prompt, get_escalation_pr
 from .arbitrator import ARBITRATOR_SYSTEM, get_arbitrator_prompt
 from .reporter import ReporterAgent, report_to_operator
 from .debugger import DEBUGGER_SYSTEM, get_debugger_prompt, get_debugger_summary_prompt
+from .plateau_breaker import (
+    PLATEAU_BREAKER_SYSTEM,
+    get_plateau_breaker_prompt,
+    get_intervention_prompt,
+    detect_plateau,
+)
 
 __all__ = [
     "MUTATOR_SYSTEM", "get_mutator_prompt",
@@ -18,4 +24,5 @@ __all__ = [
     "ARBITRATOR_SYSTEM", "get_arbitrator_prompt",
     "ReporterAgent", "report_to_operator",
     "DEBUGGER_SYSTEM", "get_debugger_prompt", "get_debugger_summary_prompt",
+    "PLATEAU_BREAKER_SYSTEM", "get_plateau_breaker_prompt", "get_intervention_prompt", "detect_plateau",
 ]
