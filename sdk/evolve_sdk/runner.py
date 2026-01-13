@@ -40,6 +40,7 @@ from .agents import (
     EVALUATOR_SYSTEM, get_evaluator_prompt,
     ADVERSARY_SYSTEM, get_adversary_prompt, get_escalation_prompt,
     ARBITRATOR_SYSTEM, get_arbitrator_prompt,
+    ReporterAgent,
 )
 from .hooks import create_validation_hook, create_logging_hook, set_log_context
 from .progress import (
@@ -124,6 +125,9 @@ class EvolutionRunner:
 
         # Memory system (crash recovery, mutation patterns)
         self._init_memory_system()
+
+        # Reporter agent (surfaces messages to operator)
+        self.reporter: ReporterAgent | None = None
 
     def _init_memory_system(self):
         """Initialize memory system if enabled."""
@@ -383,6 +387,15 @@ class EvolutionRunner:
         # Setup directories
         self.work_dir.mkdir(parents=True, exist_ok=True)
         self.mutations_dir.mkdir(parents=True, exist_ok=True)
+
+        # Start reporter agent if memory is enabled
+        if self.memory:
+            self.reporter = ReporterAgent(
+                memory=self.memory,
+                poll_interval=2.0,
+                min_priority="info",
+            )
+            await self.reporter.start()
 
         # Announce evolution start
         self._msg_milestone(
@@ -1019,57 +1032,61 @@ class EvolutionRunner:
 
         trust_cfg = self.config.trust
 
-        # Build summary display
-        print("\n" + "=" * 70)
-        print("  HUMAN ESCALATION - Trust System Needs Your Input")
-        print("=" * 70)
-        print(f"\n  Candidate: {candidate_file}")
-        print(f"  Fitness:   {fitness:.4f}  (current champion: {champion_fitness:.4f})")
-        print(f"  Trust:     {trust_score:.2f}  (threshold: {trust_cfg.reject_threshold})")
-
-        if fitness > champion_fitness:
-            improvement = ((fitness - champion_fitness) / champion_fitness * 100) if champion_fitness > 0 else 100
-            print(f"  Status:    POTENTIAL NEW CHAMPION (+{improvement:.1f}%)")
-        else:
-            print(f"  Status:    Below champion")
-
-        if flags:
-            print(f"\n  Flags ({len(flags)}):")
-            for flag in flags[:5]:  # Show first 5 flags
-                print(f"    - {flag[:60]}{'...' if len(flag) > 60 else ''}")
-            if len(flags) > 5:
-                print(f"    ... and {len(flags) - 5} more")
-
-        # Show arbitrator analysis prominently if available
-        if arbitrator_analysis:
-            print("\n" + "-" * 70)
-            print("  ARBITRATOR ANALYSIS (Neutral Assessment)")
-            print("-" * 70)
-            # Show the arbitrator's analysis - it's already formatted
-            for line in arbitrator_analysis.split('\n'):
-                print(f"  {line}")
-            print("-" * 70)
-        elif analysis:
-            # Fall back to adversary analysis if no arbitrator
-            print(f"\n  Adversary Analysis (truncated):")
-            analysis_preview = analysis[:300] + "..." if len(analysis) > 300 else analysis
-            for line in analysis_preview.split('\n')[:5]:
-                print(f"    {line}")
-
-        print("\n" + "-" * 70)
-        print("  Options:")
-        print("    [A] Accept - Trust this candidate (override rejection)")
-        print("    [R] Reject - Confirm rejection (default)")
-        print("    [T] Adjust Trust - Enter custom trust score (0.0-1.0)")
-        print("    [V] View Full - Show adversary analysis, arbitrator analysis, and flags")
-        print("-" * 70)
-
-        # Handle timeout
-        timeout = trust_cfg.human_escalation_timeout
-        if timeout > 0:
-            print(f"  (Auto-reject in {timeout}s if no response)")
+        # Pause reporter during human interaction
+        if self.reporter:
+            self.reporter.pause()
 
         try:
+            # Build summary display
+            print("\n" + "=" * 70)
+            print("  HUMAN ESCALATION - Trust System Needs Your Input")
+            print("=" * 70)
+            print(f"\n  Candidate: {candidate_file}")
+            print(f"  Fitness:   {fitness:.4f}  (current champion: {champion_fitness:.4f})")
+            print(f"  Trust:     {trust_score:.2f}  (threshold: {trust_cfg.reject_threshold})")
+
+            if fitness > champion_fitness:
+                improvement = ((fitness - champion_fitness) / champion_fitness * 100) if champion_fitness > 0 else 100
+                print(f"  Status:    POTENTIAL NEW CHAMPION (+{improvement:.1f}%)")
+            else:
+                print(f"  Status:    Below champion")
+
+            if flags:
+                print(f"\n  Flags ({len(flags)}):")
+                for flag in flags[:5]:  # Show first 5 flags
+                    print(f"    - {flag[:60]}{'...' if len(flag) > 60 else ''}")
+                if len(flags) > 5:
+                    print(f"    ... and {len(flags) - 5} more")
+
+            # Show arbitrator analysis prominently if available
+            if arbitrator_analysis:
+                print("\n" + "-" * 70)
+                print("  ARBITRATOR ANALYSIS (Neutral Assessment)")
+                print("-" * 70)
+                # Show the arbitrator's analysis - it's already formatted
+                for line in arbitrator_analysis.split('\n'):
+                    print(f"  {line}")
+                print("-" * 70)
+            elif analysis:
+                # Fall back to adversary analysis if no arbitrator
+                print(f"\n  Adversary Analysis (truncated):")
+                analysis_preview = analysis[:300] + "..." if len(analysis) > 300 else analysis
+                for line in analysis_preview.split('\n')[:5]:
+                    print(f"    {line}")
+
+            print("\n" + "-" * 70)
+            print("  Options:")
+            print("    [A] Accept - Trust this candidate (override rejection)")
+            print("    [R] Reject - Confirm rejection (default)")
+            print("    [T] Adjust Trust - Enter custom trust score (0.0-1.0)")
+            print("    [V] View Full - Show adversary analysis, arbitrator analysis, and flags")
+            print("-" * 70)
+
+            # Handle timeout
+            timeout = trust_cfg.human_escalation_timeout
+            if timeout > 0:
+                print(f"  (Auto-reject in {timeout}s if no response)")
+
             while True:
                 if timeout > 0:
                     # Use select for timeout on Unix
@@ -1118,6 +1135,11 @@ class EvolutionRunner:
         except (KeyboardInterrupt, EOFError):
             print("\n  [INTERRUPTED] Rejecting candidate")
             return {"decision": "reject", "reason": "interrupted"}
+
+        finally:
+            # Always resume reporter when done
+            if self.reporter:
+                self.reporter.resume()
 
     async def _challenge_candidates(
         self,
@@ -1572,6 +1594,10 @@ class EvolutionRunner:
         if self.config.trust.generate_dossier:
             self.dossier.save(include_history=self.config.trust.dossier_include_history)
             print(f"[TRUST] Dossier saved to: {self.dossier.dossier_path}")
+
+        # Stop reporter agent
+        if self.reporter:
+            await self.reporter.stop()
 
         return {
             "problem": self.config.problem,
