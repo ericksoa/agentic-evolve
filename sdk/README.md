@@ -235,7 +235,7 @@ After evolution, a `trust_dossier.md` is generated with:
 | `--population-size` | 10 | Population size |
 | `--plateau` | 5 | Stop after N gens without improvement |
 | `--no-parallel` | false | Run mutations sequentially |
-| `--model` | sonnet | Model for subagents |
+| `--model` | claude-opus-4-5-20251101 | Model for subagents (always use Opus 4.5 for best quality) |
 | `--config` | - | Path to evolve_config.json |
 
 ### Config File
@@ -363,3 +363,16 @@ cat .evolve-sdk/*/champion.json
 - Python 3.10+
 - Claude Agent SDK (`pip install claude-agent-sdk`)
 - Authenticated with Claude (`claude auth login`)
+
+### Model Selection
+
+**The SDK always defaults to Claude Opus 4.5 (`claude-opus-4-5-20251101`) for all subagents.**
+
+This is intentional - evolution quality depends heavily on the reasoning capabilities of the agents performing mutations, evaluations, and adversarial review. Opus 4.5 provides:
+
+- Superior code understanding and generation
+- Better reasoning about optimization strategies
+- More reliable adversarial analysis (trust system)
+- Higher quality crossover decisions
+
+While you can override with `--model`, we strongly recommend keeping the Opus 4.5 default for best results.
