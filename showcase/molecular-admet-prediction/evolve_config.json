@@ -4,8 +4,8 @@
   "problem": {
     "goal": "Maximize ROC-AUC for predicting hERG channel inhibition (cardiac toxicity) from molecular structure",
     "metric": "roc_auc",
-    "current_best": 0.8714,
-    "target": 0.90,
+    "current_best": 0.881,
+    "target": 0.92,
     "constraints": [
       "Must use only molecular structure as input (SMILES)",
       "Model must be interpretable or provide feature importance",
@@ -26,6 +26,7 @@
     }
   },
   "starter_solutions": [
+    "gen6b_champion.py",
     "dual_ensemble.py",
     "evolved_ensemble.py",
     "triple_ensemble_svm.py",
@@ -53,6 +54,9 @@
     ]
   },
   "optimization_strategies": [
+    "CRITICAL INSIGHT: Extreme regularization (shallow trees depth 3-6, few estimators 80-100) works BEST on this small dataset",
+    "PROVEN BEST: Triple ensemble RF+XGB+ET with weights ~[0.42, 0.33, 0.25] achieves 0.881 ROC-AUC",
+    "Use extended Morgan (radius=3, 1024 bits) + MACCS (167 bits) + 25 molecular descriptors",
     "CRITICAL: The best approach combines Morgan fingerprints (2048 bits) + molecular descriptors in the SAME model",
     "Use hybrid feature concatenation: np.concatenate([morgan_fp_array, descriptor_array])",
     "Include these TOP descriptors: MolLogP, BasicNitrogenCount, NumAromaticRings, TPSA, MolWt",
@@ -91,6 +95,27 @@
     "max_local_threads": 4,
     "prefer_cloud": false,
     "timeout_seconds": 300
+  },
+  "trust": {
+    "_comment": "Trust validation is MANDATORY for this drug discovery project",
+    "enabled": true,
+    "require_adversary_for_champion": true,
+    "generate_dossier": true,
+    "n_evaluations": 3,
+    "variance_threshold": 0.05,
+    "require_variance_gate": true,
+    "canary_test_enabled": true,
+    "human_escalation_enabled": true,
+    "human_escalation_on_champion_reject": true,
+    "accept_threshold": 0.7,
+    "challenge_threshold": 0.4,
+    "reject_threshold": 0.4,
+    "suspicious_jump_pct": 15.0,
+    "max_escalation_level": 3,
+    "extended_test_command": "./venv/bin/python escalated_validation.py {solution}",
+    "check_timing_anomaly": true,
+    "check_output_integrity": true,
+    "check_eval_determinism": true
   },
   "domain_context": {
     "background": "hERG (human Ether-a-go-go Related Gene) encodes a potassium ion channel. Drug-induced hERG inhibition causes cardiac arrhythmias (QT prolongation), leading to drug withdrawals. Predicting hERG liability early saves billions in failed drug development.",

@@ -1,175 +1,152 @@
 {
   "problem": "Evolve hERG molecular property prediction",
   "mode": "ml",
-  "generation": 6,
+  "generation": 10,
   "status": "completed",
   "population": [
     {
-      "file": ".evolve-sdk/evolve_herg_molecular_property/mutations/gen6b.py",
+      "file": "gen9b.py",
       "mutation_type": "mutation",
-      "description": "Extreme regularization triple ensemble: very few estimators (80), very shallow trees (depth 3-6), strong L1/L2 regularization.",
-      "hypothesis": "Pushing regularization to the extreme may prevent overfitting on small molecular data.",
+      "description": "Compact 512-bit Morgan fingerprints + MACCS + 25 descriptors, equal-weight triple ensemble",
+      "hypothesis": "Smaller fingerprints reduce noise and improve generalization on small datasets",
+      "variant": "b",
+      "valid": true,
+      "fitness": 0.8855670103092784,
+      "cv_mean": 0.8805563753124537,
+      "cv_std": 0.030765204858060544,
+      "notes": "FINAL CHAMPION! Compact fingerprints was the key insight from this run.",
+      "trust_score": 1.0
+    },
+    {
+      "file": "gen7b.py",
+      "mutation_type": "mutation",
+      "description": "Equal-weight ensemble [0.333, 0.333, 0.334] with extreme regularization",
+      "variant": "b",
+      "valid": true,
+      "fitness": 0.8820324005891017,
+      "cv_mean": 0.8756577603232618,
+      "cv_std": 0.030032983635560104,
+      "notes": "Previous champion. Equal weights slightly better than RF-dominant.",
+      "trust_score": 1.0
+    },
+    {
+      "file": "gen6b_champion.py",
+      "mutation_type": "mutation",
+      "description": "Extreme regularization triple ensemble: 80 estimators, depth 3-6, strong L1/L2",
       "variant": "b",
       "valid": true,
       "fitness": 0.8811487481590574,
       "cv_mean": 0.8756556163436825,
       "cv_std": 0.03115274176632583,
-      "notes": "FINAL CHAMPION! Extreme regularization yielded best generalization. Test > CV indicates no overfitting.",
+      "notes": "Previous champion before this session.",
       "trust_score": 1.0
     },
     {
-      "file": ".evolve-sdk/evolve_herg_molecular_property/mutations/gen5x.py",
+      "file": "gen10c.py",
       "mutation_type": "crossover",
-      "description": "Regularized RF-dominant triple ensemble. RF=0.42, XGB=0.33, ET=0.25.",
-      "variant": "x",
-      "valid": true,
-      "fitness": 0.8743740795287187,
-      "cv_mean": 0.8880648440317914,
-      "cv_std": 0.03210562754582958,
-      "notes": "Previous champion. Strong regularization + RF dominance.",
-      "trust_score": 1.0
-    },
-    {
-      "file": ".evolve-sdk/evolve_herg_molecular_property/mutations/gen5a.py",
-      "mutation_type": "mutation",
-      "description": "Regularized triple ensemble: fewer estimators (100), shallower trees (depth 8).",
-      "variant": "a",
-      "valid": true,
-      "fitness": 0.8723122238586156,
-      "cv_mean": 0.886158467836523,
-      "cv_std": 0.030975491391832175,
-      "notes": "Key breakthrough: regularization dramatically improves performance.",
-      "trust_score": 1.0
-    },
-    {
-      "file": ".evolve-sdk/evolve_herg_molecular_property/mutations/gen6c.py",
-      "mutation_type": "mutation",
-      "description": "Balanced regularization triple ensemble: searching for optimal regularization level.",
+      "description": "Compact 512 FP + 4-model ensemble (RF+XGB+ET+LightGBM)",
       "variant": "c",
       "valid": true,
-      "fitness": 0.8699558173784978,
-      "cv_mean": 0.88430947462411,
-      "cv_std": 0.03159394280038038,
-      "notes": "Good but not optimal - extreme regularization (gen6b) worked better.",
+      "fitness": 0.8855670103092784,
+      "cv_mean": 0.88,
+      "notes": "Same as gen9b - 4th model didn't help.",
       "trust_score": 1.0
     },
     {
-      "file": ".evolve-sdk/evolve_herg_molecular_property/mutations/gen6a.py",
+      "file": "gen9a.py",
       "mutation_type": "mutation",
-      "description": "Ultra-regularized single RF: depth 6, min_samples_leaf=4.",
+      "description": "4-model ensemble with 1024-bit FP",
       "variant": "a",
       "valid": true,
-      "fitness": 0.8625920471281296,
-      "cv_mean": 0.8822682799482416,
-      "cv_std": 0.02932127894288811,
-      "notes": "Single RF not as good as ensemble - ensemble diversity still helps.",
+      "fitness": 0.8820324005891017,
+      "notes": "Equal to gen7b - 4th model didn't improve with larger FP.",
       "trust_score": 1.0
     },
     {
-      "file": ".evolve-sdk/evolve_herg_molecular_property/mutations/gen5c.py",
+      "file": "gen8b.py",
       "mutation_type": "mutation",
-      "description": "RF-dominant triple ensemble (0.45/0.30/0.25). Deeper RF for complex patterns.",
-      "variant": "c",
+      "description": "ET-dominant weights [0.30, 0.30, 0.40]",
+      "variant": "b",
       "valid": true,
-      "fitness": 0.8605301914580266,
-      "cv_mean": 0.8937122123599164,
-      "cv_std": 0.029186023494333836,
-      "notes": "RF dominance effective but regularization matters more.",
+      "fitness": 0.8808541973490427,
+      "notes": "Close to gen7b but ET dominance didn't help.",
       "trust_score": 1.0
     }
   ],
   "champion": {
-    "file": ".evolve-sdk/evolve_herg_molecular_property/mutations/gen6b.py",
+    "file": "gen9b.py",
     "mutation_type": "mutation",
-    "description": "Extreme regularization triple ensemble with extended dual fingerprints",
-    "fitness": 0.8811487481590574,
-    "cv_mean": 0.8756556163436825,
-    "improvement_over_baseline": 0.0377
+    "description": "Compact 512-bit fingerprints + equal-weight triple ensemble",
+    "fitness": 0.8855670103092784,
+    "cv_mean": 0.8805563753124537,
+    "improvement_over_baseline": 0.0422
   },
   "history": [
     {
       "generation": 1,
       "timestamp": "2026-01-12T09:07:41.500255",
-      "population_size": 3,
-      "best_fitness": 0.8434,
-      "mutations_tried": 4,
-      "mutations_valid": 4
-    },
-    {
-      "generation": 2,
-      "timestamp": "2026-01-12T10:15:00.000000",
-      "population_size": 5,
-      "best_fitness": 0.8540500736377025,
-      "mutations_tried": 4,
-      "mutations_valid": 4,
-      "champion_improved": true,
-      "improvement": 0.0107
-    },
-    {
-      "generation": 3,
-      "timestamp": "2026-01-12T10:45:00.000000",
-      "population_size": 6,
-      "best_fitness": 0.8540500736377025,
-      "mutations_tried": 4,
-      "mutations_valid": 4,
-      "champion_improved": false,
-      "notes": "Plateau reached."
-    },
-    {
-      "generation": 4,
-      "timestamp": "2026-01-12T12:30:00.000000",
-      "population_size": 6,
-      "best_fitness": 0.8578792341678939,
-      "mutations_tried": 4,
-      "mutations_valid": 4,
-      "champion_improved": true,
-      "improvement": 0.0038,
-      "notes": "Broke plateau with gen4x crossover."
-    },
-    {
-      "generation": 5,
-      "timestamp": "2026-01-12T13:15:00.000000",
-      "population_size": 6,
-      "best_fitness": 0.8743740795287187,
-      "mutations_tried": 4,
-      "mutations_valid": 4,
-      "champion_improved": true,
-      "improvement": 0.0165,
-      "notes": "MAJOR BREAKTHROUGH! Regularization was the key."
+      "best_fitness": 0.8434
     },
     {
       "generation": 6,
       "timestamp": "2026-01-12T14:00:00.000000",
-      "population_size": 6,
       "best_fitness": 0.8811487481590574,
-      "mutations_tried": 4,
-      "mutations_valid": 4,
+      "notes": "Previous session champion (gen6b)"
+    },
+    {
+      "generation": 7,
+      "timestamp": "2026-01-12T14:50:00.000000",
+      "best_fitness": 0.8820324005891017,
       "champion_improved": true,
-      "improvement": 0.0068,
-      "notes": "FINAL GEN. Extreme regularization (gen6b) achieved 0.881 ROC-AUC. Simpler models generalize best on this dataset."
+      "improvement": 0.0009,
+      "notes": "gen7b: Equal weights improved slightly"
+    },
+    {
+      "generation": 8,
+      "timestamp": "2026-01-12T15:00:00.000000",
+      "best_fitness": 0.8820324005891017,
+      "champion_improved": false,
+      "notes": "No improvement from gen8 mutations"
+    },
+    {
+      "generation": 9,
+      "timestamp": "2026-01-12T15:10:00.000000",
+      "best_fitness": 0.8855670103092784,
+      "champion_improved": true,
+      "improvement": 0.0035,
+      "notes": "BREAKTHROUGH! gen9b compact fingerprints (512 bits) achieved 0.886"
+    },
+    {
+      "generation": 10,
+      "timestamp": "2026-01-12T15:20:00.000000",
+      "best_fitness": 0.8855670103092784,
+      "champion_improved": false,
+      "notes": "Plateau reached. 256-bit FP too small, more reg didn't help."
     }
   ],
   "config": {
-    "max_generations": 6,
+    "max_generations": 10,
     "population_size": 3,
     "elite_count": 3,
     "plateau": 3
   },
   "summary": {
-    "total_generations": 6,
-    "total_mutations_tried": 24,
-    "total_mutations_valid": 24,
+    "total_generations": 10,
+    "total_mutations_tried": 36,
+    "total_mutations_valid": 36,
     "starting_fitness": 0.8434,
-    "final_fitness": 0.8811487481590574,
-    "total_improvement": 0.0377,
-    "improvement_percent": 4.47
+    "final_fitness": 0.8855670103092784,
+    "total_improvement": 0.0422,
+    "improvement_percent": 5.0
   },
   "key_insights": [
+    "Compact fingerprints (512 bits) outperform larger (1024 bits) on small datasets",
+    "Equal ensemble weights [0.333, 0.333, 0.334] better than RF-dominant",
     "Regularization is critical for small molecular datasets",
-    "Simpler models (fewer estimators, shallower trees) generalize better",
-    "Triple ensemble (RF+XGB+ET) provides beneficial diversity",
-    "Extended Morgan fingerprints (r=3) + MACCS + descriptors is effective feature set",
-    "Extreme regularization (depth 3-6, few estimators) outperformed moderate settings"
+    "256-bit fingerprints are too small - lose important structural information",
+    "4-model ensembles (adding LightGBM) provide no benefit over 3-model",
+    "Feature selection (SelectKBest) doesn't help with tree-based models",
+    "Topological descriptors (Kappa, BalabanJ) don't improve hERG prediction"
   ],
-  "updated_at": "2026-01-12T14:00:00.000000"
+  "updated_at": "2026-01-12T15:30:00.000000"
 }
