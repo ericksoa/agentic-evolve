@@ -1,247 +1,100 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 750">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#1a1a2e"/>
-      <stop offset="100%" style="stop-color:#16213e"/>
-    </linearGradient>
-    <linearGradient id="mutatorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#e94560"/>
-      <stop offset="100%" style="stop-color:#c73e54"/>
-    </linearGradient>
-    <linearGradient id="evaluatorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#0f3460"/>
-      <stop offset="100%" style="stop-color:#0a2647"/>
-    </linearGradient>
-    <linearGradient id="adversaryGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#f39c12"/>
-      <stop offset="100%" style="stop-color:#d68910"/>
-    </linearGradient>
-    <linearGradient id="crossoverGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#9b59b6"/>
-      <stop offset="100%" style="stop-color:#8e44ad"/>
-    </linearGradient>
-    <linearGradient id="memoryGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#1abc9c"/>
-      <stop offset="100%" style="stop-color:#16a085"/>
-    </linearGradient>
-    <linearGradient id="debuggerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#e74c3c"/>
-      <stop offset="100%" style="stop-color:#c0392b"/>
-    </linearGradient>
-    <linearGradient id="plateauGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#3498db"/>
-      <stop offset="100%" style="stop-color:#2980b9"/>
-    </linearGradient>
-    <linearGradient id="initGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#8e44ad"/>
-      <stop offset="100%" style="stop-color:#7d3c98"/>
-    </linearGradient>
-    <linearGradient id="strategistGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#9b59b6"/>
-      <stop offset="100%" style="stop-color:#6c3483"/>
-    </linearGradient>
-    <linearGradient id="championGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#f1c40f"/>
-      <stop offset="100%" style="stop-color:#d4ac0d"/>
-    </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
       <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
     </filter>
-    <marker id="arrowGray" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L9,3 z" fill="#95a5a6"/>
-    </marker>
-    <marker id="arrowTeal" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L9,3 z" fill="#1abc9c"/>
-    </marker>
-    <marker id="arrowGold" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L9,3 z" fill="#f1c40f"/>
-    </marker>
-    <marker id="arrowOrange" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L9,3 z" fill="#f39c12"/>
-    </marker>
   </defs>
 
   <!-- Background -->
-  <rect width="1100" height="750" fill="url(#bgGrad)"/>
+  <rect width="900" height="600" fill="#1a1a2e"/>
 
-  <!-- Title -->
-  <text x="550" y="35" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#ecf0f1">Evolve SDK Architecture</text>
-  <text x="550" y="55" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#bdc3c7">LLM-driven evolutionary optimization with trust validation and persistent memory</text>
+  <!-- Evolution Loop Border -->
+  <rect x="40" y="30" width="620" height="300" rx="20" fill="none" stroke="#4a5568" stroke-width="2" stroke-dasharray="10,5"/>
+  <text x="350" y="55" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#718096">EVOLUTION LOOP</text>
 
-  <!-- ==================== MAIN EVOLUTION LOOP ==================== -->
+  <!-- Initializer -->
+  <rect x="60" y="70" width="110" height="45" rx="8" fill="#8b5cf6" filter="url(#shadow)"/>
+  <text x="115" y="98" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Initializer</text>
 
-  <!-- Loop boundary box -->
-  <rect x="60" y="75" width="700" height="310" rx="15" fill="none" stroke="#34495e" stroke-width="2" stroke-dasharray="8,4"/>
-  <text x="410" y="95" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#7f8c8d">EVOLUTION LOOP</text>
-
-  <!-- Initializer (entry point) -->
-  <g transform="translate(80, 110)">
-    <rect x="0" y="0" width="120" height="70" rx="10" fill="url(#initGrad)" filter="url(#shadow)"/>
-    <text x="60" y="28" text-anchor="middle" font-size="20" fill="#fff">🌱</text>
-    <text x="60" y="45" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#fff">Initializer</text>
-    <text x="60" y="60" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">Gen 0 only</text>
-  </g>
-
-  <!-- Population Pool (center of loop) -->
-  <g transform="translate(260, 110)">
-    <rect x="0" y="0" width="220" height="70" rx="10" fill="#2c3e50" stroke="#ecf0f1" stroke-width="2" filter="url(#shadow)"/>
-    <text x="110" y="25" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#ecf0f1">Population Pool</text>
-    <text x="110" y="42" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#95a5a6">gen0_a, gen1a, gen2b, gen3x...</text>
-    <text x="110" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#7f8c8d">Ranked by fitness score</text>
-  </g>
+  <!-- Population Pool -->
+  <rect x="60" y="135" width="580" height="55" rx="8" fill="#4a5568" filter="url(#shadow)"/>
+  <text x="350" y="168" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">Population Pool</text>
 
   <!-- Arrow: Initializer → Population -->
-  <path d="M200 145 L260 145" stroke="#8e44ad" stroke-width="2" fill="none" marker-end="url(#arrowGray)"/>
+  <path d="M115 115 L115 135" stroke="#718096" stroke-width="2" fill="none"/>
 
   <!-- Core Agents Row -->
-
   <!-- Mutator -->
-  <g transform="translate(100, 220)">
-    <rect x="0" y="0" width="130" height="85" rx="10" fill="url(#mutatorGrad)" filter="url(#shadow)"/>
-    <text x="65" y="25" text-anchor="middle" font-size="18" fill="#fff">🧬</text>
-    <text x="65" y="43" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#fff">Mutator</text>
-    <text x="65" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">3-4 parallel instances</text>
-    <text x="65" y="72" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">Clean context each</text>
-  </g>
+  <rect x="60" y="220" width="120" height="50" rx="8" fill="#ef4444" filter="url(#shadow)"/>
+  <text x="120" y="250" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Mutator</text>
 
   <!-- Crossover -->
-  <g transform="translate(260, 220)">
-    <rect x="0" y="0" width="130" height="85" rx="10" fill="url(#crossoverGrad)" filter="url(#shadow)"/>
-    <text x="65" y="25" text-anchor="middle" font-size="18" fill="#fff">🔀</text>
-    <text x="65" y="43" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#fff">Crossover</text>
-    <text x="65" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">Combines top 2-3</text>
-    <text x="65" y="72" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">Creates genXx hybrids</text>
-  </g>
+  <rect x="200" y="220" width="120" height="50" rx="8" fill="#a855f7" filter="url(#shadow)"/>
+  <text x="260" y="250" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Crossover</text>
 
   <!-- Evaluator -->
-  <g transform="translate(420, 220)">
-    <rect x="0" y="0" width="130" height="85" rx="10" fill="url(#evaluatorGrad)" filter="url(#shadow)"/>
-    <text x="65" y="25" text-anchor="middle" font-size="18" fill="#fff">📊</text>
-    <text x="65" y="43" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#fff">Evaluator</text>
-    <text x="65" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">Runs test harness</text>
-    <text x="65" y="72" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">perf / size / ml</text>
-  </g>
+  <rect x="340" y="220" width="120" height="50" rx="8" fill="#1e40af" filter="url(#shadow)"/>
+  <text x="400" y="250" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Evaluator</text>
 
-  <!-- Adversary (trust gate) -->
-  <g transform="translate(580, 220)">
-    <rect x="0" y="0" width="130" height="85" rx="10" fill="url(#adversaryGrad)" filter="url(#shadow)"/>
-    <text x="65" y="25" text-anchor="middle" font-size="18" fill="#fff">🛡️</text>
-    <text x="65" y="43" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#fff">Adversary</text>
-    <text x="65" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">Reviews &gt;15% jumps</text>
-    <text x="65" y="72" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">Trust score 0-1</text>
-  </g>
+  <!-- Adversary -->
+  <rect x="480" y="220" width="120" height="50" rx="8" fill="#f97316" filter="url(#shadow)"/>
+  <text x="540" y="250" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Adversary</text>
 
-  <!-- Arrows: Population → Mutator, Crossover -->
-  <path d="M300 180 L165 220" stroke="#95a5a6" stroke-width="1.5" fill="none" marker-end="url(#arrowGray)"/>
-  <path d="M370 180 L325 220" stroke="#95a5a6" stroke-width="1.5" fill="none" marker-end="url(#arrowGray)"/>
-  <text x="240" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#7f8c8d">select parents</text>
+  <!-- Arrows: Population → Agents -->
+  <path d="M120 190 L120 220" stroke="#718096" stroke-width="2" fill="none"/>
+  <path d="M260 190 L260 220" stroke="#718096" stroke-width="2" fill="none"/>
+  <path d="M400 190 L400 220" stroke="#718096" stroke-width="2" fill="none"/>
+  <path d="M540 190 L540 220" stroke="#718096" stroke-width="2" fill="none"/>
 
-  <!-- Arrows: Mutator, Crossover → Evaluator -->
-  <path d="M230 262 L420 262" stroke="#95a5a6" stroke-width="1.5" fill="none" marker-end="url(#arrowGray)"/>
-  <text x="325" y="255" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#7f8c8d">new candidates</text>
+  <!-- Arrow: Loop back from agents to Population -->
+  <path d="M60 245 L30 245 L30 162 L60 162" stroke="#718096" stroke-width="2" fill="none"/>
 
-  <!-- Arrow: Evaluator → Adversary (suspicious) -->
-  <path d="M550 262 L580 262" stroke="#f39c12" stroke-width="1.5" fill="none" marker-end="url(#arrowOrange)"/>
-  <text x="565" y="252" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#f39c12">if &gt;15%</text>
+  <!-- Champion -->
+  <circle cx="760" cy="180" r="55" fill="#eab308" filter="url(#shadow)"/>
+  <text x="760" y="185" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#1a1a2e">Champion</text>
 
-  <!-- Arrow: Evaluator → Population (normal results back) -->
-  <path d="M485 220 L485 145 L480 145" stroke="#95a5a6" stroke-width="1.5" fill="none" marker-end="url(#arrowGray)"/>
-  <text x="510" y="185" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#7f8c8d">update</text>
-  <text x="510" y="193" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#7f8c8d">rankings</text>
+  <!-- Arrow: Adversary → Champion -->
+  <path d="M600 245 L660 245 Q685 245 685 220 L685 180 L705 180" stroke="#718096" stroke-width="2" fill="none"/>
+  <text x="670" y="230" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#a3a3a3">validated</text>
 
-  <!-- ==================== CHAMPION (output) ==================== -->
-
-  <g transform="translate(800, 130)">
-    <rect x="0" y="0" width="100" height="100" rx="50" fill="url(#championGrad)" filter="url(#shadow)"/>
-    <text x="50" y="40" text-anchor="middle" font-size="30" fill="#fff">🏆</text>
-    <text x="50" y="62" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#fff">Champion</text>
-    <text x="50" y="78" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#8B6914">Best solution</text>
-  </g>
-
-  <!-- Arrow: Adversary → Champion (validated) -->
-  <path d="M710 250 L760 250 Q 790 250 790 220 L790 180 L800 180" stroke="#f1c40f" stroke-width="2" fill="none" marker-end="url(#arrowGold)"/>
-  <text x="770" y="215" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#f1c40f">validated</text>
-
-  <!-- ==================== DIAGNOSTIC AGENTS (triggered) ==================== -->
-
-  <text x="280" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#7f8c8d">DIAGNOSTIC AGENTS</text>
-  <text x="280" y="433" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#5d6d7e">Triggered on specific conditions</text>
+  <!-- Diagnostic Agents Section -->
+  <rect x="40" y="380" width="380" height="100" rx="12" fill="#2d3748"/>
+  <text x="230" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#718096">DIAGNOSTIC AGENTS</text>
 
   <!-- Debugger -->
-  <g transform="translate(80, 450)">
-    <rect x="0" y="0" width="150" height="70" rx="10" fill="url(#debuggerGrad)" filter="url(#shadow)"/>
-    <text x="75" y="24" text-anchor="middle" font-size="16" fill="#fff">🐛</text>
-    <text x="75" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#fff">Debugger</text>
-    <text x="75" y="54" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">On crash/error/timeout</text>
-    <text x="75" y="65" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">33% diagnosis rate</text>
-  </g>
+  <rect x="60" y="420" width="100" height="45" rx="8" fill="#dc2626" filter="url(#shadow)"/>
+  <text x="110" y="448" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">Debugger</text>
 
   <!-- Plateau Breaker -->
-  <g transform="translate(260, 450)">
-    <rect x="0" y="0" width="150" height="70" rx="10" fill="url(#plateauGrad)" filter="url(#shadow)"/>
-    <text x="75" y="24" text-anchor="middle" font-size="16" fill="#fff">🔨</text>
-    <text x="75" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#fff">Plateau Breaker</text>
-    <text x="75" y="54" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">On stall (&lt;2% over 3 gens)</text>
-    <text x="75" y="65" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">Radical interventions</text>
-  </g>
+  <rect x="180" y="420" width="100" height="45" rx="8" fill="#2563eb" filter="url(#shadow)"/>
+  <text x="230" y="440" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">Plateau</text>
+  <text x="230" y="455" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">Breaker</text>
 
   <!-- Meta-Strategist -->
-  <g transform="translate(440, 450)">
-    <rect x="0" y="0" width="150" height="70" rx="10" fill="url(#strategistGrad)" filter="url(#shadow)"/>
-    <text x="75" y="24" text-anchor="middle" font-size="16" fill="#fff">🎯</text>
-    <text x="75" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#fff">Meta-Strategist</text>
-    <text x="75" y="54" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">Every N generations</text>
-    <text x="75" y="65" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff" opacity="0.9">Adjusts mutation weights</text>
-  </g>
+  <rect x="300" y="420" width="100" height="45" rx="8" fill="#7c3aed" filter="url(#shadow)"/>
+  <text x="350" y="440" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">Meta-</text>
+  <text x="350" y="455" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">Strategist</text>
 
-  <!-- ==================== MEMORY SYSTEM (right side) ==================== -->
+  <!-- Support Systems Section -->
+  <rect x="450" y="380" width="280" height="100" rx="12" fill="#2d3748"/>
+  <text x="590" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#718096">SUPPORT SYSTEMS</text>
 
-  <g transform="translate(800, 280)">
-    <rect x="0" y="0" width="220" height="140" rx="12" fill="#34495e" opacity="0.6" stroke="#1abc9c" stroke-width="1.5"/>
-    <text x="110" y="22" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#1abc9c">MEMORY SYSTEM</text>
-    <text x="110" y="42" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#bdc3c7">Stores:</text>
-    <text x="110" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#95a5a6">• Successful mutation patterns</text>
-    <text x="110" y="72" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#95a5a6">• Failed approaches to avoid</text>
-    <text x="110" y="86" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#95a5a6">• Checkpoints for crash recovery</text>
-    <text x="110" y="100" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#95a5a6">• Champion lineage</text>
-    <text x="110" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#1abc9c">→ Injects context into Mutator</text>
-  </g>
+  <!-- Memory System -->
+  <rect x="470" y="420" width="110" height="45" rx="8" fill="#0d9488" filter="url(#shadow)"/>
+  <text x="525" y="440" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">Memory</text>
+  <text x="525" y="455" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">System</text>
 
-  <!-- Arrow: Memory → Mutator (context injection) -->
-  <path d="M800 350 L250 350 Q 165 350 165 305" stroke="#1abc9c" stroke-width="1.5" stroke-dasharray="6,3" fill="none" marker-end="url(#arrowTeal)"/>
-  <text x="500" y="342" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#1abc9c">context injection (what worked, what failed)</text>
+  <!-- Trust Validation -->
+  <rect x="600" y="420" width="110" height="45" rx="8" fill="#ea580c" filter="url(#shadow)"/>
+  <text x="655" y="440" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">Trust</text>
+  <text x="655" y="455" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">Validation</text>
 
-  <!-- ==================== TRUST SYSTEM (bottom right) ==================== -->
+  <!-- Context Injection Arrow: Memory → Mutator -->
+  <path d="M525 420 L525 350 L120 350 L120 270" stroke="#14b8a6" stroke-width="2" stroke-dasharray="6,3" fill="none"/>
+  <text x="320" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-style="italic" fill="#14b8a6">context injection</text>
 
-  <g transform="translate(800, 450)">
-    <rect x="0" y="0" width="220" height="120" rx="12" fill="#34495e" opacity="0.6" stroke="#f39c12" stroke-width="1.5"/>
-    <text x="110" y="22" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#f39c12">TRUST VALIDATION</text>
-    <text x="110" y="42" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#bdc3c7">1. Exploit detection (timing, output)</text>
-    <text x="110" y="56" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#bdc3c7">2. Variance gate (N re-evaluations)</text>
-    <text x="110" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#bdc3c7">3. Adversary code review</text>
-    <text x="110" y="84" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#bdc3c7">4. Escalation levels (L1-L3)</text>
-    <text x="110" y="108" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#95a5a6">→ Generates trust_dossier.md</text>
-  </g>
-
-  <!-- ==================== FOOTER ==================== -->
-  <rect x="80" y="600" width="940" height="55" rx="8" fill="#2c3e50" opacity="0.7"/>
-  <text x="550" y="622" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#ecf0f1">KEY PRINCIPLES</text>
-  <text x="200" y="642" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#bdc3c7">
-    <tspan font-weight="bold" fill="#e94560">Clean Context:</tspan> Each agent sees only its task
-  </text>
-  <text x="450" y="642" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#bdc3c7">
-    <tspan font-weight="bold" fill="#9b59b6">Parallel:</tspan> 3-4 mutators run concurrently
-  </text>
-  <text x="700" y="642" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#bdc3c7">
-    <tspan font-weight="bold" fill="#3498db">Stop:</tspan> Plateau, max gens, or budget
-  </text>
-  <text x="900" y="642" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#bdc3c7">
-    <tspan font-weight="bold" fill="#1abc9c">Recovery:</tspan> Checkpoint resume
-  </text>
-
-  <!-- Subtle connection indicators for diagnostic agents -->
-  <path d="M165 305 L155 400 L155 450" stroke="#e74c3c" stroke-width="1" stroke-dasharray="3,3" fill="none" opacity="0.5"/>
-  <path d="M370 180 L335 400 L335 450" stroke="#3498db" stroke-width="1" stroke-dasharray="3,3" fill="none" opacity="0.5"/>
-  <path d="M515 305 L515 400 L515 450" stroke="#9b59b6" stroke-width="1" stroke-dasharray="3,3" fill="none" opacity="0.5"/>
+  <!-- Decorative stars -->
+  <polygon points="850,450 853,460 863,460 855,467 858,477 850,471 842,477 845,467 837,460 847,460" fill="#4a5568"/>
+  <polygon points="820,520 822,527 829,527 824,532 826,539 820,535 814,539 816,532 811,527 818,527" fill="#4a5568"/>
 
 </svg>
