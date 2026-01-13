@@ -11,6 +11,8 @@ The SDK orchestrates evolution through specialized subagents:
 - **Crossover**: Combines innovations from multiple parents
 - **Evaluator**: Measures fitness against benchmarks
 - **Adversary**: Reviews suspicious improvements for trust validation
+- **Debugger**: Diagnoses failed mutations, identifies root causes, extracts lessons
+- **Plateau Breaker**: Detects stalls, proposes radical interventions to escape local optima
 
 Each agent runs with **clean context**—they only see their specific task, not the full evolution history. This prevents context bloat and keeps agents focused.
 
@@ -304,6 +306,114 @@ reporter.pause()
 reporter.resume()
 ```
 
+## Diagnostic Agents
+
+The SDK includes specialized agents that help evolution runs avoid wasted effort and escape local optima.
+
+### Debugger Agent
+
+When a mutation fails (crash, error, timeout), the Debugger Agent analyzes the failure to:
+- Identify the root cause
+- Categorize the failure type for pattern learning
+- Extract lessons for future mutators
+
+```python
+from evolve_sdk.agents import get_debugger_prompt, get_debugger_summary_prompt
+
+# Single failure analysis
+prompt = get_debugger_prompt(
+    failed_file="gen3b.py",
+    error_message="IndexError: list index out of range",
+    error_traceback="...",
+    parent_file="gen2a.py",
+    mutation_type="boundary_optimization",
+    mode="perf",
+    generation=3,
+)
+
+# Multiple failures in one generation (pattern detection)
+summary_prompt = get_debugger_summary_prompt(
+    failures=[
+        {"file": "gen4a.py", "error": "bad character range z-a"},
+        {"file": "gen4b.py", "error": "unterminated character set"},
+    ],
+    generation=4,
+    mode="perf",
+)
+```
+
+**Failure Categories:**
+- `syntax_error` - Invalid code syntax
+- `type_error` - Type mismatches
+- `boundary_condition` - Off-by-one, index out of range
+- `resource_exhaustion` - Memory, recursion limits
+- `algorithmic_flaw` - Logic errors, incorrect results
+- `runtime_crash` - Unhandled exceptions
+- And 6 more...
+
+### Plateau Breaker Agent
+
+When evolution stalls (low improvement over multiple generations), the Plateau Breaker diagnoses the situation and proposes radical interventions.
+
+```python
+from evolve_sdk.agents import (
+    detect_plateau,
+    get_plateau_breaker_prompt,
+    get_intervention_prompt,
+)
+
+# Check if evolution is stuck
+fitness_history = [
+    {"generation": 1, "best_fitness": 964.0, "improvement_pct": 0.0},
+    {"generation": 2, "best_fitness": 964.0, "improvement_pct": 0.0},
+    {"generation": 3, "best_fitness": 964.0, "improvement_pct": 0.0},
+]
+
+is_stalled, gens_stalled, avg_improvement = detect_plateau(
+    fitness_history,
+    threshold=0.02,  # <2% improvement
+    window=3,        # Over 3 generations
+)
+
+if is_stalled:
+    # Get diagnosis and interventions
+    prompt = get_plateau_breaker_prompt(
+        current_champion_code="...",
+        fitness_history=fitness_history,
+        mutation_history=["parameter_tweak", "loop_unroll", ...],
+        mode="perf",
+    )
+
+    # After getting LLM response, apply intervention
+    intervention_prompt = get_intervention_prompt(
+        diagnosis="Local optimum - incremental changes exhausted",
+        intervention_type="algorithm_swap",
+        intervention_details="Try constraint propagation instead of backtracking",
+        current_champion_code="...",
+        mode="perf",
+    )
+```
+
+**Intervention Types:**
+- `algorithm_swap` - Replace current algorithm entirely
+- `paradigm_shift` - Change fundamental approach
+- `structural` - Major code reorganization
+- `hyperparameter_reset` - Reset to explore different region
+- `population_injection` - Add diverse orthogonal solutions
+
+### Showcase: Regex Golf
+
+The `showcase/regex_golf/` directory demonstrates both diagnostic agents on a real problem.
+
+**Problem:** Find the shortest regex matching Star Wars titles but not Star Trek titles.
+
+**Results:**
+- Debugger caught 33% of mutations before they wasted evaluation cycles
+- Plateau Breaker detected stall at generation 4 and proposed breakthrough
+- Fitness improved from 964 to 977 (+13 points, 36% shorter regex)
+
+See `showcase/regex_golf/README.md` for detailed analysis.
+
 ## Trust System
 
 The SDK includes a comprehensive trust system to detect and prevent evaluator exploitation:
@@ -456,7 +566,9 @@ evolve_sdk/
 │   ├── mutator.py      # Mutation specialist
 │   ├── evaluator.py    # Fitness measurement
 │   ├── crossover.py    # Parent combination
-│   └── adversary.py    # Trust validation
+│   ├── adversary.py    # Trust validation
+│   ├── debugger.py     # Failed mutation diagnosis
+│   └── plateau_breaker.py  # Stall detection and intervention
 ├── memory/             # Evolution memory system
 │   ├── __init__.py     # Memory exports
 │   ├── store.py        # Persistent storage engine
