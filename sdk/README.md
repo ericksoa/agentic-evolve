@@ -13,6 +13,7 @@ The SDK orchestrates evolution through specialized subagents:
 - **Adversary**: Reviews suspicious improvements for trust validation
 - **Debugger**: Diagnoses failed mutations, identifies root causes, extracts lessons
 - **Plateau Breaker**: Detects stalls, proposes radical interventions to escape local optima
+- **Meta-Strategist**: Analyzes mutation effectiveness, adjusts strategy weights every N generations
 
 Each agent runs with **clean context**—they only see their specific task, not the full evolution history. This prevents context bloat and keeps agents focused.
 
@@ -91,8 +92,9 @@ The evolution loop:
 5. **Evaluator** measures fitness of all candidates
 6. **Adversary** reviews suspicious improvements (>15% jumps)
 7. **Plateau Breaker** intervenes if evolution stalls
-8. **Reporter** surfaces important messages to operator
-9. **Memory Store** records everything for pattern learning
+8. **Meta-Strategist** (every 5 gens) analyzes what's working and adjusts mutation weights
+9. **Reporter** surfaces important messages to operator
+10. **Memory Store** records everything for pattern learning
 
 ## Evolution Memory System
 
@@ -562,7 +564,8 @@ evolve_sdk/
 │   ├── crossover.py    # Parent combination
 │   ├── adversary.py    # Trust validation
 │   ├── debugger.py     # Failed mutation diagnosis
-│   └── plateau_breaker.py  # Stall detection and intervention
+│   ├── plateau_breaker.py  # Stall detection and intervention
+│   └── meta_strategist.py  # Strategy analysis and adjustment
 ├── memory/             # Evolution memory system
 │   ├── __init__.py     # Memory exports
 │   ├── store.py        # Persistent storage engine

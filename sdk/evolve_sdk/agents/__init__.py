@@ -14,6 +14,15 @@ from .plateau_breaker import (
     get_intervention_prompt,
     detect_plateau,
 )
+from .meta_strategist import (
+    META_STRATEGIST_SYSTEM,
+    get_meta_strategist_prompt,
+    get_strategy_application_prompt,
+    compute_mutation_effectiveness,
+    compute_crossover_contribution,
+    compute_diversity_index,
+    should_trigger_analysis,
+)
 
 __all__ = [
     "MUTATOR_SYSTEM", "get_mutator_prompt",
@@ -25,4 +34,7 @@ __all__ = [
     "ReporterAgent", "report_to_operator",
     "DEBUGGER_SYSTEM", "get_debugger_prompt", "get_debugger_summary_prompt",
     "PLATEAU_BREAKER_SYSTEM", "get_plateau_breaker_prompt", "get_intervention_prompt", "detect_plateau",
+    "META_STRATEGIST_SYSTEM", "get_meta_strategist_prompt", "get_strategy_application_prompt",
+    "compute_mutation_effectiveness", "compute_crossover_contribution", "compute_diversity_index",
+    "should_trigger_analysis",
 ]
