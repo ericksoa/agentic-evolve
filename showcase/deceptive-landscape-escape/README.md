@@ -1,10 +1,12 @@
-# Diversity Guardian Demo
+# Deceptive Landscape Escape
 
-**Phase 3 Agent**: Prevents premature population convergence by monitoring genotypic and phenotypic diversity.
+**Problem**: Evolution gets trapped in local optima when the fitness landscape is deceptive.
 
-![Diversity Guardian](../../docs/architecture-overview.jpg)
+*Demonstrates the Diversity Guardian agent (Phase 3)*
 
-## The Problem: Premature Convergence
+![Architecture](../../docs/architecture-overview.jpg)
+
+## The Problem: Deceptive Fitness Landscapes
 
 Premature convergence is a **silent killer** of evolutionary optimization:
 
@@ -85,7 +87,7 @@ Gen 6: Perfect alternating (fitness 100) 🏆 GLOBAL OPTIMUM
 ## Quick Start
 
 ```bash
-cd showcase/diversity-guardian-demo
+cd showcase/deceptive-landscape-escape
 
 # Run the demonstration (no full evolution needed)
 python demonstrate_diversity.py

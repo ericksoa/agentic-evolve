@@ -130,7 +130,7 @@ The memory system provides persistent storage for evolution runs, enabling:
 
 | Showcase | Description | Key Result |
 |----------|-------------|------------|
-| [diversity-guardian-demo](showcase/diversity-guardian-demo/) | Diversity Guardian (Phase 3) | Prevents premature convergence |
+| [deceptive-landscape-escape](showcase/deceptive-landscape-escape/) | Escaping local optima traps | Diversity Guardian demo |
 | [regex_golf](showcase/regex_golf/) | Debugger + Plateau Breaker demo | 33% failure diagnosis |
 | [string-search-evolution](showcase/string-search-evolution/) | String search algorithm evolution | 3.6x speedup, Meta-Strategist |
 | [nqueens-evolution](showcase/nqueens-evolution/) | N-Queens solver with memory demo | 14,000x speedup |
