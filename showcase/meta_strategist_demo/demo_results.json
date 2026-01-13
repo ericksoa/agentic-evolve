@@ -1,0 +1,39 @@
+{
+  "problem": "sorting_algorithm_optimization",
+  "demonstration": "meta_strategist_value",
+  "results": {
+    "without_strategist": 785.0381782320072,
+    "with_strategist": 1185.9,
+    "improvement_pct": 51.06271680579637
+  },
+  "phase1_mutations": 30,
+  "phase2_mutations": 15,
+  "effectiveness_at_gen5": {
+    "parameter_tweak": {
+      "attempts": 11,
+      "successes": 2,
+      "success_rate": 0.182,
+      "avg_impact": 2.8,
+      "effectiveness": 0.509
+    },
+    "structural": {
+      "attempts": 3,
+      "successes": 2,
+      "success_rate": 0.667,
+      "avg_impact": 30.25,
+      "effectiveness": 20.167
+    },
+    "algorithm_swap": {
+      "attempts": 1,
+      "successes": 1,
+      "success_rate": 1.0,
+      "avg_impact": 450.0,
+      "effectiveness": 450.0
+    }
+  },
+  "recommendations_applied": {
+    "increase_algorithm_swap": "0.34 \u2192 0.60",
+    "decrease_parameter_tweak": "0.33 \u2192 0.10",
+    "maintain_structural": "0.33 \u2192 0.30"
+  }
+}
