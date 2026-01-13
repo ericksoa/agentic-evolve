@@ -32,7 +32,7 @@ except ImportError:
     ClaudeAgentOptions = dict
     HookMatcher = dict
 
-from .config import EvolutionConfig, TrustConfig
+from .config import EvolutionConfig, TrustConfig, MemoryConfig
 from .agents import (
     INITIALIZER_SYSTEM, get_initializer_prompt,
     MUTATOR_SYSTEM, get_mutator_prompt,
@@ -53,6 +53,17 @@ from .trust import (
     ExploitDetector,
     ValidatorRegistry,
 )
+
+# Optional memory system import
+try:
+    from .memory import EvolutionMemory, MemoryConfig as MemoryStoreConfig
+    from .memory.queries import get_mutation_context, format_mutation_context_for_prompt
+    MEMORY_AVAILABLE = True
+except ImportError:
+    MEMORY_AVAILABLE = False
+    EvolutionMemory = None
+    get_mutation_context = None
+    format_mutation_context_for_prompt = None
 
 
 class EvolutionRunner:
@@ -111,6 +122,213 @@ class EvolutionRunner:
         # Trust system components
         self._init_trust_system()
 
+        # Memory system (crash recovery, mutation patterns)
+        self._init_memory_system()
+
+    def _init_memory_system(self):
+        """Initialize memory system if enabled."""
+        self.memory = None
+
+        if not self.config.memory.enabled:
+            return
+
+        if not MEMORY_AVAILABLE:
+            print("[MEMORY] Memory module not available - using JSON state only")
+            return
+
+        try:
+            store_path = self.config.memory.store_path.replace(
+                "{problem_id}", self.problem_id
+            )
+            self.memory = EvolutionMemory(
+                store_path=store_path,
+                problem_id=self.problem_id,
+                mode=self.config.mode,
+            )
+            print(f"[MEMORY] Initialized: {self.memory.stats()['store_path']}")
+
+            # Display critical notes at startup - these should never be forgotten
+            self._display_critical_notes()
+        except Exception as e:
+            print(f"[MEMORY] Failed to initialize: {e}")
+            self.memory = None
+
+    def _display_critical_notes(self):
+        """Display critical notes from memory at startup."""
+        if not self.memory:
+            return
+
+        try:
+            critical_notes = self.memory.get_critical_notes()
+            if critical_notes:
+                print()
+                print("=" * 60)
+                print("  CRITICAL NOTES FROM MEMORY - DO NOT FORGET")
+                print("=" * 60)
+                for note in critical_notes:
+                    print(f"\n  [{note.get('category', 'note').upper()}] {note.get('title', 'Untitled')}")
+                    # Show first 200 chars of content
+                    content = note.get('content', '')
+                    if len(content) > 200:
+                        content = content[:200] + "..."
+                    for line in content.split('\n')[:5]:
+                        print(f"    {line}")
+                print()
+                print("=" * 60)
+                print()
+        except Exception:
+            pass  # Don't fail startup if notes can't be displayed
+
+    # ==================== MESSAGING ====================
+
+    def _msg(
+        self,
+        title: str,
+        content: str = "",
+        from_agent: str = "runner",
+        message_type: str = "status",
+        priority: str = "info",
+        related_file: str = "",
+        related_fitness: float | None = None,
+        print_to_terminal: bool = True,
+    ):
+        """
+        Broadcast a message to the operator (and other agents).
+
+        This is a convenience wrapper that handles memory not being available.
+        Messages at priority 'important' or higher are always printed to terminal.
+
+        Args:
+            title: Short message for the feed
+            content: Full details
+            from_agent: Who is sending
+            message_type: status, milestone, warning, discovery, etc.
+            priority: debug, info, important, urgent, critical
+            related_file: Associated file
+            related_fitness: Associated fitness value
+            print_to_terminal: Whether to print to stdout (important+ always print)
+        """
+        # Get agent emoji
+        agent_info = {
+            "runner": ("Evolution Runner", "🎯"),
+            "mutator": ("Mutator", "🧬"),
+            "mutator_a": ("Mutator A", "🧬"),
+            "mutator_b": ("Mutator B", "🧬"),
+            "mutator_c": ("Mutator C", "🧬"),
+            "crossover": ("Crossover", "🔀"),
+            "evaluator": ("Evaluator", "📊"),
+            "adversary": ("Adversary", "🛡️"),
+        }.get(from_agent, (from_agent, "📝"))
+        emoji = agent_info[1]
+
+        # Print to terminal for important+ or if explicitly requested
+        priority_levels = ["debug", "info", "important", "urgent", "critical"]
+        should_print = (
+            print_to_terminal
+            and priority_levels.index(priority) >= priority_levels.index("important")
+        ) or message_type in ("milestone", "warning", "error", "discovery")
+
+        if should_print:
+            # Color based on message type
+            colors = {
+                "milestone": "\033[1;33m",  # Bold yellow
+                "discovery": "\033[1;32m",  # Bold green
+                "warning": "\033[1;31m",    # Bold red
+                "error": "\033[1;31m",      # Bold red
+            }
+            color = colors.get(message_type, "")
+            reset = "\033[0m" if color else ""
+            print(f"\n  {emoji} [{from_agent.upper()}] {color}{title}{reset}")
+            if content and content != title:
+                print(f"     {content[:100]}")
+
+        # Store in memory
+        if not self.memory:
+            return
+
+        try:
+            self.memory.broadcast(
+                from_agent=from_agent,
+                message_type=message_type,
+                title=title,
+                content=content,
+                priority=priority,
+                to_audience=["human", "*"],
+                generation=self.generation,
+                related_file=related_file,
+                related_fitness=related_fitness,
+            )
+        except Exception:
+            pass  # Messaging should never break evolution
+
+    def _msg_milestone(
+        self,
+        title: str,
+        content: str = "",
+        related_file: str = "",
+        related_fitness: float | None = None,
+    ):
+        """Announce a significant milestone - always printed to terminal."""
+        # Always print milestones with prominent formatting
+        print(f"\n  🏆 \033[1;33m[MILESTONE]\033[0m {title}")
+        if content:
+            print(f"     {content}")
+
+        # Store in memory
+        if not self.memory:
+            return
+        try:
+            self.memory.announce_milestone(
+                title=title,
+                content=content,
+                generation=self.generation,
+                related_file=related_file,
+                related_fitness=related_fitness,
+            )
+        except Exception:
+            pass
+
+    def _msg_mutator(
+        self,
+        variant: str,
+        title: str,
+        content: str = "",
+        related_file: str = "",
+        related_fitness: float | None = None,
+    ):
+        """Send a message from a mutator agent."""
+        self._msg(
+            title=title,
+            content=content,
+            from_agent=f"mutator_{variant}",
+            message_type="status",
+            related_file=related_file,
+            related_fitness=related_fitness,
+        )
+
+    def get_message_feed(self, limit: int = 20, priority: str = "info") -> str:
+        """
+        Get the current message feed for display.
+
+        Args:
+            limit: Maximum messages to return
+            priority: Minimum priority level
+
+        Returns:
+            Formatted message feed string
+        """
+        if not self.memory:
+            return "Messaging not available (memory disabled)"
+
+        try:
+            return self.memory.get_message_feed(
+                limit=limit,
+                current_generation=self.generation,
+                priority=priority,
+            )
+        except Exception as e:
+            return f"Error getting messages: {e}"
+
     def _init_trust_system(self):
         """Initialize trust system components based on config."""
         trust_cfg = self.config.trust
@@ -166,6 +384,12 @@ class EvolutionRunner:
         self.work_dir.mkdir(parents=True, exist_ok=True)
         self.mutations_dir.mkdir(parents=True, exist_ok=True)
 
+        # Announce evolution start
+        self._msg_milestone(
+            title=f"Evolution started: {self.config.problem[:50]}",
+            content=f"Mode: {self.config.mode}, Max generations: {self.config.max_generations}",
+        )
+
         # Run canary test if enabled (verifies trust system works)
         if self.config.trust.canary_test_enabled:
             canary_passed = await self._run_canary_test()
@@ -211,14 +435,30 @@ class EvolutionRunner:
             # Track improvement
             if gen_best and gen_best["fitness"] > best_fitness:
                 improvement = gen_best["fitness"] - best_fitness
+                improvement_pct = (improvement / best_fitness * 100) if best_fitness > 0 else 0
                 print(f"[+] Improvement: {best_fitness:.4f} -> {gen_best['fitness']:.4f} (+{improvement:.4f})")
                 best_fitness = gen_best["fitness"]
                 plateau_count = 0
+
+                # Announce improvement
+                self._msg_milestone(
+                    title=f"Generation {self.generation}: +{improvement_pct:.1f}% improvement!",
+                    content=f"Fitness: {best_fitness:.4f}",
+                    related_file=gen_best.get("file", ""),
+                    related_fitness=best_fitness,
+                )
             else:
                 plateau_count += 1
                 print(f"[=] No improvement (plateau: {plateau_count}/{self.config.plateau_threshold})")
 
-            self._save_state()
+                # Note plateau status
+                self._msg(
+                    title=f"Generation {self.generation}: No improvement",
+                    content=f"Plateau: {plateau_count}/{self.config.plateau_threshold}",
+                    priority="info" if plateau_count < 3 else "important",
+                )
+
+            self._save_state(operation="post_generation")
 
         # Phase 3: Finalize
         return await self._finalize()
@@ -252,13 +492,20 @@ class EvolutionRunner:
                 self.champion = parsed["best"]
             print(f"[Gen 0] Created {len(self.population)} initial solutions")
             print(f"[Gen 0] Best initial fitness: {self.champion['fitness'] if self.champion else 'N/A'}")
+
+            # Notify operator
+            self._msg(
+                title=f"Population initialized: {len(self.population)} solutions",
+                content=f"Best initial fitness: {self.champion['fitness'] if self.champion else 'N/A'}",
+                related_fitness=self.champion['fitness'] if self.champion else None,
+            )
         else:
             print("[Gen 0] Warning: Could not parse initialization results")
             # Try to discover any created files
             await self._discover_population()
 
         self.generation = 0
-        self._save_state()
+        self._save_state(operation="post_initialization")
 
     async def _run_generation(self) -> dict[str, Any] | None:
         """
@@ -411,6 +658,40 @@ class EvolutionRunner:
 
                 gen_results.append(result_entry)
 
+                # Store mutation in memory
+                if self.memory:
+                    try:
+                        parent = parent_map.get(m.get("file"))
+                        parent_fitness = parent.get("fitness", 0) if parent else 0
+                        parent_file = parent.get("file", "") if parent else ""
+
+                        if decision == "KEEP" and self.config.memory.store_successful_mutations:
+                            # Successful mutation
+                            self.memory.store_mutation(
+                                generation=self.generation,
+                                variant=m.get("variant", ""),
+                                parent_file=parent_file,
+                                child_file=m.get("file", ""),
+                                parent_fitness=parent_fitness,
+                                child_fitness=fitness,
+                                mutation_type=m.get("mutation_type", "mutation"),
+                            )
+                        elif decision == "DROP" and self.config.memory.store_failed_mutations:
+                            # Failed mutation
+                            reason = "adversary_rejected" if adversary_rejected else (
+                                "invalid" if not is_valid else "worse"
+                            )
+                            self.memory.store_failed_mutation(
+                                generation=self.generation,
+                                parent_file=parent_file,
+                                child_file=m.get("file", ""),
+                                parent_fitness=parent_fitness,
+                                child_fitness=fitness,
+                                failure_reason=reason,
+                            )
+                    except Exception as e:
+                        pass  # Memory storage errors are not critical
+
         # Selection: keep top N
         self.population.sort(key=lambda x: x.get("fitness", 0), reverse=True)
         self.population = self.population[: self.config.population_size]
@@ -420,9 +701,21 @@ class EvolutionRunner:
         if self.population:
             best = self.population[0]
             if not self.champion or best["fitness"] > self.champion["fitness"]:
+                old_fitness = self.champion["fitness"] if self.champion else 0
                 self.champion = best.copy()
                 new_champion = self.champion
                 self._save_champion()
+
+                # Announce new champion!
+                champion_file = new_champion.get("file", "").split("/")[-1]
+                improvement = new_champion["fitness"] - old_fitness if old_fitness > 0 else 0
+                improvement_pct = (improvement / old_fitness * 100) if old_fitness > 0 else 0
+                self._msg_milestone(
+                    title=f"New champion: {champion_file}",
+                    content=f"Fitness: {new_champion['fitness']:.4f}" + (f" (+{improvement_pct:.1f}%)" if improvement_pct > 0 else ""),
+                    related_file=new_champion.get("file", ""),
+                    related_fitness=new_champion["fitness"],
+                )
 
         # Show generation summary
         self.progress.generation_summary(
@@ -435,14 +728,33 @@ class EvolutionRunner:
 
         # Record history
         kept_count = sum(1 for r in gen_results if r.get("decision") == "KEEP")
+        previous_best = self.history[-1].get("best_fitness", 0) if self.history else 0
+        current_best = self.champion["fitness"] if self.champion else 0
+
         self.history.append({
             "generation": self.generation,
             "timestamp": datetime.now().isoformat(),
             "population_size": len(self.population),
-            "best_fitness": self.champion["fitness"] if self.champion else 0,
+            "best_fitness": current_best,
             "mutations_tried": len(mutation_tasks),
             "mutations_valid": kept_count,
         })
+
+        # Store generation snapshot in memory
+        if self.memory:
+            try:
+                self.memory.store_generation(
+                    generation=self.generation,
+                    population=self.population,
+                    best_fitness=current_best,
+                    champion_file=self.champion.get("file") if self.champion else None,
+                    mutations_tried=len(mutation_tasks),
+                    mutations_kept=kept_count,
+                    plateau_count=0,  # Will be updated by caller
+                    previous_best=previous_best,
+                )
+            except Exception:
+                pass  # Memory storage errors are not critical
 
         return self.champion
 
@@ -450,6 +762,35 @@ class EvolutionRunner:
         self, parent: dict, output_file: str, variant: str
     ) -> dict[str, Any]:
         """Spawn a dedicated mutator agent (clean context)."""
+
+        # Get memory context if enabled
+        memory_context = None
+        if (
+            self.memory
+            and self.config.memory.inject_mutation_context
+            and get_mutation_context is not None
+            and format_mutation_context_for_prompt is not None
+        ):
+            try:
+                # Read parent code for similarity search
+                parent_code = ""
+                try:
+                    with open(parent["file"]) as f:
+                        parent_code = f.read()
+                except Exception:
+                    pass
+
+                if parent_code:
+                    context = get_mutation_context(
+                        memory=self.memory,
+                        parent_code=parent_code,
+                        max_similar=self.config.memory.max_similar_mutations,
+                        max_failed=self.config.memory.max_failed_mutations,
+                    )
+                    memory_context = format_mutation_context_for_prompt(context)
+            except Exception:
+                pass  # Memory context is not critical
+
         prompt = get_mutator_prompt(
             parent_file=parent["file"],
             parent_fitness=parent.get("fitness", 0),
@@ -457,6 +798,7 @@ class EvolutionRunner:
             mode=self.config.mode,
             generation=self.generation,
             variant=variant,
+            memory_context=memory_context,
         )
 
         result = await self._run_agent(
@@ -823,6 +1165,32 @@ class EvolutionRunner:
             exploit_results = {}
             variance_stats = None
 
+            # === MEMORY: Check for similar exploits ===
+            if self.memory and self.config.memory.check_exploit_similarity:
+                try:
+                    # Read candidate code
+                    candidate_code = ""
+                    try:
+                        with open(file_path) as f:
+                            candidate_code = f.read()
+                    except Exception:
+                        pass
+
+                    if candidate_code:
+                        similar_exploits = self.memory.find_similar_exploits(
+                            code=candidate_code,
+                            threshold=0.85,
+                        )
+                        if similar_exploits:
+                            print(f"  [MEMORY] Found {len(similar_exploits)} similar exploit patterns!")
+                            for exp in similar_exploits[:2]:
+                                all_flags.append(
+                                    f"Similar to known exploit: {exp.get('pattern_type', 'unknown')} "
+                                    f"(similarity: {exp.get('_similarity', 0):.2f})"
+                                )
+                except Exception:
+                    pass  # Memory check is not critical
+
             # === EXPLOIT DETECTION (B) ===
             # Run basic exploit checks before adversary review
             exploit_results = self.exploit_detector.run_all_checks(
@@ -842,6 +1210,28 @@ class EvolutionRunner:
                 eval_result["exploit_checks"] = {k: v.to_dict() for k, v in exploit_results.items()}
                 eval_result["fitness"] = 0
                 updated_evals.append(eval_result)
+
+                # Store exploit in memory for future detection
+                if self.memory and self.config.memory.store_exploits:
+                    try:
+                        candidate_code = ""
+                        try:
+                            with open(file_path) as f:
+                                candidate_code = f.read()
+                        except Exception:
+                            pass
+
+                        self.memory.store_exploit(
+                            file_path=file_path,
+                            code_content=candidate_code,
+                            pattern_type=exploit_flags[0] if exploit_flags else "unknown",
+                            detection_method="exploit_detector",
+                            flags=exploit_flags,
+                            claimed_fitness=fitness,
+                        )
+                        print(f"  [MEMORY] Exploit pattern stored for future detection")
+                    except Exception:
+                        pass  # Memory storage is not critical
 
                 # Record in dossier
                 self.dossier.record_evaluation(
@@ -1133,7 +1523,50 @@ class EvolutionRunner:
     async def _finalize(self) -> dict[str, Any]:
         """Finalize evolution and return results."""
         print_evolution_complete(self.generation, self.champion, len(self.population))
-        self._save_state()
+        self._save_state(operation="finalize")
+
+        # Announce completion
+        champion_file = self.champion.get("file", "").split("/")[-1] if self.champion else "none"
+        champion_fitness = self.champion.get("fitness", 0) if self.champion else 0
+        self._msg_milestone(
+            title=f"Evolution complete! Champion: {champion_file}",
+            content=f"Generations: {self.generation}, Final fitness: {champion_fitness:.4f}",
+            related_file=self.champion.get("file", "") if self.champion else "",
+            related_fitness=champion_fitness,
+        )
+
+        # Store final champion in memory
+        if self.memory and self.champion and self.config.memory.store_champions:
+            try:
+                champion_file = self.champion.get("file", "")
+                champion_code = ""
+                if champion_file:
+                    try:
+                        with open(champion_file) as f:
+                            champion_code = f.read()
+                    except Exception:
+                        pass
+
+                self.memory.store_champion(
+                    file_path=champion_file,
+                    code_content=champion_code,
+                    fitness=self.champion.get("fitness", 0),
+                    generation=self.generation,
+                    improvement_over_baseline=self.champion.get("improvement_over_baseline", 0),
+                    trust_score=self.champion.get("trust_score", 1.0),
+                    cv_mean=self.champion.get("cv_mean", 0),
+                    cv_std=self.champion.get("cv_std", 0),
+                    insights=self.champion.get("insights", []),
+                    problem_description=self.config.problem,
+                )
+                print(f"[MEMORY] Champion stored in memory")
+            except Exception as e:
+                print(f"[MEMORY] Failed to store champion: {e}")
+
+        # Print memory stats
+        if self.memory:
+            stats = self.memory.stats()
+            print(f"[MEMORY] Final stats: {stats['total_frames']} frames stored")
 
         # Generate trust dossier if enabled
         if self.config.trust.generate_dossier:
@@ -1239,7 +1672,35 @@ class EvolutionRunner:
         return None
 
     def _load_state(self) -> bool:
-        """Load state from disk. Returns True if state was loaded."""
+        """
+        Load state from disk. Returns True if state was loaded.
+
+        Attempts memory-based recovery first (for crash recovery),
+        then falls back to JSON state file.
+        """
+        # Try memory-based recovery first (more resilient to crashes)
+        if self.memory:
+            try:
+                recovered = self.memory.recover()
+                if recovered:
+                    self.generation = recovered.get("generation", 0)
+                    self.population = recovered.get("population", [])
+                    self.champion = recovered.get("champion")
+                    # History is stored separately - try to load from JSON
+                    state_file = self.work_dir / "evolution.json"
+                    if state_file.exists():
+                        try:
+                            state = json.loads(state_file.read_text())
+                            self.history = state.get("history", [])
+                        except Exception:
+                            self.history = []
+                    print(f"[MEMORY] Recovered from checkpoint: gen {self.generation}, "
+                          f"operation: {recovered.get('operation', 'unknown')}")
+                    return True
+            except Exception as e:
+                print(f"[MEMORY] Recovery failed: {e}, trying JSON state")
+
+        # Fall back to JSON state file
         state_file = self.work_dir / "evolution.json"
         if not state_file.exists():
             return False
@@ -1255,8 +1716,38 @@ class EvolutionRunner:
             print(f"[!] Could not load state: {e}")
             return False
 
-    def _save_state(self):
-        """Save current state to disk."""
+    def _save_state(self, operation: str = "save"):
+        """
+        Save current state to disk.
+
+        Args:
+            operation: Type of operation (post_mutation, post_evaluation, post_selection)
+        """
+        # Save to memory (crash-safe checkpoint)
+        if self.memory:
+            try:
+                plateau_count = 0
+                if self.history:
+                    # Calculate plateau from history
+                    recent = self.history[-self.config.plateau_threshold:]
+                    if len(recent) >= 2:
+                        improvements = [
+                            h.get("best_fitness", 0) > self.history[i-1].get("best_fitness", 0)
+                            for i, h in enumerate(recent[1:], 1)
+                        ]
+                        plateau_count = len(recent) - sum(improvements) - 1
+
+                self.memory.checkpoint(
+                    generation=self.generation,
+                    population=self.population,
+                    champion=self.champion,
+                    operation=operation,
+                    plateau_count=plateau_count,
+                )
+            except Exception as e:
+                print(f"[MEMORY] Checkpoint failed: {e}")
+
+        # Also save to JSON for backwards compatibility
         state = {
             "problem": self.config.problem,
             "mode": self.config.mode,

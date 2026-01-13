@@ -34,15 +34,6 @@
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
       <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
     </filter>
-
-    <!-- Glow effect -->
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
   </defs>
 
   <!-- Background -->
@@ -64,17 +55,11 @@
   <!-- Mutator Agent (Left) -->
   <g transform="translate(80, 180)">
     <rect x="0" y="0" width="140" height="140" rx="15" fill="url(#mutatorGrad)" filter="url(#shadow)"/>
-    <!-- Robot icon -->
-    <circle cx="70" cy="45" r="25" fill="#fff" opacity="0.2"/>
-    <rect x="50" y="30" width="40" height="35" rx="5" fill="#fff" opacity="0.9"/>
-    <circle cx="60" cy="42" r="5" fill="#e94560"/>
-    <circle cx="80" cy="42" r="5" fill="#e94560"/>
-    <rect x="55" y="52" width="30" height="8" rx="2" fill="#e94560"/>
-    <!-- Wrench icon -->
-    <path d="M90 70 L100 80 L95 85 L85 75 Z" fill="#fff" opacity="0.7"/>
-    <text x="70" y="95" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff">Mutator</text>
-    <text x="70" y="112" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">Creates variants</text>
-    <text x="70" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">+26% best jump</text>
+    <!-- DNA/mutation icon -->
+    <text x="70" y="55" text-anchor="middle" font-size="40" fill="#fff" opacity="0.9">🧬</text>
+    <text x="70" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff">Mutator</text>
+    <text x="70" y="107" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">Creates variants</text>
+    <text x="70" y="122" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">+26% best jump</text>
   </g>
 
   <!-- Arrow from Mutator to Pool -->
@@ -88,17 +73,11 @@
   <!-- Evaluator Agent (Right) -->
   <g transform="translate(680, 180)">
     <rect x="0" y="0" width="140" height="140" rx="15" fill="url(#evaluatorGrad)" filter="url(#shadow)"/>
-    <!-- Clipboard icon -->
-    <rect x="50" y="25" width="40" height="50" rx="3" fill="#fff" opacity="0.9"/>
-    <rect x="45" y="20" width="50" height="12" rx="3" fill="#fff" opacity="0.7"/>
-    <line x1="55" y1="40" x2="85" y2="40" stroke="#0f3460" stroke-width="2"/>
-    <line x1="55" y1="50" x2="85" y2="50" stroke="#0f3460" stroke-width="2"/>
-    <line x1="55" y1="60" x2="75" y2="60" stroke="#0f3460" stroke-width="2"/>
-    <!-- Checkmark -->
-    <path d="M78 55 L82 62 L92 48" stroke="#27ae60" stroke-width="3" fill="none"/>
-    <text x="70" y="95" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff">Evaluator</text>
-    <text x="70" y="112" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">Measures fitness</text>
-    <text x="70" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">20,407 sol/sec</text>
+    <!-- Chart icon -->
+    <text x="70" y="55" text-anchor="middle" font-size="40" fill="#fff" opacity="0.9">📊</text>
+    <text x="70" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff">Evaluator</text>
+    <text x="70" y="107" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">Measures fitness</text>
+    <text x="70" y="122" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">20,407 sol/sec</text>
   </g>
 
   <!-- Arrow from Pool to Evaluator -->
@@ -113,11 +92,10 @@
   <g transform="translate(380, 90)">
     <rect x="0" y="0" width="140" height="120" rx="15" fill="url(#adversaryGrad)" filter="url(#shadow)"/>
     <!-- Shield icon -->
-    <path d="M70 25 L95 35 L95 60 Q95 80 70 90 Q45 80 45 60 L45 35 Z" fill="#fff" opacity="0.9"/>
-    <path d="M60 55 L68 65 L85 45" stroke="#f39c12" stroke-width="4" fill="none"/>
-    <text x="70" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff">Adversary</text>
-    <text x="70" y="92" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">Trust validation</text>
-    <text x="70" y="105" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">4 rejected</text>
+    <text x="70" y="50" text-anchor="middle" font-size="36" fill="#fff" opacity="0.9">🛡️</text>
+    <text x="70" y="78" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff">Adversary</text>
+    <text x="70" y="95" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">Trust validation</text>
+    <text x="70" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">4 rejected</text>
   </g>
 
   <!-- Arrow from Pool to Adversary -->
@@ -131,15 +109,10 @@
   <!-- Crossover Agent (Bottom Left) -->
   <g transform="translate(180, 400)">
     <rect x="0" y="0" width="140" height="120" rx="15" fill="url(#crossoverGrad)" filter="url(#shadow)"/>
-    <!-- DNA helix icon -->
-    <ellipse cx="55" cy="45" rx="15" ry="8" fill="#fff" opacity="0.8" transform="rotate(-20 55 45)"/>
-    <ellipse cx="85" cy="45" rx="15" ry="8" fill="#fff" opacity="0.8" transform="rotate(20 85 45)"/>
-    <ellipse cx="55" cy="60" rx="15" ry="8" fill="#fff" opacity="0.6" transform="rotate(20 55 60)"/>
-    <ellipse cx="85" cy="60" rx="15" ry="8" fill="#fff" opacity="0.6" transform="rotate(-20 85 60)"/>
-    <line x1="55" y1="45" x2="85" y2="45" stroke="#fff" stroke-width="2" opacity="0.5"/>
-    <line x1="55" y1="60" x2="85" y2="60" stroke="#fff" stroke-width="2" opacity="0.5"/>
-    <text x="70" y="80" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff">Crossover</text>
-    <text x="70" y="97" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">Combines parents</text>
+    <!-- DNA merge icon -->
+    <text x="70" y="50" text-anchor="middle" font-size="36" fill="#fff" opacity="0.9">🔀</text>
+    <text x="70" y="78" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff">Crossover</text>
+    <text x="70" y="95" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">Combines parents</text>
     <text x="70" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">gen6x champion</text>
   </g>
 
@@ -155,13 +128,9 @@
   <g transform="translate(580, 400)">
     <rect x="0" y="0" width="140" height="120" rx="15" fill="url(#memoryGrad)" filter="url(#shadow)"/>
     <!-- Database icon -->
-    <ellipse cx="70" cy="35" rx="30" ry="10" fill="#fff" opacity="0.9"/>
-    <path d="M40 35 L40 65 Q40 75 70 75 Q100 75 100 65 L100 35" fill="#fff" opacity="0.7"/>
-    <ellipse cx="70" cy="65" rx="30" ry="10" fill="#fff" opacity="0.5"/>
-    <line x1="50" y1="45" x2="90" y2="45" stroke="#1abc9c" stroke-width="2"/>
-    <line x1="50" y1="55" x2="90" y2="55" stroke="#1abc9c" stroke-width="2"/>
-    <text x="70" y="80" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff">Memory</text>
-    <text x="70" y="97" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">Stores patterns</text>
+    <text x="70" y="50" text-anchor="middle" font-size="36" fill="#fff" opacity="0.9">💾</text>
+    <text x="70" y="78" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff">Memory</text>
+    <text x="70" y="95" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">Stores patterns</text>
     <text x="70" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.8">49 frames</text>
   </g>
 
@@ -174,15 +143,12 @@
   </defs>
 
   <!-- Champion Output (Far Right) -->
-  <g transform="translate(780, 380)">
-    <rect x="0" y="0" width="100" height="100" rx="50" fill="url(#championGrad)" filter="url(#shadow)"/>
+  <g transform="translate(770, 380)">
+    <rect x="0" y="0" width="110" height="110" rx="55" fill="url(#championGrad)" filter="url(#shadow)"/>
     <!-- Trophy icon -->
-    <path d="M50 30 L65 30 L65 45 Q65 60 50 65 Q35 60 35 45 L35 30 Z" fill="#fff" opacity="0.9"/>
-    <rect x="45" y="65" width="10" height="8" fill="#fff" opacity="0.8"/>
-    <rect x="40" y="73" width="20" height="5" rx="2" fill="#fff" opacity="0.8"/>
-    <path d="M30 35 Q20 35 20 45 Q20 50 30 50" fill="none" stroke="#fff" stroke-width="3" opacity="0.7"/>
-    <path d="M70 35 Q80 35 80 45 Q80 50 70 50" fill="none" stroke="#fff" stroke-width="3" opacity="0.7"/>
-    <text x="50" y="60" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#d4ac0d">gen6x</text>
+    <text x="55" y="55" text-anchor="middle" font-size="40" fill="#fff" opacity="0.9">🏆</text>
+    <text x="55" y="82" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#fff">Champion</text>
+    <text x="55" y="97" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#8B6914">gen6x</text>
   </g>
 
   <!-- Stats Footer -->

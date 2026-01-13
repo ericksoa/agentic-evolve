@@ -22,6 +22,7 @@ class FrameType(str, Enum):
     CONFIG = "config"  # Successful evolution configs (meta-evolution)
     GENERATION = "generation"  # Per-generation snapshots
     NOTE = "note"  # Institutional knowledge and facts to remember
+    MESSAGE = "message"  # Inter-agent communication
 
 
 @dataclass
@@ -233,3 +234,81 @@ class NoteFrame(BaseFrame):
     tags: list[str] = field(default_factory=list)
     verified: bool = True  # Has this been verified?
     source: str = ""  # Where this info came from (human, evaluation, etc.)
+
+
+class MessageType(str, Enum):
+    """Types of inter-agent messages."""
+    STATUS = "status"  # Progress update (e.g., "Starting mutation gen3a")
+    DISCOVERY = "discovery"  # Found something useful (e.g., "Inlining gave +26%")
+    WARNING = "warning"  # Alert about issues (e.g., "Timing exploit detected")
+    QUESTION = "question"  # Needs input (e.g., "Should I continue this approach?")
+    GUIDANCE = "guidance"  # Direction from human (e.g., "Focus on memory efficiency")
+    STRATEGY = "strategy"  # Claiming a strategy (e.g., "I'm trying bitwise ops")
+    RESULT = "result"  # Reporting outcome (e.g., "gen3a fitness: 18,722")
+    MILESTONE = "milestone"  # Significant event (e.g., "New champion crowned!")
+    ERROR = "error"  # Something went wrong
+
+
+class MessagePriority(str, Enum):
+    """Priority levels for messages."""
+    DEBUG = "debug"  # Verbose, usually hidden
+    INFO = "info"  # Normal updates
+    IMPORTANT = "important"  # Should be noticed
+    URGENT = "urgent"  # Needs immediate attention
+    CRITICAL = "critical"  # Evolution-stopping issue
+
+
+@dataclass
+class MessageFrame(BaseFrame):
+    """
+    Inter-agent message frame.
+
+    Enables agents to communicate with each other and with the human operator.
+    Messages can be targeted to specific audiences and have TTLs for auto-expiry.
+    """
+    frame_type: FrameType = field(default=FrameType.MESSAGE)
+
+    # Sender identification
+    from_agent: str = ""  # e.g., "mutator_a", "adversary", "runner", "human"
+    agent_emoji: str = ""  # e.g., "🧬", "🛡️", "🎯", "👤" for visual distinction
+
+    # Audience targeting
+    to_audience: list[str] = field(default_factory=list)  # e.g., ["human"], ["mutator_*"], ["*"]
+
+    # Message content
+    message_type: str = "status"  # From MessageType enum
+    priority: str = "info"  # From MessagePriority enum
+    title: str = ""  # Short summary (shown in feed)
+    content: str = ""  # Full message body
+
+    # Context
+    generation: int = 0  # When this was posted
+    related_file: str = ""  # File this relates to (if any)
+    related_fitness: float | None = None  # Fitness value (if relevant)
+
+    # Lifecycle
+    ttl_generations: int = -1  # -1 = never expire, N = expire after N generations
+    expires_at: str = ""  # ISO timestamp for time-based expiry
+
+    # Interaction tracking
+    acknowledged_by: list[str] = field(default_factory=list)  # Who has seen this
+    requires_response: bool = False  # Does this need an answer?
+    response_to: str = ""  # ID of message this responds to
+
+    # Metadata
+    tags: list[str] = field(default_factory=list)  # For filtering
+
+
+# Agent identity constants for consistent messaging
+AGENT_IDENTITIES = {
+    "runner": {"name": "Evolution Runner", "emoji": "🎯"},
+    "mutator": {"name": "Mutator", "emoji": "🧬"},
+    "mutator_a": {"name": "Mutator A", "emoji": "🧬"},
+    "mutator_b": {"name": "Mutator B", "emoji": "🧬"},
+    "mutator_c": {"name": "Mutator C", "emoji": "🧬"},
+    "crossover": {"name": "Crossover", "emoji": "🔀"},
+    "evaluator": {"name": "Evaluator", "emoji": "📊"},
+    "adversary": {"name": "Adversary", "emoji": "🛡️"},
+    "human": {"name": "Operator", "emoji": "👤"},
+    "system": {"name": "System", "emoji": "⚙️"},
+}

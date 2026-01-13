@@ -27,6 +27,10 @@ from .schemas import (
     ConfigFrame,
     GenerationFrame,
     NoteFrame,
+    MessageFrame,
+    MessageType,
+    MessagePriority,
+    AGENT_IDENTITIES,
 )
 
 # Check for memvid availability
@@ -736,6 +740,454 @@ class EvolutionMemory:
     def get_critical_notes(self) -> list[dict]:
         """Get all critical priority notes - these should never be forgotten."""
         return self.get_notes(priority="critical")
+
+    # ==================== MESSAGING OPERATIONS ====================
+
+    def broadcast(
+        self,
+        from_agent: str,
+        message_type: str,
+        title: str,
+        content: str = "",
+        priority: str = "info",
+        to_audience: list[str] | None = None,
+        generation: int = 0,
+        related_file: str = "",
+        related_fitness: float | None = None,
+        ttl_generations: int = -1,
+        tags: list[str] | None = None,
+        requires_response: bool = False,
+    ) -> str:
+        """
+        Broadcast a message to agents and/or the human operator.
+
+        This is the primary method for inter-agent communication.
+
+        Args:
+            from_agent: Who is sending (e.g., "mutator_a", "runner", "human")
+            message_type: Type from MessageType (status, discovery, warning, etc.)
+            title: Short summary for the feed
+            content: Full message body
+            priority: From MessagePriority (debug, info, important, urgent, critical)
+            to_audience: Who should see this (e.g., ["human"], ["*"], ["mutator_*"])
+            generation: Current generation number
+            related_file: Associated file path (if any)
+            related_fitness: Fitness value (if relevant)
+            ttl_generations: Auto-expire after N generations (-1 = never)
+            tags: Optional tags for filtering
+            requires_response: Whether this needs acknowledgment
+
+        Returns:
+            Message frame ID
+        """
+        # Get agent emoji from identity constants
+        agent_info = AGENT_IDENTITIES.get(from_agent, {})
+        agent_emoji = agent_info.get("emoji", "💬")
+
+        frame = MessageFrame(
+            problem_id=self.problem_id,
+            mode=self.mode,
+            from_agent=from_agent,
+            agent_emoji=agent_emoji,
+            to_audience=to_audience or ["*"],
+            message_type=message_type,
+            priority=priority,
+            title=title,
+            content=content,
+            generation=generation,
+            related_file=related_file,
+            related_fitness=related_fitness,
+            ttl_generations=ttl_generations,
+            tags=tags or [],
+            requires_response=requires_response,
+        )
+
+        return self._store_frame(frame)
+
+    def notify_human(
+        self,
+        from_agent: str,
+        title: str,
+        content: str = "",
+        priority: str = "info",
+        generation: int = 0,
+        related_file: str = "",
+        related_fitness: float | None = None,
+    ) -> str:
+        """
+        Send a notification specifically to the human operator.
+
+        Convenience method for agent-to-human communication.
+
+        Args:
+            from_agent: Who is sending
+            title: Short summary
+            content: Full details
+            priority: Importance level
+            generation: Current generation
+            related_file: Associated file
+            related_fitness: Fitness value
+
+        Returns:
+            Message frame ID
+        """
+        return self.broadcast(
+            from_agent=from_agent,
+            message_type="status",
+            title=title,
+            content=content,
+            priority=priority,
+            to_audience=["human"],
+            generation=generation,
+            related_file=related_file,
+            related_fitness=related_fitness,
+        )
+
+    def announce_milestone(
+        self,
+        title: str,
+        content: str = "",
+        generation: int = 0,
+        related_file: str = "",
+        related_fitness: float | None = None,
+    ) -> str:
+        """
+        Announce a significant milestone to everyone.
+
+        Used for champion promotions, plateaus broken, etc.
+
+        Args:
+            title: Milestone summary
+            content: Details
+            generation: When it happened
+            related_file: Champion file (if applicable)
+            related_fitness: New fitness
+
+        Returns:
+            Message frame ID
+        """
+        return self.broadcast(
+            from_agent="runner",
+            message_type="milestone",
+            title=title,
+            content=content,
+            priority="important",
+            to_audience=["*"],
+            generation=generation,
+            related_file=related_file,
+            related_fitness=related_fitness,
+        )
+
+    def warn(
+        self,
+        from_agent: str,
+        title: str,
+        content: str = "",
+        generation: int = 0,
+        tags: list[str] | None = None,
+    ) -> str:
+        """
+        Send a warning message.
+
+        Used by adversary to share exploit patterns, etc.
+
+        Args:
+            from_agent: Who detected the issue
+            title: Warning summary
+            content: Details
+            generation: When detected
+            tags: Categories for filtering
+
+        Returns:
+            Message frame ID
+        """
+        return self.broadcast(
+            from_agent=from_agent,
+            message_type="warning",
+            title=title,
+            content=content,
+            priority="important",
+            to_audience=["*"],
+            generation=generation,
+            tags=tags,
+        )
+
+    def share_discovery(
+        self,
+        from_agent: str,
+        title: str,
+        content: str = "",
+        generation: int = 0,
+        related_fitness: float | None = None,
+        tags: list[str] | None = None,
+    ) -> str:
+        """
+        Share a useful discovery with other agents.
+
+        Used when an agent finds something that might help others.
+
+        Args:
+            from_agent: Who discovered it
+            title: Discovery summary
+            content: Details about what was found
+            generation: When discovered
+            related_fitness: Fitness improvement (if applicable)
+            tags: Categories
+
+        Returns:
+            Message frame ID
+        """
+        return self.broadcast(
+            from_agent=from_agent,
+            message_type="discovery",
+            title=title,
+            content=content,
+            priority="info",
+            to_audience=["*"],
+            generation=generation,
+            related_fitness=related_fitness,
+            tags=tags,
+        )
+
+    def claim_strategy(
+        self,
+        from_agent: str,
+        strategy: str,
+        generation: int = 0,
+    ) -> str:
+        """
+        Claim a strategy to avoid duplication with other agents.
+
+        Mutators should call this before starting work.
+
+        Args:
+            from_agent: Agent claiming the strategy
+            strategy: What approach they're trying
+            generation: Current generation
+
+        Returns:
+            Message frame ID
+        """
+        return self.broadcast(
+            from_agent=from_agent,
+            message_type="strategy",
+            title=f"Claiming: {strategy}",
+            content=strategy,
+            priority="debug",
+            to_audience=["mutator_*"],
+            generation=generation,
+            ttl_generations=1,  # Only valid for current generation
+            tags=["strategy_claim"],
+        )
+
+    def get_messages(
+        self,
+        audience: str | None = None,
+        message_type: str | None = None,
+        priority: str | None = None,
+        since_generation: int | None = None,
+        from_agent: str | None = None,
+        limit: int | None = None,
+        include_expired: bool = False,
+        current_generation: int = 0,
+    ) -> list[dict]:
+        """
+        Retrieve messages matching filters.
+
+        Args:
+            audience: Filter by intended audience (supports wildcards like "mutator_*")
+            message_type: Filter by message type
+            priority: Filter by minimum priority
+            since_generation: Only messages from this generation onwards
+            from_agent: Filter by sender
+            limit: Maximum results
+            include_expired: Include messages past their TTL
+            current_generation: Current generation (for TTL calculation)
+
+        Returns:
+            List of message frames matching filters
+        """
+        messages = self.query(frame_type=FrameType.MESSAGE)
+
+        # Filter by audience
+        if audience:
+            filtered = []
+            for m in messages:
+                msg_audience = m.get("to_audience", ["*"])
+                # Check if audience matches (supports wildcards)
+                for target in msg_audience:
+                    if target == "*":
+                        filtered.append(m)
+                        break
+                    elif target.endswith("*"):
+                        prefix = target[:-1]
+                        if audience.startswith(prefix):
+                            filtered.append(m)
+                            break
+                    elif target == audience:
+                        filtered.append(m)
+                        break
+            messages = filtered
+
+        # Filter by message type
+        if message_type:
+            messages = [m for m in messages if m.get("message_type") == message_type]
+
+        # Filter by priority (show this level and higher)
+        if priority:
+            priority_order = ["debug", "info", "important", "urgent", "critical"]
+            min_level = priority_order.index(priority) if priority in priority_order else 0
+            messages = [
+                m for m in messages
+                if priority_order.index(m.get("priority", "info")) >= min_level
+            ]
+
+        # Filter by generation
+        if since_generation is not None:
+            messages = [m for m in messages if m.get("generation", 0) >= since_generation]
+
+        # Filter by sender
+        if from_agent:
+            messages = [m for m in messages if m.get("from_agent") == from_agent]
+
+        # Filter expired messages
+        if not include_expired and current_generation > 0:
+            valid = []
+            for m in messages:
+                ttl = m.get("ttl_generations", -1)
+                if ttl < 0:  # Never expires
+                    valid.append(m)
+                else:
+                    msg_gen = m.get("generation", 0)
+                    if current_generation - msg_gen < ttl:
+                        valid.append(m)
+            messages = valid
+
+        # Sort by timestamp (newest first)
+        messages = sorted(messages, key=lambda m: m.get("timestamp", ""), reverse=True)
+
+        if limit:
+            messages = messages[:limit]
+
+        return messages
+
+    def get_human_messages(
+        self,
+        since_generation: int | None = None,
+        priority: str = "info",
+        limit: int = 50,
+        current_generation: int = 0,
+    ) -> list[dict]:
+        """
+        Get messages intended for the human operator.
+
+        Convenience method for displaying the operator feed.
+
+        Args:
+            since_generation: Only show messages from this generation
+            priority: Minimum priority level
+            limit: Maximum messages
+            current_generation: For TTL filtering
+
+        Returns:
+            List of messages for human
+        """
+        return self.get_messages(
+            audience="human",
+            since_generation=since_generation,
+            priority=priority,
+            limit=limit,
+            current_generation=current_generation,
+        )
+
+    def get_active_strategies(self, generation: int) -> list[str]:
+        """
+        Get strategies claimed by agents for the current generation.
+
+        Used by mutators to avoid duplicating work.
+
+        Args:
+            generation: Current generation
+
+        Returns:
+            List of claimed strategy descriptions
+        """
+        messages = self.get_messages(
+            message_type="strategy",
+            since_generation=generation,
+            include_expired=False,
+            current_generation=generation,
+        )
+        return [m.get("content", "") for m in messages if m.get("content")]
+
+    def format_message_for_display(self, message: dict) -> str:
+        """
+        Format a message for terminal display.
+
+        Args:
+            message: Message frame dict
+
+        Returns:
+            Formatted string for display
+        """
+        emoji = message.get("agent_emoji", "💬")
+        agent = message.get("from_agent", "unknown")
+        title = message.get("title", "")
+        priority = message.get("priority", "info")
+        gen = message.get("generation", 0)
+        fitness = message.get("related_fitness")
+
+        # Priority indicators
+        priority_prefix = {
+            "debug": "  ",
+            "info": "  ",
+            "important": "❗",
+            "urgent": "🔔",
+            "critical": "🚨",
+        }.get(priority, "  ")
+
+        # Build the display line
+        line = f"{priority_prefix} {emoji} [{agent}] {title}"
+
+        if fitness is not None:
+            line += f" (fitness: {fitness:,.0f})"
+
+        if gen > 0:
+            line += f" [gen{gen}]"
+
+        return line
+
+    def get_message_feed(
+        self,
+        limit: int = 20,
+        current_generation: int = 0,
+        priority: str = "info",
+    ) -> str:
+        """
+        Get a formatted message feed for display.
+
+        Args:
+            limit: Number of messages
+            current_generation: For TTL filtering
+            priority: Minimum priority
+
+        Returns:
+            Formatted multi-line string
+        """
+        messages = self.get_human_messages(
+            priority=priority,
+            limit=limit,
+            current_generation=current_generation,
+        )
+
+        if not messages:
+            return "No messages yet."
+
+        lines = []
+        for msg in messages:
+            lines.append(self.format_message_for_display(msg))
+
+        return "\n".join(lines)
 
     # ==================== QUERY OPERATIONS ====================
 
