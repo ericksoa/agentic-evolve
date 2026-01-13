@@ -2,6 +2,12 @@
 
 This showcase demonstrates the **evolution memory system** by evolving fast N-Queens solvers, achieving a **14,000x speedup** over the baseline through 10 generations of guided evolution.
 
+![Evolution Factory](evolution-factory.svg)
+
+*The Evolution Factory: Specialized agents work together to evolve solutions. Mutators create variants, Evaluators measure fitness, the Adversary validates trust, Crossover combines parents, and Memory stores patterns for future learning.*
+
+---
+
 ## Results Summary
 
 | Metric | Baseline | Champion (gen6x) | Improvement |
