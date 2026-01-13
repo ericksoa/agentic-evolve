@@ -23,6 +23,15 @@ from .meta_strategist import (
     compute_diversity_index,
     should_trigger_analysis,
 )
+from .diversity_guardian import (
+    DIVERSITY_GUARDIAN_SYSTEM,
+    get_diversity_guardian_prompt,
+    get_orthogonal_generation_prompt,
+    compute_genotypic_diversity,
+    compute_phenotypic_diversity,
+    compute_combined_diversity,
+    should_alert_diversity,
+)
 
 __all__ = [
     "MUTATOR_SYSTEM", "get_mutator_prompt",
@@ -37,4 +46,7 @@ __all__ = [
     "META_STRATEGIST_SYSTEM", "get_meta_strategist_prompt", "get_strategy_application_prompt",
     "compute_mutation_effectiveness", "compute_crossover_contribution", "compute_diversity_index",
     "should_trigger_analysis",
+    "DIVERSITY_GUARDIAN_SYSTEM", "get_diversity_guardian_prompt", "get_orthogonal_generation_prompt",
+    "compute_genotypic_diversity", "compute_phenotypic_diversity", "compute_combined_diversity",
+    "should_alert_diversity",
 ]

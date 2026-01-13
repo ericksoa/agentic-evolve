@@ -130,6 +130,7 @@ The memory system provides persistent storage for evolution runs, enabling:
 
 | Showcase | Description | Key Result |
 |----------|-------------|------------|
+| [diversity-guardian-demo](showcase/diversity-guardian-demo/) | Diversity Guardian (Phase 3) | Prevents premature convergence |
 | [regex_golf](showcase/regex_golf/) | Debugger + Plateau Breaker demo | 33% failure diagnosis |
 | [string-search-evolution](showcase/string-search-evolution/) | String search algorithm evolution | 3.6x speedup, Meta-Strategist |
 | [nqueens-evolution](showcase/nqueens-evolution/) | N-Queens solver with memory demo | 14,000x speedup |
@@ -158,7 +159,9 @@ agentic-evolve/
 │       │   ├── crossover.py   # Parent combination
 │       │   ├── adversary.py   # Trust validation
 │       │   ├── debugger.py    # Failed mutation diagnosis
-│       │   └── plateau_breaker.py  # Stall detection/intervention
+│       │   ├── plateau_breaker.py  # Stall detection/intervention
+│       │   ├── meta_strategist.py  # Strategy optimization
+│       │   └── diversity_guardian.py  # Convergence prevention
 │       ├── memory/            # Evolution memory system
 │       │   ├── store.py       # Persistent storage engine
 │       │   ├── schemas.py     # Frame type definitions

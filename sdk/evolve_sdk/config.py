@@ -107,6 +107,33 @@ class MemoryConfig:
 
 
 @dataclass
+class DiversityConfig:
+    """Configuration for Diversity Guardian agent (Phase 3)."""
+
+    # Enable/disable diversity monitoring
+    enabled: bool = True
+
+    # Diversity thresholds (alert when below)
+    genotypic_threshold: float = 0.25  # Code similarity diversity
+    phenotypic_threshold: float = 0.20  # Fitness spread diversity
+
+    # Check frequency
+    check_interval: int = 1  # Check every N generations (1 = every generation)
+
+    # Intervention settings
+    max_injections_per_alert: int = 2  # Max orthogonal solutions to inject
+    auto_inject: bool = True  # Automatically inject orthogonal solutions on alert
+
+    # Weights for combined diversity score
+    genotypic_weight: float = 0.6  # Weight for code similarity
+    phenotypic_weight: float = 0.4  # Weight for fitness spread
+
+    # Alert levels
+    warning_multiplier: float = 1.0  # Alert at threshold * this
+    critical_multiplier: float = 0.6  # Critical at threshold * this
+
+
+@dataclass
 class EvolutionConfig:
     """Configuration for an evolution run."""
 
@@ -143,6 +170,9 @@ class EvolutionConfig:
 
     # Memory system (crash recovery, mutation patterns, cross-problem learning)
     memory: MemoryConfig = field(default_factory=MemoryConfig)
+
+    # Diversity monitoring (Diversity Guardian agent - Phase 3)
+    diversity: DiversityConfig = field(default_factory=DiversityConfig)
 
     # Safety
     enable_validation_hooks: bool = True
@@ -239,6 +269,21 @@ class EvolutionConfig:
             prune_strategy=memory_data.get("prune_strategy", "lru"),
         )
 
+        # Extract diversity config if present (Phase 3)
+        diversity_data = data.get("diversity", {})
+        diversity_config = DiversityConfig(
+            enabled=diversity_data.get("enabled", True),
+            genotypic_threshold=diversity_data.get("genotypic_threshold", 0.25),
+            phenotypic_threshold=diversity_data.get("phenotypic_threshold", 0.20),
+            check_interval=diversity_data.get("check_interval", 1),
+            max_injections_per_alert=diversity_data.get("max_injections_per_alert", 2),
+            auto_inject=diversity_data.get("auto_inject", True),
+            genotypic_weight=diversity_data.get("genotypic_weight", 0.6),
+            phenotypic_weight=diversity_data.get("phenotypic_weight", 0.4),
+            warning_multiplier=diversity_data.get("warning_multiplier", 1.0),
+            critical_multiplier=diversity_data.get("critical_multiplier", 0.6),
+        )
+
         # Build config with file data and overrides
         config = cls(
             problem=overrides.get("problem", problem),
@@ -255,6 +300,7 @@ class EvolutionConfig:
             model=overrides.get("model", "claude-opus-4-5-20251101"),
             trust=trust_config,
             memory=memory_config,
+            diversity=diversity_config,
         )
         # Store cwd as extra attribute for runner
         config.cwd = cwd
