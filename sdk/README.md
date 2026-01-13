@@ -89,12 +89,19 @@ EvolutionRunner (orchestrator)
 ├── For each generation:
 │   ├── Mutator Agents (parallel)
 │   │   └── Each creates one mutation variant
+│   ├── Debugger Agent (on failure)
+│   │   └── Diagnoses crashed mutations, extracts lessons
 │   ├── Crossover Agent
 │   │   └── Combines top solutions
 │   ├── Evaluator Agent
 │   │   └── Measures fitness of all new solutions
-│   └── Adversary Agent (if suspicious)
-│       └── Reviews large fitness jumps
+│   ├── Adversary Agent (if suspicious)
+│   │   └── Reviews large fitness jumps
+│   └── Plateau Breaker Agent (if stalled)
+│       └── Proposes radical interventions when stuck
+│
+├── Reporter Agent (background)
+│   └── Surfaces important messages to human operator
 │
 └── Memory Store
     └── Records mutations, failures, checkpoints
