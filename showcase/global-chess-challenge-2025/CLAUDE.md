@@ -1,5 +1,19 @@
 # Global Chess Challenge 2025 - Evolve SDK Project
 
+## CRITICAL: Current Best Results
+
+**WE HAVE NEVER ACHIEVED <100 ACPL YET.**
+
+| Model | ACPL (legal moves) | Status |
+|-------|-------------------|--------|
+| SF3 trained (final/) | **208.7** | Best verified |
+| SF1 trained | 231.8 | Verified |
+| chess-lora-v1 | 334.1 | Early attempt |
+
+- The 85.64 ACPL in evolution.json was SIMULATED TEST DATA, not real
+- Target: <100 ACPL for competitive submission
+- Current level: ~1400 Elo (weak amateur)
+
 ## Competition Overview
 - **Platform**: AIcrowd
 - **URL**: https://www.aicrowd.com/challenges/global-chess-challenge-2025

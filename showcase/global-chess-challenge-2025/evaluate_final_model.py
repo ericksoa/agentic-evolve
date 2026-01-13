@@ -22,16 +22,22 @@ from evaluate import (
 )
 
 # Model configuration
-BASE_MODEL = "Qwen/Qwen2.5-3B"
-LORA_PATH = Path(__file__).parent / "models" / "final"
+DEFAULT_BASE_MODEL = "Qwen/Qwen2.5-3B"
+DEFAULT_LORA_PATH = Path(__file__).parent / "models" / "final"
 
 
-def load_model(device: str = "auto"):
+def load_model(lora_path: Path = None, base_model: str = None, device: str = "auto"):
     """Load base model with LoRA adapter"""
     from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import PeftModel
 
-    print(f"Loading base model: {BASE_MODEL}")
+    if lora_path is None:
+        lora_path = DEFAULT_LORA_PATH
+    if base_model is None:
+        base_model = DEFAULT_BASE_MODEL
+
+    print(f"Loading base model: {base_model}")
+    print(f"LoRA adapter: {lora_path}")
 
     # Determine device
     if device == "auto":
@@ -44,19 +50,20 @@ def load_model(device: str = "auto"):
 
     print(f"Using device: {device}")
 
-    # Load tokenizer from final model (has chat template)
-    tokenizer = AutoTokenizer.from_pretrained(str(LORA_PATH))
+    # Load tokenizer from base model (has chat template)
+    # LoRA checkpoints may not preserve the chat template
+    tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
 
     # Load base model
     model = AutoModelForCausalLM.from_pretrained(
-        BASE_MODEL,
+        base_model,
         torch_dtype=torch.float16 if device != "cpu" else torch.float32,
         device_map={"": device} if device in ["mps", "cpu"] else "auto",
         trust_remote_code=True
     )
 
-    print(f"Loading LoRA adapter from: {LORA_PATH}")
-    model = PeftModel.from_pretrained(model, str(LORA_PATH))
+    print(f"Loading LoRA adapter from: {lora_path}")
+    model = PeftModel.from_pretrained(model, str(lora_path))
     model.eval()
 
     return model, tokenizer, device
@@ -121,11 +128,27 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Evaluate final chess model")
+    parser.add_argument("--model-path", type=str, default=None, help="Path to LoRA adapter (default: models/final)")
+    parser.add_argument("--base-model", type=str, default=None, help="Base model (default: Qwen/Qwen2.5-3B, use Qwen/Qwen2.5-7B for 7B)")
     parser.add_argument("--positions", type=int, default=100, help="Number of positions to evaluate")
     parser.add_argument("--depth", type=int, default=15, help="Stockfish depth")
     parser.add_argument("--device", type=str, default="auto", help="Device (auto/cuda/mps/cpu)")
     parser.add_argument("--output", type=str, default=None, help="Output JSON file")
     args = parser.parse_args()
+
+    # Resolve model path
+    if args.model_path:
+        lora_path = Path(args.model_path)
+        if not lora_path.is_absolute():
+            lora_path = Path(__file__).parent / args.model_path
+    else:
+        lora_path = DEFAULT_LORA_PATH
+
+    # Auto-detect 7B model from path
+    base_model = args.base_model
+    if base_model is None and "7b" in str(lora_path).lower():
+        base_model = "Qwen/Qwen2.5-7B"
+        print(f"Auto-detected 7B model from path")
 
     print("=" * 60)
     print("Chess Final Model Evaluation")
@@ -133,7 +156,7 @@ def main():
     print()
 
     # Load model
-    model, tokenizer, device = load_model(args.device)
+    model, tokenizer, device = load_model(lora_path, base_model, args.device)
     print()
 
     # Create model function
@@ -198,8 +221,8 @@ def main():
     print(f"  Positions: {results['n_positions']} ({results['n_legal']} legal, {results['n_illegal']} illegal)")
     print()
     print("Config:")
-    print(f"  Model: {BASE_MODEL} + LoRA (final)")
-    print(f"  LoRA: {LORA_PATH}")
+    print(f"  Model: {base_model or DEFAULT_BASE_MODEL} + LoRA")
+    print(f"  LoRA: {lora_path}")
     print(f"  Device: {device}")
     print(f"  Stockfish: {results['config']['stockfish_version']}")
     print(f"  Depth: {results['config']['depth']}")
@@ -231,8 +254,8 @@ def main():
     # Remove non-serializable results for saving
     save_results = {k: v for k, v in results.items() if k != 'results'}
     save_results['model'] = {
-        'base': BASE_MODEL,
-        'lora_path': str(LORA_PATH),
+        'base': base_model or DEFAULT_BASE_MODEL,
+        'lora_path': str(lora_path),
         'device': device
     }
 
