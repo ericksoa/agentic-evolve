@@ -2,7 +2,7 @@
 
 **Evolutionary algorithm discovery powered by Claude.** Evolves novel solutions through LLM-driven mutation, crossover, and selection—optimizing for speed, size, or ML accuracy.
 
-![Evolution Factory](showcase/nqueens-evolution/evolution-factory.svg)
+![Evolve SDK Architecture Overview](docs/architecture-overview.jpg)
 
 ## Features
 
