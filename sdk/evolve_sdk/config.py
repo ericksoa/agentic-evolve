@@ -3,7 +3,7 @@
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Any
 
 
 @dataclass
@@ -68,6 +68,45 @@ class TrustConfig:
 
 
 @dataclass
+class MemoryConfig:
+    """Configuration for evolution memory system."""
+
+    # Enable/disable memory
+    enabled: bool = True
+
+    # Storage paths
+    store_path: str = ".evolve-sdk/{problem_id}/memory.json"  # .mv2 when memvid available
+
+    # Embedding settings
+    use_embeddings: bool = True
+    embedding_model: str = "all-MiniLM-L6-v2"
+
+    # Checkpoint settings
+    checkpoint_on_mutation: bool = True
+    checkpoint_on_evaluation: bool = True
+    checkpoint_on_selection: bool = True
+
+    # Mutation memory settings
+    store_failed_mutations: bool = True
+    store_successful_mutations: bool = True
+    inject_mutation_context: bool = True  # Inject memory context into mutator prompts
+    max_similar_mutations: int = 3  # Max similar mutations to show
+    max_failed_mutations: int = 5  # Max failed mutations to warn about
+
+    # Champion library
+    store_champions: bool = True
+    bootstrap_from_similar: bool = False  # Bootstrap from similar past problems
+
+    # Exploit memory
+    store_exploits: bool = True
+    check_exploit_similarity: bool = True
+
+    # Retention
+    max_frames: int = 100000
+    prune_strategy: str = "lru"  # lru, fifo, none
+
+
+@dataclass
 class EvolutionConfig:
     """Configuration for an evolution run."""
 
@@ -86,8 +125,8 @@ class EvolutionConfig:
 
     # Agent settings
     max_turns_per_agent: int = 15
-    model: str = "claude-sonnet-4-20250514"  # Use sonnet for subagents (cost effective)
-    orchestrator_model: str = "claude-sonnet-4-20250514"  # Main orchestrator
+    model: str = "claude-opus-4-5-20251101"  # Use Opus 4.5 for best quality
+    orchestrator_model: str = "claude-opus-4-5-20251101"  # Main orchestrator
 
     # Paths
     evolve_dir: Path = field(default_factory=lambda: Path(".evolve-sdk"))
@@ -101,6 +140,9 @@ class EvolutionConfig:
 
     # Trust-aware evolution (Adversary agent)
     trust: TrustConfig = field(default_factory=TrustConfig)
+
+    # Memory system (crash recovery, mutation patterns, cross-problem learning)
+    memory: MemoryConfig = field(default_factory=MemoryConfig)
 
     # Safety
     enable_validation_hooks: bool = True
@@ -174,6 +216,29 @@ class EvolutionConfig:
             human_escalation_timeout=trust_data.get("human_escalation_timeout", 300),
         )
 
+        # Extract memory config if present
+        memory_data = data.get("memory", {})
+        memory_config = MemoryConfig(
+            enabled=memory_data.get("enabled", True),
+            store_path=memory_data.get("store_path", ".evolve-sdk/{problem_id}/memory.json"),
+            use_embeddings=memory_data.get("use_embeddings", True),
+            embedding_model=memory_data.get("embedding_model", "all-MiniLM-L6-v2"),
+            checkpoint_on_mutation=memory_data.get("checkpoint_on_mutation", True),
+            checkpoint_on_evaluation=memory_data.get("checkpoint_on_evaluation", True),
+            checkpoint_on_selection=memory_data.get("checkpoint_on_selection", True),
+            store_failed_mutations=memory_data.get("store_failed_mutations", True),
+            store_successful_mutations=memory_data.get("store_successful_mutations", True),
+            inject_mutation_context=memory_data.get("inject_mutation_context", True),
+            max_similar_mutations=memory_data.get("max_similar_mutations", 3),
+            max_failed_mutations=memory_data.get("max_failed_mutations", 5),
+            store_champions=memory_data.get("store_champions", True),
+            bootstrap_from_similar=memory_data.get("bootstrap_from_similar", False),
+            store_exploits=memory_data.get("store_exploits", True),
+            check_exploit_similarity=memory_data.get("check_exploit_similarity", True),
+            max_frames=memory_data.get("max_frames", 100000),
+            prune_strategy=memory_data.get("prune_strategy", "lru"),
+        )
+
         # Build config with file data and overrides
         config = cls(
             problem=overrides.get("problem", problem),
@@ -187,8 +252,9 @@ class EvolutionConfig:
             optimization_strategies=data.get("optimization_strategies", []),
             constraints=data.get("constraints", []),
             references=data.get("references", []),
-            model=overrides.get("model", "claude-sonnet-4-20250514"),
+            model=overrides.get("model", "claude-opus-4-5-20251101"),
             trust=trust_config,
+            memory=memory_config,
         )
         # Store cwd as extra attribute for runner
         config.cwd = cwd

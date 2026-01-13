@@ -60,8 +60,20 @@ def get_mutator_prompt(
     generation: int,
     variant: str,
     mutation_hint: str | None = None,
+    memory_context: str | None = None,
 ) -> str:
-    """Generate the prompt for a mutator agent."""
+    """Generate the prompt for a mutator agent.
+
+    Args:
+        parent_file: Path to parent solution
+        parent_fitness: Parent's fitness score
+        output_file: Path to save mutation
+        mode: Evolution mode (size, perf, ml)
+        generation: Current generation number
+        variant: Mutation variant (a, b, c, etc.)
+        mutation_hint: Optional hint for mutation direction
+        memory_context: Optional context from evolution memory (similar mutations, failed approaches)
+    """
 
     # Try to get guidance from skill file first, fall back to defaults
     skill_guidance = get_mode_guidance(mode, "mutator")
@@ -77,6 +89,13 @@ def get_mutator_prompt(
 Suggested mutation direction: {mutation_hint}
 (You may follow this hint or try something different if you have a better idea)"""
 
+    memory_section = ""
+    if memory_context:
+        memory_section = f"""
+## Memory Context (from previous evolution runs)
+{memory_context}
+"""
+
     return f"""Create ONE mutation of the parent solution.
 
 Parent: {parent_file}
@@ -86,7 +105,7 @@ Mode: {mode}
 
 {mode_section}
 {hint_section}
-
+{memory_section}
 Instructions:
 1. Read the parent solution carefully
 2. Choose ONE mutation strategy
