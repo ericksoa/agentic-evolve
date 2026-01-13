@@ -48,15 +48,16 @@ When asked to "resume work" or "continue evolution":
 
 ## Current State (Update After Each Session)
 
-**Champion**: `gen9b.py` (0.886 ROC-AUC)
+**Champion**: `gen12c.py` (0.890 ROC-AUC)
 **Trust Status**: ✅ VALIDATED (2026-01-12)
   - Trust Score: 0.95
   - Pass Rate: 90.9% (10/11 tests)
   - Final Recommendation: ACCEPT
-  - CV Stability: mean=0.8804, std=0.0041 (excellent)
-  - Inference: 3.88ms/molecule (well under 100ms limit)
-  - Baseline Comparison: +8.04% improvement over baseline
-**Last Session**: Gen7-10 evolution + trust validation completed
+  - CV Stability: mean=0.8836, std=0.0305
+  - Inference: ~5.2ms/molecule (well under 100ms limit)
+  - Baseline Comparison: +8.97% improvement over baseline
+**Previous Champion**: `gen9b.py` (0.886 ROC-AUC, validated)
+**Last Session**: Gen11-14 evolution completed. Gen14a achieved 0.892 but FAILED trust validation (edge case handling issues with MLP). Gen12c promoted to champion.
 
 ## Validation Commands
 

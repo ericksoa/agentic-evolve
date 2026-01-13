@@ -55,12 +55,13 @@ def get_baseline_fitness(solution_path):
         if result.returncode == 0:
             # Parse JSON from output (may have progress bars before it)
             output = result.stdout
-            # Find the JSON part
-            for line in output.split('\n'):
-                line = line.strip()
-                if line.startswith('{'):
-                    eval_data = json.loads(line)
-                    return eval_data.get('fitness', 0.0), eval_data
+            # Find the JSON part - it may be multiline
+            json_start = output.find('{')
+            json_end = output.rfind('}')
+            if json_start != -1 and json_end != -1:
+                json_str = output[json_start:json_end+1]
+                eval_data = json.loads(json_str)
+                return eval_data.get('fitness', 0.0), eval_data
             # Try parsing the whole thing
             eval_data = json.loads(output)
             return eval_data.get('fitness', 0.0), eval_data
