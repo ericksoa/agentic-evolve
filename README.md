@@ -131,6 +131,7 @@ The memory system provides persistent storage for evolution runs, enabling:
 | Showcase | Description | Key Result |
 |----------|-------------|------------|
 | [regex_golf](showcase/regex_golf/) | Debugger + Plateau Breaker demo | 33% failure diagnosis |
+| [meta_strategist_demo](showcase/meta_strategist_demo/) | Meta-Strategist demo | +51% fitness, +142% success |
 | [nqueens-evolution](showcase/nqueens-evolution/) | N-Queens solver with memory demo | 14,000x speedup |
 | [kv-cache-eviction](showcase/kv-cache-eviction/) | LLM KV-cache eviction policy | 6.65% improvement |
 | [molecular-admet-prediction](showcase/molecular-admet-prediction/) | hERG cardiac toxicity | 0.890 ROC-AUC |
