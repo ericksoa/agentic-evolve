@@ -1,18 +1,20 @@
 """
-Gen1a: Optimized Ensemble Weights
+Gen9b: XGBoost Hyperparameter Tuning - Learning Rate and Tree Parameters
 
-Parent: gen0_champion (0.89 ROC-AUC)
+Parent: gen1a (0.8899 ROC-AUC)
 
-Mutation: Hyperparameter tuning - adjust ensemble weights
-- Original: [0.28, 0.28, 0.28, 0.16] for RF, XGB, ET, SVM
-- New: [0.25, 0.35, 0.22, 0.18] for RF, XGB, ET, SVM
-- Increase XGBoost weight (strong on tabular data)
-- Slightly increase SVM weight (kernel-based diversity)
-- Reduce ET weight (often redundant with RF)
+Mutation: Hyperparameter tuning - Optimize XGBoost parameters
+- Decrease learning_rate: 0.03 -> 0.02 (smaller steps for better convergence)
+- Increase n_estimators: 80 -> 120 (more trees to compensate for lower LR)
+- Increase max_depth: 3 -> 4 (capture slightly more complex interactions)
+- Adjust reg_lambda: 0.5 -> 0.7 (stronger L2 regularization to prevent overfitting)
+- Adjust min_child_weight: add parameter set to 3 (reduce overfitting on rare patterns)
 
-Hypothesis: XGBoost typically excels on structured tabular data
-with proper hyperparameters. Giving it more weight while maintaining
-model diversity may improve ensemble accuracy.
+Hypothesis: XGBoost has the highest weight (0.35) in the ensemble.
+A lower learning rate with more estimators typically provides better
+generalization. Combined with stronger regularization and min_child_weight,
+this should reduce variance in XGBoost's predictions while maintaining
+its ability to capture structure-activity relationships in hERG data.
 """
 
 import numpy as np
@@ -31,7 +33,7 @@ from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSke
 
 
 class HERGPredictor:
-    """4-model ensemble with optimized weights for hERG toxicity."""
+    """4-model ensemble with tuned XGBoost for hERG toxicity."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
@@ -47,22 +49,24 @@ class HERGPredictor:
             n_jobs=1
         )
 
+        # MUTATION: Tuned XGBoost hyperparameters
         if HAS_XGBOOST:
             self.xgb = xgb.XGBClassifier(
-                n_estimators=80,
-                max_depth=3,
-                learning_rate=0.03,
+                n_estimators=120,          # 80 -> 120: more trees for lower LR
+                max_depth=4,               # 3 -> 4: slightly deeper trees
+                learning_rate=0.02,        # 0.03 -> 0.02: smaller steps
                 subsample=0.65,
                 colsample_bytree=0.5,
                 reg_alpha=0.4,
-                reg_lambda=0.5,
+                reg_lambda=0.7,            # 0.5 -> 0.7: stronger L2 regularization
+                min_child_weight=3,        # NEW: reduce overfitting on rare patterns
                 random_state=random_state,
                 eval_metric='logloss',
                 n_jobs=1
             )
         else:
             self.xgb = GradientBoostingClassifier(
-                n_estimators=80, max_depth=3, learning_rate=0.03,
+                n_estimators=120, max_depth=4, learning_rate=0.02,
                 random_state=random_state
             )
 
@@ -86,9 +90,7 @@ class HERGPredictor:
             random_state=random_state
         )
 
-        # MUTATION: Optimized 4-model weights
-        # Original: [0.28, 0.28, 0.28, 0.16]
-        # New: Boost XGBoost, slightly increase SVM, reduce ET
+        # Keep parent's optimized weights (XGBoost dominant)
         self.weights = [0.25, 0.35, 0.22, 0.18]
 
         self.scaler = RobustScaler()

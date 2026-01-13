@@ -1,18 +1,17 @@
 """
-Gen1a: Optimized Ensemble Weights
+Gen10c: XGBoost Learning Rate Tuning
 
-Parent: gen0_champion (0.89 ROC-AUC)
+Parent: gen7a (0.8897 ROC-AUC)
 
-Mutation: Hyperparameter tuning - adjust ensemble weights
-- Original: [0.28, 0.28, 0.28, 0.16] for RF, XGB, ET, SVM
-- New: [0.25, 0.35, 0.22, 0.18] for RF, XGB, ET, SVM
-- Increase XGBoost weight (strong on tabular data)
-- Slightly increase SVM weight (kernel-based diversity)
-- Reduce ET weight (often redundant with RF)
+Mutation: Adjust XGBoost hyperparameters
+- Increase learning_rate from 0.03 to 0.05 (faster learning)
+- Increase n_estimators from 80 to 100 (more trees to compensate)
+- Reduce reg_alpha from 0.4 to 0.3 (slightly less L1 regularization)
 
-Hypothesis: XGBoost typically excels on structured tabular data
-with proper hyperparameters. Giving it more weight while maintaining
-model diversity may improve ensemble accuracy.
+Hypothesis: The current learning rate of 0.03 may be too conservative,
+preventing XGBoost from capturing complex patterns. A moderate increase
+to 0.05 with more trees could improve gradient boosting contribution
+to the ensemble without overfitting.
 """
 
 import numpy as np
@@ -31,7 +30,7 @@ from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSke
 
 
 class HERGPredictor:
-    """4-model ensemble with optimized weights for hERG toxicity."""
+    """4-model ensemble with tuned XGBoost for hERG toxicity."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
@@ -47,14 +46,18 @@ class HERGPredictor:
             n_jobs=1
         )
 
+        # MUTATION: Tuned XGBoost hyperparameters
+        # - learning_rate: 0.03 -> 0.05 (faster learning)
+        # - n_estimators: 80 -> 100 (more trees)
+        # - reg_alpha: 0.4 -> 0.3 (less L1 regularization)
         if HAS_XGBOOST:
             self.xgb = xgb.XGBClassifier(
-                n_estimators=80,
+                n_estimators=100,
                 max_depth=3,
-                learning_rate=0.03,
+                learning_rate=0.05,
                 subsample=0.65,
                 colsample_bytree=0.5,
-                reg_alpha=0.4,
+                reg_alpha=0.3,
                 reg_lambda=0.5,
                 random_state=random_state,
                 eval_metric='logloss',
@@ -62,7 +65,7 @@ class HERGPredictor:
             )
         else:
             self.xgb = GradientBoostingClassifier(
-                n_estimators=80, max_depth=3, learning_rate=0.03,
+                n_estimators=100, max_depth=3, learning_rate=0.05,
                 random_state=random_state
             )
 
@@ -76,20 +79,16 @@ class HERGPredictor:
             n_jobs=1
         )
 
-        # Add SVM with RBF kernel
         self.svm = SVC(
-            C=1.0,
+            C=2.5,
             kernel='rbf',
-            gamma='scale',
+            gamma='auto',
             class_weight='balanced',
             probability=True,
             random_state=random_state
         )
 
-        # MUTATION: Optimized 4-model weights
-        # Original: [0.28, 0.28, 0.28, 0.16]
-        # New: Boost XGBoost, slightly increase SVM, reduce ET
-        self.weights = [0.25, 0.35, 0.22, 0.18]
+        self.weights = [0.27, 0.27, 0.26, 0.20]
 
         self.scaler = RobustScaler()
         self._feature_names = None

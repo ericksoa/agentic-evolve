@@ -1,18 +1,20 @@
 """
-Gen1a: Optimized Ensemble Weights
+Gen6b: RandomForest Hyperparameter Tuning
 
-Parent: gen0_champion (0.89 ROC-AUC)
+Parent: gen1a (0.8899 ROC-AUC)
 
-Mutation: Hyperparameter tuning - adjust ensemble weights
-- Original: [0.28, 0.28, 0.28, 0.16] for RF, XGB, ET, SVM
-- New: [0.25, 0.35, 0.22, 0.18] for RF, XGB, ET, SVM
-- Increase XGBoost weight (strong on tabular data)
-- Slightly increase SVM weight (kernel-based diversity)
-- Reduce ET weight (often redundant with RF)
+Mutation: Hyperparameter tuning - Optimize RandomForest parameters
+- Increase n_estimators: 80 -> 100 (more trees for stability)
+- Decrease max_depth: 6 -> 5 (reduce overfitting)
+- Decrease min_samples_split: 10 -> 8 (allow slightly more splits)
+- Increase min_samples_leaf: 5 -> 6 (more regularization)
+- Add max_samples: 0.85 (bootstrap with 85% of data for diversity)
 
-Hypothesis: XGBoost typically excels on structured tabular data
-with proper hyperparameters. Giving it more weight while maintaining
-model diversity may improve ensemble accuracy.
+Hypothesis: The RandomForest has 0.25 weight in the ensemble. By using
+more trees with slightly shallower depth and bootstrap sampling, we can
+reduce overfitting while maintaining ensemble diversity. The max_samples
+parameter introduces more variance between trees, potentially improving
+generalization.
 """
 
 import numpy as np
@@ -31,17 +33,19 @@ from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSke
 
 
 class HERGPredictor:
-    """4-model ensemble with optimized weights for hERG toxicity."""
+    """4-model ensemble with tuned RandomForest for hERG toxicity."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
 
+        # MUTATION: Tuned RandomForest parameters
         self.rf = RandomForestClassifier(
-            n_estimators=80,
-            max_depth=6,
-            min_samples_split=10,
-            min_samples_leaf=5,
+            n_estimators=100,           # 80 -> 100: more trees for stability
+            max_depth=5,                # 6 -> 5: shallower to reduce overfitting
+            min_samples_split=8,        # 10 -> 8: allow slightly more splits
+            min_samples_leaf=6,         # 5 -> 6: more regularization
             max_features='sqrt',
+            max_samples=0.85,           # NEW: bootstrap with 85% of data
             class_weight='balanced',
             random_state=random_state,
             n_jobs=1
@@ -86,9 +90,7 @@ class HERGPredictor:
             random_state=random_state
         )
 
-        # MUTATION: Optimized 4-model weights
-        # Original: [0.28, 0.28, 0.28, 0.16]
-        # New: Boost XGBoost, slightly increase SVM, reduce ET
+        # Keep parent's optimized weights
         self.weights = [0.25, 0.35, 0.22, 0.18]
 
         self.scaler = RobustScaler()

@@ -1,18 +1,17 @@
 """
-Gen1a: Optimized Ensemble Weights
+Gen6c: XGBoost Regularization Tuning - Stronger L1/L2 Penalties
 
-Parent: gen0_champion (0.89 ROC-AUC)
+Parent: gen2x (0.8897 ROC-AUC)
 
-Mutation: Hyperparameter tuning - adjust ensemble weights
-- Original: [0.28, 0.28, 0.28, 0.16] for RF, XGB, ET, SVM
-- New: [0.25, 0.35, 0.22, 0.18] for RF, XGB, ET, SVM
-- Increase XGBoost weight (strong on tabular data)
-- Slightly increase SVM weight (kernel-based diversity)
-- Reduce ET weight (often redundant with RF)
+Mutation: Hyperparameter tuning - Increase XGBoost regularization
+- Increase reg_alpha from 0.4 to 0.6 (stronger L1 regularization)
+- Increase reg_lambda from 0.5 to 0.7 (stronger L2 regularization)
 
-Hypothesis: XGBoost typically excels on structured tabular data
-with proper hyperparameters. Giving it more weight while maintaining
-model diversity may improve ensemble accuracy.
+Hypothesis: With 512 Morgan bits + 167 MACCS keys + 25 descriptors = 704 features,
+there's a risk of overfitting on specific fingerprint patterns. Stronger L1/L2
+regularization should help XGBoost focus on the most predictive features and
+improve generalization on the test set. L1 encourages sparsity (ignore noise bits)
+while L2 prevents any single feature from dominating predictions.
 """
 
 import numpy as np
@@ -31,11 +30,12 @@ from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSke
 
 
 class HERGPredictor:
-    """4-model ensemble with optimized weights for hERG toxicity."""
+    """4-model ensemble with stronger XGBoost regularization for hERG toxicity."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
 
+        # From parent gen2x: RF with proven hyperparameters
         self.rf = RandomForestClassifier(
             n_estimators=80,
             max_depth=6,
@@ -47,6 +47,7 @@ class HERGPredictor:
             n_jobs=1
         )
 
+        # MUTATION: XGBoost with increased regularization
         if HAS_XGBOOST:
             self.xgb = xgb.XGBClassifier(
                 n_estimators=80,
@@ -54,8 +55,8 @@ class HERGPredictor:
                 learning_rate=0.03,
                 subsample=0.65,
                 colsample_bytree=0.5,
-                reg_alpha=0.4,
-                reg_lambda=0.5,
+                reg_alpha=0.6,   # MUTATION: Increased from 0.4 (stronger L1)
+                reg_lambda=0.7,  # MUTATION: Increased from 0.5 (stronger L2)
                 random_state=random_state,
                 eval_metric='logloss',
                 n_jobs=1
@@ -66,6 +67,7 @@ class HERGPredictor:
                 random_state=random_state
             )
 
+        # From parent gen2x: ExtraTrees configuration
         self.et = ExtraTreesClassifier(
             n_estimators=80,
             max_depth=5,
@@ -76,9 +78,9 @@ class HERGPredictor:
             n_jobs=1
         )
 
-        # Add SVM with RBF kernel
+        # From parent gen2x: SVM with softer margin C=0.8
         self.svm = SVC(
-            C=1.0,
+            C=0.8,
             kernel='rbf',
             gamma='scale',
             class_weight='balanced',
@@ -86,10 +88,8 @@ class HERGPredictor:
             random_state=random_state
         )
 
-        # MUTATION: Optimized 4-model weights
-        # Original: [0.28, 0.28, 0.28, 0.16]
-        # New: Boost XGBoost, slightly increase SVM, reduce ET
-        self.weights = [0.25, 0.35, 0.22, 0.18]
+        # From parent gen2x: Blended weights
+        self.weights = [0.26, 0.33, 0.25, 0.16]
 
         self.scaler = RobustScaler()
         self._feature_names = None

@@ -55,6 +55,36 @@ We take a molecule's structure (written as a "SMILES" string) and predict how li
     known to block hERG
 ```
 
+## Molecular Visualization
+
+### Blockers vs Non-Blockers
+
+Understanding what makes a molecule dangerous for the heart:
+
+| hERG Blockers (Dangerous) | Non-Blockers (Safe) |
+|:-------------------------:|:-------------------:|
+| ![Chlorpromazine](images/blocker_chlorpromazine.png) | ![Aspirin](images/nonblocker_aspirin.png) |
+| Chlorpromazine (antipsychotic) | Aspirin |
+| ![Isoproterenol](images/blocker_isoproterenol.png) | ![Paracetamol](images/nonblocker_paracetamol.png) |
+| Isoproterenol (beta-agonist) | Paracetamol |
+
+### Side-by-Side Comparison
+
+![Blocker Comparison Grid](images/blocker_comparison_grid.png)
+
+### Key Pharmacophore Features
+
+hERG blockers share common structural features. This image highlights the key pharmacophore elements:
+
+![Pharmacophore Overlay](images/pharmacophore_overlay.png)
+
+- **Blue**: Basic nitrogens (can become positively charged, interact with channel)
+- **Green**: Aromatic rings (flat structures that fit into the hERG binding pocket)
+
+### Model Architecture
+
+![Model Architecture](images/model_architecture.png)
+
 ## How It Works (ELI5 Version)
 
 ```
@@ -176,18 +206,21 @@ The Agentic Evolve SDK was used to automatically discover solutions through evol
 │                    EVOLUTION RUN SUMMARY                                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   Generations:        4 (stopped at plateau threshold)                      │
-│   Candidates Tried:   12                                                    │
-│   Candidates Accepted: 1 (8% - trust system is conservative)                │
+│   Generations:        17 (multiple evolution runs)                          │
+│   Candidates Tried:   50+                                                   │
+│   Candidates Accepted: 5 (trust system is conservative)                     │
 │                                                                             │
-│   Champion: gen1a.py                                                        │
-│   ├── ROC-AUC:     0.859                                                    │
-│   ├── Trust Score: 0.85                                                     │
-│   ├── Approach:    RF + Morgan FP + 8 molecular descriptors                 │
-│   └── Inference:   1.8ms (fastest of all solutions)                         │
+│   Champion: gen12c.py                                                       │
+│   ├── ROC-AUC:     0.890 (test), 0.884 (CV mean)                           │
+│   ├── Trust Score: 0.95                                                     │
+│   ├── Approach:    4-model ensemble (RF+XGB+ET+SVM)                        │
+│   ├── Features:    512-bit Morgan + 167-bit MACCS + 25 descriptors         │
+│   └── Inference:   ~5ms/molecule (well under 100ms limit)                   │
 │                                                                             │
-│   Key Discovery: Evolution independently found the hybrid FP+descriptor     │
-│   approach - validating this as the optimal strategy for hERG prediction.   │
+│   3D Features Explored:                                                     │
+│   ├── gen_pharma_3d.py: +9 pharmacophore 3D features (0.884 test AUC)      │
+│   ├── N-aromatic distances rank #1-2 in feature importance                 │
+│   └── 3D features chemically meaningful but don't improve test AUC         │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -242,7 +275,7 @@ ECE = 0.10
 1. **Small dataset** (655 molecules): High variance across seeds (±0.03 AUC). Results on larger datasets may differ.
 2. **Calibration is imperfect**: Use predictions for ranking, not as true probabilities.
 3. **Single benchmark**: This is TDC hERG only. External validation on ChEMBL/PubChem hERG data would strengthen claims.
-4. **No 3D/conformer features**: State-of-art uses 3D molecular shape; we use only 2D structure.
+4. **3D features explored but didn't improve test AUC**: We implemented 3D conformer features (pharmacophore distances, shape descriptors) which rank highly in feature importance but don't improve generalization on this scaffold-split test set.
 
 ## Dataset
 
@@ -275,14 +308,14 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # 2. Test the best model (basic)
-python evaluate.py dual_ensemble.py --verbose
+python evaluate.py gen12c.py --verbose
 
 # 2b. Rigorous evaluation (multi-seed + ablation)
-python evaluate_rigorous.py dual_ensemble.py --seeds 10 --ablation
+python evaluate_rigorous.py gen12c.py --seeds 10 --ablation
 
 # 3. Run on your own molecules (example)
 python -c "
-from dual_ensemble import HERGPredictor
+from gen12c import HERGPredictor
 from tdc.single_pred import Tox
 
 # Load model and data
@@ -315,40 +348,65 @@ molecular-admet-prediction/
 ├── validate_solution.py      # Pre-validation for evolved solutions
 ├── evolve_config.json        # Evolution configuration
 │
+├── gen12c.py                 # CHAMPION: 4-model ensemble (0.890 ROC-AUC)
+├── gen_pharma_3d.py          # 3D pharmacophore features variant (0.884)
+├── gen_cached_3d.py          # All 3D features variant (0.873)
+│
+├── conformer_gen.py          # 3D conformer generation & feature extraction
+├── embeddings_3d.py          # ChemBERTa transformer embeddings
+├── precompute_embeddings.py  # Cache embeddings for fast training
+├── visualize_molecules.py    # Generate molecule visualizations
+│
+├── images/                   # Generated visualizations
+│   ├── blocker_*.png         # hERG blocker molecule images
+│   ├── nonblocker_*.png      # Safe molecule images
+│   ├── pharmacophore_overlay.png  # Key features highlighted
+│   ├── blocker_comparison_grid.png
+│   └── model_architecture.png
+│
+├── data/
+│   └── embeddings/           # Pre-computed molecular embeddings
+│       ├── train_embeddings.npz
+│       ├── valid_embeddings.npz
+│       └── test_embeddings.npz
+│
 ├── baseline_fingerprint.py   # Baseline: Morgan fingerprints + RF (0.828)
 ├── baseline_descriptors.py   # Baseline: Molecular descriptors + GBM (0.843)
-├── evolved_ensemble.py       # RF+GBM+ET ensemble (0.8711)
-├── dual_ensemble.py          # RF+GBM+ET+SVM 6-model ensemble (0.8714 BEST manual)
-├── triple_ensemble_svm.py    # RF+GBM+SVM variant (0.8711)
-├── hybrid_fp_maccs.py        # Morgan + MACCS fingerprints (0.857)
-├── hybrid_fp_desc_light.py   # FP + top-10 descriptors (0.857)
-├── meta_ensemble.py          # Complex 5-model ensemble (0.853)
+├── dual_ensemble.py          # RF+GBM+ET+SVM 6-model ensemble
 │
 ├── .evolve-sdk/              # SDK evolution artifacts
 │   └── evolve_molecular_property_pred/
-│       ├── mutations/        # All evolved solutions (gen0-gen4)
-│       │   └── gen1a.py      # SDK champion (0.859, trusted)
+│       ├── mutations/        # All evolved solutions
+│       │   └── gen12c.py     # Champion (0.890, trust validated)
 │       ├── evolution.json    # Evolution state
 │       └── trust_dossier.md  # Full trust audit trail
-└── EVOLUTION_PLAN.md         # 6-phase improvement roadmap
+└── EVOLUTION_PLAN.md         # Improvement roadmap
 ```
 
 ## For the ML Engineer: Technical Details
 
 **Feature Engineering**:
-- Morgan fingerprints (radius=2, 2048 bits) - circular substructure encoding
+- Morgan fingerprints (radius=3, 512 bits) - compact circular substructure encoding
+- MACCS keys (167 bits) - structural keys
 - 25 RDKit descriptors selected for hERG relevance
 - Robust scaling on descriptor features only
 
-**Model Architecture**:
-- Dual ensemble: 6 diverse models (2x RF + 2x GBM + ExtraTrees + SVM)
-- Simple averaging - more robust than learned weights
+**3D Features (experimental)**:
+- Pre-computed from RDKit ETKDG conformer generation
+- 20 features: shape descriptors (PMI, asphericity) + pharmacophore distances
+- N-aromatic and aromatic-aromatic distances rank highly in feature importance
+- Available in `gen_pharma_3d.py` and `gen_cached_3d.py`
+
+**Model Architecture** (gen12c champion):
+- 4-model ensemble: RandomForest + XGBoost + ExtraTrees + SVM
+- Weights: [0.28, 0.28, 0.28, 0.16]
 - Class balancing for imbalanced dataset (68% positive)
 
 **Evaluation Protocol**:
 - 5-fold stratified CV on training set
 - Scaffold-based split (prevents data leakage from similar molecules)
 - Primary metric: ROC-AUC (handles class imbalance)
+- Trust validation: 11 tests including adversary review
 
 ## References
 

@@ -1,206 +1,241 @@
 """
-Generation 4 Variant C: Wide Shallow Neural Network with Dropout
-Approach: Deep learning with multi-scale features and improved regularization
-Strategy: Hyperparameter mutation - wider shallow architecture with dropout
+Gen4c: Model Swap - Replace ExtraTrees with LightGBM for Ensemble Diversity
+
+Parent: gen2x (0.8897 ROC-AUC)
+
+Mutation: Model swap - Replace ExtraTrees classifier with LightGBM classifier
+- ExtraTrees and RandomForest are very similar (both bag decision trees)
+- LightGBM uses leaf-wise tree growth (vs level-wise) - different inductive bias
+- LightGBM may capture different feature interactions than XGBoost
+- Increased model diversity in ensemble often improves generalization
+
+Hypothesis: The parent ensemble has two very similar tree models (RF and ET).
+Replacing ET with LightGBM adds a gradient boosting model with different
+growth strategy, increasing ensemble diversity. This may improve ROC-AUC
+by capturing patterns that the RF-only approach misses.
 """
 
 import numpy as np
-from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import StandardScaler
-from sklearn.impute import SimpleImputer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+try:
+    import xgboost as xgb
+    HAS_XGBOOST = True
+except ImportError:
+    from sklearn.ensemble import GradientBoostingClassifier
+    HAS_XGBOOST = False
+try:
+    import lightgbm as lgb
+    HAS_LIGHTGBM = True
+except ImportError:
+    from sklearn.ensemble import ExtraTreesClassifier
+    HAS_LIGHTGBM = False
+from sklearn.preprocessing import RobustScaler
+from sklearn.utils.class_weight import compute_class_weight
 from rdkit import Chem
-from rdkit.Chem import AllChem, Descriptors, rdMolDescriptors
-from rdkit.Avalon import pyAvalonTools
-import warnings
-warnings.filterwarnings('ignore')
+from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSkeys
 
 
 class HERGPredictor:
-    """
-    Neural Network predictor with wide-shallow architecture and dropout.
-
-    Uses multiple fingerprint types (Morgan, MACCS, Avalon) combined with
-    molecular descriptors to capture diverse aspects of molecular structure.
-    Mutated to use wider but shallower architecture with stronger regularization.
-    """
+    """4-model ensemble with LightGBM replacing ExtraTrees for hERG toxicity."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
-        self.morgan_bits = 1024
-        self.morgan_radius = 2
 
-        # MUTATION: Wider but shallower network with increased regularization
-        self.model = MLPClassifier(
-            hidden_layer_sizes=(256, 128),  # Changed from (128, 64, 32) to wider/shallower
-            activation='relu',
-            solver='adam',
-            alpha=0.01,  # Increased L2 regularization from 0.001 to 0.01
-            learning_rate_init=0.0005,  # Reduced learning rate from 0.001 to 0.0005
-            max_iter=500,  # Increased from 300 to allow more training
-            early_stopping=True,
-            validation_fraction=0.15,  # Increased validation set from 0.1 to 0.15
-            n_iter_no_change=15,  # Increased patience from 10 to 15
+        # From parent: RF with proven hyperparameters
+        self.rf = RandomForestClassifier(
+            n_estimators=80,
+            max_depth=6,
+            min_samples_split=10,
+            min_samples_leaf=5,
+            max_features='sqrt',
+            class_weight='balanced',
+            random_state=random_state,
+            n_jobs=1
+        )
+
+        # From parent: XGBoost with regularization
+        if HAS_XGBOOST:
+            self.xgb = xgb.XGBClassifier(
+                n_estimators=80,
+                max_depth=3,
+                learning_rate=0.03,
+                subsample=0.65,
+                colsample_bytree=0.5,
+                reg_alpha=0.4,
+                reg_lambda=0.5,
+                random_state=random_state,
+                eval_metric='logloss',
+                n_jobs=1
+            )
+        else:
+            self.xgb = GradientBoostingClassifier(
+                n_estimators=80, max_depth=3, learning_rate=0.03,
+                random_state=random_state
+            )
+
+        # MUTATION: Replace ExtraTrees with LightGBM
+        # LightGBM uses leaf-wise growth (faster, often better accuracy)
+        # Different inductive bias than XGBoost's level-wise growth
+        if HAS_LIGHTGBM:
+            self.lgb = lgb.LGBMClassifier(
+                n_estimators=80,
+                max_depth=4,  # Slightly deeper since leaf-wise growth
+                learning_rate=0.03,
+                num_leaves=20,  # Control complexity (2^4 = 16, slight buffer)
+                subsample=0.65,
+                colsample_bytree=0.5,
+                reg_alpha=0.3,
+                reg_lambda=0.3,
+                class_weight='balanced',
+                random_state=random_state,
+                verbose=-1,  # Suppress output
+                n_jobs=1
+            )
+        else:
+            # Fallback to ExtraTrees if LightGBM not available
+            self.lgb = ExtraTreesClassifier(
+                n_estimators=80,
+                max_depth=5,
+                min_samples_split=10,
+                min_samples_leaf=5,
+                class_weight='balanced',
+                random_state=random_state,
+                n_jobs=1
+            )
+
+        # From parent: SVM with tuned C parameter
+        self.svm = SVC(
+            C=0.8,
+            kernel='rbf',
+            gamma='scale',
+            class_weight='balanced',
+            probability=True,
             random_state=random_state
         )
 
-        self.scaler = StandardScaler()
-        self.imputer = SimpleImputer(strategy='median')
+        # Slightly adjust weights: LightGBM may be more reliable than ET
+        # Keep XGBoost emphasis but give LightGBM a bit more weight
+        # Old: [0.26, 0.33, 0.25, 0.16] for RF, XGB, ET, SVM
+        # New: [0.25, 0.32, 0.27, 0.16] for RF, XGB, LGB, SVM
+        self.weights = [0.25, 0.32, 0.27, 0.16]
 
-    def _morgan_fingerprint(self, mol):
-        """Generate Morgan fingerprint."""
-        if mol is None:
-            return np.zeros(self.morgan_bits)
-        fp = AllChem.GetMorganFingerprintAsBitVect(mol, self.morgan_radius, nBits=self.morgan_bits)
-        return np.array(fp)
+        self.scaler = RobustScaler()
+        self._feature_names = None
+        self._feature_importances = None
 
-    def _maccs_fingerprint(self, mol):
-        """Generate MACCS structural keys."""
-        if mol is None:
-            return np.zeros(167)  # MACCS has 167 keys
-        try:
-            from rdkit.Chem import MACCSkeys
-            fp = MACCSkeys.GenMACCSKeys(mol)
-            return np.array(fp)
-        except:
-            return np.zeros(167)
-
-    def _avalon_fingerprint(self, mol):
-        """Generate Avalon fingerprint (if available)."""
-        if mol is None:
-            return np.zeros(512)
-        try:
-            fp = pyAvalonTools.GetAvalonFP(mol, 512)
-            return np.array(fp)
-        except:
-            return np.zeros(512)
-
-    def _advanced_descriptors(self, mol):
-        """Calculate advanced molecular descriptors."""
-        if mol is None:
-            return [np.nan] * 20
-
-        try:
-            return [
-                # Core physicochemical properties
-                Descriptors.MolLogP(mol),
-                Descriptors.MolWt(mol),
-                Descriptors.TPSA(mol),
-                Descriptors.NumHDonors(mol),
-                Descriptors.NumHAcceptors(mol),
-
-                # Electronic and topological
-                Descriptors.BalabanJ(mol),
-                rdMolDescriptors.BertzCT(mol),
-                Descriptors.Ipc(mol),  # Information content
-                rdMolDescriptors.Kappa1(mol),  # Molecular connectivity
-                rdMolDescriptors.Kappa2(mol),
-
-                # Aromatic and ring features
-                Descriptors.NumAromaticRings(mol),
-                Descriptors.NumSaturatedRings(mol),
-                Descriptors.NumHeterocycles(mol),
-                Descriptors.RingCount(mol),
-
-                # hERG-specific features
-                Descriptors.fr_NH0(mol),  # Tertiary amines
-                Descriptors.fr_NH1(mol),  # Secondary amines
-                Descriptors.fr_NH2(mol),  # Primary amines
-                Descriptors.fr_piperdine(mol),  # Piperidine (hERG pharmacophore)
-                Descriptors.fr_piperzine(mol),  # Piperazine
-
-                # Surface area and volume
-                Descriptors.LabuteASA(mol),
-            ]
-        except:
-            return [np.nan] * 20
-
-    def _extract_features(self, smiles_list):
-        """Extract comprehensive multi-scale features."""
+    def _calculate_features(self, smiles_list):
+        """Calculate compact fingerprints + hERG descriptors."""
         all_features = []
 
         for smi in smiles_list:
             mol = Chem.MolFromSmiles(smi)
+            if mol is None:
+                features = np.zeros(512 + 167 + 25)
+            else:
+                morgan_fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=3, nBits=512)
+                morgan_bits = np.array(morgan_fp)
 
-            # Different fingerprint types
-            morgan_fp = self._morgan_fingerprint(mol)
-            maccs_fp = self._maccs_fingerprint(mol)
-            avalon_fp = self._avalon_fingerprint(mol)
-            descriptors = self._advanced_descriptors(mol)
+                maccs = MACCSkeys.GenMACCSKeys(mol)
+                maccs_bits = np.array(maccs)
 
-            # Concatenate all features
-            combined = np.concatenate([
-                morgan_fp,
-                maccs_fp,
-                avalon_fp,
-                descriptors
-            ])
+                mol_h = Chem.AddHs(mol)
+                logP = Descriptors.MolLogP(mol)
+                mw = Descriptors.MolWt(mol)
+                tpsa = rdMolDescriptors.CalcTPSA(mol)
 
-            all_features.append(combined)
+                basic_nitrogens = sum(1 for atom in mol_h.GetAtoms()
+                                      if atom.GetAtomicNum() == 7 and atom.GetFormalCharge() >= 0)
+                aromatic_atoms = sum(1 for atom in mol.GetAtoms() if atom.GetIsAromatic())
+                aromatic_rings = Descriptors.NumAromaticRings(mol)
+                heavy_atoms = Descriptors.HeavyAtomCount(mol)
+
+                descriptors = [
+                    logP, Descriptors.MolMR(mol), logP * mw / 100, mw, heavy_atoms,
+                    tpsa, Descriptors.NumRotatableBonds(mol), rdMolDescriptors.CalcFractionCSP3(mol),
+                    aromatic_atoms, aromatic_rings, aromatic_atoms / max(1, heavy_atoms),
+                    Descriptors.NumAromaticCarbocycles(mol), Descriptors.NumAromaticHeterocycles(mol),
+                    basic_nitrogens, basic_nitrogens * logP, Lipinski.NumHDonors(mol),
+                    Lipinski.NumHAcceptors(mol), Descriptors.NumHeteroatoms(mol),
+                    len([a for a in mol.GetAtoms() if a.GetAtomicNum() in [7, 8, 16]]),
+                    Descriptors.BertzCT(mol), Descriptors.Chi0(mol), Descriptors.Chi1(mol),
+                    Lipinski.RingCount(mol), rdMolDescriptors.CalcNumBridgeheadAtoms(mol),
+                    mw / max(1, Descriptors.NumRotatableBonds(mol) + 1),
+                ]
+
+                features = np.concatenate([morgan_bits, maccs_bits, descriptors])
+            all_features.append(features)
+
+        self._feature_names = (
+            [f'Morgan3_{i}' for i in range(512)] +
+            [f'MACCS_{i}' for i in range(167)] +
+            ['MolLogP', 'MolMR', 'LipophilicEfficiency', 'MolWt', 'HeavyAtomCount',
+             'TPSA', 'NumRotatableBonds', 'FractionCSP3', 'AromaticAtoms',
+             'NumAromaticRings', 'AromaticFraction', 'NumAromaticCarbocycles',
+             'NumAromaticHeterocycles', 'BasicNitrogens', 'LipophilicBasicity',
+             'NumHDonors', 'NumHAcceptors', 'NumHeteroatoms', 'NOSCount',
+             'BertzCT', 'Chi0', 'Chi1', 'RingCount', 'NumBridgeheadAtoms', 'RigidityIndex']
+        )
 
         return np.array(all_features)
 
+    def _preprocess(self, X, fit=False):
+        X = np.array(X, dtype=float)
+        X = np.nan_to_num(X, nan=0.0)
+        if fit:
+            X[:, -25:] = self.scaler.fit_transform(X[:, -25:])
+        else:
+            X[:, -25:] = self.scaler.transform(X[:, -25:])
+        return X
+
     def fit(self, X_smiles, y):
-        """Train on SMILES strings and binary labels."""
-        X = self._extract_features(X_smiles)
+        X = self._calculate_features(X_smiles)
+        X = self._preprocess(X, fit=True)
         y = np.array(y)
 
-        # Handle missing values in descriptor portion
-        X = self.imputer.fit_transform(X)
+        self.rf.fit(X, y)
+        self.lgb.fit(X, y)  # LightGBM instead of ET
+        self.svm.fit(X, y)
 
-        # Scale features (important for neural networks)
-        X = self.scaler.fit_transform(X)
+        if HAS_XGBOOST:
+            class_weights = compute_class_weight('balanced', classes=np.unique(y), y=y)
+            sample_weights = np.array([class_weights[int(label)] for label in y])
+            self.xgb.fit(X, y, sample_weight=sample_weights)
+        else:
+            self.xgb.fit(X, y)
 
-        self.model.fit(X, y)
+        # All tree models have feature_importances_
+        self._feature_importances = (
+            self.weights[0] * self.rf.feature_importances_ +
+            self.weights[1] * self.xgb.feature_importances_ +
+            self.weights[2] * self.lgb.feature_importances_
+        ) / (self.weights[0] + self.weights[1] + self.weights[2])
+
         return self
 
     def predict_proba(self, X_smiles):
-        """Predict probability of hERG blocking."""
-        X = self._extract_features(X_smiles)
-        X = self.imputer.transform(X)
-        X = self.scaler.transform(X)
+        X = self._calculate_features(X_smiles)
+        X = self._preprocess(X, fit=False)
 
-        proba = self.model.predict_proba(X)
-        return proba[:, 1]  # Return probability of positive class
+        proba_rf = self.rf.predict_proba(X)[:, 1]
+        proba_xgb = self.xgb.predict_proba(X)[:, 1]
+        proba_lgb = self.lgb.predict_proba(X)[:, 1]  # LightGBM instead of ET
+        proba_svm = self.svm.predict_proba(X)[:, 1]
+
+        return (self.weights[0] * proba_rf +
+                self.weights[1] * proba_xgb +
+                self.weights[2] * proba_lgb +
+                self.weights[3] * proba_svm)
 
     def predict(self, X_smiles, threshold=0.5):
-        """Predict binary class labels."""
-        proba = self.predict_proba(X_smiles)
-        return (proba >= threshold).astype(int)
+        return (self.predict_proba(X_smiles) >= threshold).astype(int)
 
-    def get_architecture_info(self):
-        """Get information about the neural network architecture."""
-        total_features = self.morgan_bits + 167 + 512 + 20  # Morgan + MACCS + Avalon + descriptors
+    def get_feature_importance(self):
+        if self._feature_importances is None or self._feature_names is None:
+            return None
+        importance_dict = dict(zip(self._feature_names, self._feature_importances.tolist()))
+        sorted_importance = sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)
         return {
-            'hidden_layers': (256, 128),  # Updated to reflect mutation
-            'total_features': total_features,
-            'morgan_bits': self.morgan_bits,
-            'maccs_keys': 167,
-            'avalon_bits': 512,
-            'descriptors': 20,
-            'activation': 'ReLU',
-            'optimizer': 'Adam',
-            'regularization': 'L2 (alpha=0.01)',  # Updated to reflect stronger regularization
-            'learning_rate': 0.0005  # Added to reflect reduced learning rate
+            'features': [x[0] for x in sorted_importance[:30]],
+            'importances': [x[1] for x in sorted_importance[:30]]
         }
-
-
-if __name__ == '__main__':
-    # Quick test to ensure it works
-    predictor = HERGPredictor()
-
-    # Test molecules
-    test_smiles = [
-        'CC(=O)OC1=CC=CC=C1C(=O)O',  # Aspirin
-        'CN1C=NC2=C1C(=O)N(C(=O)N2C)C',  # Caffeine
-        'CCN(CC)CCCC(C)Nc1ccnc2cc(Cl)ccc12',  # Chloroquine
-    ]
-
-    # Dummy training with more data for neural network
-    train_smiles = test_smiles * 20  # Neural nets need more data
-    train_labels = [0, 1, 1] * 20
-
-    predictor.fit(train_smiles, train_labels)
-    proba = predictor.predict_proba(test_smiles)
-
-    print(f"Generation 4C test: {proba}")
-    print(f"Architecture: {predictor.get_architecture_info()}")

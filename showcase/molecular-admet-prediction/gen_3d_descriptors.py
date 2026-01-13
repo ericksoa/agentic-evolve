@@ -1,41 +1,50 @@
 """
-Gen1a: Optimized Ensemble Weights
+Gen-3D-Descriptors: Enhanced gen12c with 3D Conformer Features
 
-Parent: gen0_champion (0.89 ROC-AUC)
+Architecture:
+- Base: gen12c (4-model ensemble, 0.890 ROC-AUC)
+- Enhancement: +20 3D conformer descriptors
+- Total features: 704 (2D) + 20 (3D) = 724 features
 
-Mutation: Hyperparameter tuning - adjust ensemble weights
-- Original: [0.28, 0.28, 0.28, 0.16] for RF, XGB, ET, SVM
-- New: [0.25, 0.35, 0.22, 0.18] for RF, XGB, ET, SVM
-- Increase XGBoost weight (strong on tabular data)
-- Slightly increase SVM weight (kernel-based diversity)
-- Reduce ET weight (often redundant with RF)
+This version avoids slow transformer embeddings by using only
+fast-to-compute 3D descriptors from pre-generated conformers.
 
-Hypothesis: XGBoost typically excels on structured tabular data
-with proper hyperparameters. Giving it more weight while maintaining
-model diversity may improve ensemble accuracy.
+Hypothesis: 3D shape and pharmacophore distance features capture
+spatial information about hERG binding that 2D fingerprints miss.
 """
 
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 from sklearn.svm import SVC
+from sklearn.preprocessing import RobustScaler
+from sklearn.utils.class_weight import compute_class_weight
 try:
     import xgboost as xgb
     HAS_XGBOOST = True
 except ImportError:
     from sklearn.ensemble import GradientBoostingClassifier
     HAS_XGBOOST = False
-from sklearn.preprocessing import RobustScaler
-from sklearn.utils.class_weight import compute_class_weight
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSkeys
 
+# Import 3D feature extraction
+from conformer_gen import get_all_3d_features, get_3d_feature_names
+
 
 class HERGPredictor:
-    """4-model ensemble with optimized weights for hERG toxicity."""
+    """
+    Enhanced 4-model ensemble with 3D conformer descriptors.
+
+    Combines gen12c's proven 2D approach with 3D spatial features:
+    - Shape descriptors (PMI, asphericity, spherocity)
+    - Pharmacophore distances (N-aromatic, aromatic-aromatic)
+    - Molecular extent and 3D size metrics
+    """
 
     def __init__(self, random_state=42):
         self.random_state = random_state
 
+        # Gen12c-style ensemble
         self.rf = RandomForestClassifier(
             n_estimators=80,
             max_depth=6,
@@ -76,7 +85,6 @@ class HERGPredictor:
             n_jobs=1
         )
 
-        # Add SVM with RBF kernel
         self.svm = SVC(
             C=1.0,
             kernel='rbf',
@@ -86,24 +94,28 @@ class HERGPredictor:
             random_state=random_state
         )
 
-        # MUTATION: Optimized 4-model weights
-        # Original: [0.28, 0.28, 0.28, 0.16]
-        # New: Boost XGBoost, slightly increase SVM, reduce ET
-        self.weights = [0.25, 0.35, 0.22, 0.18]
+        # Ensemble weights (gen12c style)
+        self.weights = [0.28, 0.28, 0.28, 0.16]
 
         self.scaler = RobustScaler()
         self._feature_names = None
         self._feature_importances = None
 
+        # 3D feature caching for faster inference
+        self._3d_cache = {}
+
     def _calculate_features(self, smiles_list):
-        """Calculate compact fingerprints + hERG descriptors."""
+        """Calculate 2D + 3D features."""
         all_features = []
+        n_2d = 512 + 167 + 25  # Morgan + MACCS + 2D descriptors
+        n_3d = len(get_3d_feature_names())
 
         for smi in smiles_list:
             mol = Chem.MolFromSmiles(smi)
             if mol is None:
-                features = np.zeros(512 + 167 + 25)
+                features = np.zeros(n_2d + n_3d)
             else:
+                # ========== 2D Features (from gen12c) ==========
                 morgan_fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=3, nBits=512)
                 morgan_bits = np.array(morgan_fp)
 
@@ -121,7 +133,7 @@ class HERGPredictor:
                 aromatic_rings = Descriptors.NumAromaticRings(mol)
                 heavy_atoms = Descriptors.HeavyAtomCount(mol)
 
-                descriptors = [
+                descriptors_2d = [
                     logP, Descriptors.MolMR(mol), logP * mw / 100, mw, heavy_atoms,
                     tpsa, Descriptors.NumRotatableBonds(mol), rdMolDescriptors.CalcFractionCSP3(mol),
                     aromatic_atoms, aromatic_rings, aromatic_atoms / max(1, heavy_atoms),
@@ -134,9 +146,19 @@ class HERGPredictor:
                     mw / max(1, Descriptors.NumRotatableBonds(mol) + 1),
                 ]
 
-                features = np.concatenate([morgan_bits, maccs_bits, descriptors])
+                # ========== 3D Features ==========
+                if smi in self._3d_cache:
+                    features_3d = self._3d_cache[smi]
+                else:
+                    features_3d_dict = get_all_3d_features(smi, random_seed=self.random_state)
+                    features_3d = [features_3d_dict[k] for k in get_3d_feature_names()]
+                    self._3d_cache[smi] = features_3d
+
+                features = np.concatenate([morgan_bits, maccs_bits, descriptors_2d, features_3d])
+
             all_features.append(features)
 
+        # Build feature names
         self._feature_names = (
             [f'Morgan3_{i}' for i in range(512)] +
             [f'MACCS_{i}' for i in range(167)] +
@@ -145,7 +167,8 @@ class HERGPredictor:
              'NumAromaticRings', 'AromaticFraction', 'NumAromaticCarbocycles',
              'NumAromaticHeterocycles', 'BasicNitrogens', 'LipophilicBasicity',
              'NumHDonors', 'NumHAcceptors', 'NumHeteroatoms', 'NOSCount',
-             'BertzCT', 'Chi0', 'Chi1', 'RingCount', 'NumBridgeheadAtoms', 'RigidityIndex']
+             'BertzCT', 'Chi0', 'Chi1', 'RingCount', 'NumBridgeheadAtoms', 'RigidityIndex'] +
+            get_3d_feature_names()
         )
 
         return np.array(all_features)
@@ -153,10 +176,12 @@ class HERGPredictor:
     def _preprocess(self, X, fit=False):
         X = np.array(X, dtype=float)
         X = np.nan_to_num(X, nan=0.0)
+        # Scale all continuous features (last 25 2D + 20 3D = 45 features)
+        n_continuous = 45
         if fit:
-            X[:, -25:] = self.scaler.fit_transform(X[:, -25:])
+            X[:, -n_continuous:] = self.scaler.fit_transform(X[:, -n_continuous:])
         else:
-            X[:, -25:] = self.scaler.transform(X[:, -25:])
+            X[:, -n_continuous:] = self.scaler.transform(X[:, -n_continuous:])
         return X
 
     def fit(self, X_smiles, y):
@@ -175,12 +200,13 @@ class HERGPredictor:
         else:
             self.xgb.fit(X, y)
 
-        # Only tree models have feature_importances_
+        # Feature importances (tree models only)
+        tree_weight_sum = self.weights[0] + self.weights[1] + self.weights[2]
         self._feature_importances = (
             self.weights[0] * self.rf.feature_importances_ +
             self.weights[1] * self.xgb.feature_importances_ +
             self.weights[2] * self.et.feature_importances_
-        ) / (self.weights[0] + self.weights[1] + self.weights[2])
+        ) / tree_weight_sum
 
         return self
 
@@ -210,3 +236,29 @@ class HERGPredictor:
             'features': [x[0] for x in sorted_importance[:30]],
             'importances': [x[1] for x in sorted_importance[:30]]
         }
+
+
+if __name__ == '__main__':
+    print("Testing Gen-3D-Descriptors model...")
+
+    predictor = HERGPredictor()
+
+    test_smiles = [
+        'CC(=O)OC1=CC=CC=C1C(=O)O',
+        'CN1C=NC2=C1C(=O)N(C(=O)N2C)C',
+        'CC(C)NCC(O)C1=CC=C(O)C(O)=C1',
+    ]
+    test_labels = [0, 0, 1]
+
+    print("\nFitting on test data...")
+    predictor.fit(test_smiles * 10, test_labels * 10)
+
+    print("Predicting...")
+    proba = predictor.predict_proba(test_smiles)
+    print(f"Probabilities: {proba}")
+
+    print(f"\nTotal features: {len(predictor._feature_names)}")
+    print("Top 10 feature importances:")
+    importance = predictor.get_feature_importance()
+    for f, i in zip(importance['features'][:10], importance['importances'][:10]):
+        print(f"  {f}: {i:.4f}")

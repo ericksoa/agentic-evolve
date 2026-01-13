@@ -1,18 +1,20 @@
 """
-Gen1a: Optimized Ensemble Weights
+Gen5c: Feature Addition - hERG-Specific Descriptors
 
-Parent: gen0_champion (0.89 ROC-AUC)
+Parent: gen2x (0.8896 ROC-AUC)
 
-Mutation: Hyperparameter tuning - adjust ensemble weights
-- Original: [0.28, 0.28, 0.28, 0.16] for RF, XGB, ET, SVM
-- New: [0.25, 0.35, 0.22, 0.18] for RF, XGB, ET, SVM
-- Increase XGBoost weight (strong on tabular data)
-- Slightly increase SVM weight (kernel-based diversity)
-- Reduce ET weight (often redundant with RF)
+Mutation: Feature addition - Add molecular descriptors specifically relevant to hERG binding
+- Add LabuteASA (Labute accessible surface area) - hERG binding correlates with surface area
+- Add BalabanJ (Balaban topological index) - captures molecular shape
+- Add HallKierAlpha (Hall-Kier alpha) - encodes molecular flexibility/branching
+- Add Kappa indices (shape/flexibility descriptors)
+- Add MaxPartialCharge and MinPartialCharge - charge distribution matters for hERG
 
-Hypothesis: XGBoost typically excels on structured tabular data
-with proper hyperparameters. Giving it more weight while maintaining
-model diversity may improve ensemble accuracy.
+Total features: 512 (Morgan) + 167 (MACCS) + 31 (descriptors) = 710 features
+
+Hypothesis: hERG blocking is influenced by molecular shape, size, and charge distribution.
+Adding surface area, topological shape indices, and partial charge features should
+capture binding-relevant patterns that fingerprints alone may miss.
 """
 
 import numpy as np
@@ -27,15 +29,16 @@ except ImportError:
 from sklearn.preprocessing import RobustScaler
 from sklearn.utils.class_weight import compute_class_weight
 from rdkit import Chem
-from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSkeys
+from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSkeys, GraphDescriptors
 
 
 class HERGPredictor:
-    """4-model ensemble with optimized weights for hERG toxicity."""
+    """4-model ensemble with hERG-specific features for toxicity prediction."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
 
+        # From parent gen2x: RF configuration
         self.rf = RandomForestClassifier(
             n_estimators=80,
             max_depth=6,
@@ -47,6 +50,7 @@ class HERGPredictor:
             n_jobs=1
         )
 
+        # From parent gen2x: XGBoost with regularization
         if HAS_XGBOOST:
             self.xgb = xgb.XGBClassifier(
                 n_estimators=80,
@@ -66,6 +70,7 @@ class HERGPredictor:
                 random_state=random_state
             )
 
+        # From parent gen2x: ExtraTrees configuration
         self.et = ExtraTreesClassifier(
             n_estimators=80,
             max_depth=5,
@@ -76,9 +81,9 @@ class HERGPredictor:
             n_jobs=1
         )
 
-        # Add SVM with RBF kernel
+        # From parent gen2x: SVM with softer margin
         self.svm = SVC(
-            C=1.0,
+            C=0.8,
             kernel='rbf',
             gamma='scale',
             class_weight='balanced',
@@ -86,23 +91,22 @@ class HERGPredictor:
             random_state=random_state
         )
 
-        # MUTATION: Optimized 4-model weights
-        # Original: [0.28, 0.28, 0.28, 0.16]
-        # New: Boost XGBoost, slightly increase SVM, reduce ET
-        self.weights = [0.25, 0.35, 0.22, 0.18]
+        # From parent gen2x: Blended weights
+        self.weights = [0.26, 0.33, 0.25, 0.16]
 
         self.scaler = RobustScaler()
         self._feature_names = None
         self._feature_importances = None
 
     def _calculate_features(self, smiles_list):
-        """Calculate compact fingerprints + hERG descriptors."""
+        """Calculate fingerprints + ENHANCED hERG-relevant descriptors."""
         all_features = []
 
         for smi in smiles_list:
             mol = Chem.MolFromSmiles(smi)
             if mol is None:
-                features = np.zeros(512 + 167 + 25)
+                # MUTATION: 31 descriptors now (was 25)
+                features = np.zeros(512 + 167 + 31)
             else:
                 morgan_fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=3, nBits=512)
                 morgan_bits = np.array(morgan_fp)
@@ -121,6 +125,7 @@ class HERGPredictor:
                 aromatic_rings = Descriptors.NumAromaticRings(mol)
                 heavy_atoms = Descriptors.HeavyAtomCount(mol)
 
+                # Original 25 descriptors from parent
                 descriptors = [
                     logP, Descriptors.MolMR(mol), logP * mw / 100, mw, heavy_atoms,
                     tpsa, Descriptors.NumRotatableBonds(mol), rdMolDescriptors.CalcFractionCSP3(mol),
@@ -134,6 +139,38 @@ class HERGPredictor:
                     mw / max(1, Descriptors.NumRotatableBonds(mol) + 1),
                 ]
 
+                # MUTATION: Add 6 new hERG-relevant descriptors
+                # Surface area - correlates with hERG binding
+                labute_asa = Descriptors.LabuteASA(mol)
+
+                # Topological shape index - captures molecular shape
+                balaban_j = GraphDescriptors.BalabanJ(mol)
+
+                # Hall-Kier alpha - flexibility/branching descriptor
+                hall_kier_alpha = Descriptors.HallKierAlpha(mol)
+
+                # Kappa shape indices - shape descriptors
+                kappa1 = Descriptors.Kappa1(mol)
+                kappa2 = Descriptors.Kappa2(mol)
+
+                # Partial charge range - charge distribution matters for hERG
+                try:
+                    max_partial = Descriptors.MaxPartialCharge(mol)
+                    min_partial = Descriptors.MinPartialCharge(mol)
+                    charge_range = max_partial - min_partial if not (np.isnan(max_partial) or np.isnan(min_partial)) else 0.0
+                except:
+                    charge_range = 0.0
+
+                # Add new features
+                descriptors.extend([
+                    labute_asa,
+                    balaban_j,
+                    hall_kier_alpha,
+                    kappa1,
+                    kappa2,
+                    charge_range,
+                ])
+
                 features = np.concatenate([morgan_bits, maccs_bits, descriptors])
             all_features.append(features)
 
@@ -145,7 +182,9 @@ class HERGPredictor:
              'NumAromaticRings', 'AromaticFraction', 'NumAromaticCarbocycles',
              'NumAromaticHeterocycles', 'BasicNitrogens', 'LipophilicBasicity',
              'NumHDonors', 'NumHAcceptors', 'NumHeteroatoms', 'NOSCount',
-             'BertzCT', 'Chi0', 'Chi1', 'RingCount', 'NumBridgeheadAtoms', 'RigidityIndex']
+             'BertzCT', 'Chi0', 'Chi1', 'RingCount', 'NumBridgeheadAtoms', 'RigidityIndex',
+             # NEW features
+             'LabuteASA', 'BalabanJ', 'HallKierAlpha', 'Kappa1', 'Kappa2', 'ChargeRange']
         )
 
         return np.array(all_features)
@@ -154,9 +193,10 @@ class HERGPredictor:
         X = np.array(X, dtype=float)
         X = np.nan_to_num(X, nan=0.0)
         if fit:
-            X[:, -25:] = self.scaler.fit_transform(X[:, -25:])
+            # MUTATION: Scale last 31 features (was 25)
+            X[:, -31:] = self.scaler.fit_transform(X[:, -31:])
         else:
-            X[:, -25:] = self.scaler.transform(X[:, -25:])
+            X[:, -31:] = self.scaler.transform(X[:, -31:])
         return X
 
     def fit(self, X_smiles, y):

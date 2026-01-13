@@ -1,18 +1,17 @@
 """
-Gen1a: Optimized Ensemble Weights
+Gen8c: ExtraTrees Hyperparameter Tuning
 
-Parent: gen0_champion (0.89 ROC-AUC)
+Parent: gen7a (0.8897 ROC-AUC)
 
-Mutation: Hyperparameter tuning - adjust ensemble weights
-- Original: [0.28, 0.28, 0.28, 0.16] for RF, XGB, ET, SVM
-- New: [0.25, 0.35, 0.22, 0.18] for RF, XGB, ET, SVM
-- Increase XGBoost weight (strong on tabular data)
-- Slightly increase SVM weight (kernel-based diversity)
-- Reduce ET weight (often redundant with RF)
+Mutation: Tune ExtraTrees hyperparameters
+- Increase max_depth from 5 to 7 (capture more complex patterns)
+- Increase n_estimators from 80 to 100 (more averaging, better stability)
+- Adjust weights to give ET slightly more influence: [0.26, 0.27, 0.28, 0.19]
 
-Hypothesis: XGBoost typically excels on structured tabular data
-with proper hyperparameters. Giving it more weight while maintaining
-model diversity may improve ensemble accuracy.
+Hypothesis: ExtraTrees with deeper trees can capture more complex
+molecular structure interactions. The extra randomization in ET
+makes it more resistant to overfitting even with deeper trees,
+potentially improving generalization on hERG toxicity prediction.
 """
 
 import numpy as np
@@ -31,7 +30,7 @@ from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSke
 
 
 class HERGPredictor:
-    """4-model ensemble with optimized weights for hERG toxicity."""
+    """4-model ensemble with tuned ExtraTrees for hERG toxicity."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
@@ -66,9 +65,12 @@ class HERGPredictor:
                 random_state=random_state
             )
 
+        # MUTATION: Tuned ExtraTrees hyperparameters
+        # - max_depth: 5 -> 7 (capture more complex patterns)
+        # - n_estimators: 80 -> 100 (more trees for stability)
         self.et = ExtraTreesClassifier(
-            n_estimators=80,
-            max_depth=5,
+            n_estimators=100,
+            max_depth=7,
             min_samples_split=10,
             min_samples_leaf=5,
             class_weight='balanced',
@@ -76,20 +78,20 @@ class HERGPredictor:
             n_jobs=1
         )
 
-        # Add SVM with RBF kernel
+        # Keep tuned SVM from parent
         self.svm = SVC(
-            C=1.0,
+            C=2.5,
             kernel='rbf',
-            gamma='scale',
+            gamma='auto',
             class_weight='balanced',
             probability=True,
             random_state=random_state
         )
 
-        # MUTATION: Optimized 4-model weights
-        # Original: [0.28, 0.28, 0.28, 0.16]
-        # New: Boost XGBoost, slightly increase SVM, reduce ET
-        self.weights = [0.25, 0.35, 0.22, 0.18]
+        # MUTATION: Adjusted weights to give ET slightly more influence
+        # Parent: [0.27, 0.27, 0.26, 0.20]
+        # New: [0.26, 0.27, 0.28, 0.19]
+        self.weights = [0.26, 0.27, 0.28, 0.19]
 
         self.scaler = RobustScaler()
         self._feature_names = None

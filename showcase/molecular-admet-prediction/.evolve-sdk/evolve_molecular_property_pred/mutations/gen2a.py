@@ -1,18 +1,17 @@
 """
-Gen1a: Optimized Ensemble Weights
+Gen2a: Rebalanced Ensemble Weights
 
 Parent: gen0_champion (0.89 ROC-AUC)
 
-Mutation: Hyperparameter tuning - adjust ensemble weights
-- Original: [0.28, 0.28, 0.28, 0.16] for RF, XGB, ET, SVM
-- New: [0.25, 0.35, 0.22, 0.18] for RF, XGB, ET, SVM
-- Increase XGBoost weight (strong on tabular data)
-- Slightly increase SVM weight (kernel-based diversity)
-- Reduce ET weight (often redundant with RF)
+Mutation: Hyperparameter tuning - Rebalance ensemble weights
+- Increase XGBoost weight (often best performer)
+- Increase SVM weight (adds diversity)
+- Reduce ExtraTrees weight (often overlaps with RF)
+- New weights: [0.25, 0.35, 0.18, 0.22] (RF, XGB, ET, SVM)
 
-Hypothesis: XGBoost typically excels on structured tabular data
-with proper hyperparameters. Giving it more weight while maintaining
-model diversity may improve ensemble accuracy.
+Hypothesis: XGBoost typically captures complex nonlinear patterns better.
+Increasing its weight while reducing the redundant ExtraTrees may improve
+overall prediction quality.
 """
 
 import numpy as np
@@ -31,7 +30,7 @@ from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSke
 
 
 class HERGPredictor:
-    """4-model ensemble with optimized weights for hERG toxicity."""
+    """4-model ensemble with rebalanced weights for hERG toxicity."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
@@ -86,10 +85,10 @@ class HERGPredictor:
             random_state=random_state
         )
 
-        # MUTATION: Optimized 4-model weights
+        # MUTATION: Rebalanced weights - boost XGB and SVM, reduce ET
         # Original: [0.28, 0.28, 0.28, 0.16]
-        # New: Boost XGBoost, slightly increase SVM, reduce ET
-        self.weights = [0.25, 0.35, 0.22, 0.18]
+        # New:      [0.25, 0.35, 0.18, 0.22]
+        self.weights = [0.25, 0.35, 0.18, 0.22]
 
         self.scaler = RobustScaler()
         self._feature_names = None

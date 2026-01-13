@@ -1,18 +1,20 @@
 """
-Gen1a: Optimized Ensemble Weights
+Gen9x: Crossover Hybrid - XGBoost-Focused with Tuned SVM
 
-Parent: gen0_champion (0.89 ROC-AUC)
+Parents:
+- gen0_champion (0.89): Base 4-model ensemble architecture
+- gen1a (0.8899): Optimized weights boosting XGBoost [0.25, 0.35, 0.22, 0.18]
+- gen7a (0.8897): Tuned SVM (C=2.5, gamma='auto')
 
-Mutation: Hyperparameter tuning - adjust ensemble weights
-- Original: [0.28, 0.28, 0.28, 0.16] for RF, XGB, ET, SVM
-- New: [0.25, 0.35, 0.22, 0.18] for RF, XGB, ET, SVM
-- Increase XGBoost weight (strong on tabular data)
-- Slightly increase SVM weight (kernel-based diversity)
-- Reduce ET weight (often redundant with RF)
+Crossover Strategy:
+- From gen1a: High XGBoost weight (0.35) - best for tabular molecular data
+- From gen7a: Tuned SVM C=2.5 (tighter decision boundary)
+- Blended: Use gamma='scale' (more stable than 'auto' for varied features)
+- Hybrid weights: [0.24, 0.36, 0.22, 0.18] - slightly more XGB focus
 
-Hypothesis: XGBoost typically excels on structured tabular data
-with proper hyperparameters. Giving it more weight while maintaining
-model diversity may improve ensemble accuracy.
+Hypothesis: Combining gen1a's XGBoost-focused weighting with gen7a's
+tuned SVM may capture the best of both - strong tabular performance
+from XGBoost with improved kernel-based diversity from the tuned SVM.
 """
 
 import numpy as np
@@ -31,11 +33,12 @@ from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSke
 
 
 class HERGPredictor:
-    """4-model ensemble with optimized weights for hERG toxicity."""
+    """Crossover hybrid: XGBoost-focused ensemble with tuned SVM for hERG toxicity."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
 
+        # From gen0_champion: Base RF configuration
         self.rf = RandomForestClassifier(
             n_estimators=80,
             max_depth=6,
@@ -47,6 +50,7 @@ class HERGPredictor:
             n_jobs=1
         )
 
+        # From gen0_champion: XGBoost configuration
         if HAS_XGBOOST:
             self.xgb = xgb.XGBClassifier(
                 n_estimators=80,
@@ -66,6 +70,7 @@ class HERGPredictor:
                 random_state=random_state
             )
 
+        # From gen0_champion: Extra Trees configuration
         self.et = ExtraTreesClassifier(
             n_estimators=80,
             max_depth=5,
@@ -76,9 +81,11 @@ class HERGPredictor:
             n_jobs=1
         )
 
-        # Add SVM with RBF kernel
+        # CROSSOVER: SVM from gen7a (C=2.5) with gamma='scale' from gen0_champion
+        # - C=2.5 from gen7a: less regularization for tighter decision boundary
+        # - gamma='scale' from gen0_champion: more stable across feature dimensions
         self.svm = SVC(
-            C=1.0,
+            C=2.5,
             kernel='rbf',
             gamma='scale',
             class_weight='balanced',
@@ -86,10 +93,11 @@ class HERGPredictor:
             random_state=random_state
         )
 
-        # MUTATION: Optimized 4-model weights
-        # Original: [0.28, 0.28, 0.28, 0.16]
-        # New: Boost XGBoost, slightly increase SVM, reduce ET
-        self.weights = [0.25, 0.35, 0.22, 0.18]
+        # CROSSOVER: Hybrid weights combining gen1a and gen7a insights
+        # gen1a: [0.25, 0.35, 0.22, 0.18] - boost XGBoost
+        # gen7a: [0.27, 0.27, 0.26, 0.20] - boost SVM
+        # Hybrid: [0.24, 0.36, 0.22, 0.18] - max XGBoost focus with gen1a SVM weight
+        self.weights = [0.24, 0.36, 0.22, 0.18]
 
         self.scaler = RobustScaler()
         self._feature_names = None

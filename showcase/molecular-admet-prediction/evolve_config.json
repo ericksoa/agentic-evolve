@@ -4,7 +4,7 @@
   "problem": {
     "goal": "Maximize ROC-AUC for predicting hERG channel inhibition (cardiac toxicity) from molecular structure",
     "metric": "roc_auc",
-    "current_best": 0.881,
+    "current_best": 0.890,
     "target": 0.92,
     "constraints": [
       "Must use only molecular structure as input (SMILES)",
@@ -26,15 +26,11 @@
     }
   },
   "starter_solutions": [
-    "gen6b_champion.py",
-    "dual_ensemble.py",
-    "evolved_ensemble.py",
-    "triple_ensemble_svm.py",
-    "hybrid_fp_maccs.py",
-    "hybrid_fp_desc_light.py",
-    "meta_ensemble.py",
-    "baseline_fingerprint.py",
-    "baseline_descriptors.py"
+    "gen12c.py",
+    "gen_pharma_3d.py",
+    "gen_cached_3d.py",
+    "gen9b.py",
+    "gen6b_champion.py"
   ],
   "solution_format": {
     "type": "python",
@@ -54,8 +50,11 @@
     ]
   },
   "optimization_strategies": [
+    "3D FEATURES NOW AVAILABLE: Use pre-cached 3D pharmacophore features from data/embeddings/",
+    "3D PHARMACOPHORE CRITICAL: N-aromatic distances rank #1-2 in feature importance for hERG",
+    "CRITICAL INSIGHT: Compact fingerprints (512 bits) OUTPERFORM larger (1024/2048 bits) on small datasets - reduces noise",
+    "CURRENT BEST (gen12c): 512-bit Morgan + MACCS + 25 descriptors, 4-model ensemble achieves 0.890 ROC-AUC",
     "CRITICAL INSIGHT: Extreme regularization (shallow trees depth 3-6, few estimators 80-100) works BEST on this small dataset",
-    "PROVEN BEST: Triple ensemble RF+XGB+ET with weights ~[0.42, 0.33, 0.25] achieves 0.881 ROC-AUC",
     "Use extended Morgan (radius=3, 1024 bits) + MACCS (167 bits) + 25 molecular descriptors",
     "CRITICAL: The best approach combines Morgan fingerprints (2048 bits) + molecular descriptors in the SAME model",
     "Use hybrid feature concatenation: np.concatenate([morgan_fp_array, descriptor_array])",
@@ -85,10 +84,14 @@
       "Descriptors.NumRotatableBonds(mol)",
       "rdMolDescriptors.CalcFractionCSP3(mol)"
     ],
+    "3d_features_available": [
+      "Pre-computed 3D features in data/embeddings/*.npz (cached)",
+      "Import from conformer_gen: get_all_3d_features(), get_3d_feature_names()",
+      "Key pharmacophore: N-aromatic distances, aromatic-aromatic distances",
+      "Shape: PMI, asphericity, eccentricity, radius of gyration"
+    ],
     "avoid": [
-      "CalcPBF (needs 3D conformers)",
-      "GetConformer (we don't generate 3D)",
-      "EmbedMolecule (slow, not needed)"
+      "EmbedMolecule without caching (slow)"
     ]
   },
   "resource_constraints": {

@@ -1,18 +1,25 @@
 """
-Gen1a: Optimized Ensemble Weights
+Gen5x: Multi-Parent Crossover - Enhanced Ensemble with Optimized Model Diversity
 
-Parent: gen0_champion (0.89 ROC-AUC)
+Parents:
+- gen0_champion (0.89 ROC-AUC): Robust 4-model ensemble architecture with SVM
+- gen1a (0.8899 ROC-AUC): XGBoost-favoring weights (0.35 for XGB)
+- gen2x (0.8897 ROC-AUC): Blended weights and tuned SVM C=0.8
 
-Mutation: Hyperparameter tuning - adjust ensemble weights
-- Original: [0.28, 0.28, 0.28, 0.16] for RF, XGB, ET, SVM
-- New: [0.25, 0.35, 0.22, 0.18] for RF, XGB, ET, SVM
-- Increase XGBoost weight (strong on tabular data)
-- Slightly increase SVM weight (kernel-based diversity)
-- Reduce ET weight (often redundant with RF)
+Crossover Strategy:
+1. From gen0_champion: Keep the proven 4-model ensemble architecture (RF, XGB, ET, SVM)
+2. From gen1a: XGBoost gets highest weight (proven effective on tabular data)
+3. From gen2x: SVM C parameter tuning concept (but adjusted)
+4. NEW INNOVATIONS:
+   - Refined weights: [0.24, 0.36, 0.24, 0.16] - further boost XGB based on gen1a success
+   - Increased n_estimators to 100 for RF/ET for better stability
+   - SVM with C=1.2 (slightly harder margin for potential better discrimination)
+   - XGBoost with slightly higher learning rate (0.04) to capture patterns faster
+   - Balanced RF/ET weights (both at 0.24) for symmetry
 
-Hypothesis: XGBoost typically excels on structured tabular data
-with proper hyperparameters. Giving it more weight while maintaining
-model diversity may improve ensemble accuracy.
+Hypothesis: The XGBoost emphasis from gen1a works well. Combining it with
+more estimators for stability and a harder SVM margin may improve
+discrimination while maintaining generalization.
 """
 
 import numpy as np
@@ -31,13 +38,14 @@ from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSke
 
 
 class HERGPredictor:
-    """4-model ensemble with optimized weights for hERG toxicity."""
+    """4-model ensemble with multi-parent crossover optimizations for hERG toxicity."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
 
+        # From gen0_champion: RF architecture with increased estimators for stability
         self.rf = RandomForestClassifier(
-            n_estimators=80,
+            n_estimators=100,  # CROSSOVER: Increased from 80 for better stability
             max_depth=6,
             min_samples_split=10,
             min_samples_leaf=5,
@@ -47,11 +55,12 @@ class HERGPredictor:
             n_jobs=1
         )
 
+        # From gen0_champion + gen1a: XGBoost with slightly tuned learning rate
         if HAS_XGBOOST:
             self.xgb = xgb.XGBClassifier(
-                n_estimators=80,
+                n_estimators=100,  # CROSSOVER: Increased from 80
                 max_depth=3,
-                learning_rate=0.03,
+                learning_rate=0.04,  # CROSSOVER: Slightly higher from 0.03
                 subsample=0.65,
                 colsample_bytree=0.5,
                 reg_alpha=0.4,
@@ -62,12 +71,13 @@ class HERGPredictor:
             )
         else:
             self.xgb = GradientBoostingClassifier(
-                n_estimators=80, max_depth=3, learning_rate=0.03,
+                n_estimators=100, max_depth=3, learning_rate=0.04,
                 random_state=random_state
             )
 
+        # From gen0_champion: ExtraTrees with increased estimators
         self.et = ExtraTreesClassifier(
-            n_estimators=80,
+            n_estimators=100,  # CROSSOVER: Increased from 80
             max_depth=5,
             min_samples_split=10,
             min_samples_leaf=5,
@@ -76,9 +86,10 @@ class HERGPredictor:
             n_jobs=1
         )
 
-        # Add SVM with RBF kernel
+        # CROSSOVER: SVM with C=1.2 (between gen0_champion C=1.0 and exploring harder margin)
+        # Hypothesis: slightly harder margin may improve discrimination on hERG
         self.svm = SVC(
-            C=1.0,
+            C=1.2,
             kernel='rbf',
             gamma='scale',
             class_weight='balanced',
@@ -86,10 +97,12 @@ class HERGPredictor:
             random_state=random_state
         )
 
-        # MUTATION: Optimized 4-model weights
-        # Original: [0.28, 0.28, 0.28, 0.16]
-        # New: Boost XGBoost, slightly increase SVM, reduce ET
-        self.weights = [0.25, 0.35, 0.22, 0.18]
+        # CROSSOVER: Refined weight strategy combining insights from all parents
+        # gen0_champion: [0.28, 0.28, 0.28, 0.16] - equal tree weights
+        # gen1a:         [0.25, 0.35, 0.22, 0.18] - XGB emphasis (best performing)
+        # gen2x:         [0.26, 0.33, 0.25, 0.16] - blended approach
+        # gen5x:         [0.24, 0.36, 0.24, 0.16] - maximize XGB, balance RF/ET
+        self.weights = [0.24, 0.36, 0.24, 0.16]
 
         self.scaler = RobustScaler()
         self._feature_names = None

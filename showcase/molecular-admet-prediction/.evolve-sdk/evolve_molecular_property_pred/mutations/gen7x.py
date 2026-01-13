@@ -1,18 +1,25 @@
 """
-Gen1a: Optimized Ensemble Weights
+Gen7x: Advanced Crossover Hybrid - Refined Ensemble with Enhanced Model Tuning
 
-Parent: gen0_champion (0.89 ROC-AUC)
+Parents:
+- gen0_champion (0.89 ROC-AUC): Original 4-model ensemble with SVM diversity
+- gen1a (0.8899 ROC-AUC): Optimized weights favoring XGBoost
+- gen2x (0.8896 ROC-AUC): Blended weights with tuned SVM C parameter
 
-Mutation: Hyperparameter tuning - adjust ensemble weights
-- Original: [0.28, 0.28, 0.28, 0.16] for RF, XGB, ET, SVM
-- New: [0.25, 0.35, 0.22, 0.18] for RF, XGB, ET, SVM
-- Increase XGBoost weight (strong on tabular data)
-- Slightly increase SVM weight (kernel-based diversity)
-- Reduce ET weight (often redundant with RF)
+Crossover Strategy:
+1. From gen0_champion: Robust 4-model ensemble architecture and feature engineering
+2. From gen1a: XGBoost emphasis (strong on tabular molecular data)
+3. From gen2x: Parameter tuning philosophy for SVM
+4. NEW: Enhanced XGBoost with more estimators (100 vs 80) for better ensemble
+5. NEW: Refined weight blend [0.27, 0.34, 0.23, 0.16] balancing all insights
+   - XGBoost gets highest weight (gen1a insight confirmed)
+   - RF slightly higher than gen2x (stability matters)
+   - ET reduced (redundancy with RF)
+   - SVM kept conservative (kernel diversity without overfitting)
+6. NEW: SVM gamma='auto' for potentially better scaling on fingerprint-heavy features
 
-Hypothesis: XGBoost typically excels on structured tabular data
-with proper hyperparameters. Giving it more weight while maintaining
-model diversity may improve ensemble accuracy.
+Hypothesis: Combining stronger XGBoost (more trees), refined weights from all parents,
+and auto-scaled SVM gamma may achieve better balance between model diversity and accuracy.
 """
 
 import numpy as np
@@ -31,11 +38,12 @@ from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSke
 
 
 class HERGPredictor:
-    """4-model ensemble with optimized weights for hERG toxicity."""
+    """4-model ensemble with advanced crossover-optimized params for hERG toxicity."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
 
+        # From gen0_champion: RF with proven hyperparameters
         self.rf = RandomForestClassifier(
             n_estimators=80,
             max_depth=6,
@@ -47,9 +55,11 @@ class HERGPredictor:
             n_jobs=1
         )
 
+        # CROSSOVER: XGBoost with MORE estimators (100 vs 80) for stronger ensemble
+        # Keeps regularization from gen0_champion, learning rate from all parents
         if HAS_XGBOOST:
             self.xgb = xgb.XGBClassifier(
-                n_estimators=80,
+                n_estimators=100,  # Increased from 80
                 max_depth=3,
                 learning_rate=0.03,
                 subsample=0.65,
@@ -62,10 +72,11 @@ class HERGPredictor:
             )
         else:
             self.xgb = GradientBoostingClassifier(
-                n_estimators=80, max_depth=3, learning_rate=0.03,
+                n_estimators=100, max_depth=3, learning_rate=0.03,
                 random_state=random_state
             )
 
+        # From gen0_champion: ExtraTrees configuration (proven stable)
         self.et = ExtraTreesClassifier(
             n_estimators=80,
             max_depth=5,
@@ -76,27 +87,36 @@ class HERGPredictor:
             n_jobs=1
         )
 
-        # Add SVM with RBF kernel
+        # CROSSOVER: SVM with hybrid tuning from gen2x + gamma exploration
+        # C=0.9 (between gen0_champion's 1.0 and gen2x's 0.8)
+        # gamma='auto' may scale better with fingerprint-heavy features (704 bits)
         self.svm = SVC(
-            C=1.0,
+            C=0.9,
             kernel='rbf',
-            gamma='scale',
+            gamma='auto',  # Changed from 'scale' - 1/n_features may work better
             class_weight='balanced',
             probability=True,
             random_state=random_state
         )
 
-        # MUTATION: Optimized 4-model weights
-        # Original: [0.28, 0.28, 0.28, 0.16]
-        # New: Boost XGBoost, slightly increase SVM, reduce ET
-        self.weights = [0.25, 0.35, 0.22, 0.18]
+        # CROSSOVER: Refined weight blend from all three parents
+        # gen0_champion: [0.28, 0.28, 0.28, 0.16]
+        # gen1a:        [0.25, 0.35, 0.22, 0.18]
+        # gen2x:        [0.26, 0.33, 0.25, 0.16]
+        # gen7x:        [0.27, 0.34, 0.23, 0.16]
+        # Rationale:
+        # - XGBoost at 0.34 (strong performer on tabular, confirmed by gen1a)
+        # - RF at 0.27 (slight increase from gen2x for stability)
+        # - ET at 0.23 (reduced, often redundant with RF)
+        # - SVM at 0.16 (conservative, provides kernel diversity)
+        self.weights = [0.27, 0.34, 0.23, 0.16]
 
         self.scaler = RobustScaler()
         self._feature_names = None
         self._feature_importances = None
 
     def _calculate_features(self, smiles_list):
-        """Calculate compact fingerprints + hERG descriptors."""
+        """Calculate compact fingerprints + hERG descriptors (from gen0_champion)."""
         all_features = []
 
         for smi in smiles_list:

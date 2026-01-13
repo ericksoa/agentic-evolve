@@ -1,18 +1,16 @@
 """
-Gen1a: Optimized Ensemble Weights
+Gen7a: SVM Hyperparameter Tuning
 
 Parent: gen0_champion (0.89 ROC-AUC)
 
-Mutation: Hyperparameter tuning - adjust ensemble weights
-- Original: [0.28, 0.28, 0.28, 0.16] for RF, XGB, ET, SVM
-- New: [0.25, 0.35, 0.22, 0.18] for RF, XGB, ET, SVM
-- Increase XGBoost weight (strong on tabular data)
-- Slightly increase SVM weight (kernel-based diversity)
-- Reduce ET weight (often redundant with RF)
+Mutation: Tune SVM hyperparameters
+- Increase C from 1.0 to 2.5 (less regularization, tighter fit)
+- Change gamma from 'scale' to 'auto' (may capture different patterns)
+- Give SVM slightly higher weight (0.16 -> 0.20)
 
-Hypothesis: XGBoost typically excels on structured tabular data
-with proper hyperparameters. Giving it more weight while maintaining
-model diversity may improve ensemble accuracy.
+Hypothesis: The SVM with adjusted hyperparameters may better
+capture the kernel-based patterns in molecular structures,
+improving ensemble diversity and overall performance.
 """
 
 import numpy as np
@@ -31,7 +29,7 @@ from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSke
 
 
 class HERGPredictor:
-    """4-model ensemble with optimized weights for hERG toxicity."""
+    """4-model ensemble with tuned SVM for hERG toxicity."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
@@ -76,20 +74,22 @@ class HERGPredictor:
             n_jobs=1
         )
 
-        # Add SVM with RBF kernel
+        # MUTATION: Tuned SVM hyperparameters
+        # - C: 1.0 -> 2.5 (less regularization for tighter decision boundary)
+        # - gamma: 'scale' -> 'auto' (1/n_features, may capture different patterns)
         self.svm = SVC(
-            C=1.0,
+            C=2.5,
             kernel='rbf',
-            gamma='scale',
+            gamma='auto',
             class_weight='balanced',
             probability=True,
             random_state=random_state
         )
 
-        # MUTATION: Optimized 4-model weights
+        # MUTATION: Adjusted weights to give SVM slightly more influence
         # Original: [0.28, 0.28, 0.28, 0.16]
-        # New: Boost XGBoost, slightly increase SVM, reduce ET
-        self.weights = [0.25, 0.35, 0.22, 0.18]
+        # New: [0.27, 0.27, 0.26, 0.20]
+        self.weights = [0.27, 0.27, 0.26, 0.20]
 
         self.scaler = RobustScaler()
         self._feature_names = None

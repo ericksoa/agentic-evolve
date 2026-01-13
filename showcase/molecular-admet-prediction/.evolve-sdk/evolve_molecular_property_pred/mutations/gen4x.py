@@ -1,194 +1,244 @@
 """
-Generation 4 Crossover: Enhanced Random Forest with Multi-Scale Features
-Approach: Hybrid combining best aspects of gen1a (high fitness) with gen0_d innovations
-Strategy: RF architecture + multi-fingerprint fusion + curated descriptor set + robust preprocessing
+Gen4x: Advanced Crossover Hybrid with Adaptive Ensemble
+
+Parents:
+- gen0_champion (0.89 ROC-AUC): 4-model ensemble with SVM diversity, C=1.0
+- gen1a (0.8899 ROC-AUC): Optimized weights emphasizing XGBoost
+- gen2x (0.8896 ROC-AUC): Blended weights and softer SVM margins
+
+Crossover Strategy:
+1. From gen0_champion: Keep SVM C=1.0 (best fitness had this)
+2. From gen1a: XGBoost emphasis (performs well on tabular molecular data)
+3. From gen2x: Balanced tree ensemble approach
+4. NEW: Add AdaBoost as 5th model for additional ensemble diversity
+5. NEW: Slightly increased n_estimators for all models (100 vs 80)
+6. NEW: Refined weight distribution [0.22, 0.30, 0.22, 0.14, 0.12]
+   - XGBoost highest (from gen1a insight)
+   - RF and ET equal (diversity matters more than redundancy)
+   - SVM and AdaBoost provide decision boundary diversity
+
+Hypothesis: Adding a 5th model (AdaBoost) with boosting on weak learners
+provides orthogonal diversity to the existing ensemble. Combined with
+slightly more estimators and refined weights from successful parents,
+this should improve generalization.
 """
 
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import StandardScaler
-from sklearn.impute import SimpleImputer
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, AdaBoostClassifier
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+try:
+    import xgboost as xgb
+    HAS_XGBOOST = True
+except ImportError:
+    from sklearn.ensemble import GradientBoostingClassifier
+    HAS_XGBOOST = False
+from sklearn.preprocessing import RobustScaler
+from sklearn.utils.class_weight import compute_class_weight
 from rdkit import Chem
-from rdkit.Chem import AllChem, Descriptors, rdMolDescriptors
-import warnings
-warnings.filterwarnings('ignore')
+from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSkeys
 
 
 class HERGPredictor:
-    """
-    Hybrid Random Forest predictor with multi-scale feature representation.
-
-    Combines:
-    - gen1a: Proven RF architecture + focused molecular descriptors (fitness 0.73)
-    - gen0_d: Multi-fingerprint approach (Morgan+MACCS) + hERG-specific descriptors
-    - Enhanced preprocessing for robustness
-    """
+    """5-model ensemble with AdaBoost diversity for hERG toxicity prediction."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
 
-        # Fingerprint parameters (optimized balance from parents)
-        self.morgan_radius = 2
-        self.morgan_bits = 1024  # Reduced from gen0_d for efficiency
-
-        # RF architecture from best parent (gen1a) with minor enhancements
-        self.model = RandomForestClassifier(
-            n_estimators=150,  # Increased from gen1a for better ensemble
-            max_depth=12,      # Slightly increased for more complex features
-            min_samples_split=5,
-            min_samples_leaf=2,
+        # From gen0_champion: RF with slightly increased estimators
+        self.rf = RandomForestClassifier(
+            n_estimators=100,  # Increased from 80
+            max_depth=6,
+            min_samples_split=10,
+            min_samples_leaf=5,
+            max_features='sqrt',
             class_weight='balanced',
             random_state=random_state,
             n_jobs=1
         )
 
-        # Preprocessing from gen0_d for robustness
-        self.scaler = StandardScaler()
-        self.imputer = SimpleImputer(strategy='median')
+        # From gen0_champion: XGBoost with regularization
+        if HAS_XGBOOST:
+            self.xgb = xgb.XGBClassifier(
+                n_estimators=100,  # Increased from 80
+                max_depth=3,
+                learning_rate=0.03,
+                subsample=0.65,
+                colsample_bytree=0.5,
+                reg_alpha=0.4,
+                reg_lambda=0.5,
+                random_state=random_state,
+                eval_metric='logloss',
+                n_jobs=1
+            )
+        else:
+            self.xgb = GradientBoostingClassifier(
+                n_estimators=100, max_depth=3, learning_rate=0.03,
+                random_state=random_state
+            )
 
-    def _morgan_fingerprint(self, mol):
-        """Generate Morgan fingerprint (from both parents)."""
-        if mol is None:
-            return np.zeros(self.morgan_bits)
-        try:
-            fp = AllChem.GetMorganFingerprintAsBitVect(mol, self.morgan_radius, nBits=self.morgan_bits)
-            return np.array(fp)
-        except:
-            return np.zeros(self.morgan_bits)
+        # From gen0_champion: ExtraTrees with increased estimators
+        self.et = ExtraTreesClassifier(
+            n_estimators=100,  # Increased from 80
+            max_depth=5,
+            min_samples_split=10,
+            min_samples_leaf=5,
+            class_weight='balanced',
+            random_state=random_state,
+            n_jobs=1
+        )
 
-    def _maccs_fingerprint(self, mol):
-        """Generate MACCS keys (from gen0_d)."""
-        if mol is None:
-            return np.zeros(167)
-        try:
-            from rdkit.Chem import MACCSkeys
-            fp = MACCSkeys.GenMACCSKeys(mol)
-            return np.array(fp)
-        except:
-            return np.zeros(167)
+        # From gen0_champion: SVM with C=1.0 (best parent used this)
+        self.svm = SVC(
+            C=1.0,  # Keep from gen0_champion (best fitness)
+            kernel='rbf',
+            gamma='scale',
+            class_weight='balanced',
+            probability=True,
+            random_state=random_state
+        )
 
-    def _enhanced_descriptors(self, mol):
-        """
-        Curated descriptor set combining best from both parents.
-        - gen1a: Core ADMET descriptors (8 features)
-        - gen0_d: hERG-specific pharmacophore features
-        """
-        if mol is None:
-            return [np.nan] * 15
+        # NEW: AdaBoost for additional ensemble diversity
+        # Uses weak decision stumps boosted iteratively
+        self.ada = AdaBoostClassifier(
+            estimator=DecisionTreeClassifier(max_depth=2),
+            n_estimators=80,
+            learning_rate=0.05,
+            random_state=random_state,
+            algorithm='SAMME'
+        )
 
-        try:
-            descriptors = [
-                # Core descriptors from gen1a (proven effective)
-                Descriptors.MolWt(mol),                    # Molecular weight
-                Descriptors.MolLogP(mol),                  # LogP
-                Descriptors.TPSA(mol),                     # Topological polar surface area
-                Descriptors.NumHDonors(mol),               # H-bond donors
-                Descriptors.NumHAcceptors(mol),            # H-bond acceptors
-                Descriptors.NumRotatableBonds(mol),        # Rotatable bonds
-                rdMolDescriptors.CalcNumAromaticRings(mol), # Aromatic rings
-                rdMolDescriptors.CalcNumAliphaticRings(mol), # Aliphatic rings
+        # CROSSOVER: 5-model weights combining insights from all parents
+        # gen0_champion: [0.28, 0.28, 0.28, 0.16] - equal tree weights
+        # gen1a:        [0.25, 0.35, 0.22, 0.18] - XGB emphasis
+        # gen2x:        [0.26, 0.33, 0.25, 0.16] - blended
+        # Hybrid:       [0.22, 0.30, 0.22, 0.14, 0.12] - 5 models
+        # - XGBoost highest (gen1a insight: good on tabular data)
+        # - RF and ET equal (ensemble diversity)
+        # - SVM provides kernel-based boundary
+        # - AdaBoost adds boosting diversity
+        self.weights = [0.22, 0.30, 0.22, 0.14, 0.12]
 
-                # hERG-specific features from gen0_d (pharmacophore relevance)
-                Descriptors.fr_NH0(mol),        # Tertiary amines (hERG binding)
-                Descriptors.fr_NH1(mol),        # Secondary amines
-                Descriptors.fr_NH2(mol),        # Primary amines
-                Descriptors.fr_piperdine(mol),  # Piperidine (key hERG pharmacophore)
-                Descriptors.fr_piperzine(mol),  # Piperazine (key hERG pharmacophore)
+        self.scaler = RobustScaler()
+        self._feature_names = None
+        self._feature_importances = None
 
-                # Additional structural complexity features
-                rdMolDescriptors.BertzCT(mol),   # Molecular complexity
-                Descriptors.NumHeterocycles(mol) # Heterocycle count
-            ]
-            return descriptors
-        except:
-            return [np.nan] * 15
-
-    def _extract_hybrid_features(self, smiles_list):
-        """
-        Extract hybrid feature set combining strengths from all parents.
-        Features: Morgan + MACCS + Enhanced descriptors
-        """
+    def _calculate_features(self, smiles_list):
+        """Calculate compact fingerprints + hERG descriptors."""
         all_features = []
 
         for smi in smiles_list:
             mol = Chem.MolFromSmiles(smi)
+            if mol is None:
+                features = np.zeros(512 + 167 + 25)
+            else:
+                morgan_fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=3, nBits=512)
+                morgan_bits = np.array(morgan_fp)
 
-            # Multi-fingerprint approach (gen0_d innovation)
-            morgan_fp = self._morgan_fingerprint(mol)
-            maccs_fp = self._maccs_fingerprint(mol)
+                maccs = MACCSkeys.GenMACCSKeys(mol)
+                maccs_bits = np.array(maccs)
 
-            # Enhanced descriptors (gen1a + gen0_d best features)
-            descriptors = self._enhanced_descriptors(mol)
+                mol_h = Chem.AddHs(mol)
+                logP = Descriptors.MolLogP(mol)
+                mw = Descriptors.MolWt(mol)
+                tpsa = rdMolDescriptors.CalcTPSA(mol)
 
-            # Combine all features
-            combined = np.concatenate([
-                morgan_fp,      # 1024 features
-                maccs_fp,       # 167 features
-                descriptors     # 15 features
-            ])
+                basic_nitrogens = sum(1 for atom in mol_h.GetAtoms()
+                                      if atom.GetAtomicNum() == 7 and atom.GetFormalCharge() >= 0)
+                aromatic_atoms = sum(1 for atom in mol.GetAtoms() if atom.GetIsAromatic())
+                aromatic_rings = Descriptors.NumAromaticRings(mol)
+                heavy_atoms = Descriptors.HeavyAtomCount(mol)
 
-            all_features.append(combined)
+                descriptors = [
+                    logP, Descriptors.MolMR(mol), logP * mw / 100, mw, heavy_atoms,
+                    tpsa, Descriptors.NumRotatableBonds(mol), rdMolDescriptors.CalcFractionCSP3(mol),
+                    aromatic_atoms, aromatic_rings, aromatic_atoms / max(1, heavy_atoms),
+                    Descriptors.NumAromaticCarbocycles(mol), Descriptors.NumAromaticHeterocycles(mol),
+                    basic_nitrogens, basic_nitrogens * logP, Lipinski.NumHDonors(mol),
+                    Lipinski.NumHAcceptors(mol), Descriptors.NumHeteroatoms(mol),
+                    len([a for a in mol.GetAtoms() if a.GetAtomicNum() in [7, 8, 16]]),
+                    Descriptors.BertzCT(mol), Descriptors.Chi0(mol), Descriptors.Chi1(mol),
+                    Lipinski.RingCount(mol), rdMolDescriptors.CalcNumBridgeheadAtoms(mol),
+                    mw / max(1, Descriptors.NumRotatableBonds(mol) + 1),
+                ]
+
+                features = np.concatenate([morgan_bits, maccs_bits, descriptors])
+            all_features.append(features)
+
+        self._feature_names = (
+            [f'Morgan3_{i}' for i in range(512)] +
+            [f'MACCS_{i}' for i in range(167)] +
+            ['MolLogP', 'MolMR', 'LipophilicEfficiency', 'MolWt', 'HeavyAtomCount',
+             'TPSA', 'NumRotatableBonds', 'FractionCSP3', 'AromaticAtoms',
+             'NumAromaticRings', 'AromaticFraction', 'NumAromaticCarbocycles',
+             'NumAromaticHeterocycles', 'BasicNitrogens', 'LipophilicBasicity',
+             'NumHDonors', 'NumHAcceptors', 'NumHeteroatoms', 'NOSCount',
+             'BertzCT', 'Chi0', 'Chi1', 'RingCount', 'NumBridgeheadAtoms', 'RigidityIndex']
+        )
 
         return np.array(all_features)
 
+    def _preprocess(self, X, fit=False):
+        X = np.array(X, dtype=float)
+        X = np.nan_to_num(X, nan=0.0)
+        if fit:
+            X[:, -25:] = self.scaler.fit_transform(X[:, -25:])
+        else:
+            X[:, -25:] = self.scaler.transform(X[:, -25:])
+        return X
+
     def fit(self, X_smiles, y):
-        """Train with robust preprocessing and proven RF architecture."""
-        X = self._extract_hybrid_features(X_smiles)
+        X = self._calculate_features(X_smiles)
+        X = self._preprocess(X, fit=True)
         y = np.array(y)
 
-        # Robust preprocessing from gen0_d
-        X = self.imputer.fit_transform(X)
-        X = self.scaler.fit_transform(X)
+        self.rf.fit(X, y)
+        self.et.fit(X, y)
+        self.svm.fit(X, y)
+        self.ada.fit(X, y)
 
-        # Train with proven RF approach from gen1a
-        self.model.fit(X, y)
+        if HAS_XGBOOST:
+            class_weights = compute_class_weight('balanced', classes=np.unique(y), y=y)
+            sample_weights = np.array([class_weights[int(label)] for label in y])
+            self.xgb.fit(X, y, sample_weight=sample_weights)
+        else:
+            self.xgb.fit(X, y)
+
+        # Tree models have feature_importances_
+        self._feature_importances = (
+            self.weights[0] * self.rf.feature_importances_ +
+            self.weights[1] * self.xgb.feature_importances_ +
+            self.weights[2] * self.et.feature_importances_ +
+            self.weights[4] * self.ada.feature_importances_
+        ) / (self.weights[0] + self.weights[1] + self.weights[2] + self.weights[4])
+
         return self
 
     def predict_proba(self, X_smiles):
-        """Predict probability of hERG blocking."""
-        X = self._extract_hybrid_features(X_smiles)
-        X = self.imputer.transform(X)
-        X = self.scaler.transform(X)
+        X = self._calculate_features(X_smiles)
+        X = self._preprocess(X, fit=False)
 
-        proba = self.model.predict_proba(X)
-        return proba[:, 1]  # Return probability of positive class
+        proba_rf = self.rf.predict_proba(X)[:, 1]
+        proba_xgb = self.xgb.predict_proba(X)[:, 1]
+        proba_et = self.et.predict_proba(X)[:, 1]
+        proba_svm = self.svm.predict_proba(X)[:, 1]
+        proba_ada = self.ada.predict_proba(X)[:, 1]
+
+        return (self.weights[0] * proba_rf +
+                self.weights[1] * proba_xgb +
+                self.weights[2] * proba_et +
+                self.weights[3] * proba_svm +
+                self.weights[4] * proba_ada)
 
     def predict(self, X_smiles, threshold=0.5):
-        """Predict binary class labels."""
-        proba = self.predict_proba(X_smiles)
-        return (proba >= threshold).astype(int)
+        return (self.predict_proba(X_smiles) >= threshold).astype(int)
 
-    def get_feature_info(self):
-        """Get information about the hybrid feature representation."""
+    def get_feature_importance(self):
+        if self._feature_importances is None or self._feature_names is None:
+            return None
+        importance_dict = dict(zip(self._feature_names, self._feature_importances.tolist()))
+        sorted_importance = sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)
         return {
-            'morgan_bits': self.morgan_bits,
-            'maccs_keys': 167,
-            'descriptors': 15,
-            'total_features': self.morgan_bits + 167 + 15,
-            'parents_combined': ['gen1a_rf_architecture', 'gen0_d_multi_fingerprints', 'gen1a_core_descriptors', 'gen0_d_herg_pharmacophores'],
-            'preprocessing': 'imputation + standardization'
+            'features': [x[0] for x in sorted_importance[:30]],
+            'importances': [x[1] for x in sorted_importance[:30]]
         }
-
-
-if __name__ == '__main__':
-    # Test the hybrid predictor
-    predictor = HERGPredictor()
-
-    # Test molecules including hERG-relevant structures
-    test_smiles = [
-        'CC(=O)OC1=CC=CC=C1C(=O)O',  # Aspirin (baseline)
-        'CN1C=NC2=C1C(=O)N(C(=O)N2C)C',  # Caffeine (baseline)
-        'CCN(CC)CCCC(C)Nc1ccnc2cc(Cl)ccc12',  # Chloroquine (hERG blocker)
-        'CN(C)CCN1c2ccccc2Sc2ccc(C(F)(F)F)cc21',  # Trifluoperazine-like (hERG blocker)
-    ]
-
-    # Training with sufficient data
-    train_smiles = test_smiles * 15
-    train_labels = [0, 0, 1, 1] * 15
-
-    predictor.fit(train_smiles, train_labels)
-    proba = predictor.predict_proba(test_smiles)
-
-    print(f"Generation 4X hybrid test: {proba}")
-    print(f"Feature info: {predictor.get_feature_info()}")
-    print("Hybrid successfully combines RF architecture + multi-fingerprints + enhanced descriptors")

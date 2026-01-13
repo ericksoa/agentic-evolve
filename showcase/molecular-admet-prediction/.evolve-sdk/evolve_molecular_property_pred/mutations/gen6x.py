@@ -1,18 +1,24 @@
 """
-Gen1a: Optimized Ensemble Weights
+Gen6x: Crossover Hybrid - Refined Ensemble Balance
 
-Parent: gen0_champion (0.89 ROC-AUC)
+Parents:
+- gen0_champion (0.89 ROC-AUC): Original 4-model ensemble, balanced weights
+- gen1a (0.8899 ROC-AUC): XGBoost-favoring weight strategy
+- gen2x (0.8897 ROC-AUC): Intermediate weights + softer SVM margin
 
-Mutation: Hyperparameter tuning - adjust ensemble weights
-- Original: [0.28, 0.28, 0.28, 0.16] for RF, XGB, ET, SVM
-- New: [0.25, 0.35, 0.22, 0.18] for RF, XGB, ET, SVM
-- Increase XGBoost weight (strong on tabular data)
-- Slightly increase SVM weight (kernel-based diversity)
-- Reduce ET weight (often redundant with RF)
+Crossover Strategy:
+1. From gen0_champion: Base architecture + near-balanced weight philosophy (best performer)
+2. From gen1a: Slight XGBoost emphasis (it has value, just not as extreme)
+3. From gen2x: Learning from the softer margin experiment (C=0.8 didn't help)
 
-Hypothesis: XGBoost typically excels on structured tabular data
-with proper hyperparameters. Giving it more weight while maintaining
-model diversity may improve ensemble accuracy.
+Key Mutations:
+- Weights: [0.27, 0.31, 0.27, 0.15] - closer to gen0_champion's balance with minimal XGB boost
+- SVM C=1.2 (opposite direction from gen2x - slightly harder margin)
+- Increased n_estimators to 90 for better stability
+- Slightly adjusted XGBoost learning_rate to 0.025 for smoother convergence
+
+Hypothesis: gen0_champion's balanced approach works best. Small, conservative
+adjustments rather than large weight shifts may squeeze out additional performance.
 """
 
 import numpy as np
@@ -31,13 +37,15 @@ from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSke
 
 
 class HERGPredictor:
-    """4-model ensemble with optimized weights for hERG toxicity."""
+    """4-model ensemble with refined balance for hERG toxicity."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
 
+        # From gen0_champion: RF with proven hyperparameters
+        # CROSSOVER: Increased n_estimators to 90 for stability
         self.rf = RandomForestClassifier(
-            n_estimators=80,
+            n_estimators=90,
             max_depth=6,
             min_samples_split=10,
             min_samples_leaf=5,
@@ -47,11 +55,13 @@ class HERGPredictor:
             n_jobs=1
         )
 
+        # From gen0_champion/gen1a: XGBoost with regularization
+        # CROSSOVER: Slight learning_rate reduction (0.025) for smoother convergence
         if HAS_XGBOOST:
             self.xgb = xgb.XGBClassifier(
-                n_estimators=80,
+                n_estimators=90,
                 max_depth=3,
-                learning_rate=0.03,
+                learning_rate=0.025,
                 subsample=0.65,
                 colsample_bytree=0.5,
                 reg_alpha=0.4,
@@ -62,12 +72,14 @@ class HERGPredictor:
             )
         else:
             self.xgb = GradientBoostingClassifier(
-                n_estimators=80, max_depth=3, learning_rate=0.03,
+                n_estimators=90, max_depth=3, learning_rate=0.025,
                 random_state=random_state
             )
 
+        # From gen0_champion: ExtraTrees configuration
+        # CROSSOVER: Increased n_estimators to 90
         self.et = ExtraTreesClassifier(
-            n_estimators=80,
+            n_estimators=90,
             max_depth=5,
             min_samples_split=10,
             min_samples_leaf=5,
@@ -76,9 +88,11 @@ class HERGPredictor:
             n_jobs=1
         )
 
-        # Add SVM with RBF kernel
+        # CROSSOVER: SVM with harder margin (opposite of gen2x's C=0.8)
+        # gen0_champion had C=1.0, gen2x tried C=0.8
+        # Since gen0_champion performed better, try C=1.2 for tighter margin
         self.svm = SVC(
-            C=1.0,
+            C=1.2,
             kernel='rbf',
             gamma='scale',
             class_weight='balanced',
@@ -86,10 +100,16 @@ class HERGPredictor:
             random_state=random_state
         )
 
-        # MUTATION: Optimized 4-model weights
-        # Original: [0.28, 0.28, 0.28, 0.16]
-        # New: Boost XGBoost, slightly increase SVM, reduce ET
-        self.weights = [0.25, 0.35, 0.22, 0.18]
+        # CROSSOVER: Blended weights - conservative shift from gen0_champion
+        # gen0_champion: [0.28, 0.28, 0.28, 0.16] - best fitness
+        # gen1a:        [0.25, 0.35, 0.22, 0.18] - XGB heavy
+        # gen2x:        [0.26, 0.33, 0.25, 0.16] - intermediate
+        #
+        # New strategy: Stay close to gen0_champion's balance with minimal XGB boost
+        # - RF/ET stay equal at 0.27 (close to gen0's 0.28)
+        # - XGB gets small boost to 0.31 (less than gen1a's 0.35)
+        # - SVM slightly reduced to 0.15 (for calibration)
+        self.weights = [0.27, 0.31, 0.27, 0.15]
 
         self.scaler = RobustScaler()
         self._feature_names = None

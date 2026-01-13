@@ -1,123 +1,211 @@
 """
-Generation 3 Variant A: Enhanced Random Forest with Optimized Hyperparameters
-Approach: Hyperparameter tuning - increased ensemble size and depth for better pattern capture
-Strategy: Mutation from Gen1A - boosted n_estimators and max_depth while adjusting regularization
+Gen3a: Rebalanced Ensemble Weights
+
+Parent: gen0_champion (0.89 ROC-AUC)
+
+Mutation: Hyperparameter tuning - Adjust ensemble weights
+- Increase SVM weight from 0.16 to 0.22
+- Rebalance tree models: RF=0.30, XGB=0.26, ET=0.22, SVM=0.22
+- Give RF slightly more weight as forest methods typically excel on fingerprints
+- Reduce ET weight as it may be redundant with RF
+
+Hypothesis: The SVM with RBF kernel captures different decision boundaries
+than tree-based models. Increasing its weight may improve ensemble diversity
+and boost ROC-AUC, especially on borderline cases.
 """
 
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
+from sklearn.svm import SVC
+try:
+    import xgboost as xgb
+    HAS_XGBOOST = True
+except ImportError:
+    from sklearn.ensemble import GradientBoostingClassifier
+    HAS_XGBOOST = False
+from sklearn.preprocessing import RobustScaler
+from sklearn.utils.class_weight import compute_class_weight
 from rdkit import Chem
-from rdkit.Chem import AllChem, Descriptors, rdMolDescriptors
-import warnings
-warnings.filterwarnings('ignore')
+from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSkeys
 
 
 class HERGPredictor:
-    """
-    Enhanced Random Forest predictor with optimized hyperparameters.
-
-    Mutation from Gen1A: Increased n_estimators (100->200), max_depth (10->15),
-    and adjusted min_samples_split for better pattern capture while maintaining
-    the same feature engineering approach.
-    """
+    """4-model ensemble with rebalanced weights for hERG toxicity."""
 
     def __init__(self, random_state=42):
         self.random_state = random_state
-        self.fp_radius = 2
-        self.fp_bits = 2048
 
-        # MUTATED: Enhanced RF parameters for better performance
-        self.model = RandomForestClassifier(
-            n_estimators=200,           # Increased from 100 for more robust ensemble
-            max_depth=15,              # Increased from 10 for deeper trees
-            min_samples_split=3,       # Reduced from 5 for more granular splits
-            min_samples_leaf=2,        # Keep same to prevent overfitting
-            class_weight='balanced',   # Keep balanced for handling imbalanced data
+        self.rf = RandomForestClassifier(
+            n_estimators=80,
+            max_depth=6,
+            min_samples_split=10,
+            min_samples_leaf=5,
+            max_features='sqrt',
+            class_weight='balanced',
             random_state=random_state,
             n_jobs=1
         )
 
-    def _calculate_molecular_descriptors(self, mol):
-        """Calculate key molecular descriptors for ADMET prediction."""
-        if mol is None:
-            return np.zeros(8)  # Return zeros for invalid molecules
+        if HAS_XGBOOST:
+            self.xgb = xgb.XGBClassifier(
+                n_estimators=80,
+                max_depth=3,
+                learning_rate=0.03,
+                subsample=0.65,
+                colsample_bytree=0.5,
+                reg_alpha=0.4,
+                reg_lambda=0.5,
+                random_state=random_state,
+                eval_metric='logloss',
+                n_jobs=1
+            )
+        else:
+            self.xgb = GradientBoostingClassifier(
+                n_estimators=80, max_depth=3, learning_rate=0.03,
+                random_state=random_state
+            )
 
-        try:
-            descriptors = [
-                Descriptors.MolWt(mol),                    # Molecular weight
-                Descriptors.MolLogP(mol),                  # LogP
-                Descriptors.TPSA(mol),                     # Topological polar surface area
-                Descriptors.NumHDonors(mol),               # H-bond donors
-                Descriptors.NumHAcceptors(mol),            # H-bond acceptors
-                Descriptors.NumRotatableBonds(mol),        # Rotatable bonds
-                rdMolDescriptors.CalcNumAromaticRings(mol), # Aromatic rings
-                rdMolDescriptors.CalcNumAliphaticRings(mol) # Aliphatic rings
-            ]
-            return np.array(descriptors)
-        except:
-            return np.zeros(8)
+        self.et = ExtraTreesClassifier(
+            n_estimators=80,
+            max_depth=5,
+            min_samples_split=10,
+            min_samples_leaf=5,
+            class_weight='balanced',
+            random_state=random_state,
+            n_jobs=1
+        )
 
-    def _smiles_to_features(self, smiles_list):
-        """Convert SMILES strings to combined fingerprints + descriptors."""
-        fingerprints = []
-        descriptors = []
+        # Add SVM with RBF kernel
+        self.svm = SVC(
+            C=1.0,
+            kernel='rbf',
+            gamma='scale',
+            class_weight='balanced',
+            probability=True,
+            random_state=random_state
+        )
+
+        # MUTATION: Rebalanced 4-model weights
+        # Previously: [0.28, 0.28, 0.28, 0.16]
+        # Now: RF gets slight boost, SVM gets more influence, ET reduced
+        self.weights = [0.30, 0.26, 0.22, 0.22]
+
+        self.scaler = RobustScaler()
+        self._feature_names = None
+        self._feature_importances = None
+
+    def _calculate_features(self, smiles_list):
+        """Calculate compact fingerprints + hERG descriptors."""
+        all_features = []
 
         for smi in smiles_list:
             mol = Chem.MolFromSmiles(smi)
-
-            # Morgan fingerprint (same as parent)
             if mol is None:
-                fp = np.zeros(self.fp_bits)
+                features = np.zeros(512 + 167 + 25)
             else:
-                fp = AllChem.GetMorganFingerprintAsBitVect(
-                    mol, self.fp_radius, nBits=self.fp_bits
-                )
-                fp = np.array(fp)
-            fingerprints.append(fp)
+                morgan_fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=3, nBits=512)
+                morgan_bits = np.array(morgan_fp)
 
-            # Molecular descriptors (inherited from Gen1A)
-            desc = self._calculate_molecular_descriptors(mol)
-            descriptors.append(desc)
+                maccs = MACCSkeys.GenMACCSKeys(mol)
+                maccs_bits = np.array(maccs)
 
-        # Combine fingerprints and descriptors
-        fingerprints = np.array(fingerprints)
-        descriptors = np.array(descriptors)
+                mol_h = Chem.AddHs(mol)
+                logP = Descriptors.MolLogP(mol)
+                mw = Descriptors.MolWt(mol)
+                tpsa = rdMolDescriptors.CalcTPSA(mol)
 
-        # Concatenate features
-        combined_features = np.hstack([fingerprints, descriptors])
-        return combined_features
+                basic_nitrogens = sum(1 for atom in mol_h.GetAtoms()
+                                      if atom.GetAtomicNum() == 7 and atom.GetFormalCharge() >= 0)
+                aromatic_atoms = sum(1 for atom in mol.GetAtoms() if atom.GetIsAromatic())
+                aromatic_rings = Descriptors.NumAromaticRings(mol)
+                heavy_atoms = Descriptors.HeavyAtomCount(mol)
+
+                descriptors = [
+                    logP, Descriptors.MolMR(mol), logP * mw / 100, mw, heavy_atoms,
+                    tpsa, Descriptors.NumRotatableBonds(mol), rdMolDescriptors.CalcFractionCSP3(mol),
+                    aromatic_atoms, aromatic_rings, aromatic_atoms / max(1, heavy_atoms),
+                    Descriptors.NumAromaticCarbocycles(mol), Descriptors.NumAromaticHeterocycles(mol),
+                    basic_nitrogens, basic_nitrogens * logP, Lipinski.NumHDonors(mol),
+                    Lipinski.NumHAcceptors(mol), Descriptors.NumHeteroatoms(mol),
+                    len([a for a in mol.GetAtoms() if a.GetAtomicNum() in [7, 8, 16]]),
+                    Descriptors.BertzCT(mol), Descriptors.Chi0(mol), Descriptors.Chi1(mol),
+                    Lipinski.RingCount(mol), rdMolDescriptors.CalcNumBridgeheadAtoms(mol),
+                    mw / max(1, Descriptors.NumRotatableBonds(mol) + 1),
+                ]
+
+                features = np.concatenate([morgan_bits, maccs_bits, descriptors])
+            all_features.append(features)
+
+        self._feature_names = (
+            [f'Morgan3_{i}' for i in range(512)] +
+            [f'MACCS_{i}' for i in range(167)] +
+            ['MolLogP', 'MolMR', 'LipophilicEfficiency', 'MolWt', 'HeavyAtomCount',
+             'TPSA', 'NumRotatableBonds', 'FractionCSP3', 'AromaticAtoms',
+             'NumAromaticRings', 'AromaticFraction', 'NumAromaticCarbocycles',
+             'NumAromaticHeterocycles', 'BasicNitrogens', 'LipophilicBasicity',
+             'NumHDonors', 'NumHAcceptors', 'NumHeteroatoms', 'NOSCount',
+             'BertzCT', 'Chi0', 'Chi1', 'RingCount', 'NumBridgeheadAtoms', 'RigidityIndex']
+        )
+
+        return np.array(all_features)
+
+    def _preprocess(self, X, fit=False):
+        X = np.array(X, dtype=float)
+        X = np.nan_to_num(X, nan=0.0)
+        if fit:
+            X[:, -25:] = self.scaler.fit_transform(X[:, -25:])
+        else:
+            X[:, -25:] = self.scaler.transform(X[:, -25:])
+        return X
 
     def fit(self, X_smiles, y):
-        """Train on SMILES strings and binary labels."""
-        X = self._smiles_to_features(X_smiles)
+        X = self._calculate_features(X_smiles)
+        X = self._preprocess(X, fit=True)
         y = np.array(y)
-        self.model.fit(X, y)
+
+        self.rf.fit(X, y)
+        self.et.fit(X, y)
+        self.svm.fit(X, y)
+
+        if HAS_XGBOOST:
+            class_weights = compute_class_weight('balanced', classes=np.unique(y), y=y)
+            sample_weights = np.array([class_weights[int(label)] for label in y])
+            self.xgb.fit(X, y, sample_weight=sample_weights)
+        else:
+            self.xgb.fit(X, y)
+
+        # Only tree models have feature_importances_
+        self._feature_importances = (
+            self.weights[0] * self.rf.feature_importances_ +
+            self.weights[1] * self.xgb.feature_importances_ +
+            self.weights[2] * self.et.feature_importances_
+        ) / (self.weights[0] + self.weights[1] + self.weights[2])
+
         return self
 
     def predict_proba(self, X_smiles):
-        """Predict probability of hERG blocking."""
-        X = self._smiles_to_features(X_smiles)
-        proba = self.model.predict_proba(X)
-        return proba[:, 1]  # Return probability of positive class
+        X = self._calculate_features(X_smiles)
+        X = self._preprocess(X, fit=False)
+
+        proba_rf = self.rf.predict_proba(X)[:, 1]
+        proba_xgb = self.xgb.predict_proba(X)[:, 1]
+        proba_et = self.et.predict_proba(X)[:, 1]
+        proba_svm = self.svm.predict_proba(X)[:, 1]
+
+        return (self.weights[0] * proba_rf +
+                self.weights[1] * proba_xgb +
+                self.weights[2] * proba_et +
+                self.weights[3] * proba_svm)
 
     def predict(self, X_smiles, threshold=0.5):
-        """Predict binary class labels."""
-        proba = self.predict_proba(X_smiles)
-        return (proba >= threshold).astype(int)
+        return (self.predict_proba(X_smiles) >= threshold).astype(int)
 
-
-if __name__ == '__main__':
-    # Quick test to ensure it works
-    predictor = HERGPredictor()
-
-    # Test molecules
-    test_smiles = [
-        'CC(=O)OC1=CC=CC=C1C(=O)O',  # Aspirin
-        'CN1C=NC2=C1C(=O)N(C(=O)N2C)C',  # Caffeine
-    ]
-
-    # Dummy training
-    predictor.fit(test_smiles * 5, [0, 1] * 5)
-    proba = predictor.predict_proba(test_smiles)
-
-    print(f"Generation 3A test: {proba}")
+    def get_feature_importance(self):
+        if self._feature_importances is None or self._feature_names is None:
+            return None
+        importance_dict = dict(zip(self._feature_names, self._feature_importances.tolist()))
+        sorted_importance = sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)
+        return {
+            'features': [x[0] for x in sorted_importance[:30]],
+            'importances': [x[1] for x in sorted_importance[:30]]
+        }

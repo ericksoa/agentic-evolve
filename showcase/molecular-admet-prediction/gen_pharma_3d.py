@@ -1,41 +1,62 @@
 """
-Gen1a: Optimized Ensemble Weights
+Gen-Pharma-3D: gen12c + Selective 3D Pharmacophore Features
 
-Parent: gen0_champion (0.89 ROC-AUC)
+Architecture:
+- Base: gen12c (4-model ensemble, 0.890 ROC-AUC)
+- Enhancement: 9 key pharmacophore-related 3D features (not shape descriptors)
+- Total features: 704 (2D) + 9 (3D pharmacophore) = 713 features
 
-Mutation: Hyperparameter tuning - adjust ensemble weights
-- Original: [0.28, 0.28, 0.28, 0.16] for RF, XGB, ET, SVM
-- New: [0.25, 0.35, 0.22, 0.18] for RF, XGB, ET, SVM
-- Increase XGBoost weight (strong on tabular data)
-- Slightly increase SVM weight (kernel-based diversity)
-- Reduce ET weight (often redundant with RF)
+Hypothesis: Shape descriptors (PMI, asphericity) may add noise. The key 3D
+features for hERG are pharmacophore distances which capture the spatial
+relationship between basic nitrogens and aromatic rings - the hallmark of
+hERG blockers.
 
-Hypothesis: XGBoost typically excels on structured tabular data
-with proper hyperparameters. Giving it more weight while maintaining
-model diversity may improve ensemble accuracy.
+Selected 3D features:
+- N-aromatic distances (min/max/mean) - critical for hERG binding
+- Aromatic-aromatic distances (min/max/mean) - ring stacking geometry
+- Molecular extent - overall size
+- num_basic_N, num_aromatic_rings - pharmacophore counts
+
+Parent: gen12c.py (0.890 ROC-AUC)
 """
 
 import numpy as np
+from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 from sklearn.svm import SVC
+from sklearn.preprocessing import RobustScaler
+from sklearn.utils.class_weight import compute_class_weight
 try:
     import xgboost as xgb
     HAS_XGBOOST = True
 except ImportError:
     from sklearn.ensemble import GradientBoostingClassifier
     HAS_XGBOOST = False
-from sklearn.preprocessing import RobustScaler
-from sklearn.utils.class_weight import compute_class_weight
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSkeys
 
 
+# Key pharmacophore features for hERG (indices in the 20-feature 3D vector)
+# Full 3D features order: PMI1,PMI2,PMI3,NPR1,NPR2,Asphericity,Eccentricity,
+# InertialShapeFactor,RadiusOfGyration,SpherocityIndex,PBF,
+# num_basic_N,num_aromatic_rings,min_N_aromatic_dist,max_N_aromatic_dist,
+# mean_N_aromatic_dist,min_aromatic_dist,max_aromatic_dist,mean_aromatic_dist,
+# molecular_extent
+PHARMA_INDICES = [11, 12, 13, 14, 15, 16, 17, 18, 19]  # Last 9 features
+
+
 class HERGPredictor:
-    """4-model ensemble with optimized weights for hERG toxicity."""
+    """
+    Enhanced 4-model ensemble with selective 3D pharmacophore features.
+
+    Uses only the pharmacophore-related 3D features (distances between
+    key functional groups) rather than all shape descriptors.
+    """
 
     def __init__(self, random_state=42):
         self.random_state = random_state
 
+        # Gen12c-style ensemble
         self.rf = RandomForestClassifier(
             n_estimators=80,
             max_depth=6,
@@ -76,7 +97,6 @@ class HERGPredictor:
             n_jobs=1
         )
 
-        # Add SVM with RBF kernel
         self.svm = SVC(
             C=1.0,
             kernel='rbf',
@@ -86,24 +106,66 @@ class HERGPredictor:
             random_state=random_state
         )
 
-        # MUTATION: Optimized 4-model weights
-        # Original: [0.28, 0.28, 0.28, 0.16]
-        # New: Boost XGBoost, slightly increase SVM, reduce ET
-        self.weights = [0.25, 0.35, 0.22, 0.18]
+        # Ensemble weights (gen12c style)
+        self.weights = [0.28, 0.28, 0.28, 0.16]
 
         self.scaler = RobustScaler()
         self._feature_names = None
         self._feature_importances = None
 
+        # 3D pharmacophore features (selective)
+        self._3d_pharma_names = [
+            'num_basic_N', 'num_aromatic_rings',
+            'min_N_aromatic_dist', 'max_N_aromatic_dist', 'mean_N_aromatic_dist',
+            'min_aromatic_dist', 'max_aromatic_dist', 'mean_aromatic_dist',
+            'molecular_extent'
+        ]
+
+        # 3D feature cache
+        self._3d_cache = {}
+        self._load_cached_3d_features()
+
+    def _load_cached_3d_features(self):
+        """Load pre-computed 3D features and extract pharmacophore subset."""
+        cache_dir = Path(__file__).parent / "data" / "embeddings"
+
+        for split in ['train', 'valid', 'test']:
+            cache_file = cache_dir / f"{split}_embeddings.npz"
+            if cache_file.exists():
+                data = np.load(cache_file, allow_pickle=True)
+                embeddings = data['embeddings']
+                smiles = data['smiles']
+
+                for smi, emb in zip(smiles, embeddings):
+                    # Extract just pharmacophore features (last 9 of the 20 3D features)
+                    full_3d = emb[-20:]
+                    self._3d_cache[smi] = full_3d[PHARMA_INDICES]
+
+    def _get_3d_features(self, smiles):
+        """Get 3D pharmacophore features from cache or compute if missing."""
+        if smiles in self._3d_cache:
+            return self._3d_cache[smiles]
+
+        # Fallback: compute on the fly
+        try:
+            from conformer_gen import get_all_3d_features, get_3d_feature_names
+            features_dict = get_all_3d_features(smiles, random_seed=self.random_state)
+            all_names = get_3d_feature_names()
+            features = [features_dict[all_names[i]] for i in PHARMA_INDICES]
+            return np.array(features)
+        except Exception:
+            return np.zeros(9)
+
     def _calculate_features(self, smiles_list):
-        """Calculate compact fingerprints + hERG descriptors."""
+        """Calculate 2D + selective 3D pharmacophore features."""
         all_features = []
 
         for smi in smiles_list:
             mol = Chem.MolFromSmiles(smi)
             if mol is None:
-                features = np.zeros(512 + 167 + 25)
+                features = np.zeros(512 + 167 + 25 + 9)
             else:
+                # ========== 2D Features (from gen12c) ==========
                 morgan_fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=3, nBits=512)
                 morgan_bits = np.array(morgan_fp)
 
@@ -121,7 +183,7 @@ class HERGPredictor:
                 aromatic_rings = Descriptors.NumAromaticRings(mol)
                 heavy_atoms = Descriptors.HeavyAtomCount(mol)
 
-                descriptors = [
+                descriptors_2d = [
                     logP, Descriptors.MolMR(mol), logP * mw / 100, mw, heavy_atoms,
                     tpsa, Descriptors.NumRotatableBonds(mol), rdMolDescriptors.CalcFractionCSP3(mol),
                     aromatic_atoms, aromatic_rings, aromatic_atoms / max(1, heavy_atoms),
@@ -134,9 +196,14 @@ class HERGPredictor:
                     mw / max(1, Descriptors.NumRotatableBonds(mol) + 1),
                 ]
 
-                features = np.concatenate([morgan_bits, maccs_bits, descriptors])
+                # ========== 3D Pharmacophore Features (selective) ==========
+                features_3d = self._get_3d_features(smi)
+
+                features = np.concatenate([morgan_bits, maccs_bits, descriptors_2d, features_3d])
+
             all_features.append(features)
 
+        # Build feature names
         self._feature_names = (
             [f'Morgan3_{i}' for i in range(512)] +
             [f'MACCS_{i}' for i in range(167)] +
@@ -145,7 +212,8 @@ class HERGPredictor:
              'NumAromaticRings', 'AromaticFraction', 'NumAromaticCarbocycles',
              'NumAromaticHeterocycles', 'BasicNitrogens', 'LipophilicBasicity',
              'NumHDonors', 'NumHAcceptors', 'NumHeteroatoms', 'NOSCount',
-             'BertzCT', 'Chi0', 'Chi1', 'RingCount', 'NumBridgeheadAtoms', 'RigidityIndex']
+             'BertzCT', 'Chi0', 'Chi1', 'RingCount', 'NumBridgeheadAtoms', 'RigidityIndex'] +
+            self._3d_pharma_names
         )
 
         return np.array(all_features)
@@ -153,10 +221,12 @@ class HERGPredictor:
     def _preprocess(self, X, fit=False):
         X = np.array(X, dtype=float)
         X = np.nan_to_num(X, nan=0.0)
+        # Scale continuous features (last 25 2D + 9 3D = 34 features)
+        n_continuous = 34
         if fit:
-            X[:, -25:] = self.scaler.fit_transform(X[:, -25:])
+            X[:, -n_continuous:] = self.scaler.fit_transform(X[:, -n_continuous:])
         else:
-            X[:, -25:] = self.scaler.transform(X[:, -25:])
+            X[:, -n_continuous:] = self.scaler.transform(X[:, -n_continuous:])
         return X
 
     def fit(self, X_smiles, y):
@@ -175,12 +245,13 @@ class HERGPredictor:
         else:
             self.xgb.fit(X, y)
 
-        # Only tree models have feature_importances_
+        # Feature importances (tree models only)
+        tree_weight_sum = self.weights[0] + self.weights[1] + self.weights[2]
         self._feature_importances = (
             self.weights[0] * self.rf.feature_importances_ +
             self.weights[1] * self.xgb.feature_importances_ +
             self.weights[2] * self.et.feature_importances_
-        ) / (self.weights[0] + self.weights[1] + self.weights[2])
+        ) / tree_weight_sum
 
         return self
 
@@ -210,3 +281,27 @@ class HERGPredictor:
             'features': [x[0] for x in sorted_importance[:30]],
             'importances': [x[1] for x in sorted_importance[:30]]
         }
+
+
+if __name__ == '__main__':
+    print("Testing Gen-Pharma-3D model...")
+
+    predictor = HERGPredictor()
+    print(f"Loaded {len(predictor._3d_cache)} cached 3D features")
+    print(f"Using {len(predictor._3d_pharma_names)} pharmacophore features")
+
+    test_smiles = [
+        'CC(=O)OC1=CC=CC=C1C(=O)O',
+        'CN1C=NC2=C1C(=O)N(C(=O)N2C)C',
+        'CC(C)NCC(O)C1=CC=C(O)C(O)=C1',
+    ]
+    test_labels = [0, 0, 1]
+
+    print("\nFitting on test data...")
+    predictor.fit(test_smiles * 10, test_labels * 10)
+
+    print("Predicting...")
+    proba = predictor.predict_proba(test_smiles)
+    print(f"Probabilities: {proba}")
+
+    print(f"\nTotal features: {len(predictor._feature_names)}")

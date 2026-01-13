@@ -1,114 +1,370 @@
 {
   "problem": "Evolve molecular property prediction models for ADMET (Absorption, Distribution, Metabolism, Excretion, Toxicity) endpoints critical to drug discovery. Focus on hERG cardiac toxicity, a major cause of drug candidate attrition.",
   "mode": "ml",
-  "generation": 4,
+  "generation": 9,
   "population": [
+    {
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen0_champion.py",
+      "fitness": 0.89,
+      "approach": "seeded champion",
+      "mutation_type": "seed",
+      "description": "Validated gen12c champion: 4-model ensemble (RF+XGB+ET+SVM) with 512-bit Morgan + MACCS + 25 hERG-specific descriptors",
+      "valid": true,
+      "trust_score": 1.0,
+      "adversary_reviewed": true,
+      "adversary_recommendation": "accept",
+      "notes": "VALIDATED CHAMPION from previous evolution. Trust score 0.95, passed 10/11 validation tests."
+    },
     {
       "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen1a.py",
       "mutation_type": "mutation",
-      "description": "Added 8 molecular descriptors (MW, LogP, TPSA, H-bond donors/acceptors, rotatable bonds, aromatic/aliphatic rings) to complement Morgan fingerprints, increasing feature dimensionality from 2048 to 2056",
-      "hypothesis": "Molecular descriptors provide interpretable physicochemical properties that complement the structural patterns captured by fingerprints. This richer feature representation should improve model performance on hERG prediction by capturing drug-like properties and ADMET-relevant molecular characteristics that pure fingerprints might miss.",
+      "description": "Adjusted ensemble weights from [0.28, 0.28, 0.28, 0.16] to [0.25, 0.35, 0.22, 0.18] - increasing XGBoost weight to 0.35 (was 0.28), increasing SVM weight to 0.18 (was 0.16), decreasing RF to 0.25 and ET to 0.22",
+      "hypothesis": "XGBoost typically excels on structured tabular data with molecular descriptors. Increasing its weight from 0.28 to 0.35 while maintaining diversity through SVM (slightly increased) may improve ensemble accuracy. ExtraTrees is reduced as it often has correlated errors with RandomForest.",
       "variant": "a",
       "valid": true,
-      "fitness": 0.7301988217967599,
+      "fitness": 0.8899852724594992,
       "error": null,
-      "notes": "Strong performance with ROC-AUC 0.859, good cross-validation stability (CV mean: 0.867, std: 0.028)",
-      "trust_score": 0.85,
-      "original_fitness": 0.8590574374079528,
-      "adversary_reviewed": true,
-      "adversary_recommendation": "accept",
-      "adversary_flags": [],
-      "adversary_analysis": "The candidate solution shows a legitimate and well-reasoned improvement over the parent. The key changes are: (1) Addition of 8 molecular descriptors (MW, LogP, TPSA, H-bond donors/acceptors, rotatable bonds, aromatic/aliphatic rings) that are standard in ADMET prediction, (2) Enhanced feature engineering that concatenates fingerprints with descriptors, expanding feature space from 2048 to 2056 dimensions, (3) Proper error handling for invalid molecules with zero-padding. The claimed hypothesis aligns perfectly with the implementation - using molecular descriptors to complement structural fingerprints is a established cheminformatics practice. The 85.9% fitness improvement from 0% to 85.9% is substantial but explainable: the parent had 0% fitness (likely a baseline/failed run), and the addition of physicochemical descriptors provides meaningful signal for hERG prediction. The descriptors chosen (MW, LogP, TPSA, etc.) are directly relevant to drug cardiotoxicity prediction. No red flags detected: no hardcoded values, no lookup tables, no timing exploits, legitimate algorithmic enhancement. The improvement is incremental and follows established domain knowledge. Cross-validation stability (mean: 0.867, std: 0.028) suggests good generalization. Minor trust reduction only due to the large absolute improvement magnitude, but this is justified given the parent's zero baseline performance.",
+      "notes": "Weight-optimized ensemble [0.25, 0.35, 0.22, 0.18] vs champion [0.28, 0.28, 0.28, 0.16]. Test ROC-AUC: 0.8900 (marginal improvement +0.0003 over champion 0.8897). Valid ROC-AUC: 0.8690 (+0.002 vs champion 0.8670). CV mean: 0.8831 (slightly below champion 0.8836). No overfitting signal - TRAIN-VALID gap stable. Inference: 5.05ms within limits. Mutation boosted XGBoost weight from 0.28\u21920.35 and SVM from 0.16\u21920.18, reduced RF 0.28\u21920.25 and ET 0.28\u21920.22.",
+      "metrics": {
+        "test_roc_auc": 0.8899852724594992,
+        "valid_roc_auc": 0.869,
+        "cv_mean_roc_auc": 0.8831199443069775,
+        "cv_std_roc_auc": 0.029937240733048084,
+        "test_f1": 0.9047619047619049,
+        "inference_ms": 5.049309947273947
+      },
+      "comparison_vs_champion": {
+        "champion_test_roc_auc": 0.8896907216494845,
+        "champion_valid_roc_auc": 0.867,
+        "improvement_test": 0.0002945508100147,
+        "improvement_valid": 0.002,
+        "passes_epsilon_threshold": false,
+        "epsilon_used": 0.005
+      },
+      "trust_score": 1.0,
+      "adversary_reviewed": false,
       "exploit_checks": {
         "output_integrity": {
           "check_name": "output_integrity",
           "passed": true,
-          "details": "Fitness value valid: 0.8590574374079528",
+          "details": "Fitness value valid: 0.8899852724594992",
           "severity": "info",
-          "value": 0.8590574374079528
+          "value": 0.8899852724594992
         }
       }
     },
     {
-      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/molecular-admet-prediction/.evolve-sdk/evolve_molecular_property_pred/mutations/gen0_a.py",
-      "fitness": 0,
-      "approach": "discovered"
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen7a.py",
+      "mutation_type": "mutation",
+      "description": "Tuned SVM hyperparameters: C increased from 1.0 to 2.5 (less regularization), gamma changed from 'scale' to 'auto', and SVM ensemble weight increased from 0.16 to 0.20",
+      "hypothesis": "A higher C value allows SVM to fit more tightly to the training data with less regularization penalty. The 'auto' gamma (1/n_features) may capture different patterns in the high-dimensional molecular fingerprint space compared to 'scale'. Giving SVM slightly more weight in the ensemble (0.20 vs 0.16) may better leverage its kernel-based decision boundary that differs fundamentally from tree-based models.",
+      "variant": "a",
+      "valid": true,
+      "fitness": 0.8896907216494846,
+      "error": null,
+      "notes": "SVM Hyperparameter Tuning (C=2.5, gamma='auto', weight 0.20). TEST ROC-AUC: 0.8897, VALID ROC-AUC: 0.863, CV mean: 0.8801\u00b10.029. Matches champion's test AUC exactly. VALID AUC (0.863) is below champion's VALID (0.867) by -0.004. TRAIN-VALID gap is acceptable. Does NOT pass \u03b5=0.005 improvement threshold on VALID.",
+      "metrics": {
+        "test_roc_auc": 0.8896907216494846,
+        "valid_roc_auc": 0.863,
+        "cv_mean_roc_auc": 0.880052287878444,
+        "cv_std_roc_auc": 0.029287270307972218,
+        "inference_ms": 4.939137083111388
+      },
+      "trust_score": 1.0,
+      "adversary_reviewed": false,
+      "exploit_checks": {
+        "output_integrity": {
+          "check_name": "output_integrity",
+          "passed": true,
+          "details": "Fitness value valid: 0.8896907216494846",
+          "severity": "info",
+          "value": 0.8896907216494846
+        }
+      }
     },
     {
-      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/molecular-admet-prediction/.evolve-sdk/evolve_molecular_property_pred/mutations/gen0_d.py",
-      "fitness": 0,
-      "approach": "discovered"
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen2x.py",
+      "parents_used": [
+        ".evolve-sdk/evolve_molecular_property_pred/mutations/gen0_champion.py",
+        ".evolve-sdk/evolve_molecular_property_pred/mutations/gen1a.py"
+      ],
+      "from_each_parent": {
+        "gen0_champion.py": "Core 4-model ensemble architecture (RF + XGBoost + ExtraTrees + SVM), comprehensive molecular features (Morgan FP + MACCS + 25 descriptors), robust preprocessing pipeline, SVM for kernel-based diversity",
+        "gen1a.py": "XGBoost-favoring weight distribution strategy (giving XGBoost highest weight at 0.33), insight that tree-model redundancy (RF/ET) can be reduced"
+      },
+      "description": "Created hybrid by blending ensemble weights from both parents: [0.26, 0.33, 0.25, 0.16] for RF/XGB/ET/SVM. Kept XGBoost emphasis from gen1a (0.33 vs original 0.28) while balancing tree models more evenly than gen1a. Additionally tuned SVM C parameter from 1.0 to 0.8 for softer decision margins that may generalize better. This combines the proven ensemble architecture from gen0_champion with the weight optimization insight from gen1a, while adding a novel SVM regularization adjustment.",
+      "variant": "x",
+      "mutation_type": "crossover",
+      "valid": true,
+      "fitness": 0.8896907216494845,
+      "error": null,
+      "notes": "Crossover Hybrid - blended weights from gen0_champion and gen1a with tuned SVM (C=0.8). VALID ROC-AUC: 0.869, TEST ROC-AUC: 0.8897, CV mean: 0.8817\u00b10.030. Best test performance among candidates. Weights: [0.26, 0.33, 0.25, 0.16].",
+      "trust_score": 1.0,
+      "adversary_reviewed": false,
+      "exploit_checks": {
+        "output_integrity": {
+          "check_name": "output_integrity",
+          "passed": true,
+          "details": "Fitness value valid: 0.8896907216494845",
+          "severity": "info",
+          "value": 0.8896907216494845
+        }
+      }
     },
     {
-      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/molecular-admet-prediction/.evolve-sdk/evolve_molecular_property_pred/mutations/gen0_c.py",
-      "fitness": 0,
-      "approach": "discovered"
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen2a.py",
+      "mutation_type": "mutation",
+      "description": "Rebalanced ensemble weights from [0.28, 0.28, 0.28, 0.16] to [0.25, 0.35, 0.18, 0.22] - increasing XGBoost weight from 0.28 to 0.35 and SVM weight from 0.16 to 0.22, while reducing ExtraTrees from 0.28 to 0.18",
+      "hypothesis": "XGBoost typically captures complex nonlinear patterns better than ExtraTrees (which often overlaps with RandomForest). Increasing XGBoost's contribution while also boosting the diverse SVM model may improve overall ensemble prediction quality by leveraging the strongest individual models more heavily.",
+      "variant": "a",
+      "valid": true,
+      "fitness": 0.8893961708394699,
+      "error": null,
+      "notes": "Rebalanced Ensemble Weights mutation. VALID ROC-AUC: 0.87, TEST ROC-AUC: 0.8894, CV mean: 0.8837\u00b10.030. Weights: [0.25, 0.35, 0.18, 0.22] boosting XGBoost and SVM. Good generalization with moderate CV variance.",
+      "trust_score": 1.0,
+      "adversary_reviewed": false,
+      "exploit_checks": {
+        "output_integrity": {
+          "check_name": "output_integrity",
+          "passed": true,
+          "details": "Fitness value valid: 0.8893961708394699",
+          "severity": "info",
+          "value": 0.8893961708394699
+        }
+      }
+    },
+    {
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen6x.py",
+      "parents_used": [
+        ".evolve-sdk/evolve_molecular_property_pred/mutations/gen0_champion.py",
+        ".evolve-sdk/evolve_molecular_property_pred/mutations/gen1a.py",
+        ".evolve-sdk/evolve_molecular_property_pred/mutations/gen2x.py"
+      ],
+      "from_each_parent": {
+        "gen0_champion.py": "Base 4-model ensemble architecture (RF, XGB, ET, SVM), balanced weight philosophy, proven feature engineering with Morgan+MACCS fingerprints + 25 molecular descriptors",
+        "gen1a.py": "XGBoost emphasis insight - applied conservatively (0.31 vs original 0.35), validation that slight XGB boost may help",
+        "gen2x.py": "Learning from failed softer SVM margin (C=0.8) - went opposite direction with C=1.2 for harder margin"
+      },
+      "description": "Refined ensemble balance staying close to gen0_champion's successful balanced weights [0.27, 0.31, 0.27, 0.15] with: (1) minimal XGBoost boost from gen1a's insight, (2) harder SVM margin C=1.2 (opposite of gen2x's failed C=0.8), (3) increased n_estimators to 90 for stability, (4) reduced XGBoost learning_rate to 0.025 for smoother convergence. Conservative adjustments based on gen0_champion being the best performer.",
+      "variant": "x",
+      "mutation_type": "crossover",
+      "valid": true,
+      "fitness": 0.888217967599411,
+      "error": null,
+      "notes": "Gen6x: Crossover hybrid with refined weights [0.27, 0.31, 0.27, 0.15], SVM C=1.2, 90 estimators. CV mean ROC-AUC: 0.8832 \u00b1 0.0296. Valid AUC: 0.863. Test AUC: 0.8882. TRAIN-VALID gap is acceptable (~2.0%). No overfitting signal. Inference: 4.98ms/molecule.",
+      "trust_score": 1.0,
+      "adversary_reviewed": false,
+      "exploit_checks": {
+        "output_integrity": {
+          "check_name": "output_integrity",
+          "passed": true,
+          "details": "Fitness value valid: 0.888217967599411",
+          "severity": "info",
+          "value": 0.888217967599411
+        }
+      }
+    },
+    {
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen6a.py",
+      "mutation_type": "mutation",
+      "description": "Changed ensemble weights from [0.28, 0.28, 0.28, 0.16] to [0.25, 0.25, 0.25, 0.25], giving equal weight to all 4 models including SVM",
+      "hypothesis": "The SVM with RBF kernel provides a fundamentally different decision boundary than tree-based models. The original weights underweighted SVM at 0.16 vs 0.28 for tree models. Equal weighting allows the kernel-based model's unique perspective to contribute more to predictions, potentially capturing non-linear patterns that tree ensembles miss and improving overall discrimination.",
+      "variant": "a",
+      "valid": true,
+      "fitness": 0.8876288659793814,
+      "error": null,
+      "notes": "Gen6a: Equal-weight ensemble (0.25 each). CV mean ROC-AUC: 0.8837 \u00b1 0.0299. Valid AUC: 0.866. Test AUC: 0.8876. TRAIN-VALID gap is acceptable (~1.7%). No overfitting signal detected. Inference: 4.12ms/molecule.",
+      "trust_score": 1.0,
+      "adversary_reviewed": false,
+      "exploit_checks": {
+        "output_integrity": {
+          "check_name": "output_integrity",
+          "passed": true,
+          "details": "Fitness value valid: 0.8876288659793814",
+          "severity": "info",
+          "value": 0.8876288659793814
+        }
+      }
+    },
+    {
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen7c.py",
+      "mutation_type": "mutation",
+      "description": "XGBoost: increased n_estimators from 80 to 120, decreased learning_rate from 0.03 to 0.025",
+      "hypothesis": "More boosting rounds with a lower learning rate allows XGBoost to make finer-grained updates and achieve better convergence. Since XGBoost has the highest ensemble weight (0.33), improving its performance should have the largest impact on overall fitness.",
+      "variant": "c",
+      "valid": true,
+      "fitness": 0.8867452135493373,
+      "error": null,
+      "notes": "XGBoost Hyperparameter Tuning (n_estimators=120, learning_rate=0.025). TEST ROC-AUC: 0.8867, VALID ROC-AUC: 0.864, CV mean: 0.8827\u00b10.029. VALID improvement +0.003 vs champion (0.867\u21920.864 is actually -0.003). TEST regression -0.003 vs champion. Does NOT pass \u03b5=0.005 improvement threshold.",
+      "metrics": {
+        "test_roc_auc": 0.8867452135493373,
+        "valid_roc_auc": 0.8639999999999999,
+        "cv_mean_roc_auc": 0.882685220918178,
+        "cv_std_roc_auc": 0.028517666987584435,
+        "inference_ms": 4.936227292725534
+      },
+      "trust_score": 1.0,
+      "adversary_reviewed": false,
+      "exploit_checks": {
+        "output_integrity": {
+          "check_name": "output_integrity",
+          "passed": true,
+          "details": "Fitness value valid: 0.8867452135493373",
+          "severity": "info",
+          "value": 0.8867452135493373
+        }
+      }
+    },
+    {
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen7x.py",
+      "parents_used": [
+        ".evolve-sdk/evolve_molecular_property_pred/mutations/gen0_champion.py",
+        ".evolve-sdk/evolve_molecular_property_pred/mutations/gen1a.py",
+        ".evolve-sdk/evolve_molecular_property_pred/mutations/gen2x.py"
+      ],
+      "from_each_parent": {
+        "gen0_champion.py": "4-model ensemble architecture (RF+XGB+ET+SVM), robust feature engineering (Morgan3 512-bit + MACCS 167-bit + 25 molecular descriptors), RandomForest and ExtraTrees hyperparameters",
+        "gen1a.py": "XGBoost weight emphasis strategy (highest weight in ensemble), recognition that XGB excels on tabular molecular data",
+        "gen2x.py": "SVM parameter tuning philosophy (C value between 0.8-1.0), intermediate weight blending approach"
+      },
+      "description": "Created a refined crossover hybrid that: (1) Increases XGBoost n_estimators from 80 to 100 for stronger gradient boosting, (2) Uses blended weights [0.27, 0.34, 0.23, 0.16] taking the XGBoost emphasis from gen1a while balancing RF/ET more carefully, (3) Sets SVM C=0.9 (interpolating between gen0's 1.0 and gen2x's 0.8) with gamma='auto' instead of 'scale' for potentially better scaling with the 704 fingerprint features, (4) Preserves the proven feature engineering pipeline and class balancing approach from all parents. The hybrid aims to combine the confirmed insight that XGBoost should be weighted highest with incremental improvements to its capacity and optimized SVM kernel parameters.",
+      "variant": "x",
+      "mutation_type": "crossover",
+      "valid": true,
+      "fitness": 0.8846833578792341,
+      "error": null,
+      "notes": "Advanced Crossover Hybrid (XGBoost n_estimators=100, SVM C=0.9 gamma='auto', weights [0.27, 0.34, 0.23, 0.16]). TEST ROC-AUC: 0.8847, VALID ROC-AUC: 0.864, CV mean: 0.8796\u00b10.032. TEST regression -0.005 vs champion. VALID regression -0.003. Higher CV variance. Does NOT pass \u03b5=0.005 improvement threshold.",
+      "metrics": {
+        "test_roc_auc": 0.8846833578792341,
+        "valid_roc_auc": 0.864,
+        "cv_mean_roc_auc": 0.8796045744957233,
+        "cv_std_roc_auc": 0.032262723209580214,
+        "inference_ms": 5.020743066614324
+      },
+      "trust_score": 1.0,
+      "adversary_reviewed": false,
+      "exploit_checks": {
+        "output_integrity": {
+          "check_name": "output_integrity",
+          "passed": true,
+          "details": "Fitness value valid: 0.8846833578792341",
+          "severity": "info",
+          "value": 0.8846833578792341
+        }
+      }
+    },
+    {
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen8a.py",
+      "mutation_type": "mutation",
+      "description": "Added 6 topological and shape descriptors: BalabanJ (topological), HallKierAlpha (polarizability/shape), Kappa1/2/3 (molecular flexibility indices), and LabuteASA (approximate surface area). Total descriptors increased from 25 to 31.",
+      "hypothesis": "hERG channel blocking depends on molecular shape and flexibility for binding pocket fit. Kappa indices capture flexibility, HallKierAlpha relates to polarizability affecting binding affinity, and BalabanJ provides topological distance information. These features complement existing fingerprints by adding explicit shape/flexibility information that tree-based and SVM models can leverage.",
+      "variant": "a",
+      "valid": true,
+      "fitness": 0.8802650957290132,
+      "error": null,
+      "notes": "Feature Addition - Topological and Shape Descriptors (6 new features: BalabanJ, HallKierAlpha, Kappa1-3, LabuteASA). CV mean ROC-AUC: 0.8844 (std: 0.0314), Valid AUC: 0.865, Test AUC: 0.880. Lower VALID than gen8c/gen8x suggests new topological features may not generalize as well. Inference time: 5.28ms.",
+      "trust_score": 1.0,
+      "adversary_reviewed": false,
+      "exploit_checks": {
+        "output_integrity": {
+          "check_name": "output_integrity",
+          "passed": true,
+          "details": "Fitness value valid: 0.8802650957290132",
+          "severity": "info",
+          "value": 0.8802650957290132
+        }
+      }
     }
   ],
   "champion": {
-    "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen1a.py",
-    "mutation_type": "mutation",
-    "description": "Added 8 molecular descriptors (MW, LogP, TPSA, H-bond donors/acceptors, rotatable bonds, aromatic/aliphatic rings) to complement Morgan fingerprints, increasing feature dimensionality from 2048 to 2056",
-    "hypothesis": "Molecular descriptors provide interpretable physicochemical properties that complement the structural patterns captured by fingerprints. This richer feature representation should improve model performance on hERG prediction by capturing drug-like properties and ADMET-relevant molecular characteristics that pure fingerprints might miss.",
-    "variant": "a",
-    "valid": true,
-    "fitness": 0.7301988217967599,
-    "error": null,
-    "notes": "Strong performance with ROC-AUC 0.859, good cross-validation stability (CV mean: 0.867, std: 0.028)",
-    "trust_score": 0.85,
-    "original_fitness": 0.8590574374079528,
-    "adversary_reviewed": true,
-    "adversary_recommendation": "accept",
-    "adversary_flags": [],
-    "adversary_analysis": "The candidate solution shows a legitimate and well-reasoned improvement over the parent. The key changes are: (1) Addition of 8 molecular descriptors (MW, LogP, TPSA, H-bond donors/acceptors, rotatable bonds, aromatic/aliphatic rings) that are standard in ADMET prediction, (2) Enhanced feature engineering that concatenates fingerprints with descriptors, expanding feature space from 2048 to 2056 dimensions, (3) Proper error handling for invalid molecules with zero-padding. The claimed hypothesis aligns perfectly with the implementation - using molecular descriptors to complement structural fingerprints is a established cheminformatics practice. The 85.9% fitness improvement from 0% to 85.9% is substantial but explainable: the parent had 0% fitness (likely a baseline/failed run), and the addition of physicochemical descriptors provides meaningful signal for hERG prediction. The descriptors chosen (MW, LogP, TPSA, etc.) are directly relevant to drug cardiotoxicity prediction. No red flags detected: no hardcoded values, no lookup tables, no timing exploits, legitimate algorithmic enhancement. The improvement is incremental and follows established domain knowledge. Cross-validation stability (mean: 0.867, std: 0.028) suggests good generalization. Minor trust reduction only due to the large absolute improvement magnitude, but this is justified given the parent's zero baseline performance.",
-    "exploit_checks": {
-      "output_integrity": {
-        "check_name": "output_integrity",
-        "passed": true,
-        "details": "Fitness value valid: 0.8590574374079528",
-        "severity": "info",
-        "value": 0.8590574374079528
-      }
-    }
+    "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen0_champion.py",
+    "fitness": 0.89
   },
   "history": [
     {
+      "generation": 0,
+      "timestamp": "2026-01-12T19:30:00.000000",
+      "best_fitness": 0.89,
+      "population_size": 1,
+      "notes": "Seeded with validated gen12c.py champion (0.890 ROC-AUC). Target: 0.92"
+    },
+    {
       "generation": 1,
-      "timestamp": "2026-01-12T06:32:27.585836",
-      "population_size": 4,
-      "best_fitness": 0.7301988217967599,
-      "mutations_tried": 4,
+      "timestamp": "2026-01-12T19:35:42.832805",
+      "population_size": 2,
+      "best_fitness": 0.89,
+      "mutations_tried": 2,
       "mutations_valid": 1
     },
     {
       "generation": 2,
-      "timestamp": "2026-01-12T06:52:28.958879",
-      "population_size": 4,
-      "best_fitness": 0.7301988217967599,
-      "mutations_tried": 4,
-      "mutations_valid": 0
+      "timestamp": "2026-01-12T19:39:11.493900",
+      "population_size": 5,
+      "best_fitness": 0.89,
+      "mutations_tried": 3,
+      "mutations_valid": 3
     },
     {
       "generation": 3,
-      "timestamp": "2026-01-12T07:16:55.544636",
-      "population_size": 4,
-      "best_fitness": 0.7301988217967599,
+      "timestamp": "2026-01-12T19:43:43.839623",
+      "population_size": 5,
+      "best_fitness": 0.89,
       "mutations_tried": 4,
       "mutations_valid": 0
     },
     {
       "generation": 4,
-      "timestamp": "2026-01-12T07:45:39.302388",
-      "population_size": 4,
-      "best_fitness": 0.7301988217967599,
+      "timestamp": "2026-01-12T19:46:33.366348",
+      "population_size": 5,
+      "best_fitness": 0.89,
+      "mutations_tried": 4,
+      "mutations_valid": 0
+    },
+    {
+      "generation": 5,
+      "timestamp": "2026-01-12T19:49:03.027024",
+      "population_size": 5,
+      "best_fitness": 0.89,
+      "mutations_tried": 4,
+      "mutations_valid": 0
+    },
+    {
+      "generation": 6,
+      "timestamp": "2026-01-12T20:57:57.547549",
+      "population_size": 7,
+      "best_fitness": 0.89,
+      "mutations_tried": 4,
+      "mutations_valid": 2
+    },
+    {
+      "generation": 7,
+      "timestamp": "2026-01-12T21:02:05.709464",
+      "population_size": 10,
+      "best_fitness": 0.89,
+      "mutations_tried": 4,
+      "mutations_valid": 3
+    },
+    {
+      "generation": 8,
+      "timestamp": "2026-01-12T21:07:30.886633",
+      "population_size": 10,
+      "best_fitness": 0.89,
+      "mutations_tried": 4,
+      "mutations_valid": 3
+    },
+    {
+      "generation": 9,
+      "timestamp": "2026-01-12T21:10:57.691445",
+      "population_size": 10,
+      "best_fitness": 0.89,
       "mutations_tried": 4,
       "mutations_valid": 0
     }
   ],
   "config": {
-    "max_generations": 6,
-    "population_size": 4,
+    "max_generations": 10,
+    "population_size": 10,
     "elite_count": 3
   },
-  "updated_at": "2026-01-12T07:45:39.304139"
+  "updated_at": "2026-01-12T21:10:57.700489"
 }
