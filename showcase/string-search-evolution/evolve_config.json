@@ -1,0 +1,18 @@
+{
+  "description": "Evolve fast string search algorithms",
+  "mode": "perf",
+  "evaluation": {
+    "test_command": "python evaluate.py {solution} --json"
+  },
+  "memory": {
+    "enabled": true,
+    "inject_mutation_context": true
+  },
+  "trust": {
+    "enabled": true,
+    "require_adversary_for_champion": true
+  },
+  "starter_solutions": ["baseline.py"],
+  "max_generations": 10,
+  "population_size": 6
+}
