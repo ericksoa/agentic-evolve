@@ -1,0 +1,43 @@
+{
+  "problem_name": "wars_vs_trek",
+  "start_time": "2026-01-13T06:19:42.587054",
+  "final_pattern": "ope|edi|nac|ith|ack|lon",
+  "final_fitness": 977,
+  "improvement_over_baseline": 13,
+  "debugger_invocations": 4,
+  "plateau_breaker_invocations": 1,
+  "generations": [
+    {
+      "generation": 1,
+      "best_fitness": 964,
+      "best_pattern": "Hope|Empire|Jedi|Phantom|Clones|Sith",
+      "mutations_attempted": 3,
+      "mutations_failed": 1,
+      "plateau_detected": false
+    },
+    {
+      "generation": 2,
+      "best_fitness": 964,
+      "best_pattern": "Hope|Empire|Jedi|Phantom|Clones|Sith",
+      "mutations_attempted": 3,
+      "mutations_failed": 0,
+      "plateau_detected": false
+    },
+    {
+      "generation": 3,
+      "best_fitness": 964,
+      "best_pattern": "Hope|Empire|Jedi|Phantom|Clones|Sith",
+      "mutations_attempted": 3,
+      "mutations_failed": 1,
+      "plateau_detected": false
+    },
+    {
+      "generation": 4,
+      "best_fitness": 964,
+      "best_pattern": "Hope|Empire|Jedi|Phantom|Clones|Sith",
+      "mutations_attempted": 3,
+      "mutations_failed": 2,
+      "plateau_detected": true
+    }
+  ]
+}
