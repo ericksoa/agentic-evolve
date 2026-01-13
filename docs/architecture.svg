@@ -1,0 +1,277 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="mutatorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e94560"/>
+      <stop offset="100%" style="stop-color:#c73e54"/>
+    </linearGradient>
+    <linearGradient id="evaluatorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f3460"/>
+      <stop offset="100%" style="stop-color:#0a2647"/>
+    </linearGradient>
+    <linearGradient id="adversaryGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f39c12"/>
+      <stop offset="100%" style="stop-color:#d68910"/>
+    </linearGradient>
+    <linearGradient id="crossoverGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#9b59b6"/>
+      <stop offset="100%" style="stop-color:#8e44ad"/>
+    </linearGradient>
+    <linearGradient id="memoryGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1abc9c"/>
+      <stop offset="100%" style="stop-color:#16a085"/>
+    </linearGradient>
+    <linearGradient id="debuggerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e74c3c"/>
+      <stop offset="100%" style="stop-color:#c0392b"/>
+    </linearGradient>
+    <linearGradient id="plateauGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3498db"/>
+      <stop offset="100%" style="stop-color:#2980b9"/>
+    </linearGradient>
+    <linearGradient id="reporterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#27ae60"/>
+      <stop offset="100%" style="stop-color:#1e8449"/>
+    </linearGradient>
+    <linearGradient id="initGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8e44ad"/>
+      <stop offset="100%" style="stop-color:#7d3c98"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+    <marker id="arrowGray" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#95a5a6"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#e94560"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#1abc9c"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="900" fill="url(#bgGrad)"/>
+
+  <!-- Title -->
+  <text x="600" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#ecf0f1">
+    Evolve SDK Architecture
+  </text>
+  <text x="600" y="65" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#bdc3c7">
+    Hierarchical agents with clean context, memory persistence, and trust validation
+  </text>
+
+  <!-- SECTION: Generation Loop (center) -->
+  <rect x="250" y="90" width="700" height="480" rx="15" fill="#2c3e50" opacity="0.3" stroke="#34495e" stroke-width="2"/>
+  <text x="600" y="115" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#ecf0f1">
+    GENERATION LOOP (repeats until plateau or max generations)
+  </text>
+
+  <!-- Initializer (top, outside loop) -->
+  <g transform="translate(50, 130)">
+    <rect x="0" y="0" width="160" height="90" rx="12" fill="url(#initGrad)" filter="url(#shadow)"/>
+    <text x="80" y="35" text-anchor="middle" font-size="28" fill="#fff">🌱</text>
+    <text x="80" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff">Initializer</text>
+    <text x="80" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.9">Gen 0 only</text>
+  </g>
+  <!-- Initializer description -->
+  <text x="55" y="240" font-family="Arial, sans-serif" font-size="11" fill="#bdc3c7">Creates diverse</text>
+  <text x="55" y="253" font-family="Arial, sans-serif" font-size="11" fill="#bdc3c7">initial population</text>
+  <text x="55" y="266" font-family="Arial, sans-serif" font-size="11" fill="#bdc3c7">with varied strategies</text>
+
+  <!-- Arrow from Initializer to Population -->
+  <path d="M210 175 L320 280" stroke="#8e44ad" stroke-width="2" fill="none" marker-end="url(#arrowGray)"/>
+
+  <!-- Population Pool (center) -->
+  <rect x="320" y="250" width="260" height="100" rx="10" fill="#2c3e50" stroke="#ecf0f1" stroke-width="2" filter="url(#shadow)"/>
+  <text x="450" y="285" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#ecf0f1">Population Pool</text>
+  <text x="450" y="305" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#95a5a6">gen0_a.py, gen1a.py, gen2b.py, gen3x.py...</text>
+  <text x="450" y="320" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#95a5a6">Ranked by fitness score</text>
+  <text x="450" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">Selection pressure promotes top performers</text>
+
+  <!-- Mutator Agent -->
+  <g transform="translate(280, 380)">
+    <rect x="0" y="0" width="140" height="100" rx="12" fill="url(#mutatorGrad)" filter="url(#shadow)"/>
+    <text x="70" y="35" text-anchor="middle" font-size="24" fill="#fff">🧬</text>
+    <text x="70" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#fff">Mutator</text>
+    <text x="70" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.9">Parallel (3-4x)</text>
+    <text x="70" y="88" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.9">Clean context</text>
+  </g>
+  <!-- Mutator description -->
+  <text x="280" y="500" font-family="Arial, sans-serif" font-size="10" fill="#e94560">Each mutator tries ONE strategy:</text>
+  <text x="280" y="513" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• Parameter tweaks</text>
+  <text x="280" y="526" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• Algorithm changes</text>
+  <text x="280" y="539" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• Structural refactoring</text>
+
+  <!-- Crossover Agent -->
+  <g transform="translate(480, 380)">
+    <rect x="0" y="0" width="140" height="100" rx="12" fill="url(#crossoverGrad)" filter="url(#shadow)"/>
+    <text x="70" y="35" text-anchor="middle" font-size="24" fill="#fff">🔀</text>
+    <text x="70" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#fff">Crossover</text>
+    <text x="70" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.9">Combines top 2-3</text>
+    <text x="70" y="88" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.9">parents (genXx)</text>
+  </g>
+  <!-- Crossover description -->
+  <text x="480" y="500" font-family="Arial, sans-serif" font-size="10" fill="#9b59b6">Merges best innovations:</text>
+  <text x="480" y="513" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• Takes fast loop from A</text>
+  <text x="480" y="526" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• Takes pruning from B</text>
+  <text x="480" y="539" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• Creates hybrid solution</text>
+
+  <!-- Evaluator Agent -->
+  <g transform="translate(680, 380)">
+    <rect x="0" y="0" width="140" height="100" rx="12" fill="url(#evaluatorGrad)" filter="url(#shadow)"/>
+    <text x="70" y="35" text-anchor="middle" font-size="24" fill="#fff">📊</text>
+    <text x="70" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#fff">Evaluator</text>
+    <text x="70" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.9">Runs test harness</text>
+    <text x="70" y="88" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff" opacity="0.9">Returns fitness</text>
+  </g>
+  <!-- Evaluator description -->
+  <text x="680" y="500" font-family="Arial, sans-serif" font-size="10" fill="#3498db">Measures against benchmark:</text>
+  <text x="680" y="513" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• perf: ops/sec, latency</text>
+  <text x="680" y="526" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• size: bytes, chars</text>
+  <text x="680" y="539" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• ml: F1, accuracy, AUC</text>
+
+  <!-- Arrows from Pool to agents -->
+  <path d="M380 350 L350 380" stroke="#95a5a6" stroke-width="2" fill="none" marker-end="url(#arrowGray)"/>
+  <path d="M450 350 L550 380" stroke="#95a5a6" stroke-width="2" fill="none" marker-end="url(#arrowGray)"/>
+  <path d="M520 350 L750 380" stroke="#95a5a6" stroke-width="2" fill="none" marker-end="url(#arrowGray)"/>
+
+  <!-- SECTION: Diagnostic Agents (right side) -->
+  <rect x="870" y="130" width="310" height="280" rx="12" fill="#34495e" opacity="0.4" stroke="#7f8c8d" stroke-width="1" stroke-dasharray="5,5"/>
+  <text x="1025" y="155" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#bdc3c7">
+    DIAGNOSTIC AGENTS (triggered on events)
+  </text>
+
+  <!-- Debugger Agent -->
+  <g transform="translate(890, 175)">
+    <rect x="0" y="0" width="130" height="90" rx="12" fill="url(#debuggerGrad)" filter="url(#shadow)"/>
+    <text x="65" y="32" text-anchor="middle" font-size="22" fill="#fff">🐛</text>
+    <text x="65" y="52" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#fff">Debugger</text>
+    <text x="65" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#fff" opacity="0.9">On mutation failure</text>
+    <text x="65" y="80" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#fff" opacity="0.9">33% catch rate</text>
+  </g>
+  <!-- Debugger description -->
+  <text x="1030" y="195" font-family="Arial, sans-serif" font-size="10" fill="#e74c3c">Triggered: crash/error/timeout</text>
+  <text x="1030" y="210" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• Identifies root cause</text>
+  <text x="1030" y="225" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• Categorizes failure type</text>
+  <text x="1030" y="240" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• Extracts lessons for future</text>
+
+  <!-- Plateau Breaker Agent -->
+  <g transform="translate(890, 285)">
+    <rect x="0" y="0" width="130" height="90" rx="12" fill="url(#plateauGrad)" filter="url(#shadow)"/>
+    <text x="65" y="32" text-anchor="middle" font-size="22" fill="#fff">🔨</text>
+    <text x="65" y="52" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#fff">Plateau Breaker</text>
+    <text x="65" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#fff" opacity="0.9">On stall detection</text>
+    <text x="65" y="80" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#fff" opacity="0.9">&lt;2% over 3 gens</text>
+  </g>
+  <!-- Plateau Breaker description -->
+  <text x="1030" y="305" font-family="Arial, sans-serif" font-size="10" fill="#3498db">Triggered: evolution stuck</text>
+  <text x="1030" y="320" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• Diagnoses local optimum</text>
+  <text x="1030" y="335" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• Proposes radical changes</text>
+  <text x="1030" y="350" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• Algorithm swaps, paradigm shifts</text>
+
+  <!-- SECTION: Trust System (bottom left) -->
+  <rect x="50" y="580" width="350" height="200" rx="12" fill="#34495e" opacity="0.4" stroke="#f39c12" stroke-width="1"/>
+  <text x="225" y="605" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#f39c12">
+    TRUST SYSTEM (validates large improvements)
+  </text>
+
+  <!-- Adversary Agent -->
+  <g transform="translate(70, 625)">
+    <rect x="0" y="0" width="130" height="90" rx="12" fill="url(#adversaryGrad)" filter="url(#shadow)"/>
+    <text x="65" y="32" text-anchor="middle" font-size="22" fill="#fff">🛡️</text>
+    <text x="65" y="52" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#fff">Adversary</text>
+    <text x="65" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#fff" opacity="0.9">Reviews &gt;15% jumps</text>
+    <text x="65" y="80" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#fff" opacity="0.9">Trust score 0-1</text>
+  </g>
+  <!-- Trust flow description -->
+  <text x="210" y="645" font-family="Arial, sans-serif" font-size="10" fill="#f39c12">Validation pipeline:</text>
+  <text x="210" y="660" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">1. Exploit detection (timing, output)</text>
+  <text x="210" y="675" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">2. Variance gate (N re-evaluations)</text>
+  <text x="210" y="690" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">3. Adversary review (suspicious?)</text>
+  <text x="210" y="705" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">4. Escalation levels (L1-L3)</text>
+  <text x="210" y="725" font-family="Arial, sans-serif" font-size="10" fill="#95a5a6">→ Generates trust_dossier.md</text>
+
+  <!-- SECTION: Persistence Layer (bottom center) -->
+  <rect x="420" y="580" width="350" height="200" rx="12" fill="#34495e" opacity="0.4" stroke="#1abc9c" stroke-width="1"/>
+  <text x="595" y="605" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#1abc9c">
+    MEMORY SYSTEM (persistent learning)
+  </text>
+
+  <!-- Memory Store -->
+  <g transform="translate(440, 625)">
+    <rect x="0" y="0" width="130" height="90" rx="12" fill="url(#memoryGrad)" filter="url(#shadow)"/>
+    <text x="65" y="32" text-anchor="middle" font-size="22" fill="#fff">💾</text>
+    <text x="65" y="52" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#fff">Memory Store</text>
+    <text x="65" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#fff" opacity="0.9">evolution.json</text>
+    <text x="65" y="80" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#fff" opacity="0.9">Pattern matching</text>
+  </g>
+  <!-- Memory description -->
+  <text x="580" y="645" font-family="Arial, sans-serif" font-size="10" fill="#1abc9c">Frame types stored:</text>
+  <text x="580" y="660" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• mutation (success + fitness delta)</text>
+  <text x="580" y="675" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• failed_mutation (why it broke)</text>
+  <text x="580" y="690" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• checkpoint (crash recovery)</text>
+  <text x="580" y="705" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">• champion (winning solutions)</text>
+  <text x="580" y="725" font-family="Arial, sans-serif" font-size="10" fill="#95a5a6">→ Injected as context for mutators</text>
+
+  <!-- SECTION: Human Interface (bottom right) -->
+  <rect x="790" y="580" width="350" height="200" rx="12" fill="#34495e" opacity="0.4" stroke="#27ae60" stroke-width="1"/>
+  <text x="965" y="605" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#27ae60">
+    HUMAN INTERFACE (real-time updates)
+  </text>
+
+  <!-- Reporter Agent -->
+  <g transform="translate(810, 625)">
+    <rect x="0" y="0" width="130" height="90" rx="12" fill="url(#reporterGrad)" filter="url(#shadow)"/>
+    <text x="65" y="32" text-anchor="middle" font-size="22" fill="#fff">📢</text>
+    <text x="65" y="52" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#fff">Reporter</text>
+    <text x="65" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#fff" opacity="0.9">Background task</text>
+    <text x="65" y="80" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#fff" opacity="0.9">Polls every 2s</text>
+  </g>
+  <!-- Reporter description -->
+  <text x="950" y="645" font-family="Arial, sans-serif" font-size="10" fill="#27ae60">Message types surfaced:</text>
+  <text x="950" y="660" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">🏆 milestone (new champion)</text>
+  <text x="950" y="675" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">💡 discovery (share insights)</text>
+  <text x="950" y="690" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">⚠️ warning (suspicious activity)</text>
+  <text x="950" y="705" font-family="Arial, sans-serif" font-size="10" fill="#bdc3c7">📊 status (progress updates)</text>
+  <text x="950" y="725" font-family="Arial, sans-serif" font-size="10" fill="#95a5a6">→ Filtered by priority level</text>
+
+  <!-- Champion output (top right) -->
+  <g transform="translate(1050, 430)">
+    <rect x="0" y="0" width="100" height="100" rx="50" fill="#f1c40f" filter="url(#shadow)"/>
+    <text x="50" y="45" text-anchor="middle" font-size="36" fill="#fff">🏆</text>
+    <text x="50" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#fff">Champion</text>
+    <text x="50" y="85" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#8B6914">Best solution</text>
+  </g>
+
+  <!-- Arrow from Evaluator to Champion -->
+  <path d="M820 430 L1050 480" stroke="#f1c40f" stroke-width="2" fill="none" marker-end="url(#arrowGray)"/>
+  <text x="920" y="445" font-family="Arial, sans-serif" font-size="10" fill="#f1c40f">Promoted after</text>
+  <text x="920" y="458" font-family="Arial, sans-serif" font-size="10" fill="#f1c40f">trust validation</text>
+
+  <!-- Data flow arrows -->
+  <!-- Pool to Memory -->
+  <path d="M450 350 L505 580" stroke="#1abc9c" stroke-width="2" stroke-dasharray="5,3" fill="none" marker-end="url(#arrowGreen)"/>
+
+  <!-- Memory to Mutators (context injection) -->
+  <path d="M440 670 L350 500" stroke="#1abc9c" stroke-width="2" stroke-dasharray="5,3" fill="none" marker-end="url(#arrowGreen)"/>
+  <text x="370" y="570" font-family="Arial, sans-serif" font-size="9" fill="#1abc9c">Context</text>
+  <text x="370" y="582" font-family="Arial, sans-serif" font-size="9" fill="#1abc9c">injection</text>
+
+  <!-- Footer: Key metrics -->
+  <rect x="50" y="850" width="1100" height="40" rx="8" fill="#2c3e50" opacity="0.8"/>
+  <text x="100" y="875" font-family="Arial, sans-serif" font-size="12" fill="#ecf0f1">
+    <tspan font-weight="bold">Clean Context:</tspan> Each agent sees only its task, not full history
+  </text>
+  <text x="420" y="875" font-family="Arial, sans-serif" font-size="12" fill="#ecf0f1">
+    <tspan font-weight="bold">Parallel Mutations:</tspan> 3-4 mutators run concurrently
+  </text>
+  <text x="720" y="875" font-family="Arial, sans-serif" font-size="12" fill="#ecf0f1">
+    <tspan font-weight="bold">Stop Conditions:</tspan> Plateau, max generations, or budget
+  </text>
+
+</svg>

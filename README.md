@@ -69,7 +69,7 @@ python -m evolve_sdk --resume
 
 ## Architecture
 
-See the [Evolution Factory diagram](showcase/nqueens-evolution/evolution-factory.svg) above for a visual overview of the agent system.
+![Evolve SDK Architecture](docs/architecture.svg)
 
 ## Evolution Memory System
 
