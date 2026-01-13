@@ -52,6 +52,12 @@ agentic-evolve/
 4. **Tests**: SDK tests in `sdk/tests/`, showcase-specific tests stay with their showcase
 5. **When in doubt**: Look at 2-3 existing examples before deciding where to put something new
 
+### Diagram Standards
+- **Always use SVG** for architecture diagrams, flowcharts, and visual documentation
+- **Never use ASCII art** for diagrams - SVG is more professional, readable, and version-controllable
+- Place diagram SVGs near the content they document (e.g., `showcase/nqueens-evolution/evolution-factory.svg`)
+- Reference SVGs in markdown with `![Alt text](path/to/diagram.svg)`
+
 ## Showcase Projects
 - `regex_golf/` - Phase 1 agents demonstration (Debugger + Plateau Breaker)
 - `santa-2025-packing/` - Kaggle Christmas tree packing challenge

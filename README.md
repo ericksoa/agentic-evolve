@@ -69,41 +69,7 @@ python -m evolve_sdk --resume
 
 ## Architecture
 
-```
-┌───────────────────────────────────────────────────────────────────────────┐
-│                          Evolution Factory                                 │
-│                                                                           │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │ Mutator  │  │ Debugger │  │ Evaluator│  │ Adversary│  │ Crossover│   │
-│  │  Agent   │  │  Agent   │  │  Agent   │  │  Agent   │  │  Agent   │   │
-│  │          │  │          │  │          │  │          │  │          │   │
-│  │ Creates  │  │ Diagnoses│  │ Measures │  │ Validates│  │ Combines │   │
-│  │ variants │  │ failures │  │ fitness  │  │  trust   │  │ parents  │   │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘   │
-│       │             │             │             │             │          │
-│       └─────────────┴─────────────┴─────────────┴─────────────┘          │
-│                                   │                                       │
-│                                   ▼                                       │
-│                        ┌──────────────────┐                              │
-│                        │  Population Pool │                              │
-│                        │                  │                              │
-│                        │ gen0_a, gen1a,   │                              │
-│                        │ gen2b, gen3x...  │                              │
-│                        └────────┬─────────┘                              │
-│                                 │                                         │
-│            ┌────────────────────┼────────────────────┐                   │
-│            ▼                    ▼                    ▼                   │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐       │
-│  │  Memory Store    │  │ Plateau Breaker  │  │  Reporter Agent  │       │
-│  │                  │  │     Agent        │  │                  │       │
-│  │ Mutations, fails,│  │                  │  │ Surfaces msgs to │       │
-│  │ checkpoints      │  │ Escapes local    │  │ human operator   │       │
-│  │                  │  │ optima           │  │                  │       │
-│  └──────────────────┘  └──────────────────┘  └──────────────────┘       │
-│                                                                           │
-│  Stop when: plateau OR max generations OR budget exhausted               │
-└───────────────────────────────────────────────────────────────────────────┘
-```
+See the [Evolution Factory diagram](showcase/nqueens-evolution/evolution-factory.svg) above for a visual overview of the agent system.
 
 ## Evolution Memory System
 

@@ -81,31 +81,18 @@ The `/evolve` skills are thin wrappers that call this SDK:
 
 ## Architecture
 
-```
-EvolutionRunner (orchestrator)
-├── Initializer Agent (Gen 0)
-│   └── Creates diverse initial population
-│
-├── For each generation:
-│   ├── Mutator Agents (parallel)
-│   │   └── Each creates one mutation variant
-│   ├── Debugger Agent (on failure)
-│   │   └── Diagnoses crashed mutations, extracts lessons
-│   ├── Crossover Agent
-│   │   └── Combines top solutions
-│   ├── Evaluator Agent
-│   │   └── Measures fitness of all new solutions
-│   ├── Adversary Agent (if suspicious)
-│   │   └── Reviews large fitness jumps
-│   └── Plateau Breaker Agent (if stalled)
-│       └── Proposes radical interventions when stuck
-│
-├── Reporter Agent (background)
-│   └── Surfaces important messages to human operator
-│
-└── Memory Store
-    └── Records mutations, failures, checkpoints
-```
+![Evolution Factory](../showcase/nqueens-evolution/evolution-factory.svg)
+
+The evolution loop:
+1. **Initializer** creates diverse Gen 0 population
+2. **Mutators** (parallel) create variants of promising solutions
+3. **Debugger** diagnoses any crashed mutations, extracts lessons
+4. **Crossover** combines top solutions
+5. **Evaluator** measures fitness of all candidates
+6. **Adversary** reviews suspicious improvements (>15% jumps)
+7. **Plateau Breaker** intervenes if evolution stalls
+8. **Reporter** surfaces important messages to operator
+9. **Memory Store** records everything for pattern learning
 
 ## Evolution Memory System
 
