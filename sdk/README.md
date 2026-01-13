@@ -403,7 +403,7 @@ if is_stalled:
 
 ### Showcase: Regex Golf
 
-The `showcase/regex_golf/` directory demonstrates both diagnostic agents on a real problem.
+The top-level `showcase/regex_golf/` directory demonstrates both diagnostic agents on a real problem.
 
 **Problem:** Find the shortest regex matching Star Wars titles but not Star Trek titles.
 
