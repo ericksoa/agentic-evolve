@@ -27,17 +27,17 @@ python3 -m evolve_sdk "problem" --max-workers=4
 
 ## Directory Structure
 
-**CRITICAL: Check existing patterns before creating new directories.**
+**CRITICAL: Before creating ANY new file or directory, check where similar things already exist.**
 
 ```
 agentic-evolve/
-├── sdk/                    # The evolve-sdk Python package
+├── sdk/                    # The evolve-sdk Python package ONLY
 │   ├── evolve_sdk/         # Source code
 │   ├── tests/              # SDK unit tests
 │   └── README.md           # SDK documentation
 │
-├── showcase/               # ALL showcase projects go here (NOT in sdk/)
-│   ├── regex_golf/         # Example showcase
+├── showcase/               # ALL showcase/demo projects
+│   ├── regex_golf/
 │   ├── nqueens-evolution/
 │   └── ...
 │
@@ -46,9 +46,11 @@ agentic-evolve/
 ```
 
 ### Rules
-1. **Showcases**: Always in top-level `showcase/`, never in `sdk/showcase/`
-2. **SDK code**: Only in `sdk/evolve_sdk/`
-3. **Tests**: SDK tests in `sdk/tests/`, showcase tests stay with their showcase
+1. **Always check existing patterns first** - run `ls` to see where similar files/directories live before creating new ones
+2. **Showcases**: Top-level `showcase/` directory
+3. **SDK code**: `sdk/evolve_sdk/` only - nothing else in sdk/ except tests and docs
+4. **Tests**: SDK tests in `sdk/tests/`, showcase-specific tests stay with their showcase
+5. **When in doubt**: Look at 2-3 existing examples before deciding where to put something new
 
 ## Showcase Projects
 - `regex_golf/` - Phase 1 agents demonstration (Debugger + Plateau Breaker)

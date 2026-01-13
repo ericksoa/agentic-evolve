@@ -70,37 +70,39 @@ python -m evolve_sdk --resume
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                      Evolution Factory                               │
-│                                                                      │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐      │
-│  │ Mutator  │    │ Evaluator│    │ Adversary│    │ Crossover│      │
-│  │  Agent   │    │  Agent   │    │  Agent   │    │  Agent   │      │
-│  │          │    │          │    │          │    │          │      │
-│  │ Creates  │    │ Measures │    │ Validates│    │ Combines │      │
-│  │ variants │    │ fitness  │    │  trust   │    │ parents  │      │
-│  └────┬─────┘    └────┬─────┘    └────┬─────┘    └────┬─────┘      │
-│       │               │               │               │             │
-│       └───────────────┴───────────────┴───────────────┘             │
-│                               │                                      │
-│                               ▼                                      │
-│                    ┌──────────────────┐                             │
-│                    │  Population Pool │                             │
-│                    │                  │                             │
-│                    │ gen0_a, gen1a,   │                             │
-│                    │ gen2b, gen3x...  │                             │
-│                    └────────┬─────────┘                             │
-│                             │                                        │
-│                             ▼                                        │
-│                    ┌──────────────────┐                             │
-│                    │  Memory Store    │                             │
-│                    │                  │                             │
-│                    │ Mutations, fails,│                             │
-│                    │ checkpoints      │                             │
-│                    └──────────────────┘                             │
-│                                                                      │
-│  Stop when: plateau OR max generations OR budget exhausted          │
-└─────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────┐
+│                          Evolution Factory                                 │
+│                                                                           │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+│  │ Mutator  │  │ Debugger │  │ Evaluator│  │ Adversary│  │ Crossover│   │
+│  │  Agent   │  │  Agent   │  │  Agent   │  │  Agent   │  │  Agent   │   │
+│  │          │  │          │  │          │  │          │  │          │   │
+│  │ Creates  │  │ Diagnoses│  │ Measures │  │ Validates│  │ Combines │   │
+│  │ variants │  │ failures │  │ fitness  │  │  trust   │  │ parents  │   │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘   │
+│       │             │             │             │             │          │
+│       └─────────────┴─────────────┴─────────────┴─────────────┘          │
+│                                   │                                       │
+│                                   ▼                                       │
+│                        ┌──────────────────┐                              │
+│                        │  Population Pool │                              │
+│                        │                  │                              │
+│                        │ gen0_a, gen1a,   │                              │
+│                        │ gen2b, gen3x...  │                              │
+│                        └────────┬─────────┘                              │
+│                                 │                                         │
+│            ┌────────────────────┼────────────────────┐                   │
+│            ▼                    ▼                    ▼                   │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐       │
+│  │  Memory Store    │  │ Plateau Breaker  │  │  Reporter Agent  │       │
+│  │                  │  │     Agent        │  │                  │       │
+│  │ Mutations, fails,│  │                  │  │ Surfaces msgs to │       │
+│  │ checkpoints      │  │ Escapes local    │  │ human operator   │       │
+│  │                  │  │ optima           │  │                  │       │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘       │
+│                                                                           │
+│  Stop when: plateau OR max generations OR budget exhausted               │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Evolution Memory System
@@ -162,6 +164,7 @@ The memory system provides persistent storage for evolution runs, enabling:
 
 | Showcase | Description | Key Result |
 |----------|-------------|------------|
+| [regex_golf](showcase/regex_golf/) | Debugger + Plateau Breaker demo | 33% failure diagnosis |
 | [nqueens-evolution](showcase/nqueens-evolution/) | N-Queens solver with memory demo | 14,000x speedup |
 | [kv-cache-eviction](showcase/kv-cache-eviction/) | LLM KV-cache eviction policy | 6.65% improvement |
 | [molecular-admet-prediction](showcase/molecular-admet-prediction/) | hERG cardiac toxicity | 0.890 ROC-AUC |
@@ -186,7 +189,9 @@ agentic-evolve/
 │       │   ├── mutator.py     # Mutation specialist
 │       │   ├── evaluator.py   # Fitness measurement
 │       │   ├── crossover.py   # Parent combination
-│       │   └── adversary.py   # Trust validation
+│       │   ├── adversary.py   # Trust validation
+│       │   ├── debugger.py    # Failed mutation diagnosis
+│       │   └── plateau_breaker.py  # Stall detection/intervention
 │       ├── memory/            # Evolution memory system
 │       │   ├── store.py       # Persistent storage engine
 │       │   ├── schemas.py     # Frame type definitions
