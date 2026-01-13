@@ -6,14 +6,15 @@ Architecture:
 - Enhancement: +20 3D conformer descriptors
 - Total features: 704 (2D) + 20 (3D) = 724 features
 
-This version avoids slow transformer embeddings by using only
-fast-to-compute 3D descriptors from pre-generated conformers.
+Uses pre-cached 3D features from data/embeddings/ for fast training.
+Falls back to on-the-fly generation for molecules not in cache.
 
 Hypothesis: 3D shape and pharmacophore distance features capture
 spatial information about hERG binding that 2D fingerprints miss.
 """
 
 import numpy as np
+from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 from sklearn.svm import SVC
 from sklearn.preprocessing import RobustScaler
@@ -27,7 +28,7 @@ except ImportError:
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors, Lipinski, rdMolDescriptors, MACCSkeys
 
-# Import 3D feature extraction
+# Import 3D feature extraction (lazy - only used for cache misses)
 from conformer_gen import get_all_3d_features, get_3d_feature_names
 
 
@@ -101,8 +102,24 @@ class HERGPredictor:
         self._feature_names = None
         self._feature_importances = None
 
-        # 3D feature caching for faster inference
+        # 3D feature caching - load pre-computed features
         self._3d_cache = {}
+        self._load_cached_3d_features()
+
+    def _load_cached_3d_features(self):
+        """Load pre-computed 3D features from embeddings cache."""
+        cache_dir = Path(__file__).parent / "data" / "embeddings"
+
+        for split in ['train', 'valid', 'test']:
+            cache_file = cache_dir / f"{split}_embeddings.npz"
+            if cache_file.exists():
+                data = np.load(cache_file, allow_pickle=True)
+                embeddings = data['embeddings']  # Shape: (n_mols, 404)
+                smiles = data['smiles']
+
+                # Extract 3D features (last 20 dimensions of 404-dim vector)
+                for smi, emb in zip(smiles, embeddings):
+                    self._3d_cache[smi] = emb[-20:]  # Last 20 are 3D features
 
     def _calculate_features(self, smiles_list):
         """Calculate 2D + 3D features."""

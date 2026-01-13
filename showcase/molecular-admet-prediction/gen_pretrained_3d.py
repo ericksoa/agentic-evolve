@@ -133,6 +133,32 @@ class HERGPredictor:
         self._embeddings_precomputed = False
         self._use_cached_embeddings = True
 
+        # 3D feature cache
+        self._3d_cache = {}
+
+        # Auto-load cached embeddings and 3D features on init
+        self._load_all_caches()
+
+    def _load_all_caches(self):
+        """Load pre-computed embeddings and 3D features from cache."""
+        cache_dir = Path(__file__).parent / "data" / "embeddings"
+
+        for split in ['train', 'valid', 'test']:
+            cache_file = cache_dir / f"{split}_embeddings.npz"
+            if cache_file.exists():
+                data = np.load(cache_file, allow_pickle=True)
+                embeddings = data['embeddings']  # Shape: (n_mols, 404)
+                smiles = data['smiles']
+
+                for smi, emb in zip(smiles, embeddings):
+                    # First 384 dims are ChemBERTa embeddings
+                    self._embedding_cache[smi] = emb[:384]
+                    # Last 20 dims are 3D features
+                    self._3d_cache[smi] = emb[-20:]
+
+        if self._embedding_cache:
+            self._embeddings_precomputed = True
+
     def _calculate_2d_features(self, smiles_list):
         """Calculate traditional 2D features (fingerprints + descriptors)."""
         all_features = []
@@ -180,13 +206,18 @@ class HERGPredictor:
         return np.array(all_features)
 
     def _calculate_3d_features(self, smiles_list):
-        """Calculate 3D conformer features."""
+        """Calculate 3D conformer features (uses cache when available)."""
         all_features = []
         feature_names = get_3d_feature_names()
 
         for smi in smiles_list:
-            features_dict = get_all_3d_features(smi, random_seed=self.random_state)
-            features = [features_dict[k] for k in feature_names]
+            if smi in self._3d_cache:
+                features = self._3d_cache[smi]
+            else:
+                # Fallback: compute on the fly (slow)
+                features_dict = get_all_3d_features(smi, random_seed=self.random_state)
+                features = [features_dict[k] for k in feature_names]
+                self._3d_cache[smi] = features
             all_features.append(features)
 
         return np.array(all_features)
