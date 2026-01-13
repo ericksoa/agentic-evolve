@@ -1,40 +1,29 @@
 {
-  "file": ".evolve-sdk/evolve_fast_n_queens_solvers_t/mutations/gen6x.py",
-  "parents_used": [
-    ".evolve-sdk/evolve_fast_n_queens_solvers_t/mutations/gen1a.py",
-    ".evolve-sdk/evolve_fast_n_queens_solvers_t/mutations/gen5a.py",
-    ".evolve-sdk/evolve_fast_n_queens_solvers_t/mutations/gen5b.py"
-  ],
-  "from_each_parent": {
-    "gen1a.py": "Inlined MRV structure with early termination optimizations (fail-fast on 0 options, break early on 1 option)",
-    "gen5a.py": "Precomputed diagonal lookup tables (d1_table, d2_table) to eliminate arithmetic in hot loops",
-    "gen5b.py": "Hybrid dispatch (bitwise for n<=10, MRV for larger n) and bit_length()-1 optimization for column extraction"
-  },
-  "description": "Created a hybrid that uses gen5b's dispatch strategy to route small problems to an optimized bitwise solver (with bit_length() optimization), while large problems use gen1a's inlined MRV structure enhanced with gen5a's precomputed diagonal lookup tables. This combines the lower overhead of bitwise operations for small n with the intelligent search pruning of MRV for larger n, while eliminating repeated arithmetic through precomputed lookups.",
-  "variant": "x",
-  "mutation_type": "crossover",
+  "file": ".evolve-sdk/evolve_fast_n_queens_solvers_t/mutations/gen1b.py",
+  "mutation_type": "mutation",
+  "description": "Replaced min-conflicts local search with pure bitwise backtracking. Uses bit manipulation (cols, diag1, diag2 as integers) instead of boolean arrays. Bit operations &, |, <<, >> replace array indexing. Uses (bit - 1).bit_count() to convert bit position to column index.",
+  "hypothesis": "Bitwise operations are significantly faster than array lookups and comparisons. The CPU can process all 64 columns in parallel with single operations. This eliminates the O(n) conflict counting loops in min-conflicts and replaces them with O(1) bit operations. The deterministic backtracking also removes random number generation overhead.",
+  "variant": "b",
   "valid": true,
-  "fitness": 20406.72843,
+  "fitness": 532.99872,
   "error": null,
-  "notes": "100% correctness (4/4 tests passed), total time 1.76ms, speed: 2267.41 solutions/sec",
+  "notes": "Fastest solution - 59.22 solutions/sec, total time 67.54ms for all test cases",
   "trust_score": 0.9,
-  "original_fitness": 22674.1427,
+  "original_fitness": 592.2208,
   "adversary_reviewed": true,
   "adversary_recommendation": "accept",
   "adversary_flags": [
-    "21% jump is relative to trust-adjusted champion (only ~2.9% vs original fitness)",
-    "crossover_combining_proven_techniques",
-    "small_n_bitwise_from_gen5b",
-    "large_n_mrv_with_gen5a_lookups"
+    "parent_zero_fitness_makes_comparison_meaningless",
+    "should_verify_across_larger_board_sizes"
   ],
-  "adversary_analysis": "The gen6x crossover legitimately combines proven techniques from three high-performing parents. The claimed 21.1% improvement is misleading - it compares against gen1a's trust-adjusted fitness (18722). Against gen1a's original fitness (22025.91), the actual improvement is only ~2.9%, which is reasonable for a crossover combining complementary optimizations. The algorithm has two distinct paths: (1) For n\u226410, uses gen5b's bitwise solver with bit_length() optimization - identical code structure; (2) For n>10, uses gen5a's precomputed diagonal lookup tables combined with gen1a's boolean array tracking and early termination patterns. This is a legitimate hybrid that may offer better performance by using the optimal strategy for each problem size. No hardcoded answers, cached results, or exploitation detected. The code is well-documented and the crossover claims are verifiable by diffing against parents. Recommending acceptance with 0.90 trust score - slight discount because crossover synergy benefits should be validated on extended test suite. Level 1 escalation to verify performance holds across more board sizes and edge cases.",
+  "adversary_analysis": "This is a LEGITIMATE algorithmic improvement. The candidate implements well-known bitwise N-Queens backtracking, which is a standard efficient technique. The code shows no signs of exploitation - no hardcoded solutions, no lookup tables, no caching tricks. The algorithm correctly uses bit manipulation for O(1) constraint checking: column occupancy via OR, diagonal propagation via bit shifts, and position extraction via bit tricks. The parent had 0.0 fitness (likely failed/timed out), making the 'fitness jump' metric meaningless - this isn't a suspicious improvement, it's comparing a working solution to a broken one. The claimed 59.22 solutions/sec is plausible for bitwise backtracking. Minor trust reduction (0.9) because: (1) the parent's zero fitness means we can't properly assess incremental improvement, and (2) we should verify performance on larger board sizes (N>20) to ensure the algorithm generalizes. Recommending Level 1 escalation to run extended test suite with larger N values to confirm the bitwise approach scales as expected.",
   "exploit_checks": {
     "output_integrity": {
       "check_name": "output_integrity",
       "passed": true,
-      "details": "Fitness value valid: 22674.1427",
+      "details": "Fitness value valid: 592.2208",
       "severity": "info",
-      "value": 22674.1427
+      "value": 592.2208
     }
   }
 }

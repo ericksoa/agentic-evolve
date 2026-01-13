@@ -1,0 +1,39 @@
+{
+  "file": ".evolve-sdk/evolve_herg_prediction_models/mutations/gen1x.py",
+  "parents_used": [
+    ".evolve-sdk/evolve_herg_prediction_models/mutations/gen0_a.py",
+    ".evolve-sdk/evolve_herg_prediction_models/mutations/gen0_d.py",
+    ".evolve-sdk/evolve_herg_prediction_models/mutations/gen0_e.py"
+  ],
+  "from_each_parent": {
+    "gen0_a.py": "Random Forest classifier architecture with balanced class weights, feature importance tracking, and robust model structure",
+    "gen0_d.py": "LightGBM model with comprehensive 25 molecular descriptors, RobustScaler preprocessing (only scaling descriptors not fingerprints), fallback to HistGradientBoostingClassifier, and 1024-bit fingerprints",
+    "gen0_e.py": "Key hERG-relevant molecular descriptors including basic nitrogens count, lipophilic basicity interaction term (basic_nitrogens * logP), and StandardScaler preprocessing concept"
+  },
+  "description": "Created a soft-voting ensemble that combines Random Forest (40% weight) and LightGBM (60% weight) classifiers. The hybrid uses: (1) Morgan fingerprints at 1024 bits (balanced between gen0_a's 2048 and gen0_e's 512), (2) comprehensive 25 molecular descriptors from gen0_d including lipophilicity, aromaticity, topology, and rigidity features, (3) hERG-critical basicity features from gen0_e (basic nitrogens and lipophilic basicity interaction), (4) selective RobustScaler preprocessing that only normalizes descriptors while preserving binary fingerprint values, and (5) combined feature importance from both models weighted by their ensemble contribution. The ensemble approach should reduce variance and capture complementary patterns learned by tree-based (RF) and gradient boosting (LightGBM) methods.",
+  "variant": "x",
+  "mutation_type": "crossover",
+  "valid": true,
+  "fitness": 0.7030741504184549,
+  "error": null,
+  "notes": "Strong performance. ROC-AUC: 0.827, Accuracy: 74.4%, F1: 0.755, Inference: 3.44ms, Train time: 72.4s. Fast evaluation mode (no CV).",
+  "trust_score": 0.85,
+  "original_fitness": 0.8271460593158293,
+  "adversary_reviewed": true,
+  "adversary_recommendation": "accept",
+  "adversary_flags": [
+    "no_cv_validation",
+    "parent_fitness_unknown",
+    "first_generation_crossover"
+  ],
+  "adversary_analysis": "The solution is a legitimate ensemble of Random Forest and LightGBM, implementing standard soft voting. Code review confirms all claimed crossover elements: RF architecture from gen0_a, LightGBM with comprehensive features from gen0_d, and descriptor concepts from gen0_e. No exploit patterns detected - all 1049 features (1024 fingerprint bits + 25 descriptors) are dynamically computed from molecular structures using RDKit. The 0.827 ROC-AUC represents ~2% improvement over the 0.81 baseline, which is a modest, believable gain from ensemble diversity. The main concern is 'fast evaluation mode (no CV)' which bypasses cross-validation, reducing confidence in generalization. Recommend Level 1 escalation to run extended test suite with proper CV before final promotion. Trust score of 0.85 reflects legitimate technique with minor validation concerns.",
+  "exploit_checks": {
+    "output_integrity": {
+      "check_name": "output_integrity",
+      "passed": true,
+      "details": "Fitness value valid: 0.8271460593158293",
+      "severity": "info",
+      "value": 0.8271460593158293
+    }
+  }
+}

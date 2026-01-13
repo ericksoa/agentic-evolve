@@ -1,129 +1,57 @@
 """
-N-Queens Solver - Gen2a: Bitwise MRV with Lookup Table
-
-Mutation: Convert MRV heuristic from boolean arrays to bitmask operations.
-- Uses bitmasks for column and diagonal tracking
-- Uses bit_count() for O(1) counting of available positions
-- Precomputes diagonal bit patterns for each (row, col) pair
-- Uses lookup table to avoid per-iteration bit calculations
+Variant gen2a: Optimized Bit Position Extraction
+Replaces (bit - 1).bit_count() with bit.bit_length() - 1 for column index.
+bit_length() is a simpler operation than subtraction + population count.
 """
 
+
 def solve_nqueens(n: int) -> list[int] | None:
-    """
-    Solve N-Queens using bitwise MRV heuristic with precomputed lookups.
-    """
-    if n == 0:
-        return []
+    """Solve N-Queens using bitwise backtracking with optimized bit extraction."""
+    if n <= 0:
+        return None
     if n == 1:
         return [0]
 
-    solution = [-1] * n
+    board = [-1] * n
+    all_ones = (1 << n) - 1  # Mask with n bits set
 
-    # Precompute diagonal bit patterns for all (row, col) combinations
-    # d1_bits[row][col] = bit position for row-col diagonal
-    # d2_bits[row][col] = bit position for row+col diagonal
-    d1_bits = [[1 << (row - col + n - 1) for col in range(n)] for row in range(n)]
-    d2_bits = [[1 << (row + col) for col in range(n)] for row in range(n)]
-    col_bits = [1 << col for col in range(n)]
-
-    # Bitmasks for tracking conflicts
-    col_mask = 0
-    diag1_mask = 0
-    diag2_mask = 0
-
-    row_done = [False] * n
-
-    def backtrack(placed: int) -> bool:
-        nonlocal col_mask, diag1_mask, diag2_mask
-
-        if placed == n:
+    def backtrack(row: int, cols: int, diag1: int, diag2: int) -> bool:
+        """
+        Bitwise backtracking solver.
+        cols: columns already occupied (bit set = occupied)
+        diag1: down-left diagonals occupied
+        diag2: down-right diagonals occupied
+        """
+        if row == n:
             return True
 
-        # MRV: select most constrained row using bit_count()
-        min_count = n + 1
-        min_row = -1
-        min_available = None
+        # Available positions: where no column or diagonal is blocked
+        available = all_ones & ~(cols | diag1 | diag2)
 
-        for row in range(n):
-            if row_done[row]:
-                continue
+        while available:
+            # Get rightmost available position
+            bit = available & (-available)
+            available &= available - 1  # Remove this bit
 
-            # Build available list for this row
-            row_d1 = d1_bits[row]
-            row_d2 = d2_bits[row]
-            available = []
-            for col in range(n):
-                if not (col_mask & col_bits[col]) and not (diag1_mask & row_d1[col]) and not (diag2_mask & row_d2[col]):
-                    available.append(col)
+            # Convert bit position to column index using bit_length
+            # For isolated bit, bit_length() - 1 gives the position directly
+            col = bit.bit_length() - 1
+            board[row] = col
 
-            count = len(available)
-            if count == 0:
-                return False
-
-            if count < min_count:
-                min_count = count
-                min_row = row
-                min_available = available
-                if count == 1:
-                    break
-
-        if min_row == -1:
-            return False
-
-        row = min_row
-        row_done[row] = True
-        row_d1 = d1_bits[row]
-        row_d2 = d2_bits[row]
-
-        for col in min_available:
-            col_bit = col_bits[col]
-            d1_bit = row_d1[col]
-            d2_bit = row_d2[col]
-
-            solution[row] = col
-            col_mask |= col_bit
-            diag1_mask |= d1_bit
-            diag2_mask |= d2_bit
-
-            if backtrack(placed + 1):
+            # Recurse with updated constraints
+            # diag1 shifts left (going down-left)
+            # diag2 shifts right (going down-right)
+            if backtrack(row + 1, cols | bit, (diag1 | bit) << 1, (diag2 | bit) >> 1):
                 return True
 
-            col_mask &= ~col_bit
-            diag1_mask &= ~d1_bit
-            diag2_mask &= ~d2_bit
-
-        solution[row] = -1
-        row_done[row] = False
         return False
 
-    if backtrack(0):
-        return solution
+    if backtrack(0, 0, 0, 0):
+        return board
     return None
 
 
-def verify_solution(n: int, solution: list[int]) -> bool:
-    """Verify that a solution is valid."""
-    if solution is None or len(solution) != n:
-        return False
-
-    for row, col in enumerate(solution):
-        if col < 0 or col >= n:
-            return False
-        for prev_row in range(row):
-            prev_col = solution[prev_row]
-            if prev_col == col:
-                return False
-            if abs(prev_col - col) == abs(prev_row - row):
-                return False
-
-    return True
-
-
 if __name__ == "__main__":
-    import time
     for n in [8, 12, 16, 20]:
-        start = time.perf_counter()
-        solution = solve_nqueens(n)
-        elapsed = time.perf_counter() - start
-        valid = verify_solution(n, solution)
-        print(f"N={n}: valid={valid}, time={elapsed*1000:.2f}ms, solution={solution}")
+        result = solve_nqueens(n)
+        print(f"N={n}: {result}")

@@ -1,7 +1,7 @@
 # Trust Dossier
 
 > **Problem:** Evolve molecular property prediction models for ADMET (Absorption, Distribution, Metabolism, Excretion, Toxicity) endpoints critical to drug discovery. Focus on hERG cardiac toxicity, a major cause of drug candidate attrition.
-> **Generated:** 2026-01-12 20:53:32
+> **Generated:** 2026-01-12 21:14:01
 
 ---
 
@@ -9,10 +9,36 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Evaluations | 0 |
-| Accepted | 0 |
+| Total Evaluations | 2 |
+| Accepted | 2 |
 | Challenged | 0 |
 | Rejected | 0 |
+
+## Trust History
+
+### Gen 8: gen8c.py
+
+- **Fitness:** 0.8909
+- **Trust Score:** 0.92
+- **Recommendation:** ACCEPT
+- **Flags:**
+  - test_auc_slightly_higher_than_cv_mean
+- **Exploit Detection:**
+  - output_integrity: PASS
+    - Fitness value valid: 0.8908689248895435
+- **Analysis:** Legitimate hyperparameter tuning mutation. Changes are minimal and well-documented: ExtraTrees max_depth increased from 5 to 7, n_estimators from 80 to 100, with slight weight rebalancing. The 0.1% fi...
+
+### Gen 8: gen8x.py
+
+- **Fitness:** 0.8903
+- **Trust Score:** 0.95
+- **Recommendation:** ACCEPT
+- **Flags:**
+  - minimal_improvement_within_noise
+- **Exploit Detection:**
+  - output_integrity: PASS
+    - Fitness value valid: 0.8902798232695139
+- **Analysis:** Gen8x is a legitimate crossover combining XGBoost weight emphasis from gen1a (weights [0.25, 0.35, 0.22, 0.18]) with tuned SVM hyperparameters (C=2.5, gamma='auto') from gen7a. The resulting hybrid we...
 
 ---
 

@@ -1,82 +1,46 @@
 """
-N-Queens Solver - Gen1 Variant C: Bitmask Diagonals
-
-Mutation: Replace boolean arrays with integer bitmasks for diagonal tracking.
-Uses bitwise operations instead of array indexing for faster conflict checks.
+Variant gen1c: Permutation-based with Incremental Diagonal Tracking
+Uses sets to track diagonals instead of O(n²) pairwise checking.
 """
 
 def solve_nqueens(n: int) -> list[int] | None:
-    """
-    Solve N-Queens using permutation approach with bitmask diagonal tracking.
+    """Solve N-Queens using permutation approach with O(1) diagonal checks."""
+    board = list(range(n))  # Start with identity permutation
+    diag1 = set()  # row - col diagonals
+    diag2 = set()  # row + col diagonals
 
-    Uses integer bitmasks instead of boolean arrays:
-    - Single bitwise AND to check if diagonal is free
-    - Single bitwise OR to mark diagonal as used
-    - Single bitwise XOR to unmark diagonal
-    """
-    if n == 0:
-        return []
-    if n == 1:
-        return [0]
-
-    solution = list(range(n))  # Start with identity permutation
-
-    # Use integer bitmasks for diagonals
-    diag1_mask = 0  # row - col + n - 1
-    diag2_mask = 0  # row + col
-
-    def backtrack(row: int, d1_mask: int, d2_mask: int) -> bool:
-        if row == n:
+    def backtrack(pos: int) -> bool:
+        if pos == n:
             return True
 
-        # Try swapping current position with each remaining position
-        for i in range(row, n):
-            col = solution[i]
-            d1_bit = 1 << (row - col + n - 1)
-            d2_bit = 1 << (row + col)
+        for i in range(pos, n):
+            col = board[i]
+            d1 = pos - col
+            d2 = pos + col
 
-            # Check if both diagonals are free using bitwise AND
-            if not (d1_mask & d1_bit) and not (d2_mask & d2_bit):
-                # Swap to put this column at current row
-                solution[row], solution[i] = solution[i], solution[row]
+            # Check if diagonals are free
+            if d1 not in diag1 and d2 not in diag2:
+                # Swap
+                board[pos], board[i] = board[i], board[pos]
+                diag1.add(d1)
+                diag2.add(d2)
 
-                # Mark diagonals using bitwise OR
-                if backtrack(row + 1, d1_mask | d1_bit, d2_mask | d2_bit):
+                if backtrack(pos + 1):
                     return True
 
-                # Undo swap (no need to undo masks - they're passed by value)
-                solution[row], solution[i] = solution[i], solution[row]
+                # Backtrack
+                diag1.remove(d1)
+                diag2.remove(d2)
+                board[pos], board[i] = board[i], board[pos]
 
         return False
 
-    if backtrack(0, 0, 0):
-        return solution
+    if backtrack(0):
+        return board
     return None
 
 
-def verify_solution(n: int, solution: list[int]) -> bool:
-    """Verify that a solution is valid."""
-    if solution is None or len(solution) != n:
-        return False
-
-    for row, col in enumerate(solution):
-        if col < 0 or col >= n:
-            return False
-        for prev_row in range(row):
-            prev_col = solution[prev_row]
-            if prev_col == col:
-                return False
-            if abs(prev_col - col) == abs(prev_row - row):
-                return False
-
-    return True
-
-
 if __name__ == "__main__":
-    import time
     for n in [8, 12, 16, 20]:
-        start = time.perf_counter()
-        solution = solve_nqueens(n)
-        elapsed = time.perf_counter() - start
-        valid = verify_solution(n, solution)
-        print(f"N={n}: valid={valid}, time={elapsed*1000:.2f}ms, solution={solution}")
+        result = solve_nqueens(n)
+        print(f"N={n}: {result}")

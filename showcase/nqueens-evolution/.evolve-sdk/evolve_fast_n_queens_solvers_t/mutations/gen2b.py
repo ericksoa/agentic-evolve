@@ -1,159 +1,54 @@
 """
-N-Queens Solver - Variant gen2b: Hybrid Dispatch with Bitwise Operations
-
-Approach: Hybrid algorithm selection based on input size.
-- For small n (<=10): Uses simple row-by-row backtracking with bitmasks
-- For large n (>10): Uses MRV heuristic
-- Bitmask operations for faster conflict checking
+Variant gen2b: Permutation-based with Inline Diagonal Check
+Mutation: Eliminate set operations entirely, use inline integer-based conflict check.
+Parent: gen1c.py (permutation + sets, fitness 197.45)
 """
 
+
 def solve_nqueens(n: int) -> list[int] | None:
-    """
-    Solve N-Queens using hybrid approach based on problem size.
-    """
-    if n == 0:
-        return []
+    """Solve N-Queens using permutation approach with inline conflict checks."""
+    if n <= 0:
+        return None
     if n == 1:
         return [0]
 
-    # Use simple bitwise backtracking for small n (faster due to lower overhead)
-    if n <= 10:
-        return _solve_simple_bitwise(n)
-    else:
-        return _solve_mrv(n)
+    board = list(range(n))  # Start with identity permutation
+    # Track diagonal values directly in arrays for fast lookup
+    diag1 = [False] * (2 * n - 1)  # row - col + (n-1), range 0 to 2n-2
+    diag2 = [False] * (2 * n - 1)  # row + col, range 0 to 2n-2
 
-
-def _solve_simple_bitwise(n: int) -> list[int] | None:
-    """Simple row-by-row backtracking with bitmask conflict tracking."""
-    solution = [-1] * n
-    all_cols = (1 << n) - 1  # Mask of all columns
-
-    def backtrack(row: int, cols: int, diag1: int, diag2: int) -> bool:
-        if row == n:
+    def backtrack(pos: int) -> bool:
+        if pos == n:
             return True
 
-        # Available positions: columns not attacked
-        available = all_cols & ~(cols | diag1 | diag2)
+        for i in range(pos, n):
+            col = board[i]
+            d1 = pos - col + n - 1
+            d2 = pos + col
 
-        while available:
-            # Get rightmost set bit (a valid column)
-            bit = available & -available
-            available ^= bit  # Remove this bit
+            # Check if diagonals are free using direct array indexing
+            if not diag1[d1] and not diag2[d2]:
+                # Swap
+                board[pos], board[i] = board[i], board[pos]
+                diag1[d1] = True
+                diag2[d2] = True
 
-            # Convert bit position to column index
-            col = (bit - 1).bit_count()
-            solution[row] = col
+                if backtrack(pos + 1):
+                    return True
 
-            # Recurse: shift diagonals for next row
-            if backtrack(row + 1, cols | bit, (diag1 | bit) << 1, (diag2 | bit) >> 1):
-                return True
+                # Backtrack
+                diag1[d1] = False
+                diag2[d2] = False
+                board[pos], board[i] = board[i], board[pos]
 
-        return False
-
-    if backtrack(0, 0, 0, 0):
-        return solution
-    return None
-
-
-def _solve_mrv(n: int) -> list[int] | None:
-    """MRV heuristic solver for larger boards."""
-    solution = [-1] * n
-
-    # Track conflicts using arrays
-    col_used = [False] * n
-    diag1_used = [False] * (2 * n - 1)
-    diag2_used = [False] * (2 * n - 1)
-    row_done = [False] * n
-
-    def count_available(row: int) -> int:
-        count = 0
-        for col in range(n):
-            if not col_used[col] and not diag1_used[row - col + n - 1] and not diag2_used[row + col]:
-                count += 1
-        return count
-
-    def get_available(row: int) -> list[int]:
-        result = []
-        for col in range(n):
-            if not col_used[col] and not diag1_used[row - col + n - 1] and not diag2_used[row + col]:
-                result.append(col)
-        return result
-
-    def select_row() -> int:
-        min_count = n + 1
-        min_row = -1
-        for row in range(n):
-            if not row_done[row]:
-                count = count_available(row)
-                if count < min_count:
-                    min_count = count
-                    min_row = row
-                    if count == 0:
-                        break
-        return min_row
-
-    def backtrack(placed: int) -> bool:
-        if placed == n:
-            return True
-
-        row = select_row()
-        if row == -1:
-            return False
-
-        available = get_available(row)
-        if not available:
-            return False
-
-        row_done[row] = True
-
-        for col in available:
-            d1 = row - col + n - 1
-            d2 = row + col
-
-            solution[row] = col
-            col_used[col] = True
-            diag1_used[d1] = True
-            diag2_used[d2] = True
-
-            if backtrack(placed + 1):
-                return True
-
-            col_used[col] = False
-            diag1_used[d1] = False
-            diag2_used[d2] = False
-
-        solution[row] = -1
-        row_done[row] = False
         return False
 
     if backtrack(0):
-        return solution
+        return board
     return None
 
 
-def verify_solution(n: int, solution: list[int]) -> bool:
-    """Verify that a solution is valid."""
-    if solution is None or len(solution) != n:
-        return False
-
-    for row, col in enumerate(solution):
-        if col < 0 or col >= n:
-            return False
-        for prev_row in range(row):
-            prev_col = solution[prev_row]
-            if prev_col == col:
-                return False
-            if abs(prev_col - col) == abs(prev_row - row):
-                return False
-
-    return True
-
-
 if __name__ == "__main__":
-    import time
     for n in [8, 12, 16, 20]:
-        start = time.perf_counter()
-        solution = solve_nqueens(n)
-        elapsed = time.perf_counter() - start
-        valid = verify_solution(n, solution)
-        print(f"N={n}: valid={valid}, time={elapsed*1000:.2f}ms, solution={solution}")
+        result = solve_nqueens(n)
+        print(f"N={n}: {result}")

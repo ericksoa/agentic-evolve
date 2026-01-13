@@ -1,20 +1,30 @@
 """
-Variant C: Array-based Backtracking with Precomputed Indices
-Uses arrays instead of sets with direct indexing for cache efficiency.
+Variant F: Middle-Out Search with Smart Ordering
+Starts from middle rows/columns for faster convergence.
 """
 
 def solve_nqueens(n: int) -> list[int] | None:
-    """Solve N-Queens using array-based constraint tracking."""
+    """Solve N-Queens starting from middle columns."""
     board = [-1] * n
     cols = [False] * n
-    diag1 = [False] * (2 * n - 1)  # row - col + n - 1
-    diag2 = [False] * (2 * n - 1)  # row + col
+    diag1 = [False] * (2 * n - 1)
+    diag2 = [False] * (2 * n - 1)
+
+    # Order columns from middle outward
+    middle = n // 2
+    col_order = []
+    for i in range(n):
+        if i % 2 == 0:
+            col_order.append(middle + i // 2)
+        else:
+            col_order.append(middle - (i + 1) // 2)
+    col_order = [c for c in col_order if 0 <= c < n]
 
     def backtrack(row: int) -> bool:
         if row == n:
             return True
 
-        for col in range(n):
+        for col in col_order:
             d1 = row - col + n - 1
             d2 = row + col
 
@@ -26,7 +36,6 @@ def solve_nqueens(n: int) -> list[int] | None:
                     return True
 
                 cols[col] = diag1[d1] = diag2[d2] = False
-                board[row] = -1
 
         return False
 

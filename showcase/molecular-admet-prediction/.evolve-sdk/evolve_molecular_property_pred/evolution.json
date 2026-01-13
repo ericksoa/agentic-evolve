@@ -1,7 +1,7 @@
 {
   "problem": "Evolve molecular property prediction models for ADMET (Absorption, Distribution, Metabolism, Excretion, Toxicity) endpoints critical to drug discovery. Focus on hERG cardiac toxicity, a major cause of drug candidate attrition.",
   "mode": "ml",
-  "generation": 9,
+  "generation": 10,
   "population": [
     {
       "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen0_champion.py",
@@ -274,6 +274,23 @@
           "value": 0.8802650957290132
         }
       }
+    },
+    {
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen11_e3fp.py",
+      "mutation_type": "mutation",
+      "description": "Added E3FP (Extended 3D Fingerprints) - 1024-bit 3D circular fingerprints capturing learned spatial patterns",
+      "hypothesis": "E3FP encodes 3D atom neighborhood patterns without hand-crafted descriptors, capturing hERG binding geometry",
+      "variant": "e3fp",
+      "valid": true,
+      "fitness": 0.8814432989690723,
+      "metrics": {
+        "test_roc_auc": 0.8814432989690723,
+        "valid_roc_auc": 0.866,
+        "cv_mean_roc_auc": 0.8830744162700306,
+        "cv_std_roc_auc": 0.027883078097575648
+      },
+      "notes": "E3FP 3D fingerprints. TEST +0.23% vs champion. Features: Morgan(512)+MACCS(167)+E3FP(1024)+25 descriptors = 1728 total.",
+      "trust_score": 1.0
     }
   ],
   "champion": {
@@ -359,6 +376,14 @@
       "best_fitness": 0.89,
       "mutations_tried": 4,
       "mutations_valid": 0
+    },
+    {
+      "generation": 10,
+      "timestamp": "2026-01-12T21:14:01.089222",
+      "population_size": 10,
+      "best_fitness": 0.89,
+      "mutations_tried": 4,
+      "mutations_valid": 0
     }
   ],
   "config": {
@@ -366,5 +391,5 @@
     "population_size": 10,
     "elite_count": 3
   },
-  "updated_at": "2026-01-12T21:10:57.700489"
+  "updated_at": "2026-01-12T21:14:01.103283"
 }
