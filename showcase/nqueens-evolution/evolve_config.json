@@ -1,0 +1,48 @@
+{
+  "description": "Evolve fast N-Queens solvers that generalize across board sizes",
+  "mode": "perf",
+  "evaluation": {
+    "test_command": "python evaluate.py {solution} --json"
+  },
+  "memory": {
+    "enabled": true,
+    "inject_mutation_context": true,
+    "store_successful_mutations": true,
+    "store_failed_mutations": true,
+    "max_similar_mutations": 5,
+    "max_failed_mutations": 5
+  },
+  "trust": {
+    "enabled": true,
+    "suspicious_jump_pct": 50.0,
+    "require_adversary_for_champion": true
+  },
+  "starter_solutions": ["baseline.py"],
+  "optimization_strategies": [
+    {
+      "name": "constraint_propagation",
+      "description": "Add constraint propagation to prune search space early"
+    },
+    {
+      "name": "heuristic_ordering",
+      "description": "Order queen placements by most constrained variable"
+    },
+    {
+      "name": "symmetry_breaking",
+      "description": "Exploit board symmetry to reduce search space"
+    },
+    {
+      "name": "bitwise_operations",
+      "description": "Use bitwise ops for faster conflict detection"
+    },
+    {
+      "name": "iterative_repair",
+      "description": "Start with random placement and repair conflicts"
+    }
+  ],
+  "constraints": [
+    "Must be pure Python (no numpy/external deps)",
+    "Must return list of queen positions (column index per row)",
+    "Must handle any board size N >= 4"
+  ]
+}

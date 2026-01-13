@@ -1,0 +1,40 @@
+{
+  "file": ".evolve-sdk/evolve_fast_n_queens_solvers_t/mutations/gen6x.py",
+  "parents_used": [
+    ".evolve-sdk/evolve_fast_n_queens_solvers_t/mutations/gen1a.py",
+    ".evolve-sdk/evolve_fast_n_queens_solvers_t/mutations/gen5a.py",
+    ".evolve-sdk/evolve_fast_n_queens_solvers_t/mutations/gen5b.py"
+  ],
+  "from_each_parent": {
+    "gen1a.py": "Inlined MRV structure with early termination optimizations (fail-fast on 0 options, break early on 1 option)",
+    "gen5a.py": "Precomputed diagonal lookup tables (d1_table, d2_table) to eliminate arithmetic in hot loops",
+    "gen5b.py": "Hybrid dispatch (bitwise for n<=10, MRV for larger n) and bit_length()-1 optimization for column extraction"
+  },
+  "description": "Created a hybrid that uses gen5b's dispatch strategy to route small problems to an optimized bitwise solver (with bit_length() optimization), while large problems use gen1a's inlined MRV structure enhanced with gen5a's precomputed diagonal lookup tables. This combines the lower overhead of bitwise operations for small n with the intelligent search pruning of MRV for larger n, while eliminating repeated arithmetic through precomputed lookups.",
+  "variant": "x",
+  "mutation_type": "crossover",
+  "valid": true,
+  "fitness": 20406.72843,
+  "error": null,
+  "notes": "100% correctness (4/4 tests passed), total time 1.76ms, speed: 2267.41 solutions/sec",
+  "trust_score": 0.9,
+  "original_fitness": 22674.1427,
+  "adversary_reviewed": true,
+  "adversary_recommendation": "accept",
+  "adversary_flags": [
+    "21% jump is relative to trust-adjusted champion (only ~2.9% vs original fitness)",
+    "crossover_combining_proven_techniques",
+    "small_n_bitwise_from_gen5b",
+    "large_n_mrv_with_gen5a_lookups"
+  ],
+  "adversary_analysis": "The gen6x crossover legitimately combines proven techniques from three high-performing parents. The claimed 21.1% improvement is misleading - it compares against gen1a's trust-adjusted fitness (18722). Against gen1a's original fitness (22025.91), the actual improvement is only ~2.9%, which is reasonable for a crossover combining complementary optimizations. The algorithm has two distinct paths: (1) For n\u226410, uses gen5b's bitwise solver with bit_length() optimization - identical code structure; (2) For n>10, uses gen5a's precomputed diagonal lookup tables combined with gen1a's boolean array tracking and early termination patterns. This is a legitimate hybrid that may offer better performance by using the optimal strategy for each problem size. No hardcoded answers, cached results, or exploitation detected. The code is well-documented and the crossover claims are verifiable by diffing against parents. Recommending acceptance with 0.90 trust score - slight discount because crossover synergy benefits should be validated on extended test suite. Level 1 escalation to verify performance holds across more board sizes and edge cases.",
+  "exploit_checks": {
+    "output_integrity": {
+      "check_name": "output_integrity",
+      "passed": true,
+      "details": "Fitness value valid: 22674.1427",
+      "severity": "info",
+      "value": 22674.1427
+    }
+  }
+}
