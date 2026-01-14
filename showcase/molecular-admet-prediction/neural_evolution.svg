@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7b2cbf;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="url(#bgGrad)"/>
+
+  <!-- Title -->
+  <text x="400" y="40" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="24" font-weight="bold">Neural Network Evolution for hERG Prediction</text>
+  <text x="400" y="65" text-anchor="middle" fill="#8892b0" font-family="Arial, sans-serif" font-size="14">12 variants evolved, +2.2% improvement</text>
+
+  <!-- Grid lines -->
+  <g stroke="#2d3748" stroke-width="1" opacity="0.5">
+    <line x1="100" y1="120" x2="100" y2="400"/>
+    <line x1="100" y1="400" x2="750" y2="400"/>
+    <!-- Horizontal grid -->
+    <line x1="100" y1="160" x2="750" y2="160" stroke-dasharray="5,5"/>
+    <line x1="100" y1="220" x2="750" y2="220" stroke-dasharray="5,5"/>
+    <line x1="100" y1="280" x2="750" y2="280" stroke-dasharray="5,5"/>
+    <line x1="100" y1="340" x2="750" y2="340" stroke-dasharray="5,5"/>
+  </g>
+
+  <!-- Y-axis labels -->
+  <text x="90" y="165" text-anchor="end" fill="#8892b0" font-family="Arial, sans-serif" font-size="11">0.90</text>
+  <text x="90" y="225" text-anchor="end" fill="#8892b0" font-family="Arial, sans-serif" font-size="11">0.89</text>
+  <text x="90" y="285" text-anchor="end" fill="#8892b0" font-family="Arial, sans-serif" font-size="11">0.88</text>
+  <text x="90" y="345" text-anchor="end" fill="#8892b0" font-family="Arial, sans-serif" font-size="11">0.87</text>
+  <text x="90" y="405" text-anchor="end" fill="#8892b0" font-family="Arial, sans-serif" font-size="11">0.86</text>
+  <text x="40" y="260" text-anchor="middle" fill="#8892b0" font-family="Arial, sans-serif" font-size="12" transform="rotate(-90, 40, 260)">Test ROC-AUC</text>
+
+  <!-- Champion line -->
+  <line x1="100" y1="187" x2="750" y2="187" stroke="#ffd700" stroke-width="2" stroke-dasharray="10,5"/>
+  <text x="755" y="191" fill="#ffd700" font-family="Arial, sans-serif" font-size="10">Champion (0.8897)</text>
+
+  <!-- Evolution data points and line -->
+  <!-- gen18: 0.8667 -> y = 400 - (0.8667-0.86)*600 = 360 -->
+  <!-- gen18b: 0.8776 -> y = 400 - (0.8776-0.86)*600 = 294 -->
+  <!-- gen18c: 0.8829 -> y = 400 - (0.8829-0.86)*600 = 262 -->
+  <!-- gen18d: 0.8879 -> y = 400 - (0.8879-0.86)*600 = 233 -->
+  <!-- gen18g: 0.8885 -> y = 400 - (0.8885-0.86)*600 = 229 -->
+
+  <!-- Evolution path -->
+  <polyline points="150,360 250,294 350,262 450,233 550,229 650,244"
+            fill="none" stroke="url(#lineGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Data points -->
+  <circle cx="150" cy="360" r="8" fill="#00d4ff"/>
+  <circle cx="250" cy="294" r="8" fill="#26c6da"/>
+  <circle cx="350" cy="262" r="8" fill="#4db6ac"/>
+  <circle cx="450" cy="233" r="8" fill="#9575cd"/>
+  <circle cx="550" cy="229" r="8" fill="#7b2cbf"/>
+  <circle cx="650" cy="244" r="8" fill="#e040fb"/>
+
+  <!-- Labels -->
+  <text x="150" y="385" text-anchor="middle" fill="#00d4ff" font-family="Arial, sans-serif" font-size="10" font-weight="bold">gen18</text>
+  <text x="150" y="398" text-anchor="middle" fill="#8892b0" font-family="Arial, sans-serif" font-size="9">0.867</text>
+
+  <text x="250" y="318" text-anchor="middle" fill="#26c6da" font-family="Arial, sans-serif" font-size="10" font-weight="bold">gen18b</text>
+  <text x="250" y="331" text-anchor="middle" fill="#8892b0" font-family="Arial, sans-serif" font-size="9">0.878</text>
+
+  <text x="350" y="286" text-anchor="middle" fill="#4db6ac" font-family="Arial, sans-serif" font-size="10" font-weight="bold">gen18c</text>
+  <text x="350" y="299" text-anchor="middle" fill="#8892b0" font-family="Arial, sans-serif" font-size="9">0.883</text>
+
+  <text x="450" y="257" text-anchor="middle" fill="#9575cd" font-family="Arial, sans-serif" font-size="10" font-weight="bold">gen18d</text>
+  <text x="450" y="270" text-anchor="middle" fill="#8892b0" font-family="Arial, sans-serif" font-size="9">0.888</text>
+
+  <text x="550" y="210" text-anchor="middle" fill="#7b2cbf" font-family="Arial, sans-serif" font-size="10" font-weight="bold">gen18g</text>
+  <text x="550" y="223" text-anchor="middle" fill="#8892b0" font-family="Arial, sans-serif" font-size="9">0.8885 ⭐</text>
+
+  <text x="650" y="268" text-anchor="middle" fill="#e040fb" font-family="Arial, sans-serif" font-size="10" font-weight="bold">gen19</text>
+  <text x="650" y="281" text-anchor="middle" fill="#8892b0" font-family="Arial, sans-serif" font-size="9">0.886</text>
+
+  <!-- Legend -->
+  <rect x="550" y="420" width="180" height="70" rx="5" fill="#1a1a2e" stroke="#2d3748"/>
+  <text x="560" y="438" fill="#ffffff" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Legend</text>
+  <line x1="560" y1="452" x2="590" y2="452" stroke="#ffd700" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="595" y="456" fill="#8892b0" font-family="Arial, sans-serif" font-size="10">Champion baseline</text>
+  <line x1="560" y1="472" x2="590" y2="472" stroke="url(#lineGrad)" stroke-width="3"/>
+  <text x="595" y="476" fill="#8892b0" font-family="Arial, sans-serif" font-size="10">Evolution progress</text>
+
+  <!-- Stats box -->
+  <rect x="120" y="420" width="200" height="70" rx="5" fill="#1a1a2e" stroke="#2d3748"/>
+  <text x="130" y="438" fill="#ffffff" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Evolution Stats</text>
+  <text x="130" y="456" fill="#8892b0" font-family="Arial, sans-serif" font-size="10">Variants tested: 12</text>
+  <text x="130" y="472" fill="#8892b0" font-family="Arial, sans-serif" font-size="10">Improvement: +2.2%</text>
+  <text x="130" y="488" fill="#00ff88" font-family="Arial, sans-serif" font-size="10">Gap to champion: 0.12%</text>
+</svg>
