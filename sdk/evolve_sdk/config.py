@@ -107,6 +107,28 @@ class MemoryConfig:
 
 
 @dataclass
+class StrategicConfig:
+    """Configuration for strategic direction analysis (Meta-Strategist extension)."""
+
+    # Enable/disable strategic direction analysis
+    enabled: bool = True
+
+    # Trigger interval (analyze every N generations)
+    direction_interval: int = 10
+
+    # Auto-trigger when tactical adjustments stall
+    auto_trigger_on_stall: bool = True
+    tactical_stall_threshold: int = 2  # Trigger after N stalled tactical analyses
+
+    # Direction generation settings
+    max_candidate_directions: int = 5
+    include_historical_breakthroughs: bool = True
+
+    # Risk tolerance affects ranking (low=prefer safe, high=prefer bold)
+    risk_tolerance: str = "medium"  # low|medium|high
+
+
+@dataclass
 class DiversityConfig:
     """Configuration for Diversity Guardian agent (Phase 3)."""
 
@@ -173,6 +195,9 @@ class EvolutionConfig:
 
     # Diversity monitoring (Diversity Guardian agent - Phase 3)
     diversity: DiversityConfig = field(default_factory=DiversityConfig)
+
+    # Strategic direction analysis (Meta-Strategist extension)
+    strategic: StrategicConfig = field(default_factory=StrategicConfig)
 
     # Safety
     enable_validation_hooks: bool = True
@@ -284,6 +309,18 @@ class EvolutionConfig:
             critical_multiplier=diversity_data.get("critical_multiplier", 0.6),
         )
 
+        # Extract strategic config if present
+        strategic_data = data.get("strategic", {})
+        strategic_config = StrategicConfig(
+            enabled=strategic_data.get("enabled", True),
+            direction_interval=strategic_data.get("direction_interval", 10),
+            auto_trigger_on_stall=strategic_data.get("auto_trigger_on_stall", True),
+            tactical_stall_threshold=strategic_data.get("tactical_stall_threshold", 2),
+            max_candidate_directions=strategic_data.get("max_candidate_directions", 5),
+            include_historical_breakthroughs=strategic_data.get("include_historical_breakthroughs", True),
+            risk_tolerance=strategic_data.get("risk_tolerance", "medium"),
+        )
+
         # Build config with file data and overrides
         config = cls(
             problem=overrides.get("problem", problem),
@@ -301,6 +338,7 @@ class EvolutionConfig:
             trust=trust_config,
             memory=memory_config,
             diversity=diversity_config,
+            strategic=strategic_config,
         )
         # Store cwd as extra attribute for runner
         config.cwd = cwd

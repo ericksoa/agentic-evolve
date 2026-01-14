@@ -41,6 +41,10 @@ from .agents import (
     ADVERSARY_SYSTEM, get_adversary_prompt, get_escalation_prompt,
     ARBITRATOR_SYSTEM, get_arbitrator_prompt,
     ReporterAgent,
+    # Direction advisor (Meta-Strategist extension)
+    DIRECTION_ADVISOR_SYSTEM,
+    get_direction_recommendation_prompt,
+    should_trigger_direction_analysis,
 )
 from .hooks import create_validation_hook, create_logging_hook, set_log_context
 from .progress import (
@@ -128,6 +132,12 @@ class EvolutionRunner:
 
         # Reporter agent (surfaces messages to operator)
         self.reporter: ReporterAgent | None = None
+
+        # Strategic direction analysis state
+        self._last_direction_gen: int | None = None
+        self._tactical_stall_count: int = 0
+        self._active_direction: dict[str, Any] | None = None
+        self._direction_guidance: str | None = None
 
     def _init_memory_system(self):
         """Initialize memory system if enabled."""
@@ -452,6 +462,7 @@ class EvolutionRunner:
                 print(f"[+] Improvement: {best_fitness:.4f} -> {gen_best['fitness']:.4f} (+{improvement:.4f})")
                 best_fitness = gen_best["fitness"]
                 plateau_count = 0
+                self._tactical_stall_count = 0  # Reset tactical stall on improvement
 
                 # Announce improvement
                 self._msg_milestone(
@@ -462,6 +473,7 @@ class EvolutionRunner:
                 )
             else:
                 plateau_count += 1
+                self._tactical_stall_count += 1
                 print(f"[=] No improvement (plateau: {plateau_count}/{self.config.plateau_threshold})")
 
                 # Note plateau status
@@ -470,6 +482,22 @@ class EvolutionRunner:
                     content=f"Plateau: {plateau_count}/{self.config.plateau_threshold}",
                     priority="info" if plateau_count < 3 else "important",
                 )
+
+            # Check if strategic direction analysis should be triggered
+            if (
+                self.config.strategic.enabled
+                and should_trigger_direction_analysis(
+                    generation=self.generation,
+                    last_direction_analysis=self._last_direction_gen,
+                    trigger_interval=self.config.strategic.direction_interval,
+                    tactical_stall_count=self._tactical_stall_count,
+                    tactical_stall_threshold=self.config.strategic.tactical_stall_threshold,
+                )
+            ):
+                print(f"\n[STRATEGY] Analyzing strategic directions...")
+                direction_result = await self._run_direction_analysis()
+                if direction_result and not direction_result.get("error"):
+                    self._tactical_stall_count = 0  # Reset stall count after analysis
 
             self._save_state(operation="post_generation")
 
@@ -1791,6 +1819,154 @@ class EvolutionRunner:
 
         state_file = self.work_dir / "evolution.json"
         state_file.write_text(json.dumps(state, indent=2))
+
+    # ==================== STRATEGIC DIRECTION ANALYSIS ====================
+
+    async def _run_direction_analysis(
+        self,
+        candidate_directions: list[dict] | None = None,
+    ) -> dict[str, Any]:
+        """
+        Run strategic direction analysis and get recommendations.
+
+        Args:
+            candidate_directions: Optional list of directions to evaluate.
+                If not provided, directions will be auto-generated based on mode.
+
+        Returns:
+            Direction recommendation result with ranked directions and guidance.
+        """
+        if not self.config.strategic.enabled:
+            return {}
+
+        # Build context for direction analysis
+        current_champion = self.champion or {"file": "none", "fitness": 0}
+
+        # Get breakthrough patterns from memory if available
+        breakthrough_patterns = None
+        if self.memory and self.config.strategic.include_historical_breakthroughs:
+            try:
+                # Import here to avoid circular imports
+                from .memory.queries import get_breakthrough_patterns
+                breakthrough_patterns = get_breakthrough_patterns(
+                    memory=self.memory,
+                    problem_description=self.config.problem,
+                    limit=3,
+                )
+            except Exception:
+                pass  # Memory query is not critical
+
+        prompt = get_direction_recommendation_prompt(
+            generation=self.generation,
+            current_champion=current_champion,
+            fitness_history=self.history,
+            mutation_history=self._get_mutation_history(),
+            population_snapshot=self.population,
+            candidate_directions=candidate_directions,
+            breakthrough_patterns=breakthrough_patterns,
+            mode=self.config.mode,
+            problem_description=self.config.problem,
+            risk_tolerance=self.config.strategic.risk_tolerance,
+            analysis_window=10,
+        )
+
+        result = await self._run_agent(
+            system=DIRECTION_ADVISOR_SYSTEM,
+            prompt=prompt,
+            tools=["Read", "Glob"],
+            max_turns=10,
+        )
+
+        parsed = self._parse_json_from_result(result)
+        if parsed:
+            # Update state
+            self._last_direction_gen = self.generation
+            self._active_direction = parsed.get("recommended_action", {})
+            self._direction_guidance = parsed.get("guidance_for_mutators")
+
+            # Announce direction recommendation
+            primary = self._active_direction.get("primary_direction", "unknown")
+            directions = parsed.get("directions", [])
+            primary_dir = next((d for d in directions if d.get("id") == primary), {})
+
+            self._msg(
+                title=f"Strategic direction: {primary_dir.get('name', primary)}",
+                content=self._direction_guidance or "",
+                from_agent="meta_strategist",
+                message_type="strategy",
+                priority="important",
+            )
+
+            return parsed
+
+        return {"error": "Failed to parse direction analysis"}
+
+    def _get_mutation_history(self) -> list[dict]:
+        """Get mutation history from memory or history."""
+        if self.memory:
+            try:
+                frames = self.memory.query(
+                    frame_type="mutation",
+                    filters={"generation": {"$gte": max(0, self.generation - 10)}},
+                )
+                return [
+                    {
+                        "generation": f.get("generation", 0),
+                        "mutation_type": f.get("mutation_type", "unknown"),
+                        "success": f.get("fitness_delta", 0) > 0,
+                        "fitness_delta": f.get("fitness_delta", 0),
+                    }
+                    for f in frames
+                ]
+            except Exception:
+                pass
+
+        # Fall back to basic history
+        return []
+
+    async def request_direction_recommendation(
+        self,
+        directions: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """
+        Public API: Request strategic direction recommendation.
+
+        This can be called at any time during evolution to get recommendations
+        on which strategic direction to pursue next.
+
+        Args:
+            directions: Optional list of direction names/descriptions to evaluate.
+                If provided, these will be evaluated instead of auto-generated ones.
+
+        Returns:
+            Direction recommendation result with:
+            - directions: List of evaluated directions with scores
+            - ranked_direction_ids: Sorted by recommendation score
+            - recommended_action: Best direction and exploration plan
+            - guidance_for_mutators: Specific guidance for next generation
+
+        Example:
+            >>> result = await runner.request_direction_recommendation([
+            ...     "Try XGBoost instead of Random Forest",
+            ...     "Add dropout regularization",
+            ... ])
+            >>> print(result["recommended_action"]["primary_direction"])
+        """
+        # Convert string directions to dict format if provided
+        candidate_directions = None
+        if directions:
+            candidate_directions = [
+                {
+                    "id": f"u{i+1}",
+                    "name": d[:50],
+                    "description": d,
+                    "approach_type": "user_provided",
+                    "source": "user_provided",
+                }
+                for i, d in enumerate(directions)
+            ]
+
+        return await self._run_direction_analysis(candidate_directions)
 
     def _save_champion(self):
         """Save champion to separate file for easy access."""

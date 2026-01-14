@@ -22,6 +22,11 @@ from .meta_strategist import (
     compute_crossover_contribution,
     compute_diversity_index,
     should_trigger_analysis,
+    # Direction advisor extension
+    DIRECTION_ADVISOR_SYSTEM,
+    get_direction_recommendation_prompt,
+    generate_candidate_directions,
+    should_trigger_direction_analysis,
 )
 from .diversity_guardian import (
     DIVERSITY_GUARDIAN_SYSTEM,
@@ -46,6 +51,8 @@ __all__ = [
     "META_STRATEGIST_SYSTEM", "get_meta_strategist_prompt", "get_strategy_application_prompt",
     "compute_mutation_effectiveness", "compute_crossover_contribution", "compute_diversity_index",
     "should_trigger_analysis",
+    "DIRECTION_ADVISOR_SYSTEM", "get_direction_recommendation_prompt",
+    "generate_candidate_directions", "should_trigger_direction_analysis",
     "DIVERSITY_GUARDIAN_SYSTEM", "get_diversity_guardian_prompt", "get_orthogonal_generation_prompt",
     "compute_genotypic_diversity", "compute_phenotypic_diversity", "compute_combined_diversity",
     "should_alert_diversity",

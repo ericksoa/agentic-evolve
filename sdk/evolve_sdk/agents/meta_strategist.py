@@ -475,3 +475,449 @@ def _summarize_population(population: list[dict]) -> str:
         lines.append(f"| {i} | {name} | {fitness:.2f} |")
 
     return "\n".join(lines)
+
+
+# =============================================================================
+# DIRECTION ADVISOR MODE
+# Extension to Meta-Strategist for strategic direction recommendations
+# =============================================================================
+
+DIRECTION_ADVISOR_SYSTEM = """You are a strategic direction advisor for evolutionary algorithm discovery.
+
+Your role: Analyze candidate strategic directions and recommend the best path forward
+based on expected impact, risk, and historical evidence.
+
+## Core Responsibilities
+
+1. **Direction Analysis**: Evaluate each candidate direction's potential
+2. **Impact Assessment**: Estimate expected fitness improvement for each direction
+3. **Risk Assessment**: Evaluate regression risk and resource cost
+4. **Historical Correlation**: Check if similar directions succeeded/failed before
+5. **Ranked Recommendations**: Provide prioritized list with clear rationale
+
+## Assessment Criteria
+
+### Expected Impact
+- **high**: Could yield >5% improvement, paradigm-shifting potential
+- **medium**: Expected 1-5% improvement, solid incremental gain
+- **low**: <1% expected improvement, marginal benefit
+
+### Risk Level
+- **high**: Significant regression risk, may require many generations to validate
+- **medium**: Moderate risk, some exploration cost but recoverable
+- **low**: Safe bet, low regression probability, quick to validate
+
+### Confidence Score (0.0-1.0)
+Based on:
+- Historical evidence (similar approaches tried before)
+- Theoretical soundness (does this make sense for the problem?)
+- Current trajectory alignment (does this fit where evolution is heading?)
+
+## Output Format
+
+Always return valid JSON:
+{
+    "generation_analyzed": <current generation>,
+    "analysis_context": {
+        "current_fitness": <float>,
+        "fitness_trajectory": "improving|stalled|declining",
+        "plateau_status": <bool>,
+        "diversity_status": "healthy|warning|critical",
+        "dominant_approach": "<description of current best approach>"
+    },
+    "directions": [
+        {
+            "id": "d1",
+            "name": "<short name>",
+            "description": "<full description>",
+            "approach_type": "algorithmic|architectural|data_structural|hybrid|domain_specific",
+            "source": "generated|user_provided|breakthrough_pattern",
+            "expected_impact": {
+                "potential_gain": "high|medium|low",
+                "confidence": <0.0-1.0>,
+                "timeframe_generations": <int>
+            },
+            "risk_assessment": {
+                "level": "high|medium|low",
+                "regression_risk": <0.0-1.0>,
+                "resource_cost": "high|medium|low",
+                "factors": ["<risk factor 1>", "<risk factor 2>"]
+            },
+            "mode_fit": {
+                "alignment": "strong|moderate|weak",
+                "rationale": "<why this fits or doesn't fit the optimization mode>"
+            },
+            "evidence": {
+                "similar_successes": <count from history>,
+                "similar_failures": <count from history>,
+                "breakthrough_correlation": <0.0-1.0>
+            },
+            "recommendation_score": <0-100>,
+            "rationale": "<detailed reasoning for this ranking>"
+        }
+    ],
+    "ranked_direction_ids": ["<sorted by recommendation_score descending>"],
+    "recommended_action": {
+        "primary_direction": "<best direction id>",
+        "exploration_plan": "<how to explore this direction>",
+        "fallback_direction": "<second choice if primary fails>",
+        "avoid_directions": ["<directions to skip and why>"]
+    },
+    "guidance_for_mutators": "<specific guidance to pass to next generation mutators>"
+}
+
+Be data-driven. Justify recommendations with evidence from history and metrics.
+Consider risk tolerance when ranking - conservative runs should prefer safer options.
+"""
+
+
+# Mode-specific direction templates
+_DIRECTION_TEMPLATES = {
+    "size": [
+        {
+            "name": "Functional Composition",
+            "description": "Refactor using higher-order functions, map/filter/reduce patterns",
+            "approach_type": "algorithmic",
+        },
+        {
+            "name": "List Comprehension Exploitation",
+            "description": "Replace loops with comprehensions and generator expressions",
+            "approach_type": "algorithmic",
+        },
+        {
+            "name": "Operator Overloading",
+            "description": "Use operator magic methods to reduce explicit function calls",
+            "approach_type": "architectural",
+        },
+        {
+            "name": "Lambda Consolidation",
+            "description": "Inline functions as lambdas where possible",
+            "approach_type": "algorithmic",
+        },
+        {
+            "name": "Import Aliasing",
+            "description": "Use short aliases and from-imports to reduce character count",
+            "approach_type": "data_structural",
+        },
+    ],
+    "perf": [
+        {
+            "name": "Data Structure Optimization",
+            "description": "Switch to more efficient data structures (sets, deques, arrays)",
+            "approach_type": "data_structural",
+        },
+        {
+            "name": "Algorithm Complexity Reduction",
+            "description": "Find O(n) or O(n log n) replacements for O(n²) operations",
+            "approach_type": "algorithmic",
+        },
+        {
+            "name": "Vectorization",
+            "description": "Replace loops with numpy/array operations for SIMD benefits",
+            "approach_type": "architectural",
+        },
+        {
+            "name": "Caching and Memoization",
+            "description": "Add functools.lru_cache or manual memoization for repeated computations",
+            "approach_type": "algorithmic",
+        },
+        {
+            "name": "Early Termination",
+            "description": "Add early exit conditions to avoid unnecessary computation",
+            "approach_type": "algorithmic",
+        },
+    ],
+    "ml": [
+        {
+            "name": "Feature Engineering",
+            "description": "Focus on feature selection, transformation, and interaction terms",
+            "approach_type": "domain_specific",
+        },
+        {
+            "name": "Architecture Modification",
+            "description": "Change model architecture (layers, connections, attention)",
+            "approach_type": "architectural",
+        },
+        {
+            "name": "Ensemble Strategies",
+            "description": "Combine multiple models via voting, stacking, or blending",
+            "approach_type": "hybrid",
+        },
+        {
+            "name": "Regularization Tuning",
+            "description": "Adjust dropout, weight decay, batch normalization parameters",
+            "approach_type": "algorithmic",
+        },
+        {
+            "name": "Loss Function Engineering",
+            "description": "Try alternative loss functions or custom weighted objectives",
+            "approach_type": "domain_specific",
+        },
+    ],
+}
+
+
+def generate_candidate_directions(
+    mode: str,
+    fitness_trajectory: str = "stable",
+    dominant_approach: str | None = None,
+    breakthrough_patterns: list[dict] | None = None,
+    max_directions: int = 5,
+) -> list[dict]:
+    """Generate candidate strategic directions based on mode and context.
+
+    Args:
+        mode: Evolution mode (size, perf, ml)
+        fitness_trajectory: Current fitness trend (improving, stalled, declining)
+        dominant_approach: Description of current dominant approach
+        breakthrough_patterns: Historical breakthrough patterns from memory
+        max_directions: Maximum number of directions to generate
+
+    Returns:
+        List of candidate direction dictionaries
+    """
+    directions = []
+
+    # Reserve slots for breakthrough patterns (up to 2)
+    breakthrough_slots = min(2, len(breakthrough_patterns)) if breakthrough_patterns else 0
+    template_slots = max_directions - breakthrough_slots
+
+    # Get mode-specific templates
+    templates = _DIRECTION_TEMPLATES.get(mode, _DIRECTION_TEMPLATES["perf"])
+
+    # Select templates based on trajectory
+    if fitness_trajectory == "stalled":
+        # When stalled, prefer more radical directions (later in list)
+        selected = templates[-template_slots:] if template_slots > 0 else []
+    elif fitness_trajectory == "declining":
+        # When declining, prefer safer directions (earlier in list)
+        selected = templates[:template_slots]
+    else:
+        # When improving, mix of both
+        selected = templates[:template_slots]
+
+    for i, template in enumerate(selected):
+        direction = {
+            "id": f"d{i+1}",
+            "name": template["name"],
+            "description": template["description"],
+            "approach_type": template["approach_type"],
+            "source": "generated",
+        }
+        directions.append(direction)
+
+    # Add breakthrough-inspired directions if available
+    if breakthrough_patterns:
+        for i, pattern in enumerate(breakthrough_patterns[:2]):  # Max 2 from history
+            if len(directions) >= max_directions:
+                break
+            direction = {
+                "id": f"db{i+1}",
+                "name": f"Historical: {pattern.get('name', 'Breakthrough Pattern')}",
+                "description": pattern.get("description", "Pattern that broke through a plateau"),
+                "approach_type": pattern.get("approach_type", "hybrid"),
+                "source": "breakthrough_pattern",
+            }
+            directions.append(direction)
+
+    return directions[:max_directions]
+
+
+def should_trigger_direction_analysis(
+    generation: int,
+    last_direction_analysis: int | None,
+    trigger_interval: int = 10,
+    tactical_stall_count: int = 0,
+    tactical_stall_threshold: int = 2,
+) -> bool:
+    """Determine if strategic direction analysis should be triggered.
+
+    Args:
+        generation: Current generation number
+        last_direction_analysis: Generation of last direction analysis (None if never)
+        trigger_interval: How often to auto-trigger (default: every 10 generations)
+        tactical_stall_count: Count of consecutive tactical analyses without improvement
+        tactical_stall_threshold: How many stalls before triggering direction analysis
+
+    Returns:
+        True if direction analysis should be triggered
+    """
+    # Trigger if tactical adjustments are stalling
+    if tactical_stall_count >= tactical_stall_threshold:
+        return True
+
+    # Trigger on interval
+    if last_direction_analysis is None:
+        # First analysis after sufficient history
+        return generation >= trigger_interval
+    return generation - last_direction_analysis >= trigger_interval
+
+
+def get_direction_recommendation_prompt(
+    generation: int,
+    current_champion: dict,
+    fitness_history: list[dict],
+    mutation_history: list[dict],
+    population_snapshot: list[dict] | None = None,
+    candidate_directions: list[dict] | None = None,
+    breakthrough_patterns: list[dict] | None = None,
+    mode: str = "perf",
+    problem_description: str = "",
+    risk_tolerance: str = "medium",
+    analysis_window: int = 10,
+) -> str:
+    """Generate prompt for strategic direction recommendation.
+
+    Args:
+        generation: Current generation number
+        current_champion: Current best solution with file and fitness
+        fitness_history: Historical fitness trajectory
+        mutation_history: Recent mutation successes/failures
+        population_snapshot: Current population for diversity assessment
+        candidate_directions: User-provided directions to evaluate (optional)
+        breakthrough_patterns: Historical breakthrough patterns from memory
+        mode: Optimization mode (size, perf, ml)
+        problem_description: Description of the problem being solved
+        risk_tolerance: How aggressive to be (low, medium, high)
+        analysis_window: How many generations to analyze for trends
+
+    Returns:
+        Formatted prompt for the direction advisor
+    """
+    mode_guidance = get_mode_guidance(mode, "meta_strategist")
+
+    # Compute context from history
+    recent_fitness = fitness_history[-(analysis_window + 1):] if len(fitness_history) > analysis_window else fitness_history
+
+    # Determine fitness trajectory
+    if len(recent_fitness) >= 2:
+        first_best = recent_fitness[0].get("best_fitness", 0)
+        last_best = recent_fitness[-1].get("best_fitness", 0)
+        if first_best > 0:
+            change_pct = (last_best - first_best) / abs(first_best) * 100
+            if change_pct > 2:
+                trajectory = "improving"
+            elif change_pct < -2:
+                trajectory = "declining"
+            else:
+                trajectory = "stalled"
+        else:
+            trajectory = "stable"
+    else:
+        trajectory = "stable"
+
+    # Get champion info
+    champion_fitness = current_champion.get("fitness", 0)
+    champion_file = current_champion.get("file", "unknown")
+    champion_approach = current_champion.get("algorithm_description", "Unknown approach")
+
+    # Compute diversity if population available
+    diversity_status = "unknown"
+    if population_snapshot:
+        diversity = compute_diversity_index(population_snapshot)
+        phenotypic = diversity.get("phenotypic", 0.5)
+        if phenotypic < 0.15:
+            diversity_status = "critical"
+        elif phenotypic < 0.25:
+            diversity_status = "warning"
+        else:
+            diversity_status = "healthy"
+
+    # Generate directions if not provided
+    if not candidate_directions:
+        candidate_directions = generate_candidate_directions(
+            mode=mode,
+            fitness_trajectory=trajectory,
+            dominant_approach=champion_approach,
+            breakthrough_patterns=breakthrough_patterns,
+            max_directions=5,
+        )
+
+    # Format directions for prompt
+    directions_text = _format_directions(candidate_directions)
+
+    # Summarize mutation history
+    recent_mutations = [m for m in mutation_history if m.get("generation", 0) >= generation - analysis_window]
+    mutation_summary = _summarize_mutations(recent_mutations)
+
+    # Summarize fitness trajectory
+    fitness_summary = _summarize_fitness(recent_fitness)
+
+    # Risk tolerance guidance
+    risk_guidance = {
+        "low": "Prefer safer directions with lower regression risk. Prioritize confidence over potential gain.",
+        "medium": "Balance risk and reward. Accept moderate risk for meaningful potential improvement.",
+        "high": "Willing to take bold bets. Prioritize high potential gain even with higher risk.",
+    }.get(risk_tolerance, "Balance risk and reward.")
+
+    prompt = f"""# Strategic Direction Analysis Request
+
+## Problem Context
+{problem_description if problem_description else "Optimization problem"}
+
+## Current State
+- **Generation**: {generation}
+- **Mode**: {mode}
+- **Current Champion**: {champion_file}
+- **Champion Fitness**: {champion_fitness:.4f}
+- **Dominant Approach**: {champion_approach}
+
+## Evolution Trajectory
+- **Fitness Trajectory**: {trajectory}
+- **Diversity Status**: {diversity_status}
+
+{mode_guidance}
+
+## Risk Tolerance
+{risk_guidance}
+
+## Fitness History (last {analysis_window} generations)
+
+{fitness_summary}
+
+## Recent Mutation Patterns
+
+{mutation_summary}
+
+## Candidate Directions to Evaluate
+
+{directions_text}
+
+## Your Task
+
+Analyze each candidate direction and provide:
+
+1. **Impact Assessment**: Expected improvement potential and confidence
+2. **Risk Assessment**: Regression risk, resource cost, risk factors
+3. **Historical Evidence**: Similar successes/failures from mutation history
+4. **Mode Fit**: How well this direction aligns with {mode} optimization
+5. **Recommendation Score**: 0-100 composite score
+6. **Ranking**: Ordered list from best to worst
+
+Consider:
+- Current fitness trajectory ({trajectory}) - what does this suggest?
+- Diversity status ({diversity_status}) - do we need exploration or exploitation?
+- Risk tolerance ({risk_tolerance}) - how bold should we be?
+- Recent mutation patterns - what's been working or failing?
+
+Return your analysis as valid JSON matching the output format.
+"""
+
+    return prompt
+
+
+def _format_directions(directions: list[dict]) -> str:
+    """Format candidate directions for the prompt."""
+    if not directions:
+        return "No candidate directions provided."
+
+    lines = ["| ID | Name | Type | Description |",
+             "|----|------|------|-------------|"]
+
+    for d in directions:
+        lines.append(
+            f"| {d.get('id', '?')} | {d.get('name', 'Unknown')} | "
+            f"{d.get('approach_type', '?')} | {d.get('description', '')} |"
+        )
+
+    return "\n".join(lines)
