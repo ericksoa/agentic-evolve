@@ -408,6 +408,16 @@ molecular-admet-prediction/
 - Primary metric: ROC-AUC (handles class imbalance)
 - Trust validation: 11 tests including adversary review
 
+## Publication
+
+A draft paper describing this work is available:
+
+**EvolveML: Automated Discovery of Competitive hERG Toxicity Predictors Through Evolutionary Algorithm Design**
+
+- [Draft manuscript](paper/draft_v1.md)
+- Key result: 0.874 ± 0.008 AUROC on TDC hERG benchmark, ranking #4 among published methods
+- Statistically indistinguishable from state-of-the-art GNN approaches (p=0.25)
+
 ## References
 
 - [Therapeutics Data Commons - hERG](https://tdcommons.ai/single_pred_tasks/tox/#herg)
@@ -416,4 +426,4 @@ molecular-admet-prediction/
 
 ---
 
-*Built with [Agentic Evolve](https://github.com/anthropics/agentic-evolve) - evolutionary optimization for ML*
+*Built with [Agentic Evolve](https://github.com/ericksoa/agentic-evolve) - evolutionary optimization for ML*
