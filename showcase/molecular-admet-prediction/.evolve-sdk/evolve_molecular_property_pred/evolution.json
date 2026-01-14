@@ -1,7 +1,7 @@
 {
   "problem": "Evolve molecular property prediction models for ADMET (Absorption, Distribution, Metabolism, Excretion, Toxicity) endpoints critical to drug discovery. Focus on hERG cardiac toxicity, a major cause of drug candidate attrition.",
   "mode": "ml",
-  "generation": 10,
+  "generation": 16,
   "population": [
     {
       "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen0_champion.py",
@@ -289,7 +289,92 @@
         "cv_mean_roc_auc": 0.8830744162700306,
         "cv_std_roc_auc": 0.027883078097575648
       },
-      "notes": "E3FP 3D fingerprints. TEST +0.23% vs champion. Features: Morgan(512)+MACCS(167)+E3FP(1024)+25 descriptors = 1728 total.",
+      "notes": "E3FP 3D fingerprints. TEST +0.23% vs champion. Features: Morgan(512)+MACCS(167)+E3FP(1024)+25 descriptors = 1728 total. BEST OF 3D MUTATIONS.",
+      "trust_score": 1.0
+    },
+    {
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen12_e3fp_pharma.py",
+      "mutation_type": "mutation",
+      "description": "E3FP + Pharmacophore distances (N-aromatic, aromatic-aromatic) - 1737 features",
+      "hypothesis": "Combining E3FP with explicit pharmacophore distances should complement learned patterns with domain knowledge",
+      "variant": "e3fp_pharma",
+      "valid": true,
+      "fitness": 0.8782032400589102,
+      "metrics": {
+        "test_roc_auc": 0.8782032400589102,
+        "valid_roc_auc": 0.843,
+        "cv_mean_roc_auc": 0.8865476631883752,
+        "cv_std_roc_auc": 0.03177743883107394
+      },
+      "notes": "E3FP + 9 pharmacophore features. Did not improve over gen11_e3fp. Pharmacophore features ranked high in importance but redundant with E3FP.",
+      "trust_score": 1.0
+    },
+    {
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen13_e3fp_tuned.py",
+      "mutation_type": "mutation",
+      "description": "Tuned E3FP: 2048 bits (vs 1024), level 6 (vs 5), increased n_estimators",
+      "hypothesis": "Higher E3FP resolution and more trees may capture finer 3D patterns",
+      "variant": "e3fp_tuned",
+      "valid": true,
+      "fitness": 0.8711340206185567,
+      "metrics": {
+        "test_roc_auc": 0.8711340206185567,
+        "valid_roc_auc": 0.855,
+        "cv_mean_roc_auc": 0.888235857932346,
+        "cv_std_roc_auc": 0.028870166039046637
+      },
+      "notes": "2048-bit E3FP performed WORSE than 1024-bit. More bits added noise, not signal.",
+      "trust_score": 1.0
+    },
+    {
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen14_multiconf_e3fp.py",
+      "mutation_type": "mutation",
+      "description": "Multi-conformer E3FP: average fingerprints from 3 conformers per molecule",
+      "hypothesis": "Multiple conformers capture binding flexibility for hERG channel",
+      "variant": "multiconf_e3fp",
+      "valid": true,
+      "fitness": 0.8784977908689249,
+      "metrics": {
+        "test_roc_auc": 0.8784977908689249,
+        "valid_roc_auc": 0.859,
+        "cv_mean_roc_auc": 0.888637664928782,
+        "cv_std_roc_auc": 0.028699127354605752
+      },
+      "notes": "Multi-conformer averaging did not improve over single conformer. Adds noise and is 3x slower.",
+      "trust_score": 1.0
+    },
+    {
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen15_e3fp_lgbm.py",
+      "mutation_type": "mutation",
+      "description": "LightGBM replacing XGBoost in E3FP ensemble",
+      "hypothesis": "LightGBM's leaf-wise growth may find better splits for high-dim fingerprint data",
+      "variant": "e3fp_lgbm",
+      "valid": true,
+      "fitness": 0.8684830633284242,
+      "metrics": {
+        "test_roc_auc": 0.8684830633284242,
+        "valid_roc_auc": 0.863,
+        "cv_mean_roc_auc": 0.8924090511250847,
+        "cv_std_roc_auc": 0.026839636424101185
+      },
+      "notes": "LightGBM shows high CV (0.892) but lower test (0.868) - overfitting. Did not beat gen11.",
+      "trust_score": 1.0
+    },
+    {
+      "file": ".evolve-sdk/evolve_molecular_property_pred/mutations/gen16_e3fp_5model.py",
+      "mutation_type": "mutation",
+      "description": "5-model ensemble: RF + XGBoost + LightGBM + ET + SVM with E3FP",
+      "hypothesis": "Adding LightGBM alongside XGBoost for more ensemble diversity",
+      "variant": "e3fp_5model",
+      "valid": true,
+      "fitness": 0.8702503681885125,
+      "metrics": {
+        "test_roc_auc": 0.8702503681885125,
+        "valid_roc_auc": 0.867,
+        "cv_mean_roc_auc": 0.887346736989197,
+        "cv_std_roc_auc": 0.029569025895233872
+      },
+      "notes": "5-model ensemble did not improve over 4-model. LightGBM adds redundant/noisy signal.",
       "trust_score": 1.0
     }
   ],
@@ -384,6 +469,60 @@
       "best_fitness": 0.89,
       "mutations_tried": 4,
       "mutations_valid": 0
+    },
+    {
+      "generation": 11,
+      "timestamp": "2026-01-13T09:30:00.000000",
+      "population_size": 11,
+      "best_fitness": 0.8814,
+      "mutations_tried": 1,
+      "mutations_valid": 1,
+      "notes": "Added E3FP 3D fingerprints. gen11_e3fp scored 0.8814 test ROC-AUC, best of 3D approaches."
+    },
+    {
+      "generation": 12,
+      "timestamp": "2026-01-13T10:07:00.000000",
+      "population_size": 12,
+      "best_fitness": 0.8814,
+      "mutations_tried": 1,
+      "mutations_valid": 1,
+      "notes": "gen12_e3fp_pharma: E3FP + pharmacophore (0.8782). Did not beat gen11."
+    },
+    {
+      "generation": 13,
+      "timestamp": "2026-01-13T10:30:00.000000",
+      "population_size": 13,
+      "best_fitness": 0.8814,
+      "mutations_tried": 1,
+      "mutations_valid": 1,
+      "notes": "gen13_e3fp_tuned: 2048-bit E3FP (0.8711). More bits = worse. Did not beat gen11."
+    },
+    {
+      "generation": 14,
+      "timestamp": "2026-01-13T11:30:00.000000",
+      "population_size": 14,
+      "best_fitness": 0.8814,
+      "mutations_tried": 1,
+      "mutations_valid": 1,
+      "notes": "gen14_multiconf_e3fp: Multi-conformer avg (0.8785). Did not beat gen11. gen11_e3fp remains best 3D approach."
+    },
+    {
+      "generation": 15,
+      "timestamp": "2026-01-13T12:00:00.000000",
+      "population_size": 15,
+      "best_fitness": 0.8814,
+      "mutations_tried": 1,
+      "mutations_valid": 1,
+      "notes": "gen15_e3fp_lgbm: LightGBM (0.8685). Overfitting - high CV but low test. Did not beat gen11."
+    },
+    {
+      "generation": 16,
+      "timestamp": "2026-01-13T12:30:00.000000",
+      "population_size": 16,
+      "best_fitness": 0.8814,
+      "mutations_tried": 1,
+      "mutations_valid": 1,
+      "notes": "gen16_e3fp_5model: 5-model ensemble (0.8703). More models != better. gen11_e3fp (0.8814) confirmed as best E3FP approach."
     }
   ],
   "config": {
