@@ -481,6 +481,8 @@ Full source code including evolution framework, model implementation, and evalua
 
 The author thanks the Therapeutics Data Commons (TDC) team for providing standardized benchmarks and the open-source cheminformatics community for tools including RDKit, scikit-learn, and XGBoost.
 
+This work was developed with substantial assistance from Claude (Anthropic), which contributed to code implementation, experimental design, data analysis, and manuscript preparation. The EvolveML framework itself uses Claude as the mutation engine for generating and evaluating candidate solutions.
+
 ## Author Contributions
 
 A.E. conceived the project, developed the EvolveML framework, conducted all experiments, and wrote the manuscript.
