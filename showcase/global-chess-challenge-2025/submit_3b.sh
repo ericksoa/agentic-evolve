@@ -113,15 +113,11 @@ echo ""
 HF_REPO_TAG="main"
 PROMPT_TEMPLATE="starter-kit/player_agents/v6_chess_template.jinja"
 
-# Neuron/vLLM settings - DO NOT CHANGE THESE
-MODEL_TYPE="qwen2"  # Qwen2.5 uses qwen2 backend
-MAX_MODEL_LEN="512"
-MAX_BATCHED_TOKENS="512"
-MAX_NUM_SEQS="1"
-NUM_GAMES="1"  # CRITICAL: Prevents concurrency corruption on Neuron
-DTYPE="bfloat16"
-ENFORCE_EAGER="true"
-MAX_TOKENS="64"
+# Neuron/vLLM settings - EXACTLY matching working submission 307752
+MODEL_TYPE="qwen2"       # neuron.model_type from screenshot
+MAX_MODEL_LEN="4096"     # Max Model Len from screenshot (NOT 512!)
+NUM_GAMES="1"            # Games: 1 from screenshot (top right)
+MAX_TOKENS="64"          # Inference.Max Tokens from screenshot
 
 echo "============================================"
 echo "Qwen 3B Chess Model Submission"
@@ -131,12 +127,11 @@ echo "HF Tag: $HF_REPO_TAG"
 echo "Prompt: $PROMPT_TEMPLATE"
 echo "Model Type: $MODEL_TYPE (Neuron)"
 echo ""
-echo "vLLM Settings (DO NOT CHANGE):"
-echo "  max-model-len: $MAX_MODEL_LEN"
-echo "  max-num-seqs: $MAX_NUM_SEQS"
-echo "  dtype: $DTYPE"
-echo "  enforce-eager: $ENFORCE_EAGER"
-echo "  max-tokens: $MAX_TOKENS"
+echo "Settings (EXACTLY matching working submission 307752):"
+echo "  neuron.model-type: $MODEL_TYPE"
+echo "  num-games: $NUM_GAMES"
+echo "  vllm.max-model-len: $MAX_MODEL_LEN"
+echo "  vllm-inference.max-tokens: $MAX_TOKENS"
 echo "============================================"
 echo ""
 read -p "Proceed with submission? [y/N] " -n 1 -r
@@ -146,7 +141,7 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 1
 fi
 
-# Submit with ALL required flags
+# Submit with EXACTLY the flags from working submission 307752
 aicrowd submit-model \
     --challenge "$CHALLENGE" \
     --hf-repo "$HF_REPO" \
@@ -155,10 +150,6 @@ aicrowd submit-model \
     --neuron.model-type "$MODEL_TYPE" \
     --num-games "$NUM_GAMES" \
     --vllm.max-model-len "$MAX_MODEL_LEN" \
-    --vllm.max-num-batched-tokens "$MAX_BATCHED_TOKENS" \
-    --vllm.max-num-seqs "$MAX_NUM_SEQS" \
-    --vllm.dtype "$DTYPE" \
-    --vllm.enforce-eager "$ENFORCE_EAGER" \
     --vllm-inference.max-tokens "$MAX_TOKENS"
 
 echo ""
