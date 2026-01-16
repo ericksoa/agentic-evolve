@@ -3,17 +3,40 @@
 # Qwen 3B Chess Model Submission Script
 # =============================================================================
 #
-# ALWAYS USE THIS SCRIPT FOR 3B MODEL SUBMISSIONS
+# ALWAYS USE THIS SCRIPT FOR ALL CHESS MODEL SUBMISSIONS
+# DO NOT MANUALLY RUN aicrowd submit-model - USE THIS SCRIPT
 #
-# This script includes all the critical flags learned from painful debugging:
-# - --vllm.max-num-seqs 1: Prevents concurrency corruption
-# - --vllm.max-model-len 512: Prevents memory/compilation issues
-# - --vllm.enforce-eager true: More reliable execution
-# - --vllm.dtype bfloat16: Standard precision for Neuron
-# - --vllm-inference.max-tokens 64: Sufficient for chess move output
-# - --neuron.model-type qwen2: Qwen2.5 uses qwen2 backend
+# =============================================================================
+# CRITICAL FLAGS - Each one was learned from a failed submission:
+# =============================================================================
 #
-# DO NOT SUBMIT WITHOUT THESE FLAGS - SUBMISSIONS WILL TIMEOUT OR FAIL
+# --num-games 1              : MOST CRITICAL! Prevents Neuron concurrency
+#                              corruption that causes garbage output.
+#                              Submission 307752 (V6) got ~146 ACPL with this.
+#                              Without it: binary garbage like '<fastcall8820ah...'
+#
+# --vllm.max-num-seqs 1      : Also prevents concurrency issues
+#
+# --vllm.max-model-len 512   : Prevents memory/compilation issues on Trainium
+#
+# --vllm.enforce-eager true  : More reliable execution, avoids graph issues
+#
+# --vllm.dtype bfloat16      : Standard precision for Neuron/Trainium
+#
+# --vllm-inference.max-tokens 64 : Sufficient for chess move output
+#
+# --neuron.model-type qwen2  : Qwen2.5 uses qwen2 backend (not qwen2.5!)
+#
+# =============================================================================
+# PRE-SUBMISSION CHECKS - Script verifies HuggingFace repo before submitting:
+# =============================================================================
+#
+# 1. chat_template.jinja must have "chess grandmaster" system prompt
+# 2. tokenizer_config.json eos_token must be "<|im_end|>"
+# 3. generation_config.json eos_token_id must be 151645 (not 151643!)
+#
+# =============================================================================
+# REFERENCE: Submission 307752 got ~146 ACPL with these exact flags
 # =============================================================================
 
 set -e
