@@ -95,6 +95,7 @@ MODEL_TYPE="qwen2"  # Qwen2.5 uses qwen2 backend
 MAX_MODEL_LEN="512"
 MAX_BATCHED_TOKENS="512"
 MAX_NUM_SEQS="1"
+NUM_GAMES="1"  # CRITICAL: Prevents concurrency corruption on Neuron
 DTYPE="bfloat16"
 ENFORCE_EAGER="true"
 MAX_TOKENS="64"
@@ -129,6 +130,7 @@ aicrowd submit-model \
     --hf-repo-tag "$HF_REPO_TAG" \
     --prompt-template-path "$PROMPT_TEMPLATE" \
     --neuron.model-type "$MODEL_TYPE" \
+    --num-games "$NUM_GAMES" \
     --vllm.max-model-len "$MAX_MODEL_LEN" \
     --vllm.max-num-batched-tokens "$MAX_BATCHED_TOKENS" \
     --vllm.max-num-seqs "$MAX_NUM_SEQS" \
