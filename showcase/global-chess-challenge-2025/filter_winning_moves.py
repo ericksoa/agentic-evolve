@@ -11,6 +11,8 @@ Criteria:
 
 This creates a "winning moves" dataset where the model learns to find THE best move,
 not just A reasonable move.
+
+CHECKPOINTING: Saves progress every 1000 positions. Use --resume to continue from checkpoint.
 """
 import json
 import chess
@@ -21,6 +23,7 @@ from multiprocessing import Pool
 from tqdm import tqdm
 import argparse
 import time
+import os
 
 PROJECT_DIR = Path(__file__).parent
 DEFAULT_INPUT = PROJECT_DIR / "data" / "training_sf3_500k.jsonl"
@@ -34,6 +37,9 @@ STOCKFISH_DEPTH = 15  # Deep enough for reliable multi-pv
 
 # Resource constraint
 MAX_WORKERS = 2
+
+# Checkpointing
+CHECKPOINT_INTERVAL = 1000  # Save every N positions processed
 
 # Global engine for each worker
 _engine = None
@@ -156,6 +162,44 @@ def process_batch(items: list) -> list:
     return results
 
 
+def get_checkpoint_path(output_path: Path) -> Path:
+    """Get checkpoint file path."""
+    return output_path.with_suffix(".checkpoint.json")
+
+
+def save_checkpoint(checkpoint_path: Path, processed_count: int, accepted_count: int,
+                   rejected_count: int, start_time: float):
+    """Save checkpoint state."""
+    checkpoint = {
+        "processed_count": processed_count,
+        "accepted_count": accepted_count,
+        "rejected_count": rejected_count,
+        "elapsed_seconds": time.time() - start_time,
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+    }
+    with open(checkpoint_path, 'w') as f:
+        json.dump(checkpoint, f, indent=2)
+
+
+def load_checkpoint(checkpoint_path: Path) -> dict | None:
+    """Load checkpoint if it exists."""
+    if not checkpoint_path.exists():
+        return None
+    try:
+        with open(checkpoint_path, 'r') as f:
+            return json.load(f)
+    except:
+        return None
+
+
+def count_output_lines(output_path: Path) -> int:
+    """Count lines in output file."""
+    if not output_path.exists():
+        return 0
+    with open(output_path, 'r') as f:
+        return sum(1 for _ in f)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Filter for winning moves - positions with clear best move")
     parser.add_argument("--input", type=str, default=str(DEFAULT_INPUT),
@@ -168,24 +212,59 @@ def main():
                         help="Number of parallel workers (max 2)")
     parser.add_argument("--min-gap", type=int, default=MIN_EVAL_GAP,
                         help=f"Minimum cp gap between best and 2nd best (default {MIN_EVAL_GAP})")
+    parser.add_argument("--resume", action="store_true",
+                        help="Resume from checkpoint if available")
+    parser.add_argument("--checkpoint-interval", type=int, default=CHECKPOINT_INTERVAL,
+                        help=f"Save checkpoint every N positions (default {CHECKPOINT_INTERVAL})")
     args = parser.parse_args()
 
     min_gap = args.min_gap
     num_workers = min(args.workers, MAX_WORKERS)
+    checkpoint_interval = args.checkpoint_interval
 
     input_path = Path(args.input)
     output_path = Path(args.output)
+    checkpoint_path = get_checkpoint_path(output_path)
 
     print("=" * 60)
-    print("Winning Moves Filter")
+    print("Winning Moves Filter (with Checkpointing)")
     print("=" * 60)
     print(f"Input: {input_path}")
     print(f"Output: {output_path}")
-    print(f"Min eval gap: {min_gap} cp (note: uses module default {MIN_EVAL_GAP})")
+    print(f"Min eval gap: {min_gap} cp")
     print(f"Decisive threshold: {MIN_DECISIVE_EVAL} cp")
     print(f"Stockfish depth: {STOCKFISH_DEPTH}")
     print(f"Workers: {num_workers}")
+    print(f"Checkpoint interval: {checkpoint_interval}")
     print()
+
+    # Check for resume
+    start_position = 0
+    prior_accepted = 0
+    prior_elapsed = 0
+
+    if args.resume:
+        checkpoint = load_checkpoint(checkpoint_path)
+        if checkpoint:
+            start_position = checkpoint["processed_count"]
+            prior_accepted = count_output_lines(output_path)
+            prior_elapsed = checkpoint.get("elapsed_seconds", 0)
+            print(f"RESUMING from checkpoint:")
+            print(f"  Processed: {start_position:,}")
+            print(f"  Accepted so far: {prior_accepted:,}")
+            print(f"  Prior elapsed: {prior_elapsed/60:.1f} minutes")
+            print()
+        else:
+            print("No checkpoint found, starting fresh.")
+            # Clear output file if starting fresh
+            if output_path.exists():
+                output_path.unlink()
+    else:
+        # Starting fresh - clear any existing output
+        if output_path.exists():
+            output_path.unlink()
+        if checkpoint_path.exists():
+            checkpoint_path.unlink()
 
     # Load training data
     print("Loading training data...")
@@ -216,72 +295,117 @@ def main():
     total_available = len(items)
     print(f"Loaded {total_available:,} training examples")
 
-    # Sample if requested
-    if args.sample > 0 and args.sample < total_available:
+    # Sample if requested (only if not resuming)
+    if args.sample > 0 and args.sample < total_available and start_position == 0:
         print(f"Sampling {args.sample:,} positions...")
         random.seed(42)
         items = random.sample(items, args.sample)
 
-    print(f"Processing {len(items):,} positions with {num_workers} workers")
+    # Skip already processed items
+    if start_position > 0:
+        print(f"Skipping first {start_position:,} already-processed items...")
+        items = items[start_position:]
+
+    remaining = len(items)
+    print(f"Processing {remaining:,} remaining positions with {num_workers} workers")
     # Estimate: ~0.5 sec per position with multi-pv 2
-    est_time = len(items) * 0.5 / num_workers / 60
+    est_time = remaining * 0.5 / num_workers / 60
     print(f"Estimated time: {est_time:.1f} minutes")
     print()
 
     start_time = time.time()
 
-    # Split into batches
-    batch_size = 20
-    batches = [items[i:i+batch_size] for i in range(0, len(items), batch_size)]
+    # Process in chunks for checkpointing
+    batch_size = 20  # For multiprocessing
+    chunk_size = checkpoint_interval  # For checkpointing
 
-    # Process with multiprocessing
-    filtered_items = []
-
-    with Pool(processes=num_workers, initializer=init_worker) as pool:
-        for batch_results in tqdm(
-            pool.imap(process_batch, batches),
-            total=len(batches),
-            desc="Filtering"
-        ):
-            filtered_items.extend(batch_results)
-
-    elapsed_time = time.time() - start_time
-
-    # Save results
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, 'w') as f:
-        for item in filtered_items:
-            f.write(json.dumps(item) + "\n")
 
-    # Statistics
-    acceptance_rate = len(filtered_items) / len(items) * 100 if items else 0
+    # Open output file in append mode
+    total_processed = start_position
+    total_accepted = prior_accepted
+    total_rejected = start_position - prior_accepted if start_position > 0 else 0
 
-    # Analyze the filtered results
-    clear_best_count = sum(
-        1 for item in filtered_items
-        if item.get('metadata', {}).get('winning_move_analysis', {}).get('is_clear_best', False)
-    )
-    decisive_count = sum(
-        1 for item in filtered_items
-        if item.get('metadata', {}).get('winning_move_analysis', {}).get('is_decisive', False)
-    )
+    # Process in chunks
+    for chunk_start in range(0, len(items), chunk_size):
+        chunk_end = min(chunk_start + chunk_size, len(items))
+        chunk_items = items[chunk_start:chunk_end]
 
-    avg_gap = sum(
-        item.get('metadata', {}).get('winning_move_analysis', {}).get('eval_gap', 0)
-        for item in filtered_items
-    ) / len(filtered_items) if filtered_items else 0
+        # Split chunk into batches for multiprocessing
+        batches = [chunk_items[i:i+batch_size] for i in range(0, len(chunk_items), batch_size)]
+
+        chunk_results = []
+        with Pool(processes=num_workers, initializer=init_worker) as pool:
+            for batch_results in tqdm(
+                pool.imap(process_batch, batches),
+                total=len(batches),
+                desc=f"Chunk {chunk_start//chunk_size + 1}",
+                leave=False
+            ):
+                chunk_results.extend(batch_results)
+
+        # Write results to file immediately
+        with open(output_path, 'a') as f:
+            for item in chunk_results:
+                f.write(json.dumps(item) + "\n")
+
+        # Update counters
+        chunk_accepted = len(chunk_results)
+        chunk_rejected = len(chunk_items) - chunk_accepted
+        total_processed += len(chunk_items)
+        total_accepted += chunk_accepted
+        total_rejected += chunk_rejected
+
+        # Save checkpoint
+        save_checkpoint(checkpoint_path, total_processed, total_accepted, total_rejected,
+                       start_time - prior_elapsed)
+
+        # Progress report
+        elapsed = time.time() - start_time + prior_elapsed
+        rate = total_processed / elapsed if elapsed > 0 else 0
+        remaining_items = (start_position + len(items)) - total_processed
+        eta_minutes = remaining_items / rate / 60 if rate > 0 else 0
+
+        print(f"  Checkpoint: {total_processed:,}/{start_position + len(items):,} "
+              f"({total_processed/(start_position + len(items))*100:.1f}%) | "
+              f"Accepted: {total_accepted:,} ({total_accepted/total_processed*100:.1f}%) | "
+              f"ETA: {eta_minutes:.0f}m")
+
+    elapsed_time = time.time() - start_time + prior_elapsed
+
+    # Final statistics
+    acceptance_rate = total_accepted / total_processed * 100 if total_processed > 0 else 0
+
+    # Count breakdown from output file
+    clear_best_count = 0
+    decisive_count = 0
+    total_gap = 0
+    with open(output_path, 'r') as f:
+        for line in f:
+            try:
+                item = json.loads(line)
+                analysis = item.get('metadata', {}).get('winning_move_analysis', {})
+                if analysis.get('is_clear_best', False):
+                    clear_best_count += 1
+                if analysis.get('is_decisive', False):
+                    decisive_count += 1
+                total_gap += analysis.get('eval_gap', 0)
+            except:
+                continue
+
+    avg_gap = total_gap / total_accepted if total_accepted > 0 else 0
 
     print()
     print("=" * 60)
     print("WINNING MOVES FILTERING COMPLETE")
     print("=" * 60)
-    print(f"Processed: {len(items):,} positions")
+    print(f"Processed: {total_processed:,} positions")
     print(f"Elapsed time: {elapsed_time/60:.1f} minutes")
-    print(f"Speed: {len(items)/elapsed_time:.2f} pos/sec")
+    print(f"Speed: {total_processed/elapsed_time:.2f} pos/sec")
     print()
     print(f"RESULTS:")
-    print(f"  Accepted: {len(filtered_items):,} ({acceptance_rate:.1f}%)")
-    print(f"  Rejected: {len(items) - len(filtered_items):,} ({100-acceptance_rate:.1f}%)")
+    print(f"  Accepted: {total_accepted:,} ({acceptance_rate:.1f}%)")
+    print(f"  Rejected: {total_rejected:,} ({100-acceptance_rate:.1f}%)")
     print()
     print(f"BREAKDOWN:")
     print(f"  Clear best move (gap >= {MIN_EVAL_GAP}cp): {clear_best_count:,}")
@@ -290,13 +414,13 @@ def main():
     print()
     print(f"Saved to: {output_path}")
 
-    # Save stats
+    # Save final stats
     stats_path = output_path.with_suffix(".stats.json")
     stats = {
         "input": str(input_path),
         "output": str(output_path),
-        "total_processed": len(items),
-        "filtered_count": len(filtered_items),
+        "total_processed": total_processed,
+        "filtered_count": total_accepted,
         "acceptance_rate": acceptance_rate,
         "clear_best_count": clear_best_count,
         "decisive_count": decisive_count,
@@ -309,6 +433,11 @@ def main():
     with open(stats_path, 'w') as f:
         json.dump(stats, f, indent=2)
     print(f"Stats: {stats_path}")
+
+    # Clean up checkpoint file on successful completion
+    if checkpoint_path.exists():
+        checkpoint_path.unlink()
+        print("Checkpoint file cleaned up.")
 
 
 if __name__ == "__main__":

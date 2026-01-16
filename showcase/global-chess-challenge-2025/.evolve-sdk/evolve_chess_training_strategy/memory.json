@@ -1,4 +1,37 @@
 {
+  "RECOVERY_INSTRUCTIONS": {
+    "READ_THIS_FIRST": "Terminal crashed? Run these commands IN ORDER. User does NOT need to remember anything.",
+    "last_updated": "2026-01-16T04:05:00Z",
+    "step_1_filter_process": {
+      "description": "Check if winning moves filter is running, restart if not",
+      "check_command": "ps aux | grep filter_winning_moves | grep -v grep",
+      "restart_command": "cd /Users/aerickson/Documents/Claude\\ Code\\ Projects/agentic-evolve/showcase/global-chess-challenge-2025 && nohup python3 filter_winning_moves.py --input data/training_sf3_500k.jsonl --output data/training_winning_moves_500k.jsonl --workers 2 --resume > filter_winning_moves.log 2>&1 &",
+      "verify_command": "sleep 2 && tail -20 filter_winning_moves.log",
+      "notes": "The --resume flag is ALREADY in the command. Script auto-resumes from checkpoint."
+    },
+    "step_2_cloud_training": {
+      "description": "Check cloud training status on Lightning.ai",
+      "check_command": "cd /Users/aerickson/Documents/Claude\\ Code\\ Projects/agentic-evolve/showcase/global-chess-challenge-2025 && export $(cat .env | grep -v '^#' | xargs) && python3 -c \"from lightning_sdk import Studio; import os; [print(f'{n}: ' + Studio(name=n, teamspace=os.environ['LIGHTNING_TEAMSPACE'], user=os.environ['LIGHTNING_AI_USERNAME']).status) for n in ['chess-llm-v4', 'chess-llm-v5']]\"",
+      "studios": {
+        "chess-llm-v4": "Qwen 3B training (~14%)",
+        "chess-llm-v5": "V6 r128 7B training (~15%)"
+      },
+      "notes": "Cloud training continues automatically, just check status"
+    },
+    "step_3_check_submission": {
+      "description": "Check latest submission status",
+      "latest_submission_id": 307764,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307764",
+      "model": "Qwen 3B checkpoint-12000",
+      "action": "Visit URL or check AIcrowd dashboard"
+    },
+    "what_claude_should_do": [
+      "1. Run step_1 check_command - if no output, run restart_command then verify_command",
+      "2. Run step_2 check_command to see cloud training status",
+      "3. Report status to user",
+      "4. Continue monitoring - nothing else needs manual intervention"
+    ]
+  },
   "submission_readiness": {
     "analysis_date": "2026-01-15",
     "status": "READY_FOR_SUBMISSION",
@@ -9,7 +42,10 @@
     "repo_id": "ericksoa/chess-v6-aicrowd",
     "url": "https://huggingface.co/ericksoa/chess-v6-aicrowd",
     "upload_date": "2026-01-15",
-    "files": ["adapter_config.json", "adapter_model.safetensors"],
+    "files": [
+      "adapter_config.json",
+      "adapter_model.safetensors"
+    ],
     "base_model": "Qwen/Qwen2.5-7B",
     "checkpoint": "v6_checkpoint_4000",
     "acpl": 192.3
@@ -130,7 +166,12 @@
       "status": "EVALUATING - GARBAGE OUTPUT OBSERVED",
       "early_results": {
         "matches_completed": 3,
-        "acpl_values": [137, 198, 120, 131],
+        "acpl_values": [
+          137,
+          198,
+          120,
+          131
+        ],
         "average_acpl": 146.5,
         "observation": "Early results looked promising but..."
       },
@@ -144,7 +185,9 @@
         "implication": "Combination: (1) early checkpoint has weaker format learning AND (2) vLLM EOS handling may have issues. Early ACPL results (137, 198) suggest model CAN output correctly sometimes.",
         "additional_evidence": {
           "example_2": {
-            "input_legal_moves": ["d1e1"],
+            "input_legal_moves": [
+              "d1e1"
+            ],
             "model_output": "<uci_move>j2g4</uci_move>",
             "problem": "INVALID MOVE - 'j' file doesn't exist in chess (a-h only)",
             "garbage_after": "PostalCodesNL + Chinese text about chess input",
@@ -180,6 +223,30 @@
         "improvement": "6.2 ACPL better locally",
         "caveat": "V6 had 881 ACPL on AIcrowd due to output issues"
       },
+      "status": "FAILED - timed out (missing vLLM flags)"
+    },
+    {
+      "submission_id": 307764,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307764",
+      "submitted_at": "2026-01-16T03:46:06.074Z",
+      "model": "qwen2.5-3b-checkpoint-12000",
+      "hf_repo": "ericksoa/chess-qwen3b-12k",
+      "model_type": "FULL MERGED (not LoRA)",
+      "training_progress": "14.4% (12000/83307 steps)",
+      "local_evaluation": {
+        "acpl_legal_only": 186.1,
+        "legal_rate": "98%"
+      },
+      "command_used": "aicrowd submit-model --challenge global-chess-challenge-2025 --hf-repo ericksoa/chess-qwen3b-12k --hf-repo-tag main --prompt-template-path starter-kit/player_agents/v6_chess_template.jinja --neuron.model-type qwen2 --vllm.max-model-len 512 --vllm.max-num-batched-tokens 512 --vllm.max-num-seqs 1 --vllm.dtype bfloat16 --vllm.enforce-eager true --vllm-inference.max-tokens 64",
+      "fixes_from_307762": [
+        "Added --vllm.max-model-len 512",
+        "Added --vllm.max-num-batched-tokens 512",
+        "Added --vllm.max-num-seqs 1",
+        "Added --vllm.dtype bfloat16",
+        "Added --vllm.enforce-eager true",
+        "Added --vllm-inference.max-tokens 64"
+      ],
+      "script_created": "submit_3b.sh - ALWAYS use this for 3B model submissions",
       "status": "SUBMITTED - awaiting evaluation"
     }
   ],
@@ -205,10 +272,22 @@
       }
     ],
     "planned_checkpoints": [
-      {"checkpoint": "v6_checkpoint_8000", "expected_progress": "~14%"},
-      {"checkpoint": "v6_checkpoint_16000", "expected_progress": "~29%"},
-      {"checkpoint": "v6_checkpoint_32000", "expected_progress": "~58%"},
-      {"checkpoint": "v6_final", "expected_progress": "100%"}
+      {
+        "checkpoint": "v6_checkpoint_8000",
+        "expected_progress": "~14%"
+      },
+      {
+        "checkpoint": "v6_checkpoint_16000",
+        "expected_progress": "~29%"
+      },
+      {
+        "checkpoint": "v6_checkpoint_32000",
+        "expected_progress": "~58%"
+      },
+      {
+        "checkpoint": "v6_final",
+        "expected_progress": "100%"
+      }
     ],
     "insights_so_far": [
       "7% training = fundamentally broken outputs",
@@ -224,7 +303,10 @@
       "best_model_acpl": 208.7,
       "leader_acpl": 46.4,
       "gap": "4.5x worse than leader",
-      "sft_training_in_progress": ["Qwen 3B (13%)", "V6 r128 (13%)"],
+      "sft_training_in_progress": [
+        "Qwen 3B (13%)",
+        "V6 r128 (13%)"
+      ],
       "dpo_result": "FAILED - made things worse (+6.2 ACPL)",
       "key_data_insight": "61.5% of training positions have ambiguous best move"
     },
@@ -267,8 +349,15 @@
       }
     ],
     "position_sampling_strategy": {
-      "oversample": ["endgames (model weakness)", "tactical positions", "positions where model blundered in games"],
-      "undersample": ["equal positions", "opening theory (already good)"]
+      "oversample": [
+        "endgames (model weakness)",
+        "tactical positions",
+        "positions where model blundered in games"
+      ],
+      "undersample": [
+        "equal positions",
+        "opening theory (already good)"
+      ]
     },
     "expected_impact": {
       "sft_alone": "~150 ACPL (with good data)",
@@ -411,6 +500,14 @@
       "optimistic": "<70 ACPL (top 10)",
       "realistic": "100-120 ACPL (competitive)",
       "minimum_viable": "<150 ACPL (meaningful improvement from 208)"
+    },
+    "priority_3": {
+      "name": "Winning moves data for V7/RL",
+      "why": "Remove 61.5% noise from training",
+      "status": "RUNNING",
+      "pid": 15093,
+      "time": "~35 hours total, checkpoints every 1000 positions",
+      "resume_command": "nohup python3 filter_winning_moves.py --input data/training_sf3_500k.jsonl --output data/training_winning_moves_500k.jsonl --workers 2 --resume > filter_winning_moves.log 2>&1 &"
     }
   },
   "learnings": {
@@ -464,7 +561,12 @@
       },
       "qwen_specific_issues": {
         "concurrency_corruption": {
-          "symptoms": ["finish_reason=length", "garbled output", "missing <uci_move> tags", "ACPL 864+"],
+          "symptoms": [
+            "finish_reason=length",
+            "garbled output",
+            "missing <uci_move> tags",
+            "ACPL 864+"
+          ],
           "root_cause": "Evaluator concurrency increased from 1 to 4 on Dec 24, 2025",
           "fix": "--vllm.max-num-seqs 1"
         },
@@ -493,8 +595,16 @@
     },
     "lightning_ai_usage": {
       "description": "How to interact with Lightning.ai studios",
-      "env_vars_needed": ["LIGHTNING_TEAMSPACE", "LIGHTNING_AI_USERNAME"],
-      "known_studios": ["chess-llm-v4", "chess-llm-v5", "chess-llm-v6", "chess-llm-v7"],
+      "env_vars_needed": [
+        "LIGHTNING_TEAMSPACE",
+        "LIGHTNING_AI_USERNAME"
+      ],
+      "known_studios": [
+        "chess-llm-v4",
+        "chess-llm-v5",
+        "chess-llm-v6",
+        "chess-llm-v7"
+      ],
       "code_pattern": "from lightning_sdk import Studio; studio = Studio(name='STUDIO_NAME', teamspace=os.environ['LIGHTNING_TEAMSPACE'], user=os.environ['LIGHTNING_AI_USERNAME']); result = studio.run('COMMAND')",
       "common_commands": {
         "list_trainings": "ls ~/chess-training/",
@@ -565,9 +675,36 @@
   "improvement_plan": {
     "plan_file": "IMPROVEMENT_PLAN.md",
     "phases": [
-      {"phase": 1, "name": "Quick Wins", "timeline": "Jan 15-17", "items": ["Endgame data augmentation", "Prompt ablation", "Data filtering"]},
-      {"phase": 2, "name": "V7 Training", "timeline": "Jan 17-24", "items": ["Enhanced dataset", "Curriculum learning", "Rationale diversity"]},
-      {"phase": 3, "name": "Advanced", "timeline": "Jan 24-30", "items": ["Best-of-N sampling", "Simple search", "Ensemble"]}
+      {
+        "phase": 1,
+        "name": "Quick Wins",
+        "timeline": "Jan 15-17",
+        "items": [
+          "Endgame data augmentation",
+          "Prompt ablation",
+          "Data filtering"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "V7 Training",
+        "timeline": "Jan 17-24",
+        "items": [
+          "Enhanced dataset",
+          "Curriculum learning",
+          "Rationale diversity"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Advanced",
+        "timeline": "Jan 24-30",
+        "items": [
+          "Best-of-N sampling",
+          "Simple search",
+          "Ensemble"
+        ]
+      }
     ],
     "expected_final_acpl": "75-100 (realistic), <70 (stretch)",
     "key_insight": "Training data gaps (0 endgames) more critical than model architecture"
@@ -805,8 +942,16 @@
         }
       ],
       "local_filters": [
-        {"name": "SF3 500K", "status": "COMPLETE", "examples": 501402},
-        {"name": "SF3 v2", "status": "COMPLETE", "examples": 229054}
+        {
+          "name": "SF3 500K",
+          "status": "COMPLETE",
+          "examples": 501402
+        },
+        {
+          "name": "SF3 v2",
+          "status": "COMPLETE",
+          "examples": 229054
+        }
       ],
       "total_filtered_data": "730K examples ready for V7/V8 training"
     },
@@ -1083,7 +1228,11 @@
       "P4: Augment training with multiple correct moves for ambiguous positions"
     ],
     "position_breakdown": {
-      "phase_distribution_sample": {"middlegame": 71, "opening": 29, "endgame": 0},
+      "phase_distribution_sample": {
+        "middlegame": 71,
+        "opening": 29,
+        "endgame": 0
+      },
       "quiet_positional_moves": 58,
       "tactical_moves": 38,
       "high_branching_positions": 57
@@ -1115,7 +1264,10 @@
     ],
     "acpl_predictions": {
       "predicted_final_loss": 0.431,
-      "best_estimate_range": [140, 170],
+      "best_estimate_range": [
+        140,
+        170
+      ],
       "sub_100_likelihood": "LOW (< 20%)"
     },
     "top_5_insights": [
@@ -1147,10 +1299,26 @@
     ],
     "recommendation": "Continue V6 training to completion. Monitor checkpoint-8000 for trajectory confirmation. Sub-100 ACPL unlikely without additional techniques (ensemble, search, or architecture changes).",
     "next_checkpoints": [
-      {"step": 8000, "expected_date": "~Jan 17", "expected_acpl": "~180"},
-      {"step": 12000, "expected_date": "~Jan 18", "expected_acpl": "~175"},
-      {"step": 20000, "expected_date": "~Jan 20", "expected_acpl": "~165"},
-      {"step": 40000, "expected_date": "~Jan 23", "expected_acpl": "~155"}
+      {
+        "step": 8000,
+        "expected_date": "~Jan 17",
+        "expected_acpl": "~180"
+      },
+      {
+        "step": 12000,
+        "expected_date": "~Jan 18",
+        "expected_acpl": "~175"
+      },
+      {
+        "step": 20000,
+        "expected_date": "~Jan 20",
+        "expected_acpl": "~165"
+      },
+      {
+        "step": 40000,
+        "expected_date": "~Jan 23",
+        "expected_acpl": "~155"
+      }
     ],
     "full_analysis_file": "results/v6_training_curve_analysis.json"
   },
@@ -1246,7 +1414,12 @@
         "name": "Move List Format Variants",
         "priority": "MEDIUM",
         "hypothesis": "Space-separated may tokenize better than comma-separated. Test UCI+SAN hybrid.",
-        "variants": ["space_separated", "newline_separated", "uci_with_san", "grouped_by_piece"]
+        "variants": [
+          "space_separated",
+          "newline_separated",
+          "uci_with_san",
+          "grouped_by_piece"
+        ]
       },
       {
         "rank": 4,
@@ -1264,9 +1437,32 @@
       }
     ],
     "test_phases": [
-      {"phase": 1, "name": "Quick inference-only tests", "experiments": ["minimal_prompt", "move_list_formats"], "time": "2-3 hours"},
-      {"phase": 2, "name": "Complex format tests", "experiments": ["chain_of_thought", "few_shot_examples"], "time": "2-3 hours"},
-      {"phase": 3, "name": "Retraining (if Phase 1/2 show promise)", "experiments": ["annotated_fen"], "time": "48-72 hours"}
+      {
+        "phase": 1,
+        "name": "Quick inference-only tests",
+        "experiments": [
+          "minimal_prompt",
+          "move_list_formats"
+        ],
+        "time": "2-3 hours"
+      },
+      {
+        "phase": 2,
+        "name": "Complex format tests",
+        "experiments": [
+          "chain_of_thought",
+          "few_shot_examples"
+        ],
+        "time": "2-3 hours"
+      },
+      {
+        "phase": 3,
+        "name": "Retraining (if Phase 1/2 show promise)",
+        "experiments": [
+          "annotated_fen"
+        ],
+        "time": "48-72 hours"
+      }
     ],
     "prior_evolution_insights": [
       "Temperature 0.1 > 0.3 for deterministic tasks",
@@ -1280,7 +1476,14 @@
       "date": "2026-01-15",
       "title": "chat_template.jinja Override Caused Model Resignation",
       "submissions_wasted": 6,
-      "submission_ids": [307730, 307732, 307733, 307734, 307735, 307737],
+      "submission_ids": [
+        307730,
+        307732,
+        307733,
+        307734,
+        307735,
+        307737
+      ],
       "root_cause": "chat_template.jinja file overrode tokenizer_config.json, using wrong system prompt 'You are a helpful assistant' instead of 'You are a chess grandmaster'. Model output prose without <uci_move> tags, causing immediate resignation (1000 ACPL).",
       "my_failures": [
         "Did not list ALL files in HF repo before assuming tokenizer_config.json was the only relevant file",
@@ -1348,7 +1551,10 @@
       "date": "2026-01-15",
       "title": "Never Assumed Upload Succeeded - eos_token Fix Never Applied",
       "submissions_wasted": 2,
-      "submission_ids": [307740, 307744],
+      "submission_ids": [
+        307740,
+        307744
+      ],
       "root_cause": "Memory claimed eos_token was fixed from <|endoftext|> to <|im_end|> in tokenizer_config.json. But curl to HF repo STILL shows eos_token=<|endoftext|>. The fix was NEVER actually uploaded. Local file also has wrong value.",
       "evidence": {
         "hf_repo_actual_value": "<|endoftext|>",
@@ -1383,7 +1589,14 @@
       "date": "2026-01-15",
       "title": "ALWAYS Check .env File First for Credentials",
       "root_cause": "Tried to upload to HuggingFace, got auth error, then searched for tokens in ~/.huggingface and env vars - when HF_TOKEN was sitting in .env file the whole time.",
-      "available_keys_in_env": ["LIGHTNING_USER_ID", "LIGHTNING_API_KEY", "LIGHTNING_AI_USERNAME", "LIGHTNING_TEAMSPACE", "HF_TOKEN", "AICROWD_API_KEY"],
+      "available_keys_in_env": [
+        "LIGHTNING_USER_ID",
+        "LIGHTNING_API_KEY",
+        "LIGHTNING_AI_USERNAME",
+        "LIGHTNING_TEAMSPACE",
+        "HF_TOKEN",
+        "AICROWD_API_KEY"
+      ],
       "rule": "BEFORE any API call that needs auth, FIRST check: cat .env | grep -i <service>",
       "why_env_exists": "User set up .env specifically to avoid credential hunting. USE IT."
     },
@@ -1419,6 +1632,44 @@
       ],
       "rule": "When checking Lightning.ai, ALWAYS: (1) List ALL studios, (2) For EACH studio, list ALL directories in ~/chess-training/, (3) Check status of EVERY run, (4) Document ALL runs in memory, not just the ones I think are important",
       "command_to_use": "for dir in ~/chess-training/*/; do echo '=== '$dir' ==='; tail -5 $dir/train.log 2>/dev/null; done"
+    },
+    {
+      "id": "DRI-007",
+      "date": "2026-01-16",
+      "title": "ALWAYS Use Submission Script with Full vLLM Flags",
+      "root_cause": "Submission 307762 timed out because I submitted without the required vLLM flags. User had to remind me to check how previous submissions were done.",
+      "submissions_wasted": 1,
+      "submission_ids": [
+        307762
+      ],
+      "required_flags": {
+        "command": "aicrowd submit-model --neuron.model-type qwen2 --vllm.max-model-len 512 --vllm.max-num-batched-tokens 512 --vllm.max-num-seqs 1 --vllm.dtype bfloat16 --vllm.enforce-eager true --vllm-inference.max-tokens 64",
+        "explanation": {
+          "--vllm.max-num-seqs 1": "Prevents concurrency corruption",
+          "--vllm.max-model-len 512": "Prevents memory/compilation issues",
+          "--vllm.enforce-eager true": "More reliable execution",
+          "--vllm.dtype bfloat16": "Standard precision for Neuron",
+          "--vllm-inference.max-tokens 64": "Sufficient for chess move - prevents timeout"
+        }
+      },
+      "my_failures": [
+        "Did not check previous working submissions before submitting",
+        "Did not create/use a submission script",
+        "Submitted manually without all required flags",
+        "Wasted a submission that could have been avoided"
+      ],
+      "rules_to_follow": {
+        "before_any_submission": [
+          "ALWAYS use submit_3b.sh or submit_v6.sh scripts",
+          "NEVER submit manually without checking the script",
+          "Verify all flags are present before confirming submission"
+        ]
+      },
+      "submission_scripts": {
+        "3B_model": "submit_3b.sh",
+        "7B_model": "starter-kit/submit_v6.sh (needs updating)"
+      },
+      "lesson": "Create and use submission scripts. Never submit manually."
     }
   ],
   "model_evaluations": {
@@ -1446,7 +1697,14 @@
       "hardware": "AWS Trainium (trn1.2xlarge)",
       "software": "NxD Inference + vLLM plugin",
       "compilation": "Models compiled to Neuron artifacts",
-      "supported_model_types": ["llama", "mixtral", "dbrx", "qwen2", "qwen3", "qwen3_moe"],
+      "supported_model_types": [
+        "llama",
+        "mixtral",
+        "dbrx",
+        "qwen2",
+        "qwen3",
+        "qwen3_moe"
+      ],
       "our_model_type": "qwen2 (for Qwen2.5 models)"
     },
     "qwen25_chatml_tokens": {
@@ -1478,5 +1736,51 @@
       "--vllm.enforce-eager",
       "--vllm-inference.max-tokens"
     ]
+  },
+  "active_background_tasks": {
+    "winning_moves_filter": {
+      "status": "RUNNING",
+      "pid": 15093,
+      "started_at": "2026-01-16T03:56:00Z",
+      "log_file": "filter_winning_moves.log",
+      "checkpoint_file": "data/training_winning_moves_500k.checkpoint.json",
+      "output_file": "data/training_winning_moves_500k.jsonl",
+      "input_file": "data/training_sf3_500k.jsonl",
+      "total_positions": 501402,
+      "estimated_hours": 35,
+      "checkpoint_interval": 1000,
+      "how_to_check_progress": [
+        "tail -30 filter_winning_moves.log",
+        "cat data/training_winning_moves_500k.checkpoint.json"
+      ],
+      "how_to_resume_if_crashed": [
+        "Check if process is running: ps aux | grep filter_winning_moves | grep -v grep",
+        "If not running, restart with: nohup python3 filter_winning_moves.py --input data/training_sf3_500k.jsonl --output data/training_winning_moves_500k.jsonl --workers 2 --resume > filter_winning_moves.log 2>&1 &",
+        "The --resume flag will pick up from the last checkpoint automatically"
+      ],
+      "expected_output": {
+        "acceptance_rate": "~38.5% based on sample",
+        "expected_positions": "~193K positions with clear best move"
+      }
+    },
+    "cloud_training": {
+      "v6_r128": {
+        "studio": "chess-llm-v5",
+        "status": "RUNNING",
+        "progress": "15% (8307/55538 steps)",
+        "latest_metrics": {
+          "eval_loss": 0.555,
+          "token_accuracy": "86%"
+        },
+        "eta": "~225 hours remaining",
+        "how_to_check": "Use Lightning SDK: studio.run('tail -30 ~/chess-training/7b_v6_r128_e2_20260114_0320/train.log')"
+      },
+      "qwen_3b": {
+        "studio": "chess-llm-v4",
+        "status": "RUNNING",
+        "progress": "14% (12030/83307 steps)",
+        "how_to_check": "Use Lightning SDK: studio.run('tail -30 /teamspace/studios/this_studio/train_3b_fixed.log')"
+      }
+    }
   }
 }
