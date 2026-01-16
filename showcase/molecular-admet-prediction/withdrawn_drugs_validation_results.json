@@ -1,0 +1,267 @@
+{
+  "withdrawn_drugs": {
+    "terfenadine": {
+      "smiles": "CC(C)(C)C1=CC=C(C=C1)C(CCCN2CCC(CC2)C(C3=CC=CC=C3)(C4=CC=CC=C4)O)O",
+      "probability": 0.8353802205570421,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "CC(C)(C)C1=CC=C(C=C1)C(CCCN2CCC(CC2)C(C3=CC=CC=C3)(C4=CC=CC=C4)O)O",
+        "brand_name": "Seldane",
+        "withdrawn_year": 1998,
+        "therapeutic_class": "Antihistamine",
+        "reason": "QT prolongation, Torsades de Pointes",
+        "expected": 1,
+        "source": "FDA withdrawal"
+      }
+    },
+    "astemizole": {
+      "smiles": "COC1=CC=C(C=C1)CCN2CCC(CC2)NC3=NC4=CC=CC=C4N3CC5=CC=C(C=C5)F",
+      "probability": 0.8663928012903364,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "COC1=CC=C(C=C1)CCN2CCC(CC2)NC3=NC4=CC=CC=C4N3CC5=CC=C(C=C5)F",
+        "brand_name": "Hismanal",
+        "withdrawn_year": 1999,
+        "therapeutic_class": "Antihistamine",
+        "reason": "QT prolongation, cardiac arrhythmias",
+        "expected": 1,
+        "source": "Voluntary withdrawal after FDA negotiations"
+      }
+    },
+    "cisapride": {
+      "smiles": "COC1CN(CCC1NC(=O)C2=CC(=C(C=C2OC)N)Cl)CCCOC3=CC=C(C=C3)F",
+      "probability": 0.8475719795508023,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "COC1CN(CCC1NC(=O)C2=CC(=C(C=C2OC)N)Cl)CCCOC3=CC=C(C=C3)F",
+        "brand_name": "Propulsid",
+        "withdrawn_year": 2000,
+        "therapeutic_class": "Gastroprokinetic",
+        "reason": "QT prolongation, >80 deaths reported",
+        "expected": 1,
+        "source": "FDA withdrawal"
+      }
+    },
+    "grepafloxacin": {
+      "smiles": "CC1CN(CCN1)C2=C(C(=C3C(=C2)N(C=C(C3=O)C(=O)O)C4CC4)C)F",
+      "probability": 0.5988136014631855,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "CC1CN(CCN1)C2=C(C(=C3C(=C2)N(C=C(C3=O)C(=O)O)C4CC4)C)F",
+        "brand_name": "Raxar",
+        "withdrawn_year": 1999,
+        "therapeutic_class": "Fluoroquinolone antibiotic",
+        "reason": "QT prolongation, 7 deaths",
+        "expected": 1,
+        "source": "Voluntary withdrawal"
+      }
+    },
+    "terodiline": {
+      "smiles": "CC(CC(C1=CC=CC=C1)C2=CC=CC=C2)NC(C)(C)C",
+      "probability": 0.7055337005259223,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "CC(CC(C1=CC=CC=C1)C2=CC=CC=C2)NC(C)(C)C",
+        "brand_name": "Micturin",
+        "withdrawn_year": 1991,
+        "therapeutic_class": "Anticholinergic (urinary incontinence)",
+        "reason": "QT prolongation, Torsades de Pointes",
+        "expected": 1,
+        "source": "Worldwide withdrawal"
+      }
+    },
+    "sertindole": {
+      "smiles": "C1CN(CCC1C2=CN(C3=C2C=C(C=C3)Cl)C4=CC=C(C=C4)F)CCN5CCNC5=O",
+      "probability": 0.8266264005348307,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "C1CN(CCC1C2=CN(C3=C2C=C(C=C3)Cl)C4=CC=C(C=C4)F)CCN5CCNC5=O",
+        "brand_name": "Serdolect",
+        "withdrawn_year": 1998,
+        "therapeutic_class": "Antipsychotic",
+        "reason": "QT prolongation, sudden cardiac death",
+        "expected": 1,
+        "source": "Suspended in EU (later reintroduced with restrictions)"
+      }
+    },
+    "mibefradil": {
+      "smiles": "CC(C)C1C2=C(CCC1(CCN(C)CCCC3=NC4=CC=CC=C4N3)OC(=O)COC)C=C(C=C2)F",
+      "probability": 0.7923757537832363,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "CC(C)C1C2=C(CCC1(CCN(C)CCCC3=NC4=CC=CC=C4N3)OC(=O)COC)C=C(C=C2)F",
+        "brand_name": "Posicor",
+        "withdrawn_year": 1998,
+        "therapeutic_class": "Calcium channel blocker",
+        "reason": "Drug interactions causing QT prolongation",
+        "expected": 1,
+        "source": "FDA withdrawal"
+      }
+    },
+    "lidoflazine": {
+      "smiles": "CC1=C(C(=CC=C1)C)NC(=O)CN2CCN(CC2)CCCC(C3=CC=C(C=C3)F)C4=CC=C(C=C4)F",
+      "probability": 0.8819429447299612,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "CC1=C(C(=CC=C1)C)NC(=O)CN2CCN(CC2)CCCC(C3=CC=C(C=C3)F)C4=CC=C(C=C4)F",
+        "brand_name": "Clinium",
+        "withdrawn_year": 1989,
+        "therapeutic_class": "Calcium channel blocker",
+        "reason": "QT prolongation",
+        "expected": 1,
+        "source": "Withdrawn in multiple countries"
+      }
+    },
+    "droperidol": {
+      "smiles": "C1CN(CC=C1N2C3=CC=CC=C3NC2=O)CCCC(=O)C4=CC=C(C=C4)F",
+      "probability": 0.8214910446047743,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "C1CN(CC=C1N2C3=CC=CC=C3NC2=O)CCCC(=O)C4=CC=C(C=C4)F",
+        "brand_name": "Inapsine",
+        "withdrawn_year": null,
+        "therapeutic_class": "Antipsychotic/Antiemetic",
+        "reason": "Black box warning 2001 for QT prolongation",
+        "expected": 1,
+        "source": "FDA black box warning"
+      }
+    },
+    "thioridazine": {
+      "smiles": "CN1CCCCC1CCN2C3=CC=CC=C3SC4=C2C=C(C=C4)SC",
+      "probability": 0.867880540376498,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "CN1CCCCC1CCN2C3=CC=CC=C3SC4=C2C=C(C=C4)SC",
+        "brand_name": "Mellaril",
+        "withdrawn_year": null,
+        "therapeutic_class": "Antipsychotic",
+        "reason": "Black box warning for QT prolongation, restricted to last-line use",
+        "expected": 1,
+        "source": "FDA black box warning 2000"
+      }
+    },
+    "haloperidol": {
+      "smiles": "C1CN(CCC1(C2=CC=C(C=C2)Cl)O)CCCC(=O)C3=CC=C(C=C3)F",
+      "probability": 0.852554073812577,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "C1CN(CCC1(C2=CC=C(C=C2)Cl)O)CCCC(=O)C3=CC=C(C=C3)F",
+        "brand_name": "Haldol",
+        "withdrawn_year": null,
+        "therapeutic_class": "Antipsychotic",
+        "reason": "QT prolongation warning, especially IV administration",
+        "expected": 1,
+        "source": "FDA warning 2007"
+      }
+    },
+    "dofetilide": {
+      "smiles": "CN(CCC1=CC=C(C=C1)NS(=O)(=O)C)CCOC2=CC=C(C=C2)NS(=O)(=O)C",
+      "probability": 0.7126131775897435,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "CN(CCC1=CC=C(C=C1)NS(=O)(=O)C)CCOC2=CC=C(C=C2)NS(=O)(=O)C",
+        "brand_name": "Tikosyn",
+        "withdrawn_year": null,
+        "therapeutic_class": "Class III antiarrhythmic",
+        "reason": "Known hERG blocker (therapeutic mechanism), requires REMS program",
+        "expected": 1,
+        "source": "FDA REMS required"
+      }
+    }
+  },
+  "safe_drugs": {
+    "aspirin": {
+      "smiles": "CC(=O)OC1=CC=CC=C1C(=O)O",
+      "probability": 0.15717521360067965,
+      "prediction": 0,
+      "expected": 0,
+      "correct": true,
+      "info": {
+        "smiles": "CC(=O)OC1=CC=CC=C1C(=O)O",
+        "brand_name": "Bayer Aspirin",
+        "therapeutic_class": "NSAID/Antiplatelet",
+        "herg_status": "No significant hERG inhibition",
+        "expected": 0
+      }
+    },
+    "metformin": {
+      "smiles": "CN(C)C(=N)N=C(N)N",
+      "probability": 0.10330038783389059,
+      "prediction": 0,
+      "expected": 0,
+      "correct": true,
+      "info": {
+        "smiles": "CN(C)C(=N)N=C(N)N",
+        "brand_name": "Glucophage",
+        "therapeutic_class": "Antidiabetic",
+        "herg_status": "No significant hERG inhibition",
+        "expected": 0
+      }
+    },
+    "caffeine": {
+      "smiles": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
+      "probability": 0.251049868912416,
+      "prediction": 0,
+      "expected": 0,
+      "correct": true,
+      "info": {
+        "smiles": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
+        "brand_name": "N/A",
+        "therapeutic_class": "Stimulant",
+        "herg_status": "No significant hERG inhibition",
+        "expected": 0
+      }
+    },
+    "ibuprofen": {
+      "smiles": "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O",
+      "probability": 0.17325475300338844,
+      "prediction": 0,
+      "expected": 0,
+      "correct": true,
+      "info": {
+        "smiles": "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O",
+        "brand_name": "Advil/Motrin",
+        "therapeutic_class": "NSAID",
+        "herg_status": "No significant hERG inhibition",
+        "expected": 0
+      }
+    }
+  },
+  "summary": {
+    "withdrawn_correct": 12,
+    "withdrawn_total": 12,
+    "withdrawn_accuracy": 1.0,
+    "safe_correct": 4,
+    "safe_total": 4,
+    "safe_accuracy": 1.0,
+    "overall_correct": 16,
+    "overall_total": 16,
+    "overall_accuracy": 1.0,
+    "threshold": 0.5,
+    "timestamp": "2026-01-16T14:47:49.978200"
+  }
+}
