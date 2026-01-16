@@ -48,6 +48,16 @@
         "command": "Read dont_repeat_incidents array in memory.json",
         "action": "Check that current submission doesn't repeat any past incident"
       }
+    },
+    "CRITICAL_SUBMISSION_FLAGS": {
+      "description": "EVERY submission MUST use submit_3b.sh which has ALL these flags",
+      "script": "submit_3b.sh",
+      "flags_that_must_be_present": [
+        "--num-games 1 (CRITICAL - prevents concurrency corruption)",
+        "--vllm.max-num-seqs 1",
+        "--neuron.model-type qwen2"
+      ],
+      "reference_submission": "307752 (V6) got ~146 ACPL with these flags"
     }
   },
   "submission_readiness": {
@@ -296,6 +306,24 @@
         "generation_config.json: eos_token_id = 151645"
       ],
       "all_three_checks_passed": true,
+      "status": "SUBMITTED - awaiting evaluation"
+    },
+    {
+      "submission_id": 307768,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307768",
+      "submitted_at": "2026-01-16T04:40:20.796Z",
+      "model": "qwen2.5-3b-checkpoint-12000",
+      "hf_repo": "ericksoa/chess-qwen3b-12k",
+      "critical_fix": "Added --num-games 1 from working V6 submission 307752",
+      "all_flags": [
+        "--num-games 1",
+        "--vllm.max-num-seqs 1",
+        "--vllm.max-model-len 512",
+        "--neuron.model-type qwen2",
+        "--vllm.dtype bfloat16",
+        "--vllm.enforce-eager true",
+        "--vllm-inference.max-tokens 64"
+      ],
       "status": "SUBMITTED - awaiting evaluation"
     }
   ],
@@ -1767,6 +1795,34 @@
       "root_cause": "generation_config.json had eos_token_id=151643 (<|endoftext|>) instead of 151645 (<|im_end|>). Model never sees EOS, keeps generating garbage.",
       "fix": "Set eos_token_id to 151645 in generation_config.json",
       "verification_added_to_script": "submit_3b.sh now checks generation_config.json eos_token_id = 151645"
+    },
+    {
+      "id": "DRI-010",
+      "date": "2026-01-16",
+      "title": "MISSING --num-games 1 flag caused garbage output",
+      "submissions_wasted": 3,
+      "submission_ids": [
+        307765,
+        307767,
+        "and earlier 3B attempts"
+      ],
+      "symptom": "Model outputs binary garbage like '<fastcall8820ah8/+J+K//2k-+j+3)...'",
+      "root_cause": "V6 submission 307752 that got ~146 ACPL had --num-games 1. 3B submissions were missing it.",
+      "fix": "Add --num-games 1 to submission command",
+      "critical_flags": {
+        "description": "ALL submissions MUST include these flags:",
+        "flags": [
+          "--num-games 1",
+          "--vllm.max-num-seqs 1",
+          "--vllm.max-model-len 512",
+          "--vllm.max-num-batched-tokens 512",
+          "--vllm.dtype bfloat16",
+          "--vllm.enforce-eager true",
+          "--vllm-inference.max-tokens 64",
+          "--neuron.model-type qwen2"
+        ]
+      },
+      "script_location": "submit_3b.sh has ALL required flags - ALWAYS use this script"
     }
   ],
   "model_evaluations": {
