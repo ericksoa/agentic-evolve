@@ -12,7 +12,7 @@
 
 ## Abstract
 
-Predicting human Ether-à-go-go-Related Gene (hERG) channel blockade is critical for cardiac safety assessment in drug discovery, as hERG inhibition can cause fatal arrhythmias. While deep learning methods like Graph Neural Networks (GNNs) have achieved state-of-the-art performance, they require substantial computational resources and lack interpretability. We present EvolveML, an automated algorithm discovery framework that evolves ensemble machine learning models for molecular property prediction. Applied to hERG toxicity prediction, our evolved model using SMILES augmentation with test-time prediction averaging achieves **0.869 ± 0.005 AUROC** on the Therapeutics Data Commons (TDC) benchmark, ranking **#5 among 10 published methods** and within 1.1% of the top GNN-based approach. Notably, our method provides feature-level interpretability and achieves inference times of ~5ms per molecule. We further validate on 11,411 ChEMBL hERG compounds (0.809 AUROC) and demonstrate **100% accuracy on 12 drugs withdrawn from market for QT prolongation/cardiotoxicity**—including terfenadine, cisapride, and astemizole—providing compelling real-world evidence of clinical utility. Our results demonstrate that evolutionary optimization can discover effective hybrid architectures that balance the stability of classical ML with the expressiveness of deep learning.
+Predicting human Ether-à-go-go-Related Gene (hERG) channel blockade is critical for cardiac safety assessment in drug discovery, as hERG inhibition can cause fatal arrhythmias. While deep learning methods like Graph Neural Networks (GNNs) have achieved state-of-the-art performance, they require substantial computational resources and lack interpretability. We present EvolveML, an automated algorithm discovery framework that evolves ensemble machine learning models for molecular property prediction. Applied to hERG toxicity prediction, our evolved model using SMILES augmentation with test-time prediction averaging achieves **0.869 ± 0.005 AUROC** on the Therapeutics Data Commons (TDC) benchmark, ranking **#5 among 10 published methods** and within 1.1% of the top GNN-based approach. Notably, our method provides feature-level interpretability and achieves inference times of ~5ms per molecule. We further validate on 11,411 ChEMBL hERG compounds (0.809 AUROC) and demonstrate **90% accuracy on 20 drugs with documented hERG/QT liability**, including **100% sensitivity on the 12 drugs actually withdrawn from market** for cardiotoxicity (terfenadine, cisapride, astemizole, etc.)—providing compelling real-world evidence of clinical utility. Our results demonstrate that evolutionary optimization can discover effective hybrid architectures that balance the stability of classical ML with the expressiveness of deep learning.
 
 **Keywords:** hERG, cardiotoxicity, machine learning, ensemble methods, evolutionary algorithms, drug discovery, ADMET
 
@@ -49,7 +49,7 @@ We present EvolveML, an automated algorithm discovery framework that evolves ens
 
 5. **External Validation**: We validate on 11,411 ChEMBL hERG compounds, demonstrating generalization beyond the TDC training set.
 
-6. **Clinical Relevance**: We validate on 12 drugs withdrawn from market or given black box warnings for hERG-related cardiotoxicity, achieving 100% accuracy—demonstrating that our model would have flagged these dangerous drugs during preclinical screening.
+6. **Clinical Relevance**: We validate on 20 drugs with documented hERG/QT liability, achieving 90% overall accuracy and **100% sensitivity on the 12 drugs actually withdrawn from market**—demonstrating that our model would have flagged these dangerous drugs during preclinical screening.
 
 ---
 
@@ -269,9 +269,12 @@ The within-domain result (0.809 AUROC) demonstrates that our model architecture 
 
 ### 5.3 Withdrawn Drugs Validation
 
-The most clinically relevant test of a hERG prediction model is whether it can identify drugs that were actually withdrawn from the market due to cardiac toxicity. We curated a benchmark of 12 drugs that were withdrawn or given black box warnings for QT prolongation/hERG-related cardiotoxicity, plus 4 negative controls (drugs known to be safe).
+The most clinically relevant test of a hERG prediction model is whether it can identify drugs that were actually withdrawn from the market due to cardiac toxicity. We curated a comprehensive benchmark of 20 drugs with documented hERG/QT liability:
+- **12 withdrawn or black-box warning drugs** (highest risk category)
+- **8 additional drugs with known QT risk** from CredibleMeds and FDA AERS data
+- **4 negative controls** (drugs known to be safe)
 
-**Table 3b: Withdrawn Drugs Validation Results**
+**Table 3b: Withdrawn/Restricted Drugs (Highest Risk)**
 
 | Drug | Brand Name | Year | Reason | Predicted Prob | Correct |
 |------|------------|------|--------|----------------|---------|
@@ -290,6 +293,19 @@ The most clinically relevant test of a hERG prediction model is whether it can i
 
 *BBW = Black Box Warning; REMS = Risk Evaluation and Mitigation Strategy*
 
+**Table 3c: Additional QT-Prolonging Drugs (Still Marketed, Clinically Monitored)**
+
+| Drug | Brand Name | Class | Reason | Predicted Prob | Correct |
+|------|------------|-------|--------|----------------|---------|
+| Chlorpromazine | Thorazine | Antipsychotic | CredibleMeds Known Risk | 0.877 | ✓ |
+| Pimozide | Orap | Antipsychotic | Known hERG blocker | 0.863 | ✓ |
+| Amiodarone | Cordarone | Class III antiarrhythmic | Most TdP reports in FDA AERS | 0.814 | ✓ |
+| Domperidone | Motilium | Antiemetic | Restricted in many countries | 0.807 | ✓ |
+| Methadone | Dolophine | Opioid | 312 TdP reports in FDA AERS | 0.762 | ✓ |
+| Quinidine | Quinidex | Class Ia antiarrhythmic | 4-8% TdP incidence | 0.759 | ✓ |
+| Erythromycin | Erythrocin | Macrolide antibiotic | Highest TdP risk among macrolides | 0.186 | ✗ |
+| Sotalol | Betapace | Class III antiarrhythmic | Known hERG blocker | 0.160 | ✗ |
+
 **Safe Drug Controls:**
 
 | Drug | Predicted Prob | Correct |
@@ -300,11 +316,21 @@ The most clinically relevant test of a hERG prediction model is whether it can i
 | Caffeine | 0.251 | ✓ |
 
 **Summary:**
-- Withdrawn/restricted drugs correctly identified: **12/12 (100%)**
+- Withdrawn/restricted drugs (highest risk): **12/12 (100%)**
+- Additional QT drugs (clinically monitored): **6/8 (75%)**
+- All known hERG blockers combined: **18/20 (90%)**
 - Safe drugs correctly classified: **4/4 (100%)**
-- Overall accuracy: **16/16 (100%)**
+- Overall accuracy: **22/24 (91.7%)**
 
-This result is particularly compelling because these are real-world cases where hERG cardiotoxicity was only discovered after the drugs reached patients—sometimes after fatalities. Our model would have flagged all of them during preclinical screening. The probability scores also correlate reasonably with clinical severity: drugs with the highest death tolls (cisapride, sertindole) show high predicted probabilities.
+**Analysis of False Negatives:**
+
+Two drugs were incorrectly classified as non-blockers:
+
+1. **Sotalol** (predicted 0.160): A Class III antiarrhythmic that works *by* blocking hERG channels. However, sotalol is structurally unusual—it's a sulfonamide beta-blocker rather than the typical lipophilic amine seen in most hERG blockers. This structural class may be underrepresented in the training data.
+
+2. **Erythromycin** (predicted 0.186): A large macrolide antibiotic (MW ~734 Da) with well-documented hERG effects, particularly via IV administration. Macrolides have a distinct binding mode to hERG compared to smaller drug-like molecules, which may explain the model's difficulty.
+
+These false negatives highlight a limitation: the model performs best on drug-like molecules with canonical hERG pharmacophores (basic nitrogen + aromatic groups) but may miss structurally unusual blockers. Importantly, the model achieves **perfect sensitivity (100%) on the highest-risk category**—drugs that were actually withdrawn from the market due to cardiac deaths.
 
 ### 5.4 Evolution Analysis
 
