@@ -20,7 +20,7 @@
     },
     "step_3_check_submission": {
       "description": "Check latest submission status",
-      "latest_submission_id": 307765,
+      "latest_submission_id": 307767,
       "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307764",
       "model": "Qwen 3B checkpoint-12000",
       "action": "Visit URL or check AIcrowd dashboard"
@@ -282,6 +282,20 @@
         "system_prompt": "You are a chess grandmaster...",
         "eos_token": "<|im_end|>"
       },
+      "status": "SUBMITTED - awaiting evaluation"
+    },
+    {
+      "submission_id": 307767,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307767",
+      "submitted_at": "2026-01-16T04:27:13.787Z",
+      "model": "qwen2.5-3b-checkpoint-12000",
+      "hf_repo": "ericksoa/chess-qwen3b-12k",
+      "fixes_applied": [
+        "chat_template.jinja: chess grandmaster system prompt",
+        "tokenizer_config.json: eos_token = <|im_end|>",
+        "generation_config.json: eos_token_id = 151645"
+      ],
+      "all_three_checks_passed": true,
       "status": "SUBMITTED - awaiting evaluation"
     }
   ],
@@ -1739,6 +1753,20 @@
         "check_eos": "curl -s 'https://huggingface.co/REPO/raw/main/tokenizer_config.json' | python3 -c \"import json,sys; print(json.load(sys.stdin).get('eos_token'))\""
       },
       "lesson": "DRIs are useless if I don't read and apply them. MUST check DRIs before submissions."
+    },
+    {
+      "id": "DRI-009",
+      "date": "2026-01-16",
+      "title": "generation_config.json has wrong eos_token_id",
+      "submissions_wasted": 2,
+      "submission_ids": [
+        307764,
+        307765
+      ],
+      "symptom": "Model outputs binary garbage like '<vb tcage[,qM Album(addEventListener...'",
+      "root_cause": "generation_config.json had eos_token_id=151643 (<|endoftext|>) instead of 151645 (<|im_end|>). Model never sees EOS, keeps generating garbage.",
+      "fix": "Set eos_token_id to 151645 in generation_config.json",
+      "verification_added_to_script": "submit_3b.sh now checks generation_config.json eos_token_id = 151645"
     }
   ],
   "model_evaluations": {

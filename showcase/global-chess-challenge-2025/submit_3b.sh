@@ -62,6 +62,22 @@ fi
 echo "   ✓ PASSED"
 
 echo ""
+echo "3. Checking generation_config.json eos_token_id..."
+EOS_TOKEN_ID=$(curl -s "https://huggingface.co/$HF_REPO/raw/main/generation_config.json" | python3 -c "import json,sys; print(json.load(sys.stdin).get('eos_token_id'))")
+echo "   Found: $EOS_TOKEN_ID"
+if [[ "$EOS_TOKEN_ID" != "151645" ]]; then
+    echo ""
+    echo "   ❌ FAILED: eos_token_id is NOT 151645 (<|im_end|>)!"
+    echo "   Expected: '151645'"
+    echo "   Got: '$EOS_TOKEN_ID'"
+    echo "   NOTE: 151643 is <|endoftext|> (WRONG), 151645 is <|im_end|> (CORRECT)"
+    echo ""
+    echo "   FIX: Update generation_config.json in $HF_REPO"
+    exit 1
+fi
+echo "   ✓ PASSED"
+
+echo ""
 echo "============================================"
 echo "ALL PRE-SUBMISSION CHECKS PASSED"
 echo "============================================"
