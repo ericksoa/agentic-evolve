@@ -193,6 +193,128 @@
       }
     }
   },
+  "additional_qt_drugs": {
+    "quinidine": {
+      "smiles": "COC1=CC2=C(C=CN=C2C=C1)C(C3CC4CCN3CC4C=C)O",
+      "probability": 0.7592371811306253,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "COC1=CC2=C(C=CN=C2C=C1)C(C3CC4CCN3CC4C=C)O",
+        "brand_name": "Quinidex",
+        "therapeutic_class": "Class Ia antiarrhythmic",
+        "reason": "4-8% TdP incidence, highest among antiarrhythmics",
+        "expected": 1,
+        "source": "CredibleMeds Known Risk"
+      }
+    },
+    "sotalol": {
+      "smiles": "CC(C)NCC(C1=CC=C(C=C1)NS(=O)(=O)C)O",
+      "probability": 0.15994175943389907,
+      "prediction": 0,
+      "expected": 1,
+      "correct": false,
+      "info": {
+        "smiles": "CC(C)NCC(C1=CC=C(C=C1)NS(=O)(=O)C)O",
+        "brand_name": "Betapace",
+        "therapeutic_class": "Class III antiarrhythmic",
+        "reason": "Known hERG blocker, TdP risk",
+        "expected": 1,
+        "source": "CredibleMeds Known Risk"
+      }
+    },
+    "amiodarone": {
+      "smiles": "CCCCC1=C(C2=CC=CC=C2O1)C(=O)C3=CC(=C(C(=C3)I)OCCN(CC)CC)I",
+      "probability": 0.8144089868962738,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "CCCCC1=C(C2=CC=CC=C2O1)C(=O)C3=CC(=C(C(=C3)I)OCCN(CC)CC)I",
+        "brand_name": "Cordarone",
+        "therapeutic_class": "Class III antiarrhythmic",
+        "reason": "Most TdP reports in FDA AERS (524 reports)",
+        "expected": 1,
+        "source": "FDA AERS data"
+      }
+    },
+    "chlorpromazine": {
+      "smiles": "CN(C)CCCN1C2=CC=CC=C2SC3=C1C=C(C=C3)Cl",
+      "probability": 0.8769862035934137,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "CN(C)CCCN1C2=CC=CC=C2SC3=C1C=C(C=C3)Cl",
+        "brand_name": "Thorazine",
+        "therapeutic_class": "Antipsychotic",
+        "reason": "QT prolongation, CredibleMeds Known Risk",
+        "expected": 1,
+        "source": "CredibleMeds Known Risk"
+      }
+    },
+    "pimozide": {
+      "smiles": "C1CN(CCC1N2C3=CC=CC=C3NC2=O)CCCC(C4=CC=C(C=C4)F)C5=CC=C(C=C5)F",
+      "probability": 0.8626586765066736,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "C1CN(CCC1N2C3=CC=CC=C3NC2=O)CCCC(C4=CC=C(C=C4)F)C5=CC=C(C=C5)F",
+        "brand_name": "Orap",
+        "therapeutic_class": "Antipsychotic",
+        "reason": "Known hERG blocker, contraindicated with CYP3A4 inhibitors",
+        "expected": 1,
+        "source": "CredibleMeds Known Risk"
+      }
+    },
+    "methadone": {
+      "smiles": "CCC(=O)C(CC(C)N(C)C)(C1=CC=CC=C1)C2=CC=CC=C2",
+      "probability": 0.761665935586455,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "CCC(=O)C(CC(C)N(C)C)(C1=CC=CC=C1)C2=CC=CC=C2",
+        "brand_name": "Dolophine",
+        "therapeutic_class": "Opioid",
+        "reason": "QT prolongation at higher doses, 312 TdP reports in FDA AERS",
+        "expected": 1,
+        "source": "FDA AERS data, CredibleMeds Known Risk"
+      }
+    },
+    "domperidone": {
+      "smiles": "C1CN(CCC1N2C3=C(C=C(C=C3)Cl)NC2=O)CCCN4C5=CC=CC=C5NC4=O",
+      "probability": 0.806778292920767,
+      "prediction": 1,
+      "expected": 1,
+      "correct": true,
+      "info": {
+        "smiles": "C1CN(CCC1N2C3=C(C=C(C=C3)Cl)NC2=O)CCCN4C5=CC=CC=C5NC4=O",
+        "brand_name": "Motilium",
+        "therapeutic_class": "Dopamine antagonist (antiemetic)",
+        "reason": "QT prolongation, restricted in many countries",
+        "expected": 1,
+        "source": "CredibleMeds Known Risk"
+      }
+    },
+    "erythromycin": {
+      "smiles": "CCC1C(C(C(C(=O)C(CC(C(C(C(C(C(=O)O1)C)OC2CC(C(C(O2)C)O)(C)OC)C)OC3C(C(CC(O3)C)N(C)C)O)(C)O)C)C)O)(C)O",
+      "probability": 0.18595458874350668,
+      "prediction": 0,
+      "expected": 1,
+      "correct": false,
+      "info": {
+        "smiles": "CCC1C(C(C(C(=O)C(CC(C(C(C(C(C(=O)O1)C)OC2CC(C(C(O2)C)O)(C)OC)C)OC3C(C(CC(O3)C)N(C)C)O)(C)O)C)C)O)(C)O",
+        "brand_name": "Erythrocin",
+        "therapeutic_class": "Macrolide antibiotic",
+        "reason": "Highest TdP risk among macrolides, especially IV",
+        "expected": 1,
+        "source": "CredibleMeds Known Risk"
+      }
+    }
+  },
   "safe_drugs": {
     "aspirin": {
       "smiles": "CC(=O)OC1=CC=CC=C1C(=O)O",
@@ -255,13 +377,19 @@
     "withdrawn_correct": 12,
     "withdrawn_total": 12,
     "withdrawn_accuracy": 1.0,
+    "additional_correct": 6,
+    "additional_total": 8,
+    "additional_accuracy": 0.75,
+    "all_blockers_correct": 18,
+    "all_blockers_total": 20,
+    "all_blockers_accuracy": 0.9,
     "safe_correct": 4,
     "safe_total": 4,
     "safe_accuracy": 1.0,
-    "overall_correct": 16,
-    "overall_total": 16,
-    "overall_accuracy": 1.0,
+    "overall_correct": 22,
+    "overall_total": 24,
+    "overall_accuracy": 0.9166666666666666,
     "threshold": 0.5,
-    "timestamp": "2026-01-16T14:47:49.978200"
+    "timestamp": "2026-01-16T14:56:21.461559"
   }
 }

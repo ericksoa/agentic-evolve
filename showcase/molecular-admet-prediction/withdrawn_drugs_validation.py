@@ -181,6 +181,87 @@ SAFE_DRUGS = {
     },
 }
 
+# ============================================================================
+# ADDITIONAL QT DRUGS - Still on market but with known hERG/QT risk
+# ============================================================================
+# These drugs are clinically monitored for QT prolongation but not withdrawn
+
+ADDITIONAL_QT_DRUGS = {
+    # ----- CLASS IA/III ANTIARRHYTHMICS (highest risk, 4-10% TdP incidence) -----
+    "quinidine": {
+        "smiles": "COC1=CC2=C(C=CN=C2C=C1)C(C3CC4CCN3CC4C=C)O",
+        "brand_name": "Quinidex",
+        "therapeutic_class": "Class Ia antiarrhythmic",
+        "reason": "4-8% TdP incidence, highest among antiarrhythmics",
+        "expected": 1,
+        "source": "CredibleMeds Known Risk",
+    },
+    "sotalol": {
+        "smiles": "CC(C)NCC(C1=CC=C(C=C1)NS(=O)(=O)C)O",
+        "brand_name": "Betapace",
+        "therapeutic_class": "Class III antiarrhythmic",
+        "reason": "Known hERG blocker, TdP risk",
+        "expected": 1,
+        "source": "CredibleMeds Known Risk",
+    },
+    "amiodarone": {
+        "smiles": "CCCCC1=C(C2=CC=CC=C2O1)C(=O)C3=CC(=C(C(=C3)I)OCCN(CC)CC)I",
+        "brand_name": "Cordarone",
+        "therapeutic_class": "Class III antiarrhythmic",
+        "reason": "Most TdP reports in FDA AERS (524 reports)",
+        "expected": 1,
+        "source": "FDA AERS data",
+    },
+
+    # ----- ANTIPSYCHOTICS -----
+    "chlorpromazine": {
+        "smiles": "CN(C)CCCN1C2=CC=CC=C2SC3=C1C=C(C=C3)Cl",
+        "brand_name": "Thorazine",
+        "therapeutic_class": "Antipsychotic",
+        "reason": "QT prolongation, CredibleMeds Known Risk",
+        "expected": 1,
+        "source": "CredibleMeds Known Risk",
+    },
+    "pimozide": {
+        "smiles": "C1CN(CCC1N2C3=CC=CC=C3NC2=O)CCCC(C4=CC=C(C=C4)F)C5=CC=C(C=C5)F",
+        "brand_name": "Orap",
+        "therapeutic_class": "Antipsychotic",
+        "reason": "Known hERG blocker, contraindicated with CYP3A4 inhibitors",
+        "expected": 1,
+        "source": "CredibleMeds Known Risk",
+    },
+
+    # ----- OPIOIDS -----
+    "methadone": {
+        "smiles": "CCC(=O)C(CC(C)N(C)C)(C1=CC=CC=C1)C2=CC=CC=C2",
+        "brand_name": "Dolophine",
+        "therapeutic_class": "Opioid",
+        "reason": "QT prolongation at higher doses, 312 TdP reports in FDA AERS",
+        "expected": 1,
+        "source": "FDA AERS data, CredibleMeds Known Risk",
+    },
+
+    # ----- ANTIEMETICS / GI DRUGS -----
+    "domperidone": {
+        "smiles": "C1CN(CCC1N2C3=C(C=C(C=C3)Cl)NC2=O)CCCN4C5=CC=CC=C5NC4=O",
+        "brand_name": "Motilium",
+        "therapeutic_class": "Dopamine antagonist (antiemetic)",
+        "reason": "QT prolongation, restricted in many countries",
+        "expected": 1,
+        "source": "CredibleMeds Known Risk",
+    },
+
+    # ----- ANTIBIOTICS -----
+    "erythromycin": {
+        "smiles": "CCC1C(C(C(C(=O)C(CC(C(C(C(C(C(=O)O1)C)OC2CC(C(C(O2)C)O)(C)OC)C)OC3C(C(CC(O3)C)N(C)C)O)(C)O)C)C)O)(C)O",
+        "brand_name": "Erythrocin",
+        "therapeutic_class": "Macrolide antibiotic",
+        "reason": "Highest TdP risk among macrolides, especially IV",
+        "expected": 1,
+        "source": "CredibleMeds Known Risk",
+    },
+}
+
 
 def run_validation(threshold=0.5):
     """
@@ -214,6 +295,7 @@ def run_validation(threshold=0.5):
 
     results = {
         "withdrawn_drugs": {},
+        "additional_qt_drugs": {},
         "safe_drugs": {},
         "summary": {},
     }
@@ -257,6 +339,49 @@ def run_validation(threshold=0.5):
         except Exception as e:
             print(f"{drug_name:<20}{'ERROR':>8}{'-':>6}{expected:>10}{'FAILED':>10}")
             results["withdrawn_drugs"][drug_name] = {
+                "error": str(e),
+                "expected": expected,
+            }
+
+    # -------------------------------------------------------------------------
+    # Test Additional QT Drugs (Expected: hERG blockers)
+    # -------------------------------------------------------------------------
+    print("\n" + "-" * 70)
+    print("ADDITIONAL QT-PROLONGING DRUGS (Expected: hERG Blockers)")
+    print("-" * 70)
+    print(f"{'Drug':<20}{'Prob':>8}{'Pred':>6}{'Expected':>10}{'Status':>10}")
+    print("-" * 70)
+
+    additional_correct = 0
+    additional_total = 0
+
+    for drug_name, info in ADDITIONAL_QT_DRUGS.items():
+        smiles = info["smiles"]
+        expected = info["expected"]
+
+        try:
+            prob = model.predict_proba([smiles])[0]
+            pred = 1 if prob >= threshold else 0
+            correct = pred == expected
+
+            if correct:
+                additional_correct += 1
+            additional_total += 1
+
+            status = "✓ CORRECT" if correct else "✗ WRONG"
+            print(f"{drug_name:<20}{prob:>8.3f}{pred:>6}{expected:>10}{status:>10}")
+
+            results["additional_qt_drugs"][drug_name] = {
+                "smiles": smiles,
+                "probability": float(prob),
+                "prediction": pred,
+                "expected": expected,
+                "correct": correct,
+                "info": info,
+            }
+        except Exception as e:
+            print(f"{drug_name:<20}{'ERROR':>8}{'-':>6}{expected:>10}{'FAILED':>10}")
+            results["additional_qt_drugs"][drug_name] = {
                 "error": str(e),
                 "expected": expected,
             }
@@ -312,13 +437,26 @@ def run_validation(threshold=0.5):
     print("=" * 70)
 
     withdrawn_accuracy = withdrawn_correct / withdrawn_total if withdrawn_total > 0 else 0
+    additional_accuracy = additional_correct / additional_total if additional_total > 0 else 0
     safe_accuracy = safe_correct / safe_total if safe_total > 0 else 0
-    total_correct = withdrawn_correct + safe_correct
-    total_count = withdrawn_total + safe_total
+
+    # All hERG blockers (withdrawn + additional)
+    all_blockers_correct = withdrawn_correct + additional_correct
+    all_blockers_total = withdrawn_total + additional_total
+    all_blockers_accuracy = all_blockers_correct / all_blockers_total if all_blockers_total > 0 else 0
+
+    total_correct = withdrawn_correct + additional_correct + safe_correct
+    total_count = withdrawn_total + additional_total + safe_total
     overall_accuracy = total_correct / total_count if total_count > 0 else 0
 
-    print(f"\nWithdrawn/Restricted Drugs (Sensitivity):")
+    print(f"\nWithdrawn/Restricted Drugs (Sensitivity - Highest Risk):")
     print(f"  Correctly identified as blockers: {withdrawn_correct}/{withdrawn_total} ({withdrawn_accuracy:.1%})")
+
+    print(f"\nAdditional QT Drugs (Sensitivity - Clinically Monitored):")
+    print(f"  Correctly identified as blockers: {additional_correct}/{additional_total} ({additional_accuracy:.1%})")
+
+    print(f"\nAll Known hERG Blockers (Combined Sensitivity):")
+    print(f"  Correctly identified: {all_blockers_correct}/{all_blockers_total} ({all_blockers_accuracy:.1%})")
 
     print(f"\nSafe Drugs (Specificity):")
     print(f"  Correctly identified as non-blockers: {safe_correct}/{safe_total} ({safe_accuracy:.1%})")
@@ -330,6 +468,12 @@ def run_validation(threshold=0.5):
         "withdrawn_correct": withdrawn_correct,
         "withdrawn_total": withdrawn_total,
         "withdrawn_accuracy": withdrawn_accuracy,
+        "additional_correct": additional_correct,
+        "additional_total": additional_total,
+        "additional_accuracy": additional_accuracy,
+        "all_blockers_correct": all_blockers_correct,
+        "all_blockers_total": all_blockers_total,
+        "all_blockers_accuracy": all_blockers_accuracy,
         "safe_correct": safe_correct,
         "safe_total": safe_total,
         "safe_accuracy": safe_accuracy,
@@ -351,6 +495,13 @@ def run_validation(threshold=0.5):
         print(f"○ Model identified {withdrawn_accuracy:.0%} of withdrawn drugs (good sensitivity)")
     else:
         print(f"✗ Model only identified {withdrawn_accuracy:.0%} of withdrawn drugs (needs improvement)")
+
+    if all_blockers_accuracy >= 0.85:
+        print(f"✓ Model correctly identified {all_blockers_accuracy:.0%} of all known hERG blockers ({all_blockers_total} drugs)")
+    elif all_blockers_accuracy >= 0.70:
+        print(f"○ Model identified {all_blockers_accuracy:.0%} of all known hERG blockers")
+    else:
+        print(f"✗ Model only identified {all_blockers_accuracy:.0%} of all known hERG blockers")
 
     if safe_accuracy >= 0.75:
         print(f"✓ Model correctly classified {safe_accuracy:.0%} of safe drugs as non-blockers")
