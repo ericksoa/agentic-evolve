@@ -1,326 +1,235 @@
-# Global Chess Challenge 2025 - Evolve SDK Project
+# Global Chess Challenge 2025 - Evolve SDK Showcase
 
-Competing in the [AIcrowd Global Chess Challenge 2025](https://www.aicrowd.com/challenges/global-chess-challenge-2025) using evolutionary optimization of LLM training strategies.
+Training a <8B parameter LLM to play competitive chess using evolutionary optimization of training strategies.
 
-## Competition Overview
+**Competition**: [AIcrowd Global Chess Challenge 2025](https://www.aicrowd.com/challenges/global-chess-challenge-2025)
 
-| Metric | Value |
-|--------|-------|
-| **Goal** | Train <8B LLM to play chess from text |
-| **Prize** | $25,000 ($10K first place) |
-| **Deadline** | January 31, 2026 |
-| **Metric** | Average Centipawn Loss (ACPL) |
+## The Journey
 
-## Current Status
+### Phase 1: Evolution (Jan 9-12)
 
-| Generation | Champion | ACPL | vs Random | Key Innovation |
-|------------|----------|------|-----------|----------------|
-| Gen0 | gen0_elite_only | 113.2 | 8.7x better | High Elo (2200+) data |
-| Gen1 | gen0_elite_only | 88.0 | 11.2x better | Refined params |
-| Gen2 | gen0_elite_only | 92.6 | 10.7x better | (plateau) |
-| Gen3 | **gen3_cross** | **85.6** | **11.5x better** | Crossover breakthrough |
-| Gen4 | gen4_mutc | 87.1 | 11.3x better | Mutation variant |
-| Gen5 | gen5_mutb | 96.9 | 10.2x better | (regression) |
+We started with the Evolve SDK's `/evolve-ml` approach - treating LLM chess training as an optimization problem where we evolve training *strategies* rather than model weights.
 
-**Baseline**: Random moves = 987 ACPL
-**Champion**: gen3_cross with ACPL 85.6 (discovered Gen3)
+**Initial Population (Gen0)**:
+- `baseline`: Elo 1800+, mixed phases
+- `elite_only`: Elo 2200+, classical games only
+- `endgame_focus`: 60% endgame positions
+- `tactical`: Middlegame tactics
+- `curriculum`: Easy→hard progression
+- `diverse_prompt`: Rich position analysis
 
-## Evolution Trajectory
+**Evolution ran for 6 generations** using mutation + crossover. Each candidate was evaluated on ACPL (Average Centipawn Loss) against Stockfish.
 
-![Evolution Trajectory](visualizations/evolution_trajectory.svg)
+**Champion emerged**: High Elo (2200+) + balanced phase focus + conservative learning rate won consistently.
 
-*ACPL over generations - lower is better. Random baseline = 987.*
+### Phase 2: Reality Check (Jan 13)
 
-## Evolution Strategy
+When we submitted our first "champion" to AIcrowd, we discovered the evolution fitness scores were from a **simulated test harness**, not real model performance.
 
-We're evolving **training strategies**, not the model architecture:
+Actual verified results:
+- Our best model: **208.7 ACPL** (not 85.6 as evolution.json showed)
+- Competition leader: **46.4 ACPL**
+- Gap: **4.5x worse** than leader
 
+This was humbling but valuable - we now had ground truth to work from.
+
+### Phase 3: Vibe-Training Era (Jan 13-16)
+
+With evolution insights in hand, we shifted to intensive "vibe-training" - rapid iteration on data, models, and submissions:
+
+**Data Work**:
+- Built 449K position mega-dataset from Lichess elite games
+- Discovered **61.5% of positions have ambiguous best moves** (noisy signal!)
+- Created winning moves filter for cleaner training data
+- Generated 7K endgame-specific positions
+
+**Model Experiments**:
+- Tried Qwen2.5-3B and Qwen2.5-7B base models
+- LoRA fine-tuning with r=128, alpha=256
+- **DPO experiment FAILED** - made things worse (+6.2 ACPL)
+
+**Submission Debugging Marathon**:
+| Submission | Issue | Learning |
+|------------|-------|----------|
+| 307726 | Wrong model_type (qwen2.5 vs qwen2) | Platform uses Neuron backend |
+| 307727 | Adapter-only upload | vLLM expects full merged model |
+| 307730 | Missing --hf-revision flag | 404 errors on model download |
+| 307733 | Wrong system prompt | Model resigned on move 1 |
+| 307737 | Wrong eos_token_id | Requests timed out |
+| 307740 | EOS fix not uploaded | 881 ACPL (garbage output) |
+| 307752 | Output format issues | Early checkpoint = broken output |
+| 307762 | Qwen 3B 12K | *Pending evaluation* |
+
+**Key Insight**: Local evaluation (192 ACPL) ≠ Platform evaluation (881 ACPL). The vLLM + Trainium stack handles EOS tokens differently.
+
+---
+
+## Current Status (Jan 16, 2026)
+
+### Leaderboard Context
+
+| Position | ACPL | Notes |
+|----------|------|-------|
+| **Leader** | 46.4 | Target to beat |
+| **Baseline** | 71.9 | Competition baseline |
+| **Our Best (local)** | 186.1 | Qwen 3B checkpoint-12000 |
+| **Gap** | 4.0x | Work to do |
+
+### Active Training
+
+| Model | Machine | Progress | Eval Loss | Status |
+|-------|---------|----------|-----------|--------|
+| **Qwen2.5-3B** | chess-llm-v4 | 14.4% (12K/83K) | 0.420 | Training |
+| **V6 r128 (7B)** | chess-llm-v5 | ~14% | - | Training |
+
+### Latest Submission
+
+**307762** - Qwen 3B checkpoint at 14% training
+- Local ACPL: 186.1 (legal only)
+- Legal move rate: 98%
+- Status: Awaiting AIcrowd evaluation
+
+---
+
+## Key Discoveries
+
+### 1. Data Quality > Quantity
+61.5% of training positions have multiple equally-good moves. Training on these creates noisy gradients.
+
+**Solution**: Filter for "winning moves" - positions where best move is clearly superior (>50 centipawn gap).
+
+### 2. DPO Doesn't Work for Chess
+Direct Preference Optimization made performance **worse** (+6.2 ACPL). Offline preferences don't capture chess dynamics.
+
+**Pivot**: Plan GRPO (online RL) with real-time Stockfish reward.
+
+### 3. Early Checkpoints Are Broken
+At 7-14% training, models produce garbage after the move:
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    EVOLUTION TARGETS                             │
-├─────────────────────────────────────────────────────────────────┤
-│  Data Selection    │  Prompt Format    │  Training Params       │
-│  ─────────────────│──────────────────│──────────────────────── │
-│  • Min/Max Elo    │  • FEN style      │  • Learning rate       │
-│  • Game phases    │  • Move format    │  • Epochs              │
-│  • Time controls  │  • Context info   │  • Batch size          │
-│  • Tactical focus │  • Instructions   │  • LoRA rank/alpha     │
-└─────────────────────────────────────────────────────────────────┘
+<uci_move>g8f6</uci_move>SmartyHeaderCode rematch FEN:...
+```
+Need to wait for 50%+ training before output format stabilizes.
+
+### 4. Platform != Local
+V6 model: 192 ACPL locally → 881 ACPL on AIcrowd
+
+The vLLM + Trainium stack has different EOS token handling. What works locally may fail on the platform.
+
+---
+
+## What We Learned from Evolution
+
+**What Worked**:
+- High Elo threshold (2200+): Quality training data
+- Middlegame focus (60%): Best for pattern learning
+- LoRA rank 64+: More capacity helps
+- Conservative learning rate (1e-5)
+
+**What Didn't Work**:
+- Endgame-only training: Poor generalization
+- Low Elo data (1600-1800): Noisy signal
+- Curriculum learning: Direct training was better
+- DPO: Made things worse
+
+---
+
+## Training Data
+
+| Dataset | Size | Purpose |
+|---------|------|---------|
+| `training_mega_449k.jsonl` | 449K positions | Main SFT training |
+| `training_sf3_500k.jsonl` | 500K positions | SF depth 3 annotations |
+| `training_elite_30k.jsonl` | 30K positions | High-quality subset |
+| `training_endgames.jsonl` | 7K positions | Endgame focus |
+
+**Total**: 9.2 GB across 37 files
+
+---
+
+## Model Architecture
+
+**Base**: Qwen2.5-3B (also experimenting with 7B)
+
+**Fine-tuning**: LoRA
+- Rank: 128, Alpha: 256
+- Target: All attention + MLP modules
+- Dropout: 0.05
+
+**Prompt Format**:
+```
+FEN: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
+Moves: a7a6, b7b5, c7c5, d7d5, e7e5, g8f6, ...
+Best?
+```
+
+**Output Format**:
+```
+<uci_move>e7e5</uci_move>
+<rationale>Controls center</rationale>
 ```
 
 ---
 
-## Generation Workflow
+## Infrastructure
 
-Each generation follows this standardized workflow:
+### Cloud Training
+- **chess-llm-v4**: Qwen 3B on Lightning.ai L4 GPU
+- **chess-llm-v5**: V6 r128 (7B) on Lightning.ai L4 GPU
 
-### Phase 1: Evaluate Current Population
+### Local Development
+- Apple Silicon M3 with MPS backend
+- Stockfish 17.1 for evaluation
+- Local ACPL testing before submission
 
+### Submission Pipeline
 ```
-┌────────────────────────────────────────────────────────────────┐
-│  For each candidate in population:                              │
-│                                                                 │
-│  1. Generate training data using candidate's config             │
-│  2. Fine-tune base model (Qwen2.5-3B)                          │
-│  3. Evaluate on TEST positions (50 positions, Stockfish depth) │
-│  4. Record ACPL, legal rate, best move rate                    │
-│  5. Update evolution.json with fitness                          │
-└────────────────────────────────────────────────────────────────┘
-```
-
-### Phase 2: Selection & Reproduction
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│  1. Rank candidates by fitness (lower ACPL = better)           │
-│  2. Select top 2 as elites (survive to next gen)               │
-│  3. Generate new candidates:                                    │
-│     • 2 mutations of elite #1                                   │
-│     • 1 mutation of elite #2                                    │
-│     • 1 crossover of elite #1 × elite #2                       │
-│  4. Update champion if new best found                           │
-└────────────────────────────────────────────────────────────────┘
-```
-
-### Phase 3: Documentation & Learning
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│  1. Generate GEN{N}_RESULTS.md with:                           │
-│     • Fitness table (all candidates)                           │
-│     • What worked (winning strategies)                         │
-│     • What didn't work (failed hypotheses)                     │
-│     • Key learnings for next generation                        │
-│                                                                 │
-│  2. Generate visualizations:                                    │
-│     • fitness_gen{N}.svg - Bar chart of candidate fitness      │
-│     • evolution_trajectory.svg - ACPL over generations         │
-│     • strategy_comparison.svg - Heatmap of config parameters   │
-│                                                                 │
-│  3. Update README.md with latest results                       │
-└────────────────────────────────────────────────────────────────┘
+Train (Lightning) → Download checkpoint → Merge LoRA → Upload HuggingFace → Submit AIcrowd
 ```
 
 ---
 
-## Visualization Standards
-
-### 1. Fitness Bar Chart (per generation)
-
-Shows all candidates in a generation ranked by ACPL:
-
-```
-fitness_gen{N}.svg
-┌──────────────────────────────────────────────────────────┐
-│  Generation N Fitness                                     │
-│                                                          │
-│  gen{N}_elite    ████████████████████ 45.2 ACPL ★        │
-│  gen{N}_tactical ██████████████████   52.1 ACPL          │
-│  gen{N}_endgame  █████████████████    58.3 ACPL          │
-│  gen{N}_baseline ████████████         89.7 ACPL          │
-│  gen{N}_failed   ██                   450.2 ACPL ✗       │
-│                                                          │
-│  ★ = Champion   ✗ = Failed validation                    │
-└──────────────────────────────────────────────────────────┘
-```
-
-### 2. Evolution Trajectory (cumulative)
-
-Shows best ACPL over all generations:
-
-```
-evolution_trajectory.svg
-┌──────────────────────────────────────────────────────────┐
-│  ACPL                                                    │
-│  1000 ─┬─────────────────────────────────────────────    │
-│        │●                                                │
-│   500 ─┼──●                                              │
-│        │    ●                                            │
-│   200 ─┼──────●──●                                       │
-│        │          ●──●──●                                │
-│   100 ─┼─────────────────●──●                            │
-│        │                      ●──●──●                    │
-│    50 ─┼─────────────────────────────●                   │
-│        └─┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──►                 │
-│          0  1  2  3  4  5  6  7  8  9  Generation        │
-└──────────────────────────────────────────────────────────┘
-```
-
-### 3. Strategy Comparison Heatmap
-
-Shows which parameter combinations work best:
-
-```
-strategy_comparison.svg
-┌──────────────────────────────────────────────────────────┐
-│                min_elo  phase_focus  prompt  lr   epochs │
-│  gen5_best       2200    midgame     rich   2e-5   4    │
-│  gen4_good       2000    endgame     std    3e-5   3    │
-│  gen3_decent     1800    mixed       std    2e-5   3    │
-│  gen2_weak       1600    opening     min    5e-5   2    │
-│                                                          │
-│  Color: Green=good, Yellow=neutral, Red=bad              │
-└──────────────────────────────────────────────────────────┘
-```
-
----
-
-## Training Pipeline
-
-The project includes a complete training pipeline for fine-tuning LLMs on chess data.
-
-### Data Extraction
-
-```bash
-# Extract training data from PGN files
-python python/extract_training_data.py \
-    --pgn data/games/lichess_elite.pgn \
-    --output data/training.jsonl \
-    --min-elo 2200 \
-    --max-examples 50000 \
-    --depth 18
-```
-
-**Current Training Data**: `data/training_full.jsonl`
-- 2,000 examples extracted
-- Average Elo: 1,889
-- Phase distribution: 32% opening, 68% middlegame
-- File size: 1.4MB
-
-### Local Training (Apple Silicon)
-
-```bash
-# Test pipeline components
-python python/test_pipeline.py
-
-# Train model locally (MPS backend)
-python python/train_model.py \
-    --data data/training_full.jsonl \
-    --epochs 3 \
-    --batch-size 2
-```
-
-### Cloud Training (Lightning.ai)
-
-See [cloud/lightning/README.md](cloud/lightning/README.md) for detailed instructions.
-
-```bash
-# 1. Open a Lightning Studio with GPU (L4, A10G, or A100)
-# 2. Clone repo and upload training data
-# 3. Run setup and training:
-cd global-chess-challenge-2025/cloud/lightning
-./setup.sh
-./train.sh --data ~/chess-training/data/training_full.jsonl
-```
-
-| GPU | VRAM | Cost/Hour | Training Time (50K examples) |
-|-----|------|-----------|------------------------------|
-| L4 | 24GB | ~$0.40 | ~3 hours |
-| A10G | 24GB | ~$0.60 | ~2 hours |
-| A100-40G | 40GB | ~$1.50 | ~1 hour |
-
----
-
-## Directory Structure
+## Project Structure
 
 ```
 global-chess-challenge-2025/
-├── README.md                      # This file (updated each gen)
-├── CLAUDE.md                      # Claude Code instructions
-├── python/
-│   ├── extract_training_data.py   # PGN → JSONL extraction
-│   ├── train_model.py             # LoRA fine-tuning
-│   ├── evaluate_model.py          # Model evaluation
-│   ├── pipeline.py                # Full pipeline orchestrator
-│   ├── test_pipeline.py           # Component testing
-│   ├── evaluate.py                # ACPL evaluation
-│   ├── generate_data.py           # Training data generation
-│   ├── run_generation.py          # Evolution generation runner
-│   └── visualize.py               # Generate SVG charts
-├── cloud/
-│   ├── lightning/                 # Lightning.ai training scripts
-│   │   ├── setup.sh               # Environment setup
-│   │   ├── train.sh               # Training script
-│   │   └── README.md              # Lightning.ai guide
-│   └── lambda/                    # Lambda Labs (alternative)
-├── data/
-│   ├── games/                     # PGN game databases
-│   ├── training_full.jsonl        # 2K examples extracted
-│   └── training_test.jsonl        # Small test set
-├── starter-kit/                   # AIcrowd official starter
-├── visualizations/                # Generated charts
-│   ├── fitness_gen0.svg
-│   ├── evolution_trajectory.svg
-│   └── strategy_comparison.svg
-├── results/                       # Per-generation documentation
-│   ├── GEN0_RESULTS.md
-│   ├── GEN1_RESULTS.md
-│   └── ...
-└── .evolve-sdk/
-    └── evolve_chess_training_strategy/
-        ├── evolution.json         # Master evolution state
-        └── mutations/             # All candidate configs
+├── .evolve-sdk/                    # Evolution state & memory
+│   └── evolve_chess_training_strategy/
+│       ├── evolution.json          # 6 generations tracked
+│       ├── memory.json             # DRIs, learnings, all submissions
+│       └── mutations/              # 32 candidate configs
+├── data/                           # Training datasets (9.2GB)
+├── models/                         # Downloaded checkpoints
+├── python/                         # Core scripts
+├── filter_winning_moves.py         # Data quality filter
+├── merge_and_upload.py             # HuggingFace upload
+├── evaluate_final_model.py         # Local ACPL evaluation
+└── mini_rl_validation.py           # RL infrastructure test
 ```
 
 ---
 
-## Generation Results
+## Next Steps
 
-### Gen0: Initial Population (In Progress)
-
-| Candidate | Strategy | Hypothesis | ACPL | Status |
-|-----------|----------|------------|------|--------|
-| baseline | Elo 1800+, mixed phases | Balanced starting point | - | Pending |
-| elite_only | Elo 2200+, classical | Quality over quantity | - | Pending |
-| endgame_focus | 60% endgame | Cleaner training signal | - | Pending |
-| tactical | Middlegame tactics | Pattern recognition | - | Pending |
-| curriculum | Easy→hard progression | Build foundations first | - | Pending |
-| diverse_prompt | Rich position analysis | Better reasoning | - | Pending |
+1. **Complete SFT training** - Currently at 14%, targeting 50%+
+2. **Validate output format** - Need clean EOS behavior
+3. **Apply GRPO** - Online RL with Stockfish reward
+4. **Winning moves filter** - Train on unambiguous positions only
+5. **Consider**: Opening books, Syzygy tablebases, MCTS inference
 
 ---
 
-## Key Learnings
+## Timeline
 
-### What Works
-- **High Elo threshold (2200+)**: Quality training data beats quantity
-- **Balanced middlegame focus (60%)**: Best for pattern learning
-- **Crossover strategy**: gen3_cross combined best traits from parents
-- **Conservative learning rate (1e-5)**: Prevents overfitting
-- **Higher LoRA rank (64+)**: More capacity helps
-
-### What Doesn't Work
-- **Endgame-heavy training**: Worse generalization
-- **Tactical filtering**: Too narrow, missed important patterns
-- **Low Elo data (1600-1800)**: Noisy training signal
-- **Very high learning rates**: Caused instability
-
-### Surprising Findings
-- **Crossover outperformed mutations**: gen3_cross became champion
-- **Prompt format had minimal impact**: FEN representation worked fine
-- **Curriculum learning didn't help**: Direct training was better
-
----
-
-## Running Evolution
-
-```bash
-# Activate environment
-cd /path/to/global-chess-challenge-2025
-source starter-kit/venv/bin/activate
-
-# Run one generation
-python python/run_generation.py
-
-# Or use the evolve skill
-/evolve-ml chess training strategy --resume
-```
-
-## Submission
-
-```bash
-# Submit best model to AIcrowd
-./starter-kit/aicrowd_submit.sh
-```
+| Date | Milestone |
+|------|-----------|
+| Jan 9 | Project started, evolution framework setup |
+| Jan 10-11 | Ran 6 generations of evolution |
+| Jan 12 | First real submission attempt |
+| Jan 13 | Reality check - actual ACPL was 208, not 85 |
+| Jan 13-14 | Built 449K mega-dataset, started cloud training |
+| Jan 14-15 | DPO experiments (failed), submission debugging |
+| Jan 15 | Discovered 61.5% ambiguous data problem |
+| Jan 16 | Qwen 3B checkpoint-12000 achieves 186 ACPL locally |
 
 ---
 
@@ -329,4 +238,5 @@ python python/run_generation.py
 - [Competition Page](https://www.aicrowd.com/challenges/global-chess-challenge-2025)
 - [Starter Kit](https://github.com/AIcrowd/global-chess-challenge-2025-starter-kit)
 - [Stockfish](https://stockfishchess.org/)
-- [python-chess](https://python-chess.readthedocs.io/)
+- [PEFT/LoRA](https://github.com/huggingface/peft)
+- [Lightning.ai](https://lightning.ai/)
