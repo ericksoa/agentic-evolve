@@ -1,0 +1,106 @@
+{
+  "name": "cuopt-lp-autotuner",
+  "description": "Evolve policies for LP solver optimization: transforms, parameters, and batching",
+  "mode": "perf",
+
+  "problem": {
+    "goal": "Maximize LP solver throughput and minimize p95 latency on GPU",
+    "language": "Python policy genome (JSON)",
+    "input": "LP instances (constraint matrix, objective, bounds)",
+    "output": "Optimal solver configuration for each LP instance"
+  },
+
+  "evaluation": {
+    "test_command": "python -m showcase.cuopt_lp_autotuner.benchmark --policy {solution} --output /dev/stdout --quiet",
+    "fitness_key": "primary_fitness",
+    "valid_key": "is_valid",
+    "higher_is_better": true,
+    "notes": "Fitness combines throughput, latency, and correctness. Hard constraint: no >2% p95 regression vs baseline."
+  },
+
+  "starter_solutions": [
+    "showcase/cuopt_lp_autotuner/baseline_policy.json"
+  ],
+
+  "optimization_strategies": [
+    {
+      "name": "scaling_transforms",
+      "description": "Enable row/column equilibration scaling to improve numerical conditioning",
+      "hint": "Geometric mean scaling often helps for poorly conditioned matrices"
+    },
+    {
+      "name": "reordering_transforms",
+      "description": "Reorder rows/columns for better cache locality and pivot selection",
+      "hint": "Try degree-based ordering, RCM, or minimum degree"
+    },
+    {
+      "name": "bound_tightening",
+      "description": "Tighten variable bounds using simple constraint propagation",
+      "hint": "Safe for single-variable constraints; be careful with general propagation"
+    },
+    {
+      "name": "solver_tolerance",
+      "description": "Adjust solver tolerance for speed vs accuracy tradeoff",
+      "hint": "Looser tolerance (1e-4) can be faster but may affect solution quality"
+    },
+    {
+      "name": "batching_strategy",
+      "description": "Group similar-sized LPs for efficient GPU batching",
+      "hint": "Homogeneous batches by size or density reduce memory fragmentation"
+    },
+    {
+      "name": "feature_conditioned",
+      "description": "Select transforms based on LP features (size, density, numerical range)",
+      "hint": "Large sparse LPs may need different treatment than small dense ones"
+    }
+  ],
+
+  "constraints": [
+    "Policy must not regress p95 latency on TEST by more than 2% vs baseline",
+    "All transforms must be solution-preserving (invertible or equivalent)",
+    "Policy must maintain correctness: objective within 1e-4 relative tolerance",
+    "Fail rate must not exceed baseline fail rate",
+    "Policy representation must be human-readable JSON (no neural networks)"
+  ],
+
+  "genome_structure": {
+    "transforms": {
+      "enable_row_scale": "bool",
+      "enable_col_scale": "bool",
+      "enable_row_reorder": "bool",
+      "enable_col_reorder": "bool",
+      "enable_rhs_normalize": "bool",
+      "enable_bound_tighten": "bool",
+      "row_reorder_method": ["degree_ascending", "degree_descending", "rhs_ascending"],
+      "col_reorder_method": ["degree_ascending", "degree_descending", "bounds_first"]
+    },
+    "solver_params": {
+      "tolerance": "log_float[1e-9, 1e-3]",
+      "max_iterations": "int[1000, 100000]",
+      "presolve": "bool",
+      "scaling_method": ["none", "geometric", "equilibration"],
+      "threads": "int[1, 8]"
+    },
+    "batching": {
+      "enabled": "bool",
+      "size_thresholds": "list[3, int[10, 100000]]",
+      "density_thresholds": "list[2, float[0.001, 0.5]]",
+      "max_batch_size": "int[1, 64]",
+      "strategy": ["none", "size_homogeneous", "density_homogeneous", "mixed"]
+    }
+  },
+
+  "success_criteria": {
+    "throughput_improvement": ">=10%",
+    "p95_latency_improvement": ">=10%",
+    "p95_regression_limit": "<=2%",
+    "fail_rate": "<= baseline"
+  },
+
+  "references": [
+    "https://developer.nvidia.com/cuopt",
+    "https://www.netlib.org/lp/",
+    "Numerical Methods in Linear Programming (Chvatal)",
+    "Interior Point Methods for Large-Scale LP (Wright)"
+  ]
+}

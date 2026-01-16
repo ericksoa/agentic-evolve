@@ -1,0 +1,32 @@
+{
+  "version": "1.0",
+  "name": "baseline",
+  "description": "Baseline policy: no transforms, default solver params, no batching",
+
+  "transforms": {
+    "enable_row_scale": false,
+    "enable_col_scale": false,
+    "enable_row_reorder": false,
+    "enable_col_reorder": false,
+    "enable_rhs_normalize": false,
+    "enable_bound_tighten": false,
+    "row_reorder_method": "degree_ascending",
+    "col_reorder_method": "degree_descending"
+  },
+
+  "solver_params": {
+    "tolerance": 1e-6,
+    "max_iterations": 10000,
+    "presolve": true,
+    "scaling_method": "none",
+    "threads": 1
+  },
+
+  "batching": {
+    "enabled": false,
+    "size_thresholds": [100, 1000, 10000],
+    "density_thresholds": [0.01, 0.1],
+    "max_batch_size": 1,
+    "strategy": "none"
+  }
+}
