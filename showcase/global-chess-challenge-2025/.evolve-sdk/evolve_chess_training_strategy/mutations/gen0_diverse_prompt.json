@@ -1,0 +1,44 @@
+{
+  "id": "gen0_diverse_prompt",
+  "generation": 0,
+  "variant": "diverse_prompt",
+  "description": "Experiment with richer prompt format including piece counts and attack information",
+  "hypothesis": "Giving the model more structured information about the position improves reasoning.",
+  "data_config": {
+    "min_elo": 1900,
+    "max_elo": 2800,
+    "time_control": "any",
+    "min_move_number": 8,
+    "max_move_number": 70,
+    "exclude_forced": true,
+    "opening_fraction": 0.25,
+    "middlegame_fraction": 0.5,
+    "endgame_fraction": 0.25,
+    "mirror_positions": true,
+    "both_colors": true,
+    "stockfish_depth": 18,
+    "max_examples": 45000
+  },
+  "prompt_format": {
+    "style": "enriched",
+    "template": "Position Analysis:\n- FEN: {fen}\n- Side to move: {side}\n- Material: {material_count}\n- Piece placement: {piece_list}\n- Legal moves ({move_count}): {legal_moves}\n\nAs a chess grandmaster, select the optimal move.",
+    "include_piece_list": true,
+    "include_move_history": false,
+    "include_material_count": true,
+    "include_attacked_squares": false
+  },
+  "training_config": {
+    "base_model": "Qwen/Qwen2.5-3B",
+    "learning_rate": 2e-05,
+    "num_epochs": 4,
+    "batch_size": 6,
+    "warmup_ratio": 0.1,
+    "weight_decay": 0.01,
+    "lora_rank": 48,
+    "lora_alpha": 96
+  },
+  "fitness": 161.70140582383152,
+  "valid": true,
+  "error": null,
+  "notes": "ACPL=161.7, Legal=99.5%, Best=13.2%"
+}

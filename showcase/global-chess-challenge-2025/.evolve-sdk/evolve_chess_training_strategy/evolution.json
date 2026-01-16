@@ -1,0 +1,144 @@
+{
+  "problem": "Evolve chess LLM training strategy for Global Chess Challenge 2025",
+  "mode": "ml",
+  "generation": 6,
+  "population": [
+    {
+      "file": "mutations/gen5_mutb.json",
+      "approach": "Adjusted LoRA rank by -16",
+      "fitness": 96.85846940871144
+    },
+    {
+      "file": "mutations/gen5_mutc.json",
+      "approach": "Shifted game phase focus: more_middlegame",
+      "fitness": 109.53121242738192
+    },
+    {
+      "file": "mutations/gen6_muta.json",
+      "approach": "Adjusted epochs by 2",
+      "fitness": null
+    },
+    {
+      "file": "mutations/gen6_mutb.json",
+      "approach": "Shifted game phase focus: more_endgame",
+      "fitness": null
+    },
+    {
+      "file": "mutations/gen6_mutc.json",
+      "approach": "Adjusted learning rate by 2.0x",
+      "fitness": null
+    },
+    {
+      "file": "mutations/gen6_cross.json",
+      "approach": "Crossover of gen5_mutb and gen5_mutc",
+      "fitness": null
+    }
+  ],
+  "champion": {
+    "file": "mutations/gen3_cross.json",
+    "fitness": 85.63653906998381,
+    "generation_discovered": 3
+  },
+  "history": [
+    {
+      "generation": 0,
+      "timestamp": "2026-01-09T05:44:09.226279",
+      "population_size": 6,
+      "best_acpl": 113.18767811720764,
+      "best_id": "gen0_elite_only",
+      "valid_count": 6
+    },
+    {
+      "generation": 1,
+      "timestamp": "2026-01-09T05:44:28.634717",
+      "population_size": 6,
+      "best_acpl": 87.98136223649139,
+      "best_id": "gen0_elite_only",
+      "valid_count": 6
+    },
+    {
+      "generation": 2,
+      "timestamp": "2026-01-09T05:44:45.032859",
+      "population_size": 6,
+      "best_acpl": 92.55200675644531,
+      "best_id": "gen0_elite_only",
+      "valid_count": 6
+    },
+    {
+      "generation": 3,
+      "timestamp": "2026-01-09T05:44:45.184843",
+      "population_size": 6,
+      "best_acpl": 85.63653906998381,
+      "best_id": "gen3_cross",
+      "valid_count": 6
+    },
+    {
+      "generation": 4,
+      "timestamp": "2026-01-09T05:44:45.323127",
+      "population_size": 6,
+      "best_acpl": 87.12286808274317,
+      "best_id": "gen4_mutc",
+      "valid_count": 6
+    },
+    {
+      "generation": 5,
+      "timestamp": "2026-01-09T05:44:45.457060",
+      "population_size": 6,
+      "best_acpl": 96.85846940871144,
+      "best_id": "gen5_mutb",
+      "valid_count": 6
+    }
+  ],
+  "config": {
+    "max_generations": 20,
+    "population_size": 6,
+    "elite_count": 2,
+    "mutation_rate": 0.7,
+    "crossover_rate": 0.3
+  },
+  "problem_analysis": {
+    "algorithm_families": [
+      "curriculum_learning",
+      "data_augmentation",
+      "elo_filtering",
+      "game_phase_focus",
+      "prompt_engineering",
+      "hyperparameter_tuning"
+    ],
+    "optimization_dimensions": [
+      "min_elo",
+      "max_elo",
+      "opening_fraction",
+      "middlegame_fraction",
+      "endgame_fraction",
+      "mirror_positions",
+      "stockfish_depth",
+      "learning_rate",
+      "num_epochs",
+      "prompt_format"
+    ],
+    "viable_strategies": 18,
+    "gen1_agents": 6
+  },
+  "evaluation": {
+    "metric": "acpl",
+    "metric_direction": "minimize",
+    "train_positions": 100,
+    "valid_positions": 50,
+    "test_positions": 50,
+    "stockfish_depth": 15
+  },
+  "budget": {
+    "type": "generations",
+    "limit": 20,
+    "used": 0,
+    "remaining": 20
+  },
+  "stopping": {
+    "plateau_count": 0,
+    "plateau_threshold": 3,
+    "min_improvement": 0.01
+  },
+  "created_at": "2026-01-09T05:30:00.000000",
+  "updated_at": "2026-01-09T05:44:45.459391"
+}

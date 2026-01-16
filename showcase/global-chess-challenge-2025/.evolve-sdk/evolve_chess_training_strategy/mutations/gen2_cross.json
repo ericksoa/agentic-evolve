@@ -1,0 +1,43 @@
+{
+  "id": "gen2_cross",
+  "generation": 2,
+  "variant": "elite_only",
+  "description": "Crossover of gen0_elite_only and gen1_muta",
+  "hypothesis": "Combining best traits from both parents may yield superior results",
+  "data_config": {
+    "min_elo": 2200,
+    "max_elo": 2800,
+    "opening_fraction": 0.2,
+    "middlegame_fraction": 0.6,
+    "endgame_fraction": 0.2,
+    "stockfish_depth": 20,
+    "mirror_positions": true,
+    "both_colors": true,
+    "max_examples": 30000
+  },
+  "prompt_format": {
+    "style": "concise",
+    "template": "FEN: {fen}\nMoves: {legal_moves}\nBest?",
+    "include_piece_list": false,
+    "include_move_history": false
+  },
+  "training_config": {
+    "base_model": "Qwen/Qwen2.5-3B",
+    "learning_rate": 1e-05,
+    "num_epochs": 7,
+    "batch_size": 4,
+    "warmup_ratio": 0.1,
+    "weight_decay": 0.01,
+    "lora_rank": 64,
+    "lora_alpha": 128
+  },
+  "fitness": 115.11092103121896,
+  "valid": true,
+  "error": null,
+  "notes": "ACPL=115.1, Legal=94.6%, Best=16.9%",
+  "parents": [
+    "gen0_elite_only",
+    "gen1_muta"
+  ],
+  "mutation_type": "crossover"
+}

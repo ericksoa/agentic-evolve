@@ -1,0 +1,44 @@
+{
+  "id": "gen5_mutb",
+  "generation": 3,
+  "variant": "elite_only",
+  "description": "Adjusted LoRA rank by -16",
+  "hypothesis": "Lower LoRA rank may regularize model capacity",
+  "data_config": {
+    "min_elo": 2300,
+    "max_elo": 2800,
+    "time_control": "classical",
+    "min_move_number": 10,
+    "max_move_number": 60,
+    "exclude_forced": true,
+    "opening_fraction": 0.2,
+    "middlegame_fraction": 0.6,
+    "endgame_fraction": 0.2,
+    "mirror_positions": true,
+    "both_colors": true,
+    "stockfish_depth": 24,
+    "max_examples": 30000
+  },
+  "prompt_format": {
+    "style": "concise",
+    "template": "FEN: {fen}\nMoves: {legal_moves}\nBest?",
+    "include_piece_list": false,
+    "include_move_history": false
+  },
+  "training_config": {
+    "base_model": "Qwen/Qwen2.5-3B",
+    "learning_rate": 1e-05,
+    "num_epochs": 5,
+    "batch_size": 4,
+    "warmup_ratio": 0.15,
+    "weight_decay": 0.01,
+    "lora_rank": 48,
+    "lora_alpha": 96
+  },
+  "fitness": 96.85846940871144,
+  "valid": true,
+  "error": null,
+  "notes": "ACPL=96.9, Legal=90.3%, Best=16.1%",
+  "parent": "gen4_mutc",
+  "mutation_type": "mutation"
+}

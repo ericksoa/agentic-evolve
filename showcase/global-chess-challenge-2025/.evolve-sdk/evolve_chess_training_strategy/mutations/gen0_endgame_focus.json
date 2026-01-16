@@ -1,0 +1,42 @@
+{
+  "id": "gen0_endgame_focus",
+  "generation": 0,
+  "variant": "endgame_focus",
+  "description": "Heavy emphasis on endgame positions where precision matters most",
+  "hypothesis": "Endgames have clearer best moves and less ambiguity, leading to cleaner training signal.",
+  "data_config": {
+    "min_elo": 1900,
+    "max_elo": 2800,
+    "time_control": "any",
+    "min_move_number": 30,
+    "max_move_number": 100,
+    "exclude_forced": true,
+    "opening_fraction": 0.1,
+    "middlegame_fraction": 0.3,
+    "endgame_fraction": 0.6,
+    "mirror_positions": true,
+    "both_colors": true,
+    "stockfish_depth": 22,
+    "max_examples": 40000
+  },
+  "prompt_format": {
+    "style": "detailed",
+    "template": "Position: {fen}\nYou are playing as {side}.\nAvailable moves: {legal_moves}\n\nAnalyze and select the best move.",
+    "include_piece_list": true,
+    "include_move_history": false
+  },
+  "training_config": {
+    "base_model": "Qwen/Qwen2.5-3B",
+    "learning_rate": 3e-05,
+    "num_epochs": 4,
+    "batch_size": 8,
+    "warmup_ratio": 0.1,
+    "weight_decay": 0.02,
+    "lora_rank": 32,
+    "lora_alpha": 64
+  },
+  "fitness": 190.7961219830884,
+  "valid": true,
+  "error": null,
+  "notes": "ACPL=190.8, Legal=90.9%, Best=0.0%"
+}

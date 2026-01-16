@@ -1,0 +1,44 @@
+{
+  "id": "gen6_cross",
+  "generation": 5,
+  "variant": "elite_only",
+  "description": "Crossover of gen5_mutb and gen5_mutc",
+  "hypothesis": "Combining best traits from both parents may yield superior results",
+  "data_config": {
+    "min_elo": 2200,
+    "max_elo": 2800,
+    "opening_fraction": 0.25,
+    "middlegame_fraction": 0.6499999999999999,
+    "endgame_fraction": 0.15000000000000002,
+    "stockfish_depth": 24,
+    "mirror_positions": true,
+    "both_colors": true,
+    "max_examples": 30000
+  },
+  "prompt_format": {
+    "style": "concise",
+    "template": "FEN: {fen}\nMoves: {legal_moves}\nBest?",
+    "include_piece_list": false,
+    "include_move_history": false
+  },
+  "training_config": {
+    "base_model": "Qwen/Qwen2.5-3B",
+    "learning_rate": 1e-05,
+    "num_epochs": 5,
+    "batch_size": 4,
+    "warmup_ratio": 0.1,
+    "weight_decay": 0.01,
+    "lora_rank": 64,
+    "lora_alpha": 128
+  },
+  "fitness": null,
+  "valid": null,
+  "error": null,
+  "notes": "ACPL=96.9, Legal=90.3%, Best=16.1%",
+  "parent": "gen4_mutc",
+  "mutation_type": "crossover",
+  "parents": [
+    "gen5_mutb",
+    "gen5_mutc"
+  ]
+}

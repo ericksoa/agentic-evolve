@@ -1,0 +1,63 @@
+{
+  "id": "gen0_curriculum",
+  "generation": 0,
+  "variant": "curriculum",
+  "description": "Curriculum learning: start with easy positions, progress to hard",
+  "hypothesis": "Progressive difficulty helps model build foundational patterns before tackling complex positions.",
+  "data_config": {
+    "min_elo": 1600,
+    "max_elo": 2800,
+    "time_control": "any",
+    "min_move_number": 5,
+    "max_move_number": 80,
+    "exclude_forced": true,
+    "opening_fraction": 0.33,
+    "middlegame_fraction": 0.34,
+    "endgame_fraction": 0.33,
+    "mirror_positions": true,
+    "both_colors": true,
+    "stockfish_depth": 18,
+    "max_examples": 50000,
+    "curriculum": {
+      "enabled": true,
+      "phases": [
+        {
+          "difficulty": "easy",
+          "fraction": 0.4,
+          "min_eval_diff": 200
+        },
+        {
+          "difficulty": "medium",
+          "fraction": 0.35,
+          "min_eval_diff": 50
+        },
+        {
+          "difficulty": "hard",
+          "fraction": 0.25,
+          "min_eval_diff": 0
+        }
+      ]
+    }
+  },
+  "prompt_format": {
+    "style": "standard",
+    "template": "Chess position: {fen}\nSide: {side}\nLegal moves: {legal_moves}\n\nChoose the best move.",
+    "include_piece_list": false,
+    "include_move_history": false
+  },
+  "training_config": {
+    "base_model": "Qwen/Qwen2.5-3B",
+    "learning_rate": 2e-05,
+    "num_epochs": 3,
+    "batch_size": 8,
+    "warmup_ratio": 0.1,
+    "weight_decay": 0.01,
+    "lora_rank": 32,
+    "lora_alpha": 64,
+    "curriculum_schedule": "linear"
+  },
+  "fitness": 182.57962196789762,
+  "valid": true,
+  "error": null,
+  "notes": "ACPL=182.6, Legal=94.4%, Best=6.3%"
+}

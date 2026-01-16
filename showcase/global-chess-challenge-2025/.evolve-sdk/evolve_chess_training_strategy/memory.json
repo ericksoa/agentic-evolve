@@ -1,0 +1,1482 @@
+{
+  "submission_readiness": {
+    "analysis_date": "2026-01-15",
+    "status": "READY_FOR_SUBMISSION",
+    "blocking_issues": 0,
+    "total_issues": 2
+  },
+  "huggingface_model": {
+    "repo_id": "ericksoa/chess-v6-aicrowd",
+    "url": "https://huggingface.co/ericksoa/chess-v6-aicrowd",
+    "upload_date": "2026-01-15",
+    "files": ["adapter_config.json", "adapter_model.safetensors"],
+    "base_model": "Qwen/Qwen2.5-7B",
+    "checkpoint": "v6_checkpoint_4000",
+    "acpl": 192.3
+  },
+  "submissions": [
+    {
+      "submission_id": 307726,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307726",
+      "submitted_at": "2026-01-15T15:24:03.642Z",
+      "model": "v6_checkpoint_4000 (LoRA adapter only)",
+      "status": "FAILED",
+      "error": "Invalid neuron.model_type 'qwen2.5' - must use 'qwen2'"
+    },
+    {
+      "submission_id": 307727,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307727",
+      "submitted_at": "2026-01-15T15:25:44.954Z",
+      "model": "v6_checkpoint_4000 (LoRA adapter only)",
+      "status": "FAILED",
+      "error": "vLLM expects full model with config.json, not adapter files"
+    },
+    {
+      "submission_id": 307730,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307730",
+      "submitted_at": "2026-01-15T16:25:31.789Z",
+      "model": "v6_merged (full model)",
+      "status": "FAILED",
+      "error": "Missing --hf-revision flag caused 'revision/null' 404 error"
+    },
+    {
+      "submission_id": 307732,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307732",
+      "submitted_at": "2026-01-15T16:50:33.750Z",
+      "model": "v6_merged (full model)",
+      "local_acpl": 192.3,
+      "neuron_model_type": "qwen2",
+      "hf_revision": "main",
+      "status": "FAILED",
+      "error": "revision/null 404 - wrong flag used"
+    },
+    {
+      "submission_id": 307733,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307733",
+      "submitted_at": "2026-01-15T17:00:00.000Z",
+      "model": "v6_merged",
+      "status": "FAILED",
+      "error": "1000 ACPL - model resigning on move 1 due to wrong system prompt"
+    },
+    {
+      "submission_id": 307735,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307735",
+      "submitted_at": "2026-01-15T17:53:36.981Z",
+      "model": "v6_merged",
+      "status": "FAILED",
+      "error": "1000 ACPL - chat_template.jinja still had wrong system prompt"
+    },
+    {
+      "submission_id": 307737,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307737",
+      "submitted_at": "2026-01-15T18:21:49.202Z",
+      "model": "v6_merged",
+      "fix_applied": "Updated chat_template.jinja with correct chess grandmaster system prompt",
+      "local_test_verified": true,
+      "status": "FAILED - Request timed out due to wrong eos_token_id"
+    },
+    {
+      "submission_id": 307738,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307738",
+      "submitted_at": "2026-01-15T18:59:44.483Z",
+      "model": "v6_merged",
+      "fixes_applied": [
+        "eos_token_id: 151643 -> 151645 (correct <|im_end|> token)",
+        "max_new_tokens: 2048 -> 64 (evidence-based: training data p99=29 tokens)"
+      ],
+      "evidence": {
+        "training_data_token_stats": {
+          "samples": 3000,
+          "min": 22,
+          "max": 30,
+          "mean": 24.5,
+          "p99": 29
+        }
+      },
+      "status": "FAILED - model still generating garbage, eos_token wrong in tokenizer_config.json"
+    },
+    {
+      "submission_id": 307740,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307740",
+      "submitted_at": "2026-01-15T19:40:57.066Z",
+      "model": "v6_merged",
+      "fixes_applied": [
+        "tokenizer_config.json eos_token: <|endoftext|> -> <|im_end|> (vLLM reads THIS, not generation_config.json)",
+        "Added --vllm-inference.max-tokens 64 flag"
+      ],
+      "key_discovery": "vLLM reads eos_token from tokenizer_config.json, NOT generation_config.json",
+      "status": "FAILED - 881.459 ACPL (eos_token fix was NEVER actually uploaded to HF)"
+    },
+    {
+      "submission_id": 307752,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307752",
+      "submitted_at": "2026-01-15T21:21:57.758Z",
+      "model": "v6_merged",
+      "fixes_applied": [
+        "VERIFIED: tokenizer_config.json eos_token changed to <|im_end|> and confirmed on HF",
+        "Concurrency fix: --num-games 1 --vllm.max-num-seqs 1",
+        "--vllm-inference.max-tokens 64",
+        "--neuron.model-type qwen2"
+      ],
+      "verification": {
+        "method": "curl -s HF raw file and checked eos_token value",
+        "result": "eos_token: <|im_end|> confirmed"
+      },
+      "research_applied": [
+        "Deep research on AIcrowd stack: Trainium, NxD Inference, vLLM plugin",
+        "Forum thread analysis: concurrency bug fix confirmed working",
+        "Token analysis: 151645 = <|im_end|> is correct EOS for ChatML"
+      ],
+      "status": "EVALUATING - GARBAGE OUTPUT OBSERVED",
+      "early_results": {
+        "matches_completed": 3,
+        "acpl_values": [137, 198, 120, 131],
+        "average_acpl": 146.5,
+        "observation": "Early results looked promising but..."
+      },
+      "issue_discovered": {
+        "timestamp": "2026-01-15T23:30:00Z",
+        "problem": "Model outputs garbage after uci_move tag",
+        "example_output": "<uci_move>c3d2</uci_move>SmartyHeaderCode rematch FEN: 4kb1r/...",
+        "root_cause_hypothesis": "EOS token still not working - model used all 64 tokens instead of stopping at </uci_move>",
+        "evidence": "Completion used exactly 64 tokens (max_completion_tokens limit)",
+        "early_checkpoint_factor": "v6_checkpoint_4000 is early in training - model may not have fully learned output format and EOS behavior yet",
+        "implication": "Combination: (1) early checkpoint has weaker format learning AND (2) vLLM EOS handling may have issues. Early ACPL results (137, 198) suggest model CAN output correctly sometimes.",
+        "additional_evidence": {
+          "example_2": {
+            "input_legal_moves": ["d1e1"],
+            "model_output": "<uci_move>j2g4</uci_move>",
+            "problem": "INVALID MOVE - 'j' file doesn't exist in chess (a-h only)",
+            "garbage_after": "PostalCodesNL + Chinese text about chess input",
+            "conclusion": "Model has NOT learned: (1) chess file names, (2) constrain to legal moves list, (3) when to stop"
+          },
+          "severity": "CRITICAL - early checkpoint fundamentally broken, not just EOS issue"
+        }
+      }
+    },
+    {
+      "submission_id": 307762,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307762",
+      "submitted_at": "2026-01-16T03:24:44.081Z",
+      "model": "qwen2.5-3b-checkpoint-12000",
+      "hf_repo": "ericksoa/chess-qwen3b-12k",
+      "model_type": "FULL MERGED (not LoRA)",
+      "training_progress": "14.4% (12000/83307 steps)",
+      "local_evaluation": {
+        "acpl_legal_only": 186.1,
+        "acpl_with_penalty": 382.3,
+        "legal_rate": "98% (49/50)",
+        "best_move_rate": "8%",
+        "positions_tested": 50,
+        "stockfish_depth": 12
+      },
+      "key_observation": "Model still produces garbage text after uci_move tag (MMM\\nMMMuser\\nFEN:...)",
+      "fixes_applied": [
+        "eos_token_id set to 151645 in tokenizer_config.json"
+      ],
+      "comparison_to_v6": {
+        "v6_local_acpl": 192.3,
+        "this_local_acpl": 186.1,
+        "improvement": "6.2 ACPL better locally",
+        "caveat": "V6 had 881 ACPL on AIcrowd due to output issues"
+      },
+      "status": "SUBMITTED - awaiting evaluation"
+    }
+  ],
+  "checkpoint_evaluation_plan": {
+    "purpose": "Track ACPL trend across training to inform RL and understand model dynamics",
+    "strategy": "Submit at each checkpoint to establish trend line",
+    "key_questions": [
+      "At what % training does model produce mostly valid outputs?",
+      "How does ACPL correlate with eval_loss?",
+      "What's the convergence curve shape? (fast early, slow late?)",
+      "Does local ACPL match competition ACPL?"
+    ],
+    "checkpoints_evaluated": [
+      {
+        "checkpoint": "v6_checkpoint_4000",
+        "training_progress": "7.2% (4000/55538)",
+        "eval_loss": "~0.7 (estimated)",
+        "submission_id": 307752,
+        "local_acpl": 192.3,
+        "competition_acpl": "TBD (early results: 137-198, but invalid moves observed)",
+        "output_quality": "POOR - hallucinated moves (j2g4), garbage text, multilingual output",
+        "notes": "Too early - model hasn't learned basic chess format"
+      }
+    ],
+    "planned_checkpoints": [
+      {"checkpoint": "v6_checkpoint_8000", "expected_progress": "~14%"},
+      {"checkpoint": "v6_checkpoint_16000", "expected_progress": "~29%"},
+      {"checkpoint": "v6_checkpoint_32000", "expected_progress": "~58%"},
+      {"checkpoint": "v6_final", "expected_progress": "100%"}
+    ],
+    "insights_so_far": [
+      "7% training = fundamentally broken outputs",
+      "Local ACPL (~192) doesn't reflect output quality issues (illegal moves, garbage)",
+      "Need to track % valid moves alongside ACPL"
+    ]
+  },
+  "rl_strategy": {
+    "as_of": "2026-01-16",
+    "status": "PLANNED - not yet executed",
+    "may_change": true,
+    "context_at_time_of_writing": {
+      "best_model_acpl": 208.7,
+      "leader_acpl": 46.4,
+      "gap": "4.5x worse than leader",
+      "sft_training_in_progress": ["Qwen 3B (13%)", "V6 r128 (13%)"],
+      "dpo_result": "FAILED - made things worse (+6.2 ACPL)",
+      "key_data_insight": "61.5% of training positions have ambiguous best move"
+    },
+    "core_principles": [
+      "RL cannot fix fundamental format issues - need stable SFT base first",
+      "Train only on positions with CLEAR best move (avoid 61.5% noise)",
+      "GRPO with online Stockfish reward, not offline DPO",
+      "Heavy penalty for illegal moves",
+      "Curriculum: decisive positions first, nuanced later"
+    ],
+    "prerequisites": {
+      "min_sft_progress": "50% training (model produces valid moves >95%)",
+      "base_acpl_target": "150-200 ACPL before starting RL",
+      "data_ready": "winning_moves_500k.jsonl (~193K filtered positions)"
+    },
+    "algorithm_choice": {
+      "use": "GRPO (Group Relative Policy Optimization)",
+      "why_not_dpo": "DPO already failed - offline preferences don't capture chess dynamics",
+      "reward_function": "-centipawn_loss (Stockfish eval)",
+      "illegal_move_penalty": -1000
+    },
+    "training_curriculum": [
+      {
+        "phase": 1,
+        "name": "Decisive positions",
+        "filter": "|eval| > 300 cp",
+        "goal": "Learn to CONVERT winning/losing positions"
+      },
+      {
+        "phase": 2,
+        "name": "Clear advantage",
+        "filter": "|eval| > 100 cp",
+        "goal": "Learn to press advantages"
+      },
+      {
+        "phase": 3,
+        "name": "All filtered",
+        "filter": "winning_moves dataset (gap >= 50cp)",
+        "goal": "Refine on all clear-best-move positions"
+      }
+    ],
+    "position_sampling_strategy": {
+      "oversample": ["endgames (model weakness)", "tactical positions", "positions where model blundered in games"],
+      "undersample": ["equal positions", "opening theory (already good)"]
+    },
+    "expected_impact": {
+      "sft_alone": "~150 ACPL (with good data)",
+      "plus_rl": "~100 ACPL",
+      "plus_mcts": "~70 ACPL",
+      "target": "<50 ACPL (competitive)"
+    },
+    "what_not_to_do": [
+      "RL on early checkpoint (<30% training) - garbage in = garbage out",
+      "DPO - already proven to fail",
+      "RL on ALL positions - 61.5% is noise",
+      "RL without illegal move penalty - model will exploit"
+    ],
+    "open_questions": [
+      "What's the right batch size for GRPO on chess?",
+      "How many RL steps before overfitting?",
+      "Should we use self-play or fixed opponent (Stockfish)?",
+      "KL divergence penalty - how much to constrain from base?"
+    ],
+    "revision_history": [
+      {
+        "date": "2026-01-16",
+        "change": "Initial strategy based on checkpoint evaluation and data analysis",
+        "confidence": "Medium - need to validate with actual RL runs"
+      }
+    ]
+  },
+  "focused_strategy": {
+    "as_of": "2026-01-16",
+    "days_remaining": 15,
+    "core_insight": "Rationale comes AFTER move - doesn't help ACPL. Focus purely on move quality.",
+    "constraints": {
+      "time": "15 days to deadline (Jan 31)",
+      "compute": "2 L4 GPUs on Lightning (occupied with SFT), local CPU only",
+      "competition": "Must run on Trainium, <8B params, no external calls at inference"
+    },
+    "current_assets": {
+      "data": {
+        "training_sf3_500k": "501K positions (SF top-3 filtered)",
+        "training_endgames": "7K generated endgame positions",
+        "winning_moves_500k": "~193K positions (GENERATING - clear best move only)",
+        "puzzles": "Available but not yet integrated"
+      },
+      "models_in_training": {
+        "qwen_3b": "13% complete, chess-llm-v4",
+        "v6_r128_7b": "13% complete, chess-llm-v5"
+      },
+      "infrastructure": {
+        "stockfish": "Working locally",
+        "mcts": "Infrastructure ready, not integrated with LLM",
+        "submission_pipeline": "Working (with known quirks)"
+      }
+    },
+    "potential_assets_to_acquire": {
+      "opening_book": {
+        "what": "Precomputed best moves for first 10-15 moves",
+        "source": "Lichess opening explorer API, Polyglot books",
+        "value": "Near-zero ACPL in openings without model inference",
+        "integration": "If position in book, use book move; else use model",
+        "effort": "Low - just download and integrate"
+      },
+      "endgame_tablebases": {
+        "what": "Syzygy 6-piece tablebases - PERFECT play",
+        "source": "lichess.org/tablebase API or download",
+        "value": "Zero ACPL in <=6 piece endgames",
+        "integration": "If <=6 pieces, query tablebase; else use model",
+        "effort": "Low - API exists, ~150GB to download full tables",
+        "constraint": "Can't use at inference on Trainium (no external calls)"
+      },
+      "more_puzzle_data": {
+        "what": "Lichess puzzle database (3M+ puzzles)",
+        "source": "database.lichess.org",
+        "value": "Tactical positions with known best moves",
+        "effort": "Medium - need to convert format"
+      },
+      "elite_game_database": {
+        "what": "TCEC, Lichess elite (2400+) games",
+        "source": "database.lichess.org, tcec-chess.com",
+        "value": "More high-quality training positions",
+        "effort": "Medium - already have some, diminishing returns"
+      }
+    },
+    "what_to_focus_on": {
+      "priority_1": {
+        "name": "Let SFT training complete",
+        "why": "Can't rush GPU training, need stable base for RL",
+        "action": "Monitor checkpoints, submit at intervals to track progress",
+        "time": "Passive - just wait and monitor"
+      },
+      "priority_2": {
+        "name": "MCTS at inference",
+        "why": "Can improve ANY model without retraining",
+        "action": "Integrate MCTS with LLM, test ACPL improvement",
+        "expected_gain": "20-40% ACPL reduction",
+        "effort": "Medium - infrastructure ready, need integration",
+        "constraint": "Increases inference time significantly"
+      },
+      "priority_3": {
+        "name": "Winning moves data for V7/RL",
+        "why": "Remove 61.5% noise from training",
+        "action": "Filter running (PID 92581), will have ~193K positions",
+        "time": "~15 hours, passive"
+      },
+      "priority_4": {
+        "name": "Opening book integration",
+        "why": "Free ACPL improvement in openings",
+        "action": "Download Polyglot book, integrate into inference",
+        "constraint": "May not be allowed? Check competition rules",
+        "effort": "Low"
+      },
+      "priority_5": {
+        "name": "RL when SFT ready",
+        "why": "Push beyond SFT ceiling",
+        "action": "GRPO with filtered positions",
+        "prerequisite": "SFT model at >50% training, <200 ACPL"
+      }
+    },
+    "what_NOT_to_focus_on": [
+      "Rationale quality - comes after move, doesn't affect ACPL",
+      "More raw training data - quality > quantity at this point",
+      "DPO - already failed",
+      "Early checkpoint RL - garbage in = garbage out",
+      "Model architecture changes - no time, use what works"
+    ],
+    "decision_tree": {
+      "if_v6_checkpoint_good": {
+        "condition": ">30% training, <180 ACPL, >90% valid moves",
+        "then": "Start RL immediately, submit checkpoints"
+      },
+      "if_v6_checkpoint_mediocre": {
+        "condition": "180-250 ACPL",
+        "then": "Wait for more training, try MCTS to compensate"
+      },
+      "if_v6_checkpoint_bad": {
+        "condition": ">250 ACPL or <80% valid moves",
+        "then": "Debug training, check data quality, may need V7 with winning_moves data"
+      }
+    },
+    "realistic_targets": {
+      "optimistic": "<70 ACPL (top 10)",
+      "realistic": "100-120 ACPL (competitive)",
+      "minimum_viable": "<150 ACPL (meaningful improvement from 208)"
+    }
+  },
+  "learnings": {
+    "neuron_model_types": "Allowed: dbrx, llama, mixtral, qwen2, qwen3, qwen3_moe. Qwen2.5 models use 'qwen2' backend.",
+    "lora_submission": "CRITICAL: Cannot submit LoRA adapters directly. vLLM expects full model with config.json. Must merge LoRA into base model before upload.",
+    "submission_format": "HF repo must contain: config.json, model*.safetensors, tokenizer files. Not just adapter files.",
+    "hf_repo_tag_required": "CRITICAL: Must specify --hf-repo-tag 'main' (NOT --hf-revision). Without it, AIcrowd passes revision=null causing 404 error. Check starter kit docs FIRST.",
+    "chat_template_jinja_override": "CRITICAL: chat_template.jinja file OVERRIDES tokenizer_config.json chat_template. ALWAYS check for .jinja files in HF repo and ensure they have correct system prompt. Test locally with force_download=True before submitting.",
+    "test_before_submit": "MANDATORY: Run local model test to verify (1) correct system prompt in generated prompt, (2) model outputs <uci_move> tags. One 5-minute local test saves multiple failed submissions.",
+    "vllm_eos_token": "CRITICAL: vLLM reads eos_token from tokenizer_config.json, NOT generation_config.json. For ChatML models, must set eos_token to <|im_end|> in tokenizer_config.json.",
+    "neuron_qwen_concurrency_bug": "CRITICAL: Qwen models on Neuron vLLM have corrupted outputs at high concurrency. FIX: Add --vllm.max-num-seqs 1 to submission. See: https://discourse.aicrowd.com/t/possible-evaluator-change-concurrency-now-4-was-1-qwen3-neuron-vllm-outputs-corrupted-finish-reason-length-missing-uci-move/17687",
+    "trainium_neuron_stack_deep_research": {
+      "research_date": "2026-01-15",
+      "hardware": {
+        "instance": "trn1.2xlarge",
+        "memory": "32 GB HBM",
+        "chips": "1 Trainium chip",
+        "constraint": "Models must fit in ~32GB with context"
+      },
+      "neuron_compilation": {
+        "process": "Models compiled to Neuron-compatible NEFF artifacts before execution",
+        "time": "15+ minutes for ~15GB models",
+        "caching": "Use NEURON_COMPILED_ARTIFACTS env var",
+        "recompilation_triggers": "Any parameter change may force full recompilation"
+      },
+      "numerical_precision": {
+        "default_behavior": "Auto-cast FP32 matmul to BF16",
+        "known_issues": [
+          "Integer-to-float conversions (rotary embeddings) degrade accuracy with auto-cast",
+          "Dynamic array slicing with in-place tensor mods causes accuracy problems"
+        ],
+        "fix": "--auto-cast=none (increases memory, reduces speed)"
+      },
+      "vllm_neuron_integration": {
+        "architecture": "vLLM uses NxD Inference via Plugin System",
+        "kv_cache": "Contiguous layout, NOT PagedAttention",
+        "default_mappings": {
+          "batch_size": "max_num_seqs",
+          "max_context_length": "max_model_len",
+          "enable_bucketing": true,
+          "is_continuous_batching": true
+        }
+      },
+      "critical_vllm_flags": {
+        "--vllm.max-model-len": "512 RECOMMENDED - prevents compilation/memory issues",
+        "--vllm.max-num-batched-tokens": "512 RECOMMENDED",
+        "--vllm.max-num-seqs": "1 CRITICAL - prevents concurrency corruption",
+        "--vllm.dtype": "bfloat16 RECOMMENDED - Neuron native precision",
+        "--vllm.enforce-eager": "true RECOMMENDED - more reliable execution",
+        "--vllm-inference.max-tokens": "64 sufficient for chess output"
+      },
+      "qwen_specific_issues": {
+        "concurrency_corruption": {
+          "symptoms": ["finish_reason=length", "garbled output", "missing <uci_move> tags", "ACPL 864+"],
+          "root_cause": "Evaluator concurrency increased from 1 to 4 on Dec 24, 2025",
+          "fix": "--vllm.max-num-seqs 1"
+        },
+        "compilation_failures": {
+          "error": "TP degree (2) and KV heads (8) not divisible",
+          "cause": "Tensor parallelism incompatible with model architecture",
+          "logs": "/tmp/nxd_model/token_generation_model/_tp0_bk0/log-neuron-cc.txt"
+        }
+      },
+      "recommended_working_config": {
+        "command": "aicrowd submit-model --neuron.model-type qwen2 --vllm.max-model-len 512 --vllm.max-num-batched-tokens 512 --vllm.max-num-seqs 1 --vllm.dtype bfloat16 --vllm.enforce-eager true --vllm-inference.max-tokens 64",
+        "critical_settings_explanation": {
+          "max-num-seqs 1": "Prevents concurrency corruption",
+          "max-model-len 512": "Prevents memory/compilation issues",
+          "enforce-eager true": "More reliable execution",
+          "dtype bfloat16": "Standard precision for Neuron",
+          "max-tokens 64": "Sufficient for chess move output"
+        }
+      },
+      "sources": [
+        "https://docs.vllm.ai/en/v0.10.1/getting_started/installation/aws_neuron.html",
+        "https://awsdocs-neuron.readthedocs-hosted.com/en/latest/libraries/nxd-inference/vllm/index.html",
+        "https://discourse.aicrowd.com/t/submissions-stuck-at-compiling-model-for-neuron/17663",
+        "https://discourse.aicrowd.com/t/possible-evaluator-change-concurrency-now-4-was-1-qwen3-neuron-vllm-outputs-corrupted-finish-reason-length-missing-uci-move/17687"
+      ]
+    },
+    "lightning_ai_usage": {
+      "description": "How to interact with Lightning.ai studios",
+      "env_vars_needed": ["LIGHTNING_TEAMSPACE", "LIGHTNING_AI_USERNAME"],
+      "known_studios": ["chess-llm-v4", "chess-llm-v5", "chess-llm-v6", "chess-llm-v7"],
+      "code_pattern": "from lightning_sdk import Studio; studio = Studio(name='STUDIO_NAME', teamspace=os.environ['LIGHTNING_TEAMSPACE'], user=os.environ['LIGHTNING_AI_USERNAME']); result = studio.run('COMMAND')",
+      "common_commands": {
+        "list_trainings": "ls ~/chess-training/",
+        "check_progress": "tail -30 ~/chess-training/RUN_DIR/train.log | grep -E '(loss|%.*it|COMPLETE)'",
+        "check_final_model": "ls -la ~/chess-training/RUN_DIR/model/final/",
+        "download_model": "Use huggingface_hub to upload from studio, then download locally"
+      },
+      "gotchas": [
+        "Studios must be RUNNING to execute commands - check status first",
+        "Multiple trainings can run on same studio - always list ~/chess-training/ first",
+        "Training naming convention: {size}_{data}_{epochs}_r{lora_rank}_{date}_{time}"
+      ]
+    },
+    "competitive_gap": "Leader at 46.4 ACPL, baseline at 71.9 ACPL. Our 192.3 is 4.1x worse than leader.",
+    "dpo_result": "DPO made things WORSE (+6.2 ACPL). Abandoned this approach.",
+    "winning_moves_insight": {
+      "recovered_from": "gen0_tactical.json, train_sf1_filtered.py, audit_training_data.py, memory.json curriculum notes",
+      "core_idea": "Train ONLY on positions where there's ONE clearly best move - positions where the 'answer' is unambiguous",
+      "problem_identified": {
+        "issue": "65% of training data (19479/30000) are 'equal' positions (-100 to +100 cp)",
+        "why_bad": "In equal positions, MULTIPLE moves are good. Model learns that any reasonable move is fine.",
+        "result": "Model plays 'safe' moves in ALL positions, fails to find winning tactics"
+      },
+      "three_filtering_approaches": [
+        {
+          "name": "SF Top-1 Filtering",
+          "description": "Only positions where human move matches Stockfish's exact best move",
+          "implementation": "filter_sf_depth20.py uses depth-20 Stockfish",
+          "expected_result": "ACPL < 80 vs ~200 baseline",
+          "data_generated": "778 ultra-high-quality positions already filtered"
+        },
+        {
+          "name": "Winning Moves Filtering (NEW)",
+          "description": "Filter for positions where best move is clearly better than alternatives (>= 50cp gap)",
+          "implementation": "filter_winning_moves.py using multi-pv Stockfish",
+          "result_from_5k_sample": {
+            "acceptance_rate": "38.5%",
+            "accepted": 1927,
+            "rejected": 3073,
+            "avg_eval_gap": "416.8 cp",
+            "clear_best_count": 1533,
+            "decisive_positions": 1305
+          },
+          "implication": "~61.5% of SF3 data has ambiguous best move - model learns 'any reasonable move' not 'THE best move'"
+        },
+        {
+          "name": "Tactical Position Filtering",
+          "description": "Only positions with large evaluation swings (min_eval_swing > 100 cp)",
+          "implementation": "gen0_tactical.json tactical_filter config",
+          "rationale": "If best move gains 100+ cp over alternatives, there's ONE right answer"
+        },
+        {
+          "name": "Decisive Position Focus",
+          "description": "Train primarily on winning positions (|eval| > 200-300 cp)",
+          "implementation": "Curriculum learning: train on clear positions first, then nuanced",
+          "rationale": "In winning positions, model must CONVERT - no time for 'safe' moves"
+        }
+      ],
+      "implementation_priority": [
+        "1. Use 730K filtered dataset (already has SF top-3 filtering)",
+        "2. Add secondary filter: remove positions where top 2 moves are within 20 cp of each other",
+        "3. Curriculum: sort by |eval| descending - decisive positions first",
+        "4. For V8: Generate new data from winning games only (1-0 and 0-1, not draws)"
+      ],
+      "why_this_matters": "Current training teaches 'don't lose' not 'find the winning move'. Winners play AGGRESSIVE chess."
+    }
+  },
+  "improvement_plan": {
+    "plan_file": "IMPROVEMENT_PLAN.md",
+    "phases": [
+      {"phase": 1, "name": "Quick Wins", "timeline": "Jan 15-17", "items": ["Endgame data augmentation", "Prompt ablation", "Data filtering"]},
+      {"phase": 2, "name": "V7 Training", "timeline": "Jan 17-24", "items": ["Enhanced dataset", "Curriculum learning", "Rationale diversity"]},
+      {"phase": 3, "name": "Advanced", "timeline": "Jan 24-30", "items": ["Best-of-N sampling", "Simple search", "Ensemble"]}
+    ],
+    "expected_final_acpl": "75-100 (realistic), <70 (stretch)",
+    "key_insight": "Training data gaps (0 endgames) more critical than model architecture"
+  },
+  "winning_strategy": {
+    "last_updated": "2026-01-15T23:00:00Z",
+    "target_acpl": "<70 (top 10), <50 (competitive for #1)",
+    "deadline": "2026-01-31 (16 days remaining)",
+    "current_position": {
+      "our_best": "~150 ACPL (submission 307752, pending final eval)",
+      "leader": "46.4 ACPL (hot_king)",
+      "gap": "3.2x worse than leader"
+    },
+    "what_we_know": {
+      "confirmed_facts": [
+        "V6 merged model works: ~192 ACPL locally, ~146 ACPL early submission results",
+        "eos_token fix resolved garbage output (was 881 ACPL)",
+        "Concurrency bug fix (--vllm.max-num-seqs 1) prevents corruption",
+        "Training data has critical gaps: 0% endgames, 65% equal positions",
+        "730K filtered data ready for V7/V8 training",
+        "MCTS infrastructure working (StockfishModel validated)",
+        "RL infrastructure validated (reward signal informative)",
+        "DPO made things WORSE (+6.2 ACPL) - abandoned"
+      ],
+      "training_in_progress": [
+        "V6 r128: 11% done, ETA Jan 25 (6 days buffer)",
+        "449K r64: 6% done, ETA Jan 26 (5 days buffer)"
+      ]
+    },
+    "what_we_dont_know": {
+      "critical_unknowns": [
+        "Why V4 failed (0% best move rate, 257 ACPL) - lost knowledge",
+        "Final ACPL of submission 307752 (still evaluating)",
+        "Whether hot_king uses search at inference (likely yes)",
+        "Actual impact of endgame training data",
+        "Whether MCTS + LLM improves ACPL in practice",
+        "V6 r128 training quality - need to analyze logs"
+      ],
+      "risks": [
+        "Cloud training could fail/degrade",
+        "MCTS overhead might exceed AIcrowd time limits",
+        "Endgame data might not be diverse enough"
+      ]
+    },
+    "winning_path": {
+      "hypothesis": "Combination of better data + inference-time search can reach <70 ACPL",
+      "key_insight": "hot_king at 46.4 almost certainly uses search. Pure LLM ceiling is ~80-100 ACPL.",
+      "three_pillars": [
+        {
+          "pillar": "1. Fix Training Data Gaps",
+          "current_issue": "0% endgames, 65% equal positions teach 'safe' play not 'winning' play",
+          "solution": "Generate endgame data, filter for decisive positions, curriculum learning",
+          "expected_impact": "192 -> 150 ACPL",
+          "status": "730K filtered ready, endgame generation TODO"
+        },
+        {
+          "pillar": "2. Inference-Time Search",
+          "current_issue": "Single-shot LLM misses tactics",
+          "solution": "MCTS with LLM as policy, Stockfish-lite as value",
+          "expected_impact": "150 -> 100 ACPL",
+          "status": "Infrastructure ready, need LLM integration"
+        },
+        {
+          "pillar": "3. RL Fine-tuning",
+          "current_issue": "SFT capped by training data quality",
+          "solution": "GRPO with Stockfish reward signal",
+          "expected_impact": "100 -> 70 ACPL",
+          "status": "Infrastructure validated, waiting for base model"
+        }
+      ]
+    },
+    "immediate_cpu_tasks": [
+      {
+        "id": "CPU-1",
+        "task": "Analyze V6 training logs",
+        "why": "Understand training dynamics, catch issues early",
+        "how": "Pull logs from chess-llm-v5 studio, plot loss curves",
+        "time": "30 min"
+      },
+      {
+        "id": "CPU-2",
+        "task": "Generate endgame training data",
+        "why": "Current data has 0% endgames - critical gap",
+        "how": "Run generate_endgames.py with Syzygy tablebases",
+        "time": "2-4 hrs"
+      },
+      {
+        "id": "CPU-3",
+        "task": "Create 'winning moves' filtered dataset",
+        "why": "65% of data is equal positions teaching safe play",
+        "how": "Filter 730K data: keep only positions where top move >> 2nd best",
+        "time": "1-2 hrs"
+      },
+      {
+        "id": "CPU-4",
+        "task": "Analyze submission 307752 game logs",
+        "why": "Understand WHERE model fails (opening/middle/end)",
+        "how": "Download game logs when evaluation completes",
+        "time": "30 min (when available)"
+      },
+      {
+        "id": "CPU-5",
+        "task": "Prepare V7 training config",
+        "why": "Be ready to launch when V6 completes",
+        "status": "IN_PROGRESS",
+        "v7_enhanced_plan": {
+          "data_composition": {
+            "winning_moves_filtered": "Use filter_winning_moves.py on SF3 500K (~193K positions, 38.5% acceptance)",
+            "endgame_data": "7,049 generated endgame positions (training_endgames.jsonl)",
+            "total_estimated": "~200K high-quality examples"
+          },
+          "key_changes_from_v6": [
+            "1. Filter for 'winning moves' - only clear best move positions",
+            "2. Add 7K endgame positions to fill critical gap",
+            "3. Consider curriculum: decisive positions first, then nuanced"
+          ],
+          "lora_config": "r=128, alpha=256 (same as v6 which works)",
+          "training_plan": "2 epochs, cosine LR, save checkpoints frequently",
+          "expected_improvement": "192 ACPL -> ~150 ACPL from better data quality",
+          "script": "train_v7_combined.py (needs update to use new data)"
+        },
+        "time": "1 hr"
+      },
+      {
+        "id": "CPU-6",
+        "task": "Test MCTS + local model",
+        "why": "Validate MCTS improves ACPL before competition submission",
+        "how": "Load V6 merged locally, run MCTS vs single-shot, compare ACPL",
+        "time": "2-3 hrs (if local GPU available)"
+      }
+    ],
+    "decision_points": {
+      "jan_16": {
+        "condition": "Submission 307752 final ACPL available",
+        "if_good": "(<160 ACPL) Focus on MCTS integration",
+        "if_bad": "(>200 ACPL) Investigate remaining issues"
+      },
+      "jan_25": {
+        "condition": "V6 r128 training completes",
+        "if_good": "(loss < 0.5) Submit, prepare RL",
+        "if_bad": "(loss > 1.0) Debug training, adjust hyperparameters"
+      },
+      "jan_28": {
+        "condition": "3 days before deadline",
+        "action": "Freeze new training, focus on inference optimization"
+      }
+    },
+    "budget_remaining": {
+      "compute": "~$1,200 (of $1,500 allocated)",
+      "time": "16 days",
+      "submissions": "Unlimited Round 2"
+    }
+  },
+  "comprehensive_roadmap": {
+    "last_updated": "2026-01-15",
+    "current_phase": "Submission Pipeline Fixed",
+    "parallel_workstreams": {
+      "cloud_training": [
+        {
+          "name": "sf3_e4_r128 (Jan 11) - BEST EVAL LOSS",
+          "studio": "chess-llm-v4",
+          "status": "COMPLETE",
+          "data": "30K SF3",
+          "config": "r128 LoRA, 4 epochs",
+          "eval_loss": 0.385,
+          "path": "~/chess-training/sf3_e4_r128_20260111_0833/",
+          "notes": "Best eval loss of all runs! Need to evaluate ACPL."
+        },
+        {
+          "name": "sf1_e4_r128 (Jan 12)",
+          "studio": "chess-llm-v4",
+          "status": "COMPLETE",
+          "data": "SF1 filtered",
+          "config": "r128 LoRA, 4 epochs",
+          "eval_loss": 0.416,
+          "path": "~/chess-training/sf1_e4_r128_20260112_0454/",
+          "notes": "SF top-1 filtered data. Should test!"
+        },
+        {
+          "name": "V4 (7b_sf3_e4_r64)",
+          "studio": "chess-llm-v4",
+          "status": "COMPLETE",
+          "data": "30K SF3",
+          "config": "r64 LoRA, 4 epochs",
+          "eval_loss": 0.497,
+          "acpl": 257,
+          "path": "~/chess-training/7b_sf3_e4_r64_20260112_1539/model/final/",
+          "notes": "Known to be poor (0% best move rate). Reason unknown."
+        },
+        {
+          "name": "Qwen 3B (train_3b_fixed.py)",
+          "studio": "chess-llm-v4",
+          "status": "RUNNING 13%",
+          "data": "360K mega dataset",
+          "config": "3B model, LoRA",
+          "progress": "10965/83307 steps",
+          "metrics": {
+            "eval_loss": 0.405,
+            "token_accuracy": "88.2%",
+            "checked_at": "2026-01-15T22:50:00Z"
+          },
+          "path": "~/checkpoints/qwen3b-449k-fixed/",
+          "notes": "Best eval loss of running jobs. 3B model may be faster to iterate."
+        },
+        {
+          "name": "V6 (r128)",
+          "studio": "chess-llm-v5",
+          "status": "RUNNING 13%",
+          "data": "449K mega dataset",
+          "config": "r128 LoRA, 2 epochs, 7B model",
+          "progress": "7303/55538 steps",
+          "metrics": {
+            "eval_loss": 0.58,
+            "token_accuracy": "87%",
+            "checked_at": "2026-01-15T22:50:00Z"
+          },
+          "eta": "~Jan 25",
+          "path": "~/chess-training/7b_v6_r128_e2_20260114_0320/"
+        },
+        {
+          "name": "449K mega (r64)",
+          "studio": "chess-llm-v5",
+          "status": "STOPPED - no GPU",
+          "data": "449K mega dataset",
+          "config": "r64 LoRA, 2 epochs",
+          "progress": "3690/55538 steps (6.6%)",
+          "path": "~/chess-training/7b_mega449k_e2_r64_20260113_0940/",
+          "notes": "Stopped due to GPU unavailability"
+        },
+        {
+          "name": "dpo-test-v6-checkpoint",
+          "studio": "chess-llm-v4",
+          "status": "QUEUED - waiting for GPU",
+          "notes": "In queue, no GPU assigned yet"
+        }
+      ],
+      "local_filters": [
+        {"name": "SF3 500K", "status": "COMPLETE", "examples": 501402},
+        {"name": "SF3 v2", "status": "COMPLETE", "examples": 229054}
+      ],
+      "total_filtered_data": "730K examples ready for V7/V8 training"
+    },
+    "derisking_results": {
+      "mini_rl_validation": {
+        "run_date": "2026-01-15",
+        "result": "PASS",
+        "reward_signal_informative": true,
+        "reward_std": 223.5,
+        "recommendation": "RL infrastructure ready"
+      },
+      "best_of_n": {
+        "run_date": "2026-01-15",
+        "result": "PARTIAL",
+        "single_shot_acpl": 361.06,
+        "best_of_10_acpl": 337.02,
+        "improvement": "6.7% (below 10% threshold)",
+        "note": "Test run before submission fixes; heuristic scoring needs improvement",
+        "best_example": "792 cp improvement when Bo10 found SF best move"
+      },
+      "mcts_infrastructure": {
+        "run_date": "2026-01-15",
+        "result": "INFRASTRUCTURE_WORKING",
+        "test_description": "MCTS with Stockfish as policy+value network",
+        "observations": [
+          "0% match rate with SF best moves is MISLEADING - MCTS explores different lines",
+          "Valid moves selected (reasonable visit counts: 9-67 visits)",
+          "Reasonable value estimates (-0.39 to 0.98, correctly signed)",
+          "200 simulations spread thin across ~35 legal moves"
+        ],
+        "conclusion": "Infrastructure validated. MCTS finds valid, reasonable moves. Exact SF match rate is wrong metric.",
+        "next_test_needed": "Compute ACPL for MCTS moves (not just match rate) OR test with LLM directly",
+        "file_updated": "mcts_inference.py - added StockfishModel class and test_stockfish_mcts()"
+      }
+    },
+    "next_steps_prioritized": [
+      {
+        "priority": 1,
+        "task": "Wait for submission 307752 evaluation",
+        "status": "IN_PROGRESS",
+        "expected": "~150 ACPL if fixes worked"
+      },
+      {
+        "priority": 2,
+        "task": "Download and evaluate V4 completed model",
+        "status": "READY",
+        "location": "chess-llm-v4:~/chess-training/7b_sf3_e4_r64_20260112_1539/model/final"
+      },
+      {
+        "priority": 3,
+        "task": "Integrate MCTS with LLM",
+        "status": "INFRASTRUCTURE_READY",
+        "expected_gain": "40% ACPL reduction",
+        "script": "mcts_inference.py - StockfishModel and MCTS classes ready, need LLM integration"
+      },
+      {
+        "priority": 4,
+        "task": "Prepare V7 training with 730K filtered data",
+        "status": "DATA_READY",
+        "compute_needed": "H100 168hrs ($504)"
+      },
+      {
+        "priority": 5,
+        "task": "Self-play RL (GRPO)",
+        "status": "DERISKED",
+        "compute_needed": "H100 120hrs ($360)",
+        "prerequisite": "MCTS working first"
+      }
+    ],
+    "timeline_to_deadline": {
+      "deadline": "2026-01-31",
+      "days_remaining": 16,
+      "critical_path": [
+        "Jan 15-16: Validate submission works (~150 ACPL)",
+        "Jan 16-18: Implement MCTS, target ~100 ACPL",
+        "Jan 18-22: V7 training with 730K data",
+        "Jan 22-26: GRPO RL training",
+        "Jan 26-30: Ensemble + final tuning",
+        "Jan 30-31: Final submissions"
+      ]
+    },
+    "compute_budget": {
+      "total_planned": "$1,536 (512 H100 hours)",
+      "spent_so_far": "~$300 (V4 + V5 training)",
+      "remaining": "~$1,200"
+    }
+  },
+  "submission_checklist": [
+    {
+      "id": 1,
+      "task": "Upload model to HuggingFace",
+      "status": "DONE",
+      "blocker": false,
+      "priority": "P0",
+      "details": "Uploaded to ericksoa/chess-v6-aicrowd"
+    },
+    {
+      "id": 2,
+      "task": "Create custom prompt template",
+      "status": "DONE",
+      "blocker": false,
+      "priority": "P1",
+      "details": "Created starter-kit/player_agents/v6_chess_template.jinja"
+    },
+    {
+      "id": 3,
+      "task": "Install and authenticate aicrowd-cli",
+      "status": "UNKNOWN",
+      "blocker": true,
+      "priority": "P0",
+      "details": "pip install aicrowd-cli && aicrowd login"
+    },
+    {
+      "id": 4,
+      "task": "Test model with local vLLM + LoRA",
+      "status": "NOT_DONE",
+      "blocker": false,
+      "priority": "P1",
+      "details": "vllm serve Qwen/Qwen2.5-7B --enable-lora --lora-modules chess=<path>"
+    },
+    {
+      "id": 5,
+      "task": "Accept challenge rules on AIcrowd",
+      "status": "UNKNOWN",
+      "blocker": true,
+      "priority": "P0",
+      "details": "Click Participate button on challenge page"
+    },
+    {
+      "id": 6,
+      "task": "Determine correct --neuron.model-type",
+      "status": "PENDING",
+      "blocker": false,
+      "priority": "P1",
+      "details": "Likely 'qwen2.5' but verify from docs"
+    },
+    {
+      "id": 7,
+      "task": "First test submission (3B model)",
+      "status": "NOT_DONE",
+      "blocker": false,
+      "priority": "P2",
+      "details": "Submit smaller model first to validate pipeline"
+    }
+  ],
+  "submission_command_template": "aicrowd submit-model --challenge global-chess-challenge-2025 --hf-repo ericksoa/chess-v6-aicrowd --hf-repo-tag main --prompt-template-path player_agents/v6_chess_template.jinja --neuron.model-type qwen2.5 --vllm.enable-lora true",
+  "critical_findings": [
+    {
+      "rank": 1,
+      "title": "Model uploaded to HuggingFace",
+      "severity": "RESOLVED",
+      "fix": "Done: ericksoa/chess-v6-aicrowd"
+    },
+    {
+      "rank": 2,
+      "title": "AWS Trainium (Neuron) model type",
+      "severity": "RESOLVED",
+      "fix": "Added --neuron.model-type qwen2.5 to command"
+    },
+    {
+      "rank": 3,
+      "title": "Prompt template format",
+      "severity": "RESOLVED",
+      "fix": "Created v6_chess_template.jinja"
+    },
+    {
+      "rank": 4,
+      "title": "vLLM LoRA flags needed",
+      "severity": "MEDIUM",
+      "fix": "Add --vllm.enable-lora true"
+    },
+    {
+      "rank": 5,
+      "title": "7B model memory constraints",
+      "severity": "MEDIUM",
+      "fix": "Verify trn1.2xlarge can handle 7B"
+    }
+  ],
+  "current_best_model": {
+    "name": "v6_checkpoint_4000",
+    "base": "Qwen/Qwen2.5-7B",
+    "type": "LoRA",
+    "acpl": 192.3,
+    "legal_rate": 0.98,
+    "path": "models/v6_checkpoint_4000/"
+  },
+  "backup_model": {
+    "name": "SF3 final (3B)",
+    "base": "Qwen/Qwen2.5-3B",
+    "type": "LoRA",
+    "acpl": 208.7,
+    "path": "models/final/",
+    "training_run": "sf3_e4_r128_20260111_0833 on chess-llm-v4",
+    "eval_loss": 0.385,
+    "notes": "Best eval loss of all completed runs. ACPL 208.7 tested."
+  },
+  "timeline": {
+    "competition_deadline": "2026-01-31",
+    "recommended_first_submission": "2026-01-20",
+    "buffer_days": 11
+  },
+  "previous_analysis": {
+    "audit_date": "2025-01-15",
+    "dataset": "training_elite_30k.jsonl",
+    "key_findings": [
+      {
+        "finding": "Endgame positions severely underrepresented",
+        "impact": "critical",
+        "detail": "Only 1 endgame examples"
+      },
+      {
+        "finding": "Template rationales dominate",
+        "impact": "high",
+        "detail": "62/50 samples use templates"
+      },
+      {
+        "finding": "Legal moves validation",
+        "impact": "low",
+        "detail": "0 issues found in sample"
+      }
+    ],
+    "recommendations": [
+      "Add 5-10k endgame positions from tablebase training",
+      "Diversify rationale generation using LLM paraphrasing",
+      "Revalidate all legal moves with python-chess"
+    ],
+    "data_quality_score": 30.0
+  },
+  "v6_ckpt4000_error_analysis": {
+    "analysis_date": "2026-01-15",
+    "model": "V6 checkpoint-4000",
+    "metrics": {
+      "acpl_legal_only": 192.3,
+      "legal_rate": 0.98,
+      "best_move_rate": 0.02
+    },
+    "top_5_insights": [
+      {
+        "rank": 1,
+        "insight": "Quiet positional moves dominate (58%) and are hardest for the model",
+        "evidence": "42 dead-equal quiet positions in sample; model likely guessing among ~35 legal moves",
+        "action": "Train on more annotated quiet positions with strategic reasoning"
+      },
+      {
+        "rank": 2,
+        "insight": "Near-zero endgame training data creates systematic blind spot",
+        "evidence": "Only 1 endgame position out of 30,000 training examples (0.003%)",
+        "action": "Add 5-10k endgame positions from tablebases"
+      },
+      {
+        "rank": 3,
+        "insight": "High branching factor (35+ legal moves) correlates with difficulty",
+        "evidence": "57% of sample has 35+ legal moves requiring deeper understanding",
+        "action": "Focus training on middlegame positions with rich strategic themes"
+      },
+      {
+        "rank": 4,
+        "insight": "Tactical positions (38%) are lower risk - captures/checks easier to identify",
+        "evidence": "38 positions have clear tactical themes (captures, checks, big advantage)",
+        "action": "Tactical training working; focus resources on quiet positional play"
+      },
+      {
+        "rank": 5,
+        "insight": "Opening moves have high diversity - 26 unique moves across 29 positions",
+        "evidence": "Standard opening moves but need specific preparation knowledge",
+        "action": "Include more opening book positions with variation-specific explanations"
+      }
+    ],
+    "recommendations_priority": [
+      "P0: Add 10,000+ endgame positions with tablebase-verified best moves",
+      "P1: Increase quiet middlegame positions with strategic annotations",
+      "P2: Implement curriculum learning - easy tactical first, then quiet positions",
+      "P3: Consider DPO training to prefer positional moves over random",
+      "P4: Augment training with multiple correct moves for ambiguous positions"
+    ],
+    "position_breakdown": {
+      "phase_distribution_sample": {"middlegame": 71, "opening": 29, "endgame": 0},
+      "quiet_positional_moves": 58,
+      "tactical_moves": 38,
+      "high_branching_positions": 57
+    },
+    "full_analysis_file": "results/error_analysis_v6_ckpt4000.json"
+  },
+  "v6_training_curve_analysis": {
+    "analysis_date": "2026-01-15T10:30:00",
+    "training_status": {
+      "run_name": "7b_v6_r128_e2_20260114_0320",
+      "studio": "chess-llm-v5",
+      "current_step": 5232,
+      "total_steps": 55538,
+      "progress_pct": 9.42,
+      "estimated_completion": "2026-01-24"
+    },
+    "checkpoint_4000_results": {
+      "acpl_legal_only": 192.3,
+      "loss": 0.47,
+      "token_accuracy": 85.97,
+      "legal_rate": 98.0,
+      "verdict": "NEW BEST - beats SF3's 208.7 ACPL"
+    },
+    "loss_curve_key_observations": [
+      "71.3% of loss reduction happened in first 1000 steps (steep initial learning)",
+      "Strong diminishing returns after step 1000 (~5% improvement per 1000 steps)",
+      "Token accuracy plateauing at ~86%",
+      "Eval loss nearly flat (0.6046 -> 0.6000 from step 2000 to 4000)"
+    ],
+    "acpl_predictions": {
+      "predicted_final_loss": 0.431,
+      "best_estimate_range": [140, 170],
+      "sub_100_likelihood": "LOW (< 20%)"
+    },
+    "top_5_insights": [
+      {
+        "rank": 1,
+        "insight": "V6 at 192.3 ACPL is NEW BEST after only 7% training",
+        "confidence": "HIGH"
+      },
+      {
+        "rank": 2,
+        "insight": "Loss curve shows strong diminishing returns after step 1000",
+        "confidence": "HIGH"
+      },
+      {
+        "rank": 3,
+        "insight": "Realistic final ACPL estimate: 140-170",
+        "confidence": "MEDIUM"
+      },
+      {
+        "rank": 4,
+        "insight": "Token accuracy plateau at ~86%",
+        "confidence": "HIGH"
+      },
+      {
+        "rank": 5,
+        "insight": "Training completion ~Jan 24 at current pace",
+        "confidence": "HIGH"
+      }
+    ],
+    "recommendation": "Continue V6 training to completion. Monitor checkpoint-8000 for trajectory confirmation. Sub-100 ACPL unlikely without additional techniques (ensemble, search, or architecture changes).",
+    "next_checkpoints": [
+      {"step": 8000, "expected_date": "~Jan 17", "expected_acpl": "~180"},
+      {"step": 12000, "expected_date": "~Jan 18", "expected_acpl": "~175"},
+      {"step": 20000, "expected_date": "~Jan 20", "expected_acpl": "~165"},
+      {"step": 40000, "expected_date": "~Jan 23", "expected_acpl": "~155"}
+    ],
+    "full_analysis_file": "results/v6_training_curve_analysis.json"
+  },
+  "sf_depth20_analysis": {
+    "analysis_date": "2026-01-15",
+    "experiment_name": "High-Quality SF Depth 20 Filtering",
+    "purpose": "Create ultra-high-quality backup data for V7 if V6 plateaus",
+    "parameters": {
+      "source_dataset": "training_elite_30k.jsonl",
+      "sample_size": 1000,
+      "stockfish_depth": 20,
+      "criterion": "top-1 only (strictest)",
+      "workers": 2,
+      "elapsed_minutes": 8.1
+    },
+    "results": {
+      "positions_passed": 778,
+      "positions_rejected": 222,
+      "acceptance_rate_pct": 77.8,
+      "output_file": "data/training_sf_depth20_sample.jsonl"
+    },
+    "top_5_insights_jensen_t5t": [
+      {
+        "rank": 1,
+        "insight": "77.8% of elite training data already matches SF top-1 at depth 20",
+        "significance": "HIGH",
+        "detail": "The existing training_elite_30k dataset is ALREADY high quality. Only 22.2% of positions have human moves that disagree with SF's absolute best. This suggests the elite filtering process is effective - most elite GMs play SF top-1 moves.",
+        "action": "Consider whether stricter filtering is even necessary - 77.8% agreement is strong"
+      },
+      {
+        "rank": 2,
+        "insight": "Depth 20 vs depth 12 has minimal impact on top-1 filtering",
+        "significance": "MEDIUM",
+        "detail": "At depth 12 with top-3 criterion, ~70% acceptance rate. At depth 20 with top-1 only, 77.8% acceptance. The difference (7.8pp) is LESS than expected. This suggests move rankings are stable between depth 12-20 for most positions.",
+        "action": "Depth 20 filtering may not be worth 4x computational cost for marginal quality improvement"
+      },
+      {
+        "rank": 3,
+        "insight": "~22% of elite GM moves disagree with SF depth 20 top-1",
+        "significance": "HIGH",
+        "detail": "These 222 positions are WHERE THE MODEL LEARNS WRONG MOVES. They represent human moves that are good (top-3) but not optimal. For chess purists, removing these creates perfect training data. But human-like play may actually benefit from this diversity.",
+        "action": "Two strategies: (A) Train on pure SF top-1 for optimal play, or (B) Keep top-3 for human-like diversity"
+      },
+      {
+        "rank": 4,
+        "insight": "Processing speed: 2.07 positions/second at depth 20 with 2 workers",
+        "significance": "LOW",
+        "detail": "Depth 20 analysis takes ~0.5 sec/position per worker. Full 30k dataset would take ~4 hours with 2 workers. Scalable but not fast.",
+        "action": "For full dataset filtering, use cloud compute with more workers"
+      },
+      {
+        "rank": 5,
+        "insight": "SF score enrichment reveals evaluation confidence",
+        "significance": "MEDIUM",
+        "detail": "Each filtered position now includes SF's centipawn score at depth 20. This enables training curriculum sorted by position clarity - train on clear positions first (|score| > 200cp), then nuanced positions.",
+        "action": "Use sf_score for curriculum learning: easy-to-hard position ordering"
+      }
+    ],
+    "recommendation": "The 778 ultra-high-quality positions are ready for V7 backup training. However, the marginal benefit over existing elite data may be small. Primary V7 improvement should come from endgame augmentation and quiet position training rather than stricter filtering.",
+    "comparison_to_baseline": {
+      "baseline_criterion": "depth 12, top-3",
+      "baseline_acceptance_rate": "~70%",
+      "new_criterion": "depth 20, top-1 only",
+      "new_acceptance_rate": "77.8%",
+      "selectivity_ratio": 0.9,
+      "interpretation": "Counterintuitively, stricter depth+criterion yielded HIGHER acceptance. This is because elite data was already well-filtered, and depth 20 agrees with depth 12 in most cases."
+    }
+  },
+  "prompt_ablation_plan": {
+    "created": "2026-01-15T08:00:00",
+    "status": "PLANNED - Awaiting GPU time",
+    "full_plan_file": "results/prompt_ablation_plan.json",
+    "ranked_experiments": [
+      {
+        "rank": 1,
+        "id": "minimal_prompt",
+        "name": "Minimal Prompt (Token Efficiency)",
+        "priority": "HIGH",
+        "hypothesis": "Shorter prompts reduce noise and align better with LLM pretraining. Template: {fen} {moves_space_sep}",
+        "expected_impact": "5-15 ACPL improvement if hypothesis correct"
+      },
+      {
+        "rank": 2,
+        "id": "annotated_fen",
+        "name": "Annotated FEN with Piece Counts",
+        "priority": "HIGH",
+        "hypothesis": "Explicit material counts and game phase annotation helps model decisions",
+        "expected_impact": "3-8 ACPL improvement on endgame/material decisions"
+      },
+      {
+        "rank": 3,
+        "id": "move_list_formats",
+        "name": "Move List Format Variants",
+        "priority": "MEDIUM",
+        "hypothesis": "Space-separated may tokenize better than comma-separated. Test UCI+SAN hybrid.",
+        "variants": ["space_separated", "newline_separated", "uci_with_san", "grouped_by_piece"]
+      },
+      {
+        "rank": 4,
+        "id": "chain_of_thought",
+        "name": "Chain-of-Thought Prompting",
+        "priority": "MEDIUM",
+        "hypothesis": "Step-by-step analysis may improve complex positions. Risk: 2-3x slower inference."
+      },
+      {
+        "rank": 5,
+        "id": "few_shot_examples",
+        "name": "Few-Shot In-Context Examples",
+        "priority": "LOW",
+        "hypothesis": "Unlikely to help fine-tuned model. Include 2 worked examples in prompt."
+      }
+    ],
+    "test_phases": [
+      {"phase": 1, "name": "Quick inference-only tests", "experiments": ["minimal_prompt", "move_list_formats"], "time": "2-3 hours"},
+      {"phase": 2, "name": "Complex format tests", "experiments": ["chain_of_thought", "few_shot_examples"], "time": "2-3 hours"},
+      {"phase": 3, "name": "Retraining (if Phase 1/2 show promise)", "experiments": ["annotated_fen"], "time": "48-72 hours"}
+    ],
+    "prior_evolution_insights": [
+      "Temperature 0.1 > 0.3 for deterministic tasks",
+      "Minimal prompts performed similarly to verbose prompts",
+      "Removing 'FEN:' and 'Moves:' labels hurt legal rate (88% vs 96%)"
+    ]
+  },
+  "dont_repeat_incidents": [
+    {
+      "id": "DRI-001",
+      "date": "2026-01-15",
+      "title": "chat_template.jinja Override Caused Model Resignation",
+      "submissions_wasted": 6,
+      "submission_ids": [307730, 307732, 307733, 307734, 307735, 307737],
+      "root_cause": "chat_template.jinja file overrode tokenizer_config.json, using wrong system prompt 'You are a helpful assistant' instead of 'You are a chess grandmaster'. Model output prose without <uci_move> tags, causing immediate resignation (1000 ACPL).",
+      "my_failures": [
+        "Did not list ALL files in HF repo before assuming tokenizer_config.json was the only relevant file",
+        "Did not test model output locally before submitting - would have caught issue immediately",
+        "Did not understand .jinja files override .json chat templates in transformers",
+        "Ignored obvious signals: 'Move 1 Blunder', 'resignation', 'Move Count: 1' = broken output",
+        "Verified uploads by checking file content, not actual model behavior",
+        "Kept submitting and hoping instead of investigating"
+      ],
+      "rules_to_follow": {
+        "before_any_hf_submission": [
+          "List ALL files in repo: curl -s 'https://huggingface.co/api/models/REPO' | python3 -c \"import json,sys; [print(f['rfilename']) for f in json.load(sys.stdin).get('siblings',[])]\"",
+          "Check for override files: chat_template.jinja, tokenizer_config.json, any .jinja files",
+          "Test model output locally with actual prompt format BEFORE submitting",
+          "Verify system prompt is correct in generated prompt"
+        ],
+        "when_submission_fails": [
+          "FIRST: Run local test to see actual model output",
+          "SECOND: Analyze game logs for clues (resignation = output format broken)",
+          "THIRD: Only then hypothesize about fixes"
+        ],
+        "never_do": [
+          "Submit multiple times hoping something works",
+          "Assume upload succeeded without testing actual behavior",
+          "Ignore user-provided logs in favor of guessing at URLs",
+          "Fix symptoms without understanding root cause"
+        ]
+      },
+      "five_minute_rule": "If a submission fails, spend 5 minutes running a LOCAL TEST before attempting another submission. One local test would have saved 6 submissions.",
+      "verification_code": "from transformers import AutoTokenizer; t = AutoTokenizer.from_pretrained('REPO', force_download=True); msgs = [{'role': 'user', 'content': 'test'}]; print(t.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True))"
+    },
+    {
+      "id": "DRI-002",
+      "date": "2026-01-15",
+      "title": "Evidence-Based Changes Only - No Assumptions",
+      "root_cause": "Proposed max_tokens=100 without any evidence. User correctly called out: 'where would you even get the idea that the max tokens is 100. I think you pulled that out of your ass'",
+      "my_failures": [
+        "Made up a number (100) without measuring actual data",
+        "Acted on assumption instead of gathering evidence first",
+        "Took lazy shortcut instead of doing proper analysis"
+      ],
+      "rules_to_follow": {
+        "before_proposing_any_config_change": [
+          "Measure actual data first (write a script, run analysis)",
+          "Show evidence with statistics (min, max, mean, percentiles)",
+          "Explain rationale based on measured data",
+          "Present plan with evidence BEFORE making changes"
+        ],
+        "evidence_gathering_checklist": [
+          "What is the relevant training data format?",
+          "What are the actual token counts/values?",
+          "What do real model outputs look like?",
+          "What does the documentation say?"
+        ]
+      },
+      "example_of_correct_approach": {
+        "task": "Determine max_new_tokens value",
+        "wrong": "Just guess 100 because it seems reasonable",
+        "correct": "1) Write script to measure training data token counts, 2) Run analysis: min=22, max=30, mean=24.5, p99=29, 3) Recommend p99*2 = ~64 with evidence"
+      },
+      "mantra": "Measure, don't assume. Evidence before action."
+    },
+    {
+      "id": "DRI-003",
+      "date": "2026-01-15",
+      "title": "Never Assumed Upload Succeeded - eos_token Fix Never Applied",
+      "submissions_wasted": 2,
+      "submission_ids": [307740, 307744],
+      "root_cause": "Memory claimed eos_token was fixed from <|endoftext|> to <|im_end|> in tokenizer_config.json. But curl to HF repo STILL shows eos_token=<|endoftext|>. The fix was NEVER actually uploaded. Local file also has wrong value.",
+      "evidence": {
+        "hf_repo_actual_value": "<|endoftext|>",
+        "required_value": "<|im_end|>",
+        "local_acpl": 192.3,
+        "aicrowd_acpl": 881.459,
+        "gap_ratio": "4.5x worse on AIcrowd"
+      },
+      "why_it_matters": "vLLM reads eos_token from tokenizer_config.json, NOT generation_config.json. With wrong EOS, model doesn't stop at <|im_end|>, generates until max_tokens, producing garbage.",
+      "my_failures": [
+        "Recorded fix in memory without verifying it actually happened",
+        "Never re-fetched HF repo to confirm upload succeeded",
+        "Assumed local edit + upload command = success",
+        "Did not have verification step in workflow"
+      ],
+      "rules_to_follow": {
+        "after_any_hf_upload": [
+          "IMMEDIATELY curl the raw file from HF to verify content",
+          "Compare actual vs expected with diff or direct check",
+          "Never proceed until verification passes",
+          "Add verification step to memory ONLY after confirming"
+        ],
+        "verification_commands": [
+          "curl -s 'https://huggingface.co/REPO/raw/main/tokenizer_config.json' | python3 -c \"import json,sys; print(json.load(sys.stdin).get('eos_token'))\"",
+          "curl -s 'https://huggingface.co/api/models/REPO' | python3 -c \"import json,sys; [print(f['rfilename']) for f in json.load(sys.stdin).get('siblings',[])]\""
+        ]
+      },
+      "lesson": "Trust but verify. An upload command completing != upload succeeded."
+    },
+    {
+      "id": "DRI-004",
+      "date": "2026-01-15",
+      "title": "ALWAYS Check .env File First for Credentials",
+      "root_cause": "Tried to upload to HuggingFace, got auth error, then searched for tokens in ~/.huggingface and env vars - when HF_TOKEN was sitting in .env file the whole time.",
+      "available_keys_in_env": ["LIGHTNING_USER_ID", "LIGHTNING_API_KEY", "LIGHTNING_AI_USERNAME", "LIGHTNING_TEAMSPACE", "HF_TOKEN", "AICROWD_API_KEY"],
+      "rule": "BEFORE any API call that needs auth, FIRST check: cat .env | grep -i <service>",
+      "why_env_exists": "User set up .env specifically to avoid credential hunting. USE IT."
+    },
+    {
+      "id": "DRI-005",
+      "date": "2026-01-15",
+      "title": "ALWAYS Document WHY Things Fail, Not Just THAT They Failed",
+      "root_cause": "V4 model failed for reasons we can no longer remember because I only recorded the metrics (257 ACPL, 0% best move rate) but not the ROOT CAUSE of why it performed poorly.",
+      "knowledge_lost": [
+        "Why V4 had 0% best move rate",
+        "Why V4 can't be used for RL testing",
+        "What specifically went wrong in V4 training"
+      ],
+      "rule": "When ANY experiment/training/submission fails, IMMEDIATELY document: (1) What failed, (2) WHY it failed (root cause), (3) What we learned, (4) What to do differently next time",
+      "template_for_failures": {
+        "what_failed": "Description of the failure",
+        "metrics": "Quantitative results",
+        "root_cause": "WHY it failed - this is the most important part",
+        "hypothesis": "What we think went wrong",
+        "learnings": "What we learned",
+        "next_steps": "What to do differently"
+      }
+    },
+    {
+      "id": "DRI-006",
+      "date": "2026-01-15",
+      "title": "ALWAYS Check ALL Training Runs on ALL Studios",
+      "root_cause": "User reminded me TWICE in same session that I keep forgetting to check all training runs. I only checked some runs and missed completed runs with better metrics.",
+      "missed_runs": [
+        "sf3_e4_r128_20260111_0833 - COMPLETE, eval_loss 0.385 (best!)",
+        "sf1_e4_r128_20260112_0454 - COMPLETE, eval_loss 0.416",
+        "7b_256k_e2_r64_20260113_0826 - empty dir (aborted)"
+      ],
+      "rule": "When checking Lightning.ai, ALWAYS: (1) List ALL studios, (2) For EACH studio, list ALL directories in ~/chess-training/, (3) Check status of EVERY run, (4) Document ALL runs in memory, not just the ones I think are important",
+      "command_to_use": "for dir in ~/chess-training/*/; do echo '=== '$dir' ==='; tail -5 $dir/train.log 2>/dev/null; done"
+    }
+  ],
+  "model_evaluations": {
+    "V4": {
+      "eval_date": "2026-01-14",
+      "acpl_legal_only": 257.75,
+      "legal_rate": 0.96,
+      "best_move_rate": 0.0,
+      "verdict": "NOT USABLE",
+      "root_cause": "UNKNOWN - failed to document at time of evaluation",
+      "notes": "Cannot be used for RL testing either (reason unknown)"
+    },
+    "V6_checkpoint_4000": {
+      "eval_date": "2026-01-15",
+      "acpl_legal_only": 192.3,
+      "legal_rate": 0.98,
+      "verdict": "CURRENT BEST",
+      "submitted_as": "307752",
+      "early_results": "~146 ACPL (3/100 matches)"
+    }
+  },
+  "infrastructure_research": {
+    "research_date": "2026-01-15",
+    "aicrowd_stack": {
+      "hardware": "AWS Trainium (trn1.2xlarge)",
+      "software": "NxD Inference + vLLM plugin",
+      "compilation": "Models compiled to Neuron artifacts",
+      "supported_model_types": ["llama", "mixtral", "dbrx", "qwen2", "qwen3", "qwen3_moe"],
+      "our_model_type": "qwen2 (for Qwen2.5 models)"
+    },
+    "qwen25_chatml_tokens": {
+      "151643": "<|endoftext|> (original Qwen EOS, NOT for ChatML)",
+      "151644": "<|im_start|> (turn start marker)",
+      "151645": "<|im_end|> (CORRECT EOS for ChatML format)"
+    },
+    "concurrency_bug": {
+      "cause": "Evaluator concurrency increased from 1 to 4",
+      "symptoms": [
+        "finish_reason=length (100% of cases at concurrency=4)",
+        "Missing <uci_move> tags (~25% appearance vs 100% at concurrency=1)",
+        "Garbled/corrupted binary-ish output",
+        "ACPL jumps from ~119 to 864+"
+      ],
+      "fix_command": "--num-games 1 --vllm.max-num-seqs 1",
+      "confirmed_working": true,
+      "source": "https://discourse.aicrowd.com/t/possible-evaluator-change-concurrency-now-4-was-1-qwen3-neuron-vllm-outputs-corrupted-finish-reason-length-missing-uci-move/17687"
+    },
+    "vllm_eos_behavior": {
+      "reads_from": "tokenizer_config.json eos_token field",
+      "ignores": "generation_config.json eos_token_id",
+      "critical_fix": "For ChatML, set eos_token to <|im_end|> in tokenizer_config.json"
+    },
+    "available_vllm_flags": [
+      "--vllm.max-model-len",
+      "--vllm.dtype",
+      "--vllm.max-num-seqs",
+      "--vllm.enforce-eager",
+      "--vllm-inference.max-tokens"
+    ]
+  }
+}

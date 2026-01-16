@@ -1,17 +1,37 @@
 # Global Chess Challenge 2025 - Evolve SDK Project
 
+## CRITICAL: Use Evolve SDK Memory System
+
+**DO NOT create random .md files to store learnings, DRIs, roadmaps, or project state.**
+
+Always use the evolve-sdk memory system:
+- **Memory file**: `.evolve-sdk/evolve_chess_training_strategy/memory.json`
+- **DRIs go in**: `memory.json` → `dont_repeat_incidents` array
+- **Learnings go in**: `memory.json` → `learnings` object
+- **Submissions go in**: `memory.json` → `submissions` array
+- **Roadmaps go in**: `memory.json` → `comprehensive_roadmap` object
+- **Credentials**: Always check `.env` file FIRST for API keys
+
+Before any HuggingFace submission, CHECK the DRIs in memory.json to avoid repeating past mistakes.
+
+**NEVER create these files** (use memory.json instead):
+- IMPROVEMENT_PLAN.md
+- WORK_IN_PROGRESS.md
+- WINNING_STRATEGY.md
+- Any other .md files for plans/state
+
 ## CRITICAL: Current Best Results
 
-**WE HAVE NEVER ACHIEVED <100 ACPL YET.**
+**Target: <100 ACPL for competitive submission**
 
-| Model | ACPL (legal moves) | Status |
-|-------|-------------------|--------|
-| SF3 trained (final/) | **208.7** | Best verified |
-| SF1 trained | 231.8 | Verified |
-| chess-lora-v1 | 334.1 | Early attempt |
+| Model | ACPL | Status |
+|-------|------|--------|
+| V6 checkpoint-4000 (local) | **192.3** | Best local eval |
+| Submission 307752 (early) | **~146** | Evaluating (3/100 matches) |
+| V4 completed model | TBD | Ready to evaluate |
 
-- The 85.64 ACPL in evolution.json was SIMULATED TEST DATA, not real
-- Target: <100 ACPL for competitive submission
+- Leader: 46.4 ACPL, Baseline: 71.9 ACPL
+- We're ~3-4x behind leaders
 - Current level: ~1400 Elo (weak amateur)
 
 ## Competition Overview
@@ -139,3 +159,18 @@ This competition runs on AWS Trainium, not NVIDIA GPUs. However:
 - Evolution/hyperparameter search can run on NVIDIA hardware
 - Only final inference submission requires Trainium
 - Great showcase of cross-platform ML optimization
+
+## Naming Convention Warning
+
+**CRITICAL: Model versions ≠ Studio names**
+
+- **Model versions**: V4, V5, V6 = iterations of our chess LLM training approach
+- **Studio names**: `chess-llm-v4`, `chess-llm-v5` = Lightning.ai cloud machines
+
+These are UNRELATED. Don't confuse them:
+- V6 model training might run on studio `chess-llm-v5`
+- Studio `chess-llm-v4` has nothing to do with model V4
+
+When discussing, always clarify:
+- "Model V6" or "V6 training" = our model version
+- "Studio v4" or "chess-llm-v4" = the cloud machine

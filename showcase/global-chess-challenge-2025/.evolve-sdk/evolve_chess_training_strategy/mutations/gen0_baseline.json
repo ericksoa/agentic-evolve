@@ -1,0 +1,42 @@
+{
+  "id": "gen0_baseline",
+  "generation": 0,
+  "variant": "baseline",
+  "description": "Baseline configuration with moderate parameters",
+  "hypothesis": "A balanced approach with Elo 1800+ and mixed game phases should provide a reasonable baseline.",
+  "data_config": {
+    "min_elo": 1800,
+    "max_elo": 2800,
+    "time_control": "any",
+    "min_move_number": 5,
+    "max_move_number": 80,
+    "exclude_forced": true,
+    "opening_fraction": 0.25,
+    "middlegame_fraction": 0.5,
+    "endgame_fraction": 0.25,
+    "mirror_positions": true,
+    "both_colors": true,
+    "stockfish_depth": 18,
+    "max_examples": 50000
+  },
+  "prompt_format": {
+    "style": "structured",
+    "template": "Position (FEN): {fen}\nSide to move: {side}\nLegal moves: {legal_moves}\n\nSelect the best move.",
+    "include_piece_list": false,
+    "include_move_history": false
+  },
+  "training_config": {
+    "base_model": "Qwen/Qwen2.5-3B",
+    "learning_rate": 2e-05,
+    "num_epochs": 3,
+    "batch_size": 8,
+    "warmup_ratio": 0.1,
+    "weight_decay": 0.01,
+    "lora_rank": 32,
+    "lora_alpha": 64
+  },
+  "fitness": 176.6511289898964,
+  "valid": true,
+  "error": null,
+  "notes": "ACPL=176.7, Legal=96.9%, Best=12.1%"
+}

@@ -1,0 +1,78 @@
+{
+  "description": "Evolve chess LLM training strategy for <8B model to minimize ACPL",
+  "mode": "ml",
+  "cwd": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/global-chess-challenge-2025",
+
+  "problem": {
+    "goal": "Train a <8B parameter LLM to play chess from text with minimal ACPL",
+    "input": "FEN position + legal moves in UCI format",
+    "output": "<uci_move>e2e4</uci_move> with optional rationale",
+    "metric": "Average Centipawn Loss (ACPL) - lower is better"
+  },
+
+  "evaluation": {
+    "test_command": "python3 evaluate_final_model.py --model-path {solution} --positions 50 --json",
+    "fitness_key": "acpl_legal_only",
+    "direction": "minimize"
+  },
+
+  "starter_solutions": [
+    "models/final",
+    "models/sf1_e4_r128_20260112_0454"
+  ],
+
+  "optimization_strategies": [
+    {
+      "name": "training_data",
+      "description": "Select and filter training data (SF1 vs SF3 vs mixed)",
+      "parameters": ["min_elo", "max_elo", "sf_match_level", "sample_size"]
+    },
+    {
+      "name": "hyperparameters",
+      "description": "Tune LoRA rank, learning rate, epochs",
+      "parameters": ["lora_rank", "lora_alpha", "learning_rate", "epochs", "batch_size"]
+    },
+    {
+      "name": "game_phase_focus",
+      "description": "Weight training on openings vs middlegame vs endgame",
+      "parameters": ["opening_fraction", "middlegame_fraction", "endgame_fraction"]
+    },
+    {
+      "name": "curriculum_learning",
+      "description": "Order training from easy to hard positions",
+      "parameters": ["position_order", "difficulty_metric"]
+    }
+  ],
+
+  "constraints": [
+    "Model must be <8B parameters",
+    "Must run on AWS Trainium (trn1.2xlarge) at inference",
+    "No external search/Stockfish at inference time",
+    "Pure language model inference only"
+  ],
+
+  "references": [
+    "https://www.aicrowd.com/challenges/global-chess-challenge-2025",
+    "https://github.com/AIcrowd/global-chess-challenge-2025-starter-kit"
+  ],
+
+  "trust": {
+    "enabled": true,
+    "suspicious_jump_pct": 30.0,
+    "require_adversary_for_champion": true,
+    "human_escalation_enabled": true,
+    "generate_dossier": true
+  },
+
+  "memory": {
+    "enabled": true,
+    "store_path": ".evolve-sdk/{problem_id}/memory.json",
+    "use_embeddings": true,
+    "inject_mutation_context": true,
+    "store_champions": true,
+    "store_failed_mutations": true,
+    "store_successful_mutations": true,
+    "store_exploits": true,
+    "check_exploit_similarity": true
+  }
+}

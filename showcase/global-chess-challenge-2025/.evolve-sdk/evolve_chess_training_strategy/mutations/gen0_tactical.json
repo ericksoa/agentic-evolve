@@ -1,0 +1,47 @@
+{
+  "id": "gen0_tactical",
+  "generation": 0,
+  "variant": "tactical",
+  "description": "Focus on tactical middlegame positions with clear winning moves",
+  "hypothesis": "Training on positions with large evaluation swings teaches the model to find tactical shots.",
+  "data_config": {
+    "min_elo": 1800,
+    "max_elo": 2800,
+    "time_control": "blitz",
+    "min_move_number": 15,
+    "max_move_number": 45,
+    "exclude_forced": true,
+    "opening_fraction": 0.15,
+    "middlegame_fraction": 0.7,
+    "endgame_fraction": 0.15,
+    "mirror_positions": false,
+    "both_colors": true,
+    "stockfish_depth": 16,
+    "max_examples": 60000,
+    "tactical_filter": {
+      "min_eval_swing": 100,
+      "prefer_checks": true,
+      "prefer_captures": true
+    }
+  },
+  "prompt_format": {
+    "style": "tactical",
+    "template": "Position: {fen}\n{side} to move.\nOptions: {legal_moves}\n\nFind the best tactical continuation.",
+    "include_piece_list": false,
+    "include_move_history": false
+  },
+  "training_config": {
+    "base_model": "Qwen/Qwen2.5-3B",
+    "learning_rate": 5e-05,
+    "num_epochs": 2,
+    "batch_size": 16,
+    "warmup_ratio": 0.05,
+    "weight_decay": 0.01,
+    "lora_rank": 48,
+    "lora_alpha": 96
+  },
+  "fitness": 194.1858514375871,
+  "valid": true,
+  "error": null,
+  "notes": "ACPL=194.2, Legal=93.1%, Best=1.6%"
+}

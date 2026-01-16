@@ -1,0 +1,44 @@
+{
+  "id": "gen4_muta",
+  "generation": 3,
+  "variant": "elite_only",
+  "description": "Shifted game phase focus: more_middlegame",
+  "hypothesis": "More middlegame positions may improve pattern learning",
+  "data_config": {
+    "min_elo": 2200,
+    "max_elo": 2800,
+    "opening_fraction": 0.2,
+    "middlegame_fraction": 0.7,
+    "endgame_fraction": 0.2,
+    "stockfish_depth": 20,
+    "mirror_positions": true,
+    "both_colors": true,
+    "max_examples": 30000
+  },
+  "prompt_format": {
+    "style": "concise",
+    "template": "FEN: {fen}\nMoves: {legal_moves}\nBest?",
+    "include_piece_list": false,
+    "include_move_history": false
+  },
+  "training_config": {
+    "base_model": "Qwen/Qwen2.5-3B",
+    "learning_rate": 1e-05,
+    "num_epochs": 5,
+    "batch_size": 4,
+    "warmup_ratio": 0.1,
+    "weight_decay": 0.01,
+    "lora_rank": 64,
+    "lora_alpha": 128
+  },
+  "fitness": 173.64534080927456,
+  "valid": true,
+  "error": null,
+  "notes": "ACPL=173.6, Legal=96.3%, Best=3.3%",
+  "parents": [
+    "gen0_elite_only",
+    "gen2_muta"
+  ],
+  "mutation_type": "mutation",
+  "parent": "gen3_cross"
+}

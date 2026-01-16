@@ -1,0 +1,44 @@
+{
+  "id": "gen3_mutc",
+  "generation": 2,
+  "variant": "elite_only",
+  "description": "Adjusted learning rate by 0.5x",
+  "hypothesis": "Lower LR may prevent overfitting",
+  "data_config": {
+    "min_elo": 2300,
+    "max_elo": 2800,
+    "time_control": "classical",
+    "min_move_number": 10,
+    "max_move_number": 60,
+    "exclude_forced": true,
+    "opening_fraction": 0.2,
+    "middlegame_fraction": 0.6,
+    "endgame_fraction": 0.2,
+    "mirror_positions": true,
+    "both_colors": true,
+    "stockfish_depth": 20,
+    "max_examples": 30000
+  },
+  "prompt_format": {
+    "style": "concise",
+    "template": "FEN: {fen}\nMoves: {legal_moves}\nBest?",
+    "include_piece_list": false,
+    "include_move_history": false
+  },
+  "training_config": {
+    "base_model": "Qwen/Qwen2.5-3B",
+    "learning_rate": 5e-06,
+    "num_epochs": 5,
+    "batch_size": 4,
+    "warmup_ratio": 0.15,
+    "weight_decay": 0.01,
+    "lora_rank": 64,
+    "lora_alpha": 128
+  },
+  "fitness": 157.9999286922011,
+  "valid": true,
+  "error": null,
+  "notes": "ACPL=158.0, Legal=99.2%, Best=3.5%",
+  "parent": "gen2_muta",
+  "mutation_type": "mutation"
+}
