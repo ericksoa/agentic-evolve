@@ -33,9 +33,9 @@ from .schemas import (
     AGENT_IDENTITIES,
 )
 
-# Check for memvid availability
+# Check for memvid-sdk availability
 try:
-    import memvid
+    import memvid_sdk
     MEMVID_AVAILABLE = True
 except ImportError:
     MEMVID_AVAILABLE = False
@@ -1376,44 +1376,189 @@ class MemvidBackend(MemoryBackend):
     """
     Memvid-based storage backend.
 
-    Uses memvid for crash-safe, queryable storage with vector search.
+    Uses memvid-sdk for crash-safe, queryable storage with semantic search.
+    Stores frames in a .mv2 file with built-in lexical and vector indexing.
     """
 
     def __init__(self, path: Path):
         self.path = path
-        self._store = None
+        self._mem = None  # memvid_sdk.Memvid instance
+        self._frame_count = 0
         self._init_store()
 
     def _init_store(self):
         """Initialize the memvid store."""
         if not MEMVID_AVAILABLE:
-            raise ImportError("memvid is required for MemvidBackend")
+            raise ImportError(
+                "memvid-sdk is required for MemvidBackend. "
+                "Install with: pip install memvid-sdk"
+            )
 
-        # TODO: Initialize memvid store
-        # The exact API depends on memvid-sdk version
-        # For now, we'll use a placeholder that falls back to JSON
-        # self._store = memvid.MemoryStore(str(self.path))
-
-        # Fallback to JSON until we have memvid API details
-        self._json_fallback = JSONBackend(self.path.with_suffix(".json"))
+        try:
+            if self.path.exists():
+                # Open existing store
+                self._mem = memvid_sdk.use("basic", str(self.path), enable_lex=True)
+                # Get frame count from stats
+                stats = self._mem.stats()
+                self._frame_count = stats.get("frame_count", 0)
+            else:
+                # Create new store with lexical search enabled
+                self._mem = memvid_sdk.create(str(self.path), enable_lex=True)
+                self._frame_count = 0
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize memvid store at {self.path}: {e}")
 
     def store(self, frame: dict) -> str:
-        """Store a frame."""
-        # TODO: Use actual memvid API
-        # return self._store.add_frame(
-        #     content=json.dumps(frame),
-        #     metadata=frame,
-        #     embedding=frame.get("_embedding"),
-        # )
-        return self._json_fallback.store(frame)
+        """Store a frame and return its ID."""
+        if self._mem is None:
+            raise RuntimeError("Memvid store not initialized")
+
+        frame_id = f"{self._frame_count:06d}"
+        frame["_id"] = frame_id
+
+        # Build metadata for memvid
+        # Support both frame_type (evolution schemas) and _schema_type (project schemas)
+        frame_type = frame.get("frame_type") or frame.get("_schema_type", "unknown")
+        title = f"{frame_type}:{frame_id}"
+
+        # Build tags list
+        tags = [frame_type, frame_id]
+        if frame.get("problem_id"):
+            tags.append(frame["problem_id"])
+        if frame.get("mode"):
+            tags.append(frame["mode"])
+
+        # Serialize frame to JSON as the text content
+        content = json.dumps(frame, default=str)
+
+        # Store with memvid API
+        self._mem.put(
+            title=title,
+            text=content,
+            tags=tags,
+        )
+
+        self._frame_count += 1
+        return frame_id
 
     def load_all(self) -> list[dict]:
-        """Load all frames."""
-        # TODO: Use actual memvid API
-        # return [json.loads(f.content) for f in self._store.query_all()]
-        return self._json_fallback.load_all()
+        """Load all frames from the store."""
+        if self._mem is None:
+            raise RuntimeError("Memvid store not initialized")
+
+        # Timeline returns truncated previews, so we use search to get full text.
+        # Search for each schema type (both project and evolution schemas).
+        schema_types = [
+            # Project schemas
+            "DRI", "Submission", "ModelEvaluation", "ConfigChange",
+            # Evolution schemas
+            "checkpoint", "mutation", "failed_mutation", "champion",
+            "exploit", "trust_decision", "human_decision", "config",
+            "generation", "note", "message",
+        ]
+
+        all_frames = {}  # Use dict to dedupe by _id
+
+        for schema_type in schema_types:
+            try:
+                response = self._mem.find(schema_type, k=10000)
+                hits = response.get("hits", [])
+                for hit in hits:
+                    text = hit.get("text", "")
+                    if text:
+                        frame = self._extract_json(text)
+                        if frame:
+                            frame_id = frame.get("_id", str(hit.get("frame_id", "")))
+                            all_frames[frame_id] = frame
+            except Exception:
+                continue
+
+        # Sort by frame_id to maintain order
+        frames = list(all_frames.values())
+        frames.sort(key=lambda f: f.get("_id", "999999"))
+        return frames
+
+    def _extract_json(self, text: str) -> dict | None:
+        """Extract JSON object from text that may have metadata appended."""
+        if not text:
+            return None
+
+        # memvid appends metadata like " title: ... tags: ..." after the JSON
+        # Find the end of our JSON object
+        text = text.strip()
+        if not text.startswith("{"):
+            return None
+
+        # Find matching closing brace
+        depth = 0
+        for i, char in enumerate(text):
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth == 0:
+                    try:
+                        return json.loads(text[: i + 1])
+                    except json.JSONDecodeError:
+                        return None
+        return None
+
+    def search(self, query: str, top_k: int = 10, frame_type: str | None = None) -> list[dict]:
+        """
+        Semantic search across stored frames.
+
+        Args:
+            query: Natural language search query
+            top_k: Maximum number of results
+            frame_type: Optional filter by frame type
+
+        Returns:
+            List of matching frames, sorted by relevance
+        """
+        if self._mem is None:
+            raise RuntimeError("Memvid store not initialized")
+
+        try:
+            # Use memvid's find() method for search
+            k = top_k * 2 if frame_type else top_k
+            response = self._mem.find(query, k=k)
+
+            results = []
+            hits = response.get("hits", [])
+            for hit in hits:
+                try:
+                    # The text field contains our JSON (with metadata appended)
+                    text = hit.get("text", "")
+                    if not text:
+                        continue
+
+                    frame = self._extract_json(text)
+                    if not frame:
+                        continue
+
+                    # Filter by frame_type if specified (supports both frame_type and _schema_type)
+                    if frame_type:
+                        actual_type = frame.get("frame_type") or frame.get("_schema_type")
+                        if actual_type != frame_type:
+                            continue
+
+                    frame["_search_score"] = hit.get("score", 0)
+                    results.append(frame)
+
+                    if len(results) >= top_k:
+                        break
+                except (json.JSONDecodeError, KeyError, TypeError):
+                    continue
+
+            return results
+        except Exception:
+            return []
 
     def close(self):
-        """Close the store."""
-        # TODO: self._store.close()
-        self._json_fallback.close()
+        """Close the memvid store."""
+        if self._mem is not None:
+            try:
+                self._mem.close()
+            except Exception:
+                pass
+            self._mem = None
