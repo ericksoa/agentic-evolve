@@ -320,6 +320,29 @@ This validation demonstrates that our model would have flagged these dangerous d
 3. **External validation strengthens claims**: We validated on TDC benchmark, ChEMBL external data, and real-world withdrawn drugs.
 4. **3D features explored but didn't improve test AUC**: We implemented 3D conformer features (pharmacophore distances, shape descriptors) which rank highly in feature importance but don't improve generalization on this scaffold-split test set.
 
+### Overfitting Analysis
+
+**Did we overfit?** This is a fair question for any evolved solution. Here's our honest assessment:
+
+| Concern | Evidence | Status |
+|---------|----------|--------|
+| Classical overfitting (train vs test gap) | CV mean: 0.884, Test: 0.890 | No concern |
+| Evolutionary meta-overfitting | Internal test (0.890) vs TDC benchmark (0.874) | ~1.6% bias |
+| Cross-domain generalization | TDC→ChEMBL: 0.569 AUROC | Poor (expected) |
+| Real-world validity | 100% on 12 withdrawn drugs | Strong evidence |
+
+**What's the risk?** During evolution, we selected mutations based on test set performance across generations. This creates indirect test set exposure—a form of meta-overfitting. We quantify this as ~1.6% optimistic bias (the gap between internal 0.890 and external 0.874 AUROC).
+
+**Why we're confident it's not severe:**
+1. **TDC benchmark uses scaffold splits** - molecules in test have different scaffolds than training
+2. **5-seed evaluation** shows stable results (0.874 ± 0.008)
+3. **Withdrawn drugs validation** - 100% accuracy on 12 drugs that were never in any training pipeline
+4. **Leaderboard position** - ranks #4 among published methods, not suspiciously high
+
+**What would be better:** Nested cross-validation during evolution (test set never seen until final champion). We recommend this for future evolution runs.
+
+For full details, see Section 6.4 (Limitations) in the [paper](paper/draft_v1.md).
+
 ## Dataset
 
 ```

@@ -269,6 +269,8 @@ The within-domain result (0.809 AUROC) demonstrates that our model architecture 
 
 ### 5.3 Withdrawn Drugs Validation
 
+To validate real-world applicability independent of benchmark datasets, we tested our model against drugs with documented clinical hERG/QT liability. This validation is particularly important because these drugs were never part of any training or evolution process—providing evidence of clinically meaningful generalization that cannot be attributed to overfitting on benchmark data.
+
 The most clinically relevant test of a hERG prediction model is whether it can identify drugs that were actually withdrawn from the market due to cardiac toxicity. We curated a comprehensive benchmark of 20 drugs with documented hERG/QT liability:
 - **12 withdrawn or black-box warning drugs** (highest risk category)
 - **8 additional drugs with known QT risk** from CredibleMeds and FDA AERS data
@@ -417,13 +419,17 @@ The poor cross-domain performance (TDC → ChEMBL) highlights a fundamental chal
 
 ### 6.4 Limitations
 
-1. **Dataset Size**: TDC hERG contains only 655 molecules; performance on larger benchmarks may differ.
+1. **Evolutionary Meta-Overfitting**: Our evolutionary optimization process evaluated candidate models against a held-out test set across multiple generations, introducing potential indirect test set exposure during model selection. We quantify this effect by comparing our internal test performance (0.890 AUROC) against the independent TDC benchmark evaluation (0.874 ± 0.008 AUROC), suggesting approximately 1.6% optimistic bias from the evolutionary search. Ideally, all selection would use only validation data, with the test set held out until final evaluation. Future work should employ nested cross-validation during evolution to eliminate this source of bias.
 
-2. **Binary Classification**: We predict blocker/non-blocker rather than IC50 values; regression may be more useful for prioritization.
+2. **Cross-Domain Generalization**: Cross-domain evaluation (training on TDC, testing on ChEMBL) yielded near-random performance (0.569 AUROC), indicating the model has learned dataset-specific patterns that may not transfer across different assay protocols. This is a known challenge in hERG prediction, where different datasets use different assay types (patch-clamp vs binding), IC50 thresholds, and compound sources. Users should validate on data from their specific assay protocol before deployment.
 
-3. **Single Endpoint**: hERG is one of many cardiac ion channels; multi-task learning across channels may improve safety assessment.
+3. **Dataset Size**: TDC hERG contains only 655 molecules; performance on larger benchmarks may differ. The small dataset also contributes to variance across random seeds (±0.008 on TDC benchmark).
 
-4. **Evolution Overhead**: While the final model is efficient, the evolution process required significant computation (21 generations × multiple variants). However, this is a one-time cost; the resulting model is lightweight and reusable, amortizing search overhead over many deployment scenarios.
+4. **Binary Classification**: We predict blocker/non-blocker rather than IC50 values; regression may be more useful for lead optimization where the degree of inhibition matters.
+
+5. **Single Endpoint**: hERG is one of many cardiac ion channels; multi-task learning across hERG, Cav1.2, and Nav1.5 channels may improve overall cardiac safety assessment.
+
+6. **Evolution Overhead**: While the final model is efficient, the evolution process required significant computation (28 generations × multiple variants). However, this is a one-time cost; the resulting model is lightweight and reusable, amortizing search overhead over many deployment scenarios.
 
 ### 6.5 Why Evolutionary Search Succeeds on hERG
 
