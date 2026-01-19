@@ -191,7 +191,7 @@
         "Forum thread analysis: concurrency bug fix confirmed working",
         "Token analysis: 151645 = <|im_end|> is correct EOS for ChatML"
       ],
-      "status": "EVALUATING - GARBAGE OUTPUT OBSERVED",
+      "status": "COMPLETED - 202 ACPL",
       "early_results": {
         "matches_completed": 3,
         "acpl_values": [
@@ -223,7 +223,9 @@
           },
           "severity": "CRITICAL - early checkpoint fundamentally broken, not just EOS issue"
         }
-      }
+      },
+      "final_acpl": 202,
+      "note": "Early result was ~146 (3/100), regressed to 202 final"
     },
     {
       "submission_id": 307762,
@@ -325,6 +327,87 @@
         "--vllm-inference.max-tokens 64"
       ],
       "status": "SUBMITTED - awaiting evaluation"
+    },
+    {
+      "submission_id": 307892,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307892",
+      "submitted_at": "2026-01-17T16:02:55.375Z",
+      "model": "v6_rs_merged (rejection-sampled 7B)",
+      "hf_repo": "ericksoa/chess-v6-rs",
+      "local_evaluation": {
+        "acpl_100pos": 78.1,
+        "acpl_with_penalty": 133.4,
+        "legal_rate": 0.94,
+        "best_move_rate": 0.064,
+        "baseline_comparison": "192.3 -> 78.1 = 2.5x improvement"
+      },
+      "training_details": {
+        "base": "v6_checkpoint_4000",
+        "method": "Rejection sampling on 39K positions",
+        "lora": "r=64, alpha=128",
+        "epochs": 1,
+        "lr": "1e-5"
+      },
+      "audit_passed": {
+        "chat_template": "chess grandmaster",
+        "eos_token": "<|im_end|>",
+        "eos_token_id": 151645,
+        "model_type": "qwen2"
+      },
+      "flags_used": [
+        "--num-games 1",
+        "--vllm.max-model-len 4096",
+        "--vllm-inference.max-tokens 64",
+        "--neuron.model-type qwen2"
+      ],
+      "status": "FAILED - 1000 ACPL",
+      "failure_reason": "chat_template.jinja didn't inject system prompt - model output prose instead of chess moves",
+      "see_dri": "DRI-014"
+    },
+    {
+      "submission_id": 307895,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307895",
+      "submitted_at": "2026-01-17T16:22:06.154Z",
+      "model": "v6_rs_merged (rejection-sampled 7B)",
+      "hf_repo": "ericksoa/chess-v6-rs",
+      "fix_applied": "Copied chat_template.jinja from working ericksoa/chess-v6-aicrowd",
+      "local_evaluation": {
+        "acpl_100pos": 78.1,
+        "legal_rate": 0.94
+      },
+      "flags_used": [
+        "--num-games 1",
+        "--vllm.max-model-len 4096",
+        "--vllm-inference.max-tokens 64",
+        "--neuron.model-type qwen2"
+      ],
+      "status": "SUBMITTED - awaiting evaluation"
+    },
+    {
+      "submission_id": 307900,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307900",
+      "submitted_at": "2026-01-17T17:53:18.818Z",
+      "model": "v6_rs_merged (rejection-sampled 7B)",
+      "hf_repo": "ericksoa/chess-v6-rs-v2",
+      "local_evaluation": {
+        "acpl_100pos": 78.1,
+        "legal_rate": 0.94
+      },
+      "config_source": "Copied EXACTLY from working submission 307752",
+      "fixes_applied": [
+        "NEW HF repo (clean slate)",
+        "generation_config.json: added max_new_tokens=64, do_sample=false",
+        "chat_template.jinja: golden template (verified)",
+        "All config verified to match working chess-v6-aicrowd"
+      ],
+      "flags_used": [
+        "--num-games 1",
+        "--vllm.max-model-len 4096",
+        "--vllm-inference.max-tokens 64",
+        "--neuron.model-type qwen2"
+      ],
+      "status": "SUBMITTED - awaiting evaluation",
+      "note": "Last manual submission - use submit_model.py going forward"
     }
   ],
   "checkpoint_evaluation_plan": {
@@ -460,6 +543,330 @@
         "change": "Initial strategy based on checkpoint evaluation and data analysis",
         "confidence": "Medium - need to validate with actual RL runs"
       }
+    ]
+  },
+  "rl_execution_plan": {
+    "created": "2026-01-16",
+    "updated": "2026-01-16T16:50:00Z",
+    "goal": "<100 ACPL to prove vibe-modeling works",
+    "status": "PHASE 1 SUCCESS - RS model achieves 78.1 ACPL (from 192.3 baseline)!",
+    "phase_1_status": {
+      "started": "2026-01-16T16:23:00Z",
+      "completed": "2026-01-17T03:34:00Z",
+      "studio": "chess-llm-v5 (RS generation), chess-llm-v4 (training + eval)",
+      "input": "data/training_winning_moves_500k.jsonl (126K positions)",
+      "output": "data/training_rejection_sampled.jsonl (39,488 examples)",
+      "script": "rejection_sampling_vllm.py",
+      "final_stats": {
+        "total_positions": 39488,
+        "model_good_rate": "18.8%",
+        "sf_fallback_rate": "81.2%"
+      },
+      "training": {
+        "model": "v6_rs_proof (LoRA r=64, alpha=128)",
+        "epochs": 1,
+        "lr": "1e-5",
+        "merged_to": "models/v6_rs_merged"
+      },
+      "evaluation_100pos": {
+        "conclusion": "MASSIVE IMPROVEMENT - Rejection sampling WORKS!",
+        "positions_tested": 100,
+        "baseline_acpl": 192.3,
+        "rs_model_acpl": 78.1,
+        "improvement": "-114 CP (2.5x better!)",
+        "legal_rate": "94%",
+        "best_move_rate": "6.4%",
+        "comparison_to_competition": {
+          "leader": 46.4,
+          "baseline": 71.9,
+          "our_model": 78.1,
+          "gap_to_leader": 31.7
+        }
+      },
+      "earlier_4pos_test_was_wrong": {
+        "note": "Initial 4-position test showed regression but was statistically insignificant",
+        "lesson": "Always use 100+ positions for evaluation"
+      }
+    },
+    "current_baseline": {
+      "model": "v6_merged (7B)",
+      "location": "models/final/v6_merged",
+      "acpl_legal": 192.3,
+      "acpl_with_penalty": 388.5,
+      "legal_rate": "98%"
+    },
+    "why_7b_not_3b": {
+      "7b_legal_acpl": 192.3,
+      "3b_legal_acpl": "282-296",
+      "conclusion": "3B is capacity-limited, 90+ ACPL worse. Abandon 3B, focus on 7B."
+    },
+    "data_inventory": {
+      "as_of": "2026-01-16T08:00:00Z",
+      "available_now": {
+        "training_winning_moves_500k.jsonl": {
+          "count": 124000,
+          "description": "Clear best move positions (38% of sf3_500k pass filter)",
+          "status": "USABLE NOW - filter still running, will grow to ~190K",
+          "use_for": "Phase 1 rejection sampling input"
+        },
+        "training_sf3_500k.jsonl": {
+          "count": 501402,
+          "description": "SF top-3 filtered positions",
+          "note": "61.5% have ambiguous best move - use winning_moves instead"
+        },
+        "training_puzzles.jsonl": {
+          "count": "~100K",
+          "description": "Tactical puzzle positions with known best move",
+          "use_for": "Phase 3 tactical training"
+        }
+      },
+      "filter_job_status": {
+        "progress": "65% (326K/501K)",
+        "accepted": 124000,
+        "acceptance_rate": "38%",
+        "eta_hours": 6.3,
+        "action": "LET IT RUN - don't touch"
+      }
+    },
+    "models_inventory": {
+      "use_this": {
+        "name": "v6_merged (7B)",
+        "path": "models/final/v6_merged",
+        "acpl_legal": 192.3
+      },
+      "do_not_use": {
+        "qwen3b-16k-merged": "282 ACPL - capacity limited",
+        "qwen3b-12k-merged": "296 ACPL - even worse"
+      },
+      "available_checkpoints": [
+        "models/v6_checkpoint_8000_merged"
+      ]
+    },
+    "gpu_plan": {
+      "lightning_studios": {
+        "chess-llm-v4": {
+          "current": "Running 3B training",
+          "action": "STOP - 3B is capacity limited, won't compete",
+          "repurpose": "Move generation for rejection sampling"
+        },
+        "chess-llm-v5": {
+          "current": "Paused (7B overfit)",
+          "action": "Already stopped",
+          "repurpose": "Fine-tuning after rejection sampling"
+        }
+      },
+      "first_action": {
+        "description": "Stop 3B training on chess-llm-v4",
+        "command": "Connect to chess-llm-v4 studio and kill training process",
+        "why": "3B peaked at 282 ACPL, 7B is at 192 ACPL. 3B cannot win."
+      },
+      "phase_1_gpu_assignment": {
+        "step_1_generate_moves": {
+          "gpu": "chess-llm-v4 (after stopping 3B)",
+          "task": "Load v6_merged, generate 16 moves per position",
+          "method": "vLLM or transformers with bfloat16",
+          "memory_estimate": "~14GB for 7B model inference",
+          "parallelism": "Batch inference, 8-16 samples at a time"
+        },
+        "step_2_stockfish_eval": {
+          "gpu": "None needed - CPU bound",
+          "task": "Evaluate generated moves with Stockfish",
+          "parallelism": "4 workers max (CLAUDE.md resource limit)",
+          "can_run": "On local machine while GPU generates"
+        },
+        "step_3_fine_tune": {
+          "gpu": "chess-llm-v5 (or chess-llm-v4 after generation)",
+          "task": "LoRA fine-tune v6_merged on rejection-sampled data",
+          "method": "LoRA r=64 or r=128, 1 epoch only",
+          "memory_estimate": "~20GB for 7B + LoRA training"
+        }
+      },
+      "optimization": {
+        "pipeline": "Generate on GPU1 \u2192 Eval on CPU \u2192 Fine-tune on GPU2",
+        "overlap": "Stockfish eval can run in parallel with generation (CPU vs GPU)",
+        "batching": "Generate in batches of 1000 positions, eval as batches complete"
+      }
+    },
+    "parallel_task_blunder_analysis": {
+      "status": "COMPLETED",
+      "completed_at": "2026-01-16T18:33:00Z",
+      "purpose": "Prepare Phase 2 data while Phase 1 runs on chess-llm-v5",
+      "gpu": "chess-llm-v4 (L4)",
+      "script": "blunder_analysis.py",
+      "description": "Run v6_merged on 10K diverse positions, identify blunders (>100cp loss), create hard positions dataset for GRPO",
+      "command": "python blunder_analysis.py --model models/final/v6_merged --input data/training_mega_360k.jsonl --output data/blunder_positions.jsonl --samples 10000 --depth 15 --batch-size 32",
+      "output_files": {
+        "blunder_positions": "data/blunder_positions.jsonl (599KB, 2267 blunder positions)",
+        "full_results": "data/blunder_positions_full_results.json"
+      },
+      "results": {
+        "total_positions": 10000,
+        "total_blunders": 2267,
+        "overall_blunder_rate": "22.7%",
+        "by_phase": {
+          "opening": {
+            "positions": 6779,
+            "blunders": 1425,
+            "blunder_rate": "21.0%",
+            "avg_cp_loss": 188,
+            "assessment": "BEST - lowest blunder rate and CP loss"
+          },
+          "middlegame": {
+            "positions": 2687,
+            "blunders": 693,
+            "blunder_rate": "25.8%",
+            "avg_cp_loss": 426,
+            "assessment": "MODERATE - needs improvement"
+          },
+          "endgame": {
+            "positions": 534,
+            "blunders": 149,
+            "blunder_rate": "27.9%",
+            "avg_cp_loss": 745,
+            "assessment": "WORST - highest blunder rate AND CP loss, PRIORITY for Phase 2"
+          }
+        }
+      },
+      "key_insight": "Model struggles MOST with endgames (27.9% blunder rate, 745 avg CP loss). Phase 2 GRPO should prioritize endgame positions, then middlegame.",
+      "feeds_into": "Phase 2 GRPO - hard positions dataset ready, focus on endgame positions",
+      "actual_time": "~50 minutes for 10K positions"
+    },
+    "phase_1_rejection_sampling": {
+      "goal": "192 ACPL \u2192 ~150 ACPL",
+      "duration": "Days 1-3",
+      "status": "READY TO START",
+      "can_start_now": true,
+      "input_data": "data/training_winning_moves_500k.jsonl (124K positions available NOW)",
+      "steps": [
+        "1. Load first 100K positions from training_winning_moves_500k.jsonl (EXISTS NOW)",
+        "2. For each position, generate 16 moves from models/final/v6_merged",
+        "3. Evaluate all 16 with Stockfish depth 15",
+        "4. Keep ONLY the move with lowest cp loss (<30 cp, else use SF best)",
+        "5. Create new dataset: (position, best_move) pairs \u2192 data/training_rejection_sampled.jsonl",
+        "6. Fine-tune v6_merged on this cleaned dataset - 1 EPOCH ONLY (avoid overfit)",
+        "7. Evaluate new model ACPL"
+      ],
+      "expected_improvement": "30-50 ACPL reduction",
+      "script_needed": "rejection_sampling.py",
+      "resources": {
+        "gpu_1": "Move generation from 7B (vLLM or transformers)",
+        "gpu_2": "Fine-tuning after sampling complete",
+        "cpu": "Stockfish evaluation (4 parallel workers max - see CLAUDE.md)"
+      },
+      "output": "data/training_rejection_sampled.jsonl"
+    },
+    "phase_2_grpo_on_blunders": {
+      "goal": "~150 ACPL \u2192 ~115 ACPL",
+      "duration": "Days 4-7",
+      "status": "NOT_STARTED",
+      "prerequisite": "Phase 1 complete",
+      "steps": [
+        "1. Evaluate Phase 1 model on 10K positions",
+        "2. Identify positions where model loses >100 cp (blunders)",
+        "3. Create 'hard positions' dataset from these",
+        "4. Run GRPO specifically on hard positions",
+        "5. Reward function: harsh penalty for blunders (>100cp), bonus for top-3 SF moves",
+        "6. Evaluate improvement"
+      ],
+      "expected_improvement": "35 ACPL reduction",
+      "reward_function": {
+        "illegal_move": -10.0,
+        "perfect_move": 1.0,
+        "in_top_3": 0.5,
+        "0_to_30_cp_loss": "1.0 - (cp_loss/100)",
+        "30_to_100_cp_loss": "0.7 - (cp_loss/100)",
+        "over_100_cp_loss": "-1.0 (blunder penalty)"
+      }
+    },
+    "phase_3_tactical_training": {
+      "goal": "~115 ACPL \u2192 <100 ACPL",
+      "duration": "Days 8-10",
+      "status": "NOT_STARTED",
+      "prerequisite": "Phase 2 complete",
+      "steps": [
+        "1. Download Lichess puzzle database (tactical positions)",
+        "2. Convert to training format: (puzzle_fen, correct_move)",
+        "3. Fine-tune on puzzles with HIGH weight (these are critical positions)",
+        "4. Model learns to spot tactics = fewer blunders",
+        "5. Final evaluation"
+      ],
+      "expected_improvement": "15-20 ACPL reduction",
+      "puzzle_source": "https://database.lichess.org/#puzzles"
+    },
+    "phase_4_submission": {
+      "duration": "Days 11-15",
+      "status": "NOT_STARTED",
+      "steps": [
+        "1. Run MANDATORY_BEFORE_ANY_SUBMISSION checks",
+        "2. Merge final LoRA if applicable",
+        "3. Upload to HuggingFace",
+        "4. Submit to AIcrowd",
+        "5. Monitor results, iterate if needed"
+      ]
+    },
+    "validation": {
+      "description": "Run after EACH phase to verify improvement before proceeding",
+      "eval_script": "evaluate_final_model.py",
+      "eval_command": "python3 evaluate_final_model.py --model <model_path> --positions 100 --depth 15",
+      "metrics_to_track": {
+        "acpl_legal": "ACPL counting only legal moves (primary metric)",
+        "acpl_with_penalty": "ACPL with 1000cp penalty for illegal moves",
+        "legal_rate": "% of moves that are legal (target: >98%)",
+        "best_move_rate": "% of moves matching SF best (informational)",
+        "blunder_rate": "% of moves with >100cp loss (target: <10%)"
+      },
+      "phase_1_success_criteria": {
+        "acpl_legal": "<160 (down from 192)",
+        "legal_rate": ">98%",
+        "blunder_rate": "<15%",
+        "if_met": "Proceed to Phase 2",
+        "if_not_met": "Debug: check training data quality, try different cp threshold, check for overfit"
+      },
+      "phase_2_success_criteria": {
+        "acpl_legal": "<125 (down from ~150)",
+        "blunder_rate": "<8%",
+        "if_met": "Proceed to Phase 3",
+        "if_not_met": "More GRPO iterations, or skip to Phase 3 (puzzles may help more)"
+      },
+      "phase_3_success_criteria": {
+        "acpl_legal": "<100 (TARGET ACHIEVED)",
+        "blunder_rate": "<5%",
+        "if_met": "Submit to competition, celebrate",
+        "if_not_met": "Iterate: more puzzle data, try Phase 2 again, or accept best result"
+      },
+      "comparison_baseline": {
+        "v6_merged_current": {
+          "acpl_legal": 192.3,
+          "acpl_with_penalty": 388.5,
+          "legal_rate": "98%"
+        },
+        "competition_leader": 46.4,
+        "competition_baseline": 71.9
+      },
+      "quick_eval_command": {
+        "description": "Fast 50-position eval for iteration",
+        "command": "python3 evaluate_final_model.py --model <model_path> --positions 50 --depth 12"
+      },
+      "full_eval_command": {
+        "description": "Thorough 200-position eval before submission",
+        "command": "python3 evaluate_final_model.py --model <model_path> --positions 200 --depth 15"
+      },
+      "after_each_phase": [
+        "1. Run quick_eval_command on new model",
+        "2. Compare to baseline (192 ACPL legal)",
+        "3. Check legal_rate didn't regress",
+        "4. Check blunder_rate improved",
+        "5. If success criteria met \u2192 proceed to next phase",
+        "6. If not \u2192 debug before continuing",
+        "7. Update memory.json with results"
+      ]
+    },
+    "key_insight": "Don't need brilliance. Need to STOP BLUNDERING. A model that plays boring but solid chess at 100 ACPL proves vibe-modeling works.",
+    "do_not": [
+      "Waste time on 3B - it's capacity limited",
+      "Train more than 1 epoch per phase (overfit risk)",
+      "Run more than 4 parallel Stockfish workers (resource limit)",
+      "Skip MANDATORY_BEFORE_ANY_SUBMISSION checks"
     ]
   },
   "focused_strategy": {
@@ -989,7 +1396,7 @@
         {
           "name": "V6 (r128)",
           "studio": "chess-llm-v5",
-          "status": "RUNNING 13%",
+          "status": "STOPPED - killed due to overfitting",
           "data": "449K mega dataset",
           "config": "r128 LoRA, 2 epochs, 7B model",
           "progress": "7303/55538 steps",
@@ -999,17 +1406,19 @@
             "checked_at": "2026-01-15T22:50:00Z"
           },
           "eta": "~Jan 25",
-          "path": "~/chess-training/7b_v6_r128_e2_20260114_0320/"
+          "path": "~/chess-training/7b_v6_r128_e2_20260114_0320/",
+          "stopped_at": "2026-01-16"
         },
         {
           "name": "449K mega (r64)",
           "studio": "chess-llm-v5",
-          "status": "STOPPED - no GPU",
+          "status": "STOPPED - killed due to overfitting",
           "data": "449K mega dataset",
           "config": "r64 LoRA, 2 epochs",
           "progress": "3690/55538 steps (6.6%)",
           "path": "~/chess-training/7b_mega449k_e2_r64_20260113_0940/",
-          "notes": "Stopped due to GPU unavailability"
+          "notes": "Stopped due to GPU unavailability",
+          "stopped_at": "2026-01-16"
         },
         {
           "name": "dpo-test-v6-checkpoint",
@@ -1549,6 +1958,14 @@
   },
   "dont_repeat_incidents": [
     {
+      "id": "DRI-000",
+      "severity": "CRITICAL",
+      "title": "NEVER delete files or clear disk space without explicit permission",
+      "description": "Do NOT run rm -rf, delete cache files, clear HuggingFace cache, or perform any 'disk cleanup' operations without the user explicitly saying to do so. This includes ~/.cache/huggingface, model files, or any other cached data. Always ask first.",
+      "prevention": "Before ANY file deletion: 1) Ask user for permission 2) List exactly what will be deleted 3) Wait for explicit 'yes' confirmation",
+      "date_added": "2026-01-18"
+    },
+    {
       "id": "DRI-001",
       "date": "2026-01-15",
       "title": "chat_template.jinja Override Caused Model Resignation",
@@ -1823,6 +2240,275 @@
         ]
       },
       "script_location": "submit_3b.sh has ALL required flags - ALWAYS use this script"
+    },
+    {
+      "id": "DRI-007",
+      "date": "2026-01-16",
+      "title": "Extended SFT training hurts chess performance (V6 regression)",
+      "incident": "V6 checkpoint-8000 was 23 ACPL worse than checkpoint-4000 despite better training metrics",
+      "root_cause": "Task-metric mismatch: cross-entropy loss optimization diverges from chess quality after initial format learning",
+      "key_evidence": [
+        "eval_loss improved: 0.6000 \u2192 0.5554",
+        "chess ACPL regressed: 192.3 \u2192 215.5",
+        "60% of moves differed between checkpoints",
+        "Illegal move rate stuck at 2% (no improvement)"
+      ],
+      "lessons": [
+        "Training loss/eval_loss improvement does NOT mean chess improvement",
+        "SFT has diminishing/negative returns after model learns format",
+        "Need ACPL-based early stopping, not loss-based",
+        "61.5% of training data has ambiguous best moves - filter needed",
+        "Evaluate intermediate checkpoints before final model"
+      ],
+      "action_items": [
+        "Add ACPL evaluation at each checkpoint save",
+        "Stop training when ACPL rises even if loss falls",
+        "Filter training data to clear best-move positions only (gap >= 50cp)",
+        "Consider RL fine-tuning with Stockfish reward to align objectives"
+      ]
+    },
+    {
+      "date": "2026-01-16",
+      "incident": "Stored incorrect ACPL (186.1) for Qwen 3B model, nearly recommended submitting a 587 ACPL model",
+      "root_cause": "Memory was updated without verification - likely copied from training loss or wrong metric",
+      "prevention": "ALWAYS re-verify ACPL by running evaluate_merged_model.py before trusting memory figures or recommending submissions"
+    },
+    {
+      "id": "DRI-011",
+      "date": "2026-01-17",
+      "title": "NEVER Draw Conclusions from Small Sample Sizes (< 100 positions)",
+      "incident": "Incorrectly concluded RS training failed based on only 4 positions",
+      "what_happened": {
+        "initial_4pos_test": "163.5 ACPL on 4 hand-picked positions - appeared to be 3.8x WORSE",
+        "correct_100pos_test": "78.1 ACPL on 100 positions - actually 2.5x BETTER!",
+        "conclusion_flip": "Initial diagnosis was COMPLETELY WRONG"
+      },
+      "root_cause": [
+        "Used only 4 positions for evaluation - statistically meaningless",
+        "4 positions were hand-picked, not representative sample",
+        "Drew strong conclusions ('RS training corrupts model') from insufficient data"
+      ],
+      "correct_results": {
+        "baseline_acpl": 192.3,
+        "rs_model_acpl": 78.1,
+        "improvement": "-114 CP (MASSIVE SUCCESS, not failure!)"
+      },
+      "lessons": [
+        "NEVER evaluate models on fewer than 100 positions",
+        "Hand-picked test cases can be misleading",
+        "Wait for full evaluation before drawing conclusions",
+        "Statistical significance matters more than speed"
+      ],
+      "rule": "ALWAYS use 100+ positions for model evaluation. 4 positions is USELESS."
+    },
+    {
+      "id": "DRI-012",
+      "date": "2026-01-17",
+      "title": "ALWAYS Follow the Golden Path - Never Deviate from Tested Pipelines",
+      "incident": "Attempted to upload directly from Lightning to HuggingFace, bypassing the tested local pipeline",
+      "what_happened": {
+        "wrong_approach": "Tried to write new fix_and_upload.py script to run on Lightning and upload directly to HF",
+        "problems_with_deviation": [
+          "Ignored existing checkpoint_pipeline.py which has tested fix_tokenizer_configs() function",
+          "Ignored audit_hf_repo.py which verifies HF repo before submission",
+          "Direct Lightning->HF upload has caused issues in the past",
+          "Created redundant code instead of using existing infrastructure"
+        ],
+        "correct_approach": "Download from Lightning -> Fix configs locally -> Upload to HF from local -> Audit -> Submit"
+      },
+      "root_cause": [
+        "Tried to be 'clever' and save time by skipping steps",
+        "Did not check what existing pipeline code does BEFORE writing new code",
+        "Forgot that past deviations from golden path caused submission failures"
+      ],
+      "golden_path_for_submissions": {
+        "step_1": "Download model from Lightning to local (models/ directory)",
+        "step_2": "Fix configs locally using checkpoint_pipeline.py logic (fix_tokenizer_configs)",
+        "step_3": "Upload to HuggingFace from local machine",
+        "step_4": "Verify with audit_hf_repo.py BEFORE submission",
+        "step_5": "Submit using submit_3b.sh or submit_v6.sh scripts"
+      },
+      "rules": [
+        "ALWAYS check for existing pipeline code before writing new code",
+        "NEVER upload directly from cloud to HF - always go through local",
+        "ALWAYS use existing scripts (checkpoint_pipeline.py, audit_hf_repo.py, submit_*.sh)",
+        "If tempted to 'optimize' or 'shortcut' - STOP and follow the tested path"
+      ],
+      "user_quote": "I want you to FIRST find the existing submission pipeline code that we RIGOROUSLY WROTE before for working submissions. If you are coding your own pipeline now, YOU ARE DOING IT WRONG"
+    },
+    {
+      "id": "DRI-013",
+      "date": "2026-01-17",
+      "title": "Use APIs, Not Workarounds - Don't Context Dump Memory",
+      "incident": "Wasted time trying to find HuggingFace repo by grep-ing memory.json and curl-scraping HF website instead of using huggingface_hub API",
+      "what_happened": {
+        "wrong_approach_1": "Read 40K+ token memory.json in chunks looking for HF repo",
+        "wrong_approach_2": "Tried curl workarounds to scrape HuggingFace website",
+        "wrong_approach_3": "Was about to re-upload model that was ALREADY uploaded",
+        "correct_approach": "python3 -c \"from huggingface_hub import HfApi; [print(m.id) for m in HfApi().list_models(author='ericksoa')]\"",
+        "time_wasted": "Multiple back-and-forth messages"
+      },
+      "root_cause": [
+        "Defaulted to grepping large memory file instead of using APIs",
+        "Used curl workarounds instead of proper Python huggingface_hub library",
+        "Did not trust user's correction ('YOU ALREADY UPLOADED') and verify quickly",
+        "Tried to read entire memory file instead of targeted sections"
+      ],
+      "rules": {
+        "for_huggingface": [
+          "ALWAYS use huggingface_hub Python API, NEVER curl workarounds",
+          "To list repos: HfApi().list_models(author='ericksoa')",
+          "To check files: HfApi().list_repo_files(repo_id)",
+          "To verify upload: HfApi().repo_info(repo_id)"
+        ],
+        "for_memory_reading": [
+          "NEVER read entire memory.json (40K+ tokens)",
+          "Use targeted grep for specific sections",
+          "For submissions: grep DRIs, then check HF API for repos",
+          "For training: grep active_processes section only",
+          "For models: grep model_inventory section only"
+        ],
+        "when_user_corrects_you": [
+          "STOP and verify with the proper API immediately",
+          "Don't continue fumbling with workarounds",
+          "A 3-line Python command is better than 10 grep attempts"
+        ]
+      },
+      "correct_workflow_for_submissions": [
+        "1. grep DRIs from memory (targeted, not full file)",
+        "2. HfApi().list_models(author='ericksoa') to see existing repos",
+        "3. audit_hf_repo.py to verify repo is ready",
+        "4. Submit using existing script"
+      ],
+      "user_quote": "use the goddamn hugging face tools you are given, stop doing workarounds"
+    },
+    {
+      "id": "DRI-014",
+      "date": "2026-01-17",
+      "title": "ALWAYS Copy chat_template.jinja from Working Submission",
+      "incident": "Submission 307892 got 1000 ACPL - model outputting prose instead of chess moves",
+      "submissions_wasted": 1,
+      "submission_ids": [
+        307892
+      ],
+      "symptom": "Model output: 'The input provided appears to be describing a chess position...' instead of '<uci_move>e2e4</uci_move>'",
+      "root_cause": {
+        "problem": "Used simplified chat_template.jinja that doesn't inject system prompt when none provided",
+        "broken_template": "Only outputs system prompt if messages contain role:system",
+        "working_template": "Injects 'You are a chess grandmaster' even when no system message in input",
+        "aicrowd_behavior": "AIcrowd sends [{'role':'user','content':'FEN:...'}] - NO system message"
+      },
+      "fix": "Copy chat_template.jinja from ericksoa/chess-v6-aicrowd (working) to new repos",
+      "rule": {
+        "for_any_new_hf_repo": [
+          "1. ALWAYS copy chat_template.jinja from ericksoa/chess-v6-aicrowd",
+          "2. NEVER write your own simplified template",
+          "3. Verify template handles missing system message case"
+        ],
+        "verification": "Template must contain: 'else' block that injects system prompt when messages[0].role != 'system'"
+      },
+      "working_template_location": "ericksoa/chess-v6-aicrowd/chat_template.jinja",
+      "user_quote": "YOU WERE SUPPOSED TO WRITE A FUCKING STANDARD FILE FOR HOW WE MAKE SURE SUBMISSIONS FOLLOW THE PATTERN OF PRIOR SUCCESSFUL SUBMISSIONS"
+    },
+    {
+      "id": "DRI-015",
+      "date": "2026-01-17",
+      "title": "ALWAYS Use submit_model.py - NEVER Submit Manually",
+      "submissions_wasted": 5,
+      "submission_ids": [
+        307892,
+        307895
+      ],
+      "root_cause": "Manual submissions missed critical config: generation_config.json missing max_new_tokens/do_sample, chat_template.jinja issues",
+      "solution": {
+        "script": "submit_model.py",
+        "usage": "python submit_model.py --local-model models/YOUR_MODEL --repo-name ericksoa/YOUR_REPO",
+        "what_it_validates": [
+          "1. All required files present",
+          "2. chat_template.jinja matches golden template",
+          "3. generation_config.json has max_new_tokens=64, do_sample=false",
+          "4. tokenizer_config.json has eos_token=<|im_end|>",
+          "5. config.json has model_type=qwen2",
+          "6. Actually loads model and tests output produces <uci_move> tag",
+          "7. Uploads to HuggingFace",
+          "8. Verifies HF repo has correct files",
+          "9. Asks for confirmation before submitting"
+        ]
+      },
+      "rule": {
+        "NEVER": [
+          "Submit manually via aicrowd CLI",
+          "Upload to HF without running validations",
+          "Assume config is correct without verification"
+        ],
+        "ALWAYS": [
+          "Use submit_model.py for ALL submissions",
+          "Wait for all 8 validation steps to pass",
+          "Confirm before final submission"
+        ]
+      }
+    },
+    {
+      "id": "DRI-016",
+      "date": "2026-01-17",
+      "title": "ALWAYS Verify GPU Before Starting Jobs",
+      "root_cause": "Started RS generation job on CPU studio without checking machine type first. Wasted time debugging vLLM errors that were simply due to no GPU.",
+      "my_failures": [
+        "Did not check studio.machine before uploading files and starting jobs",
+        "Assumed studios had GPUs because they had GPUs before",
+        "Wasted 30+ minutes debugging numpy/package errors when the real issue was no GPU",
+        "Tried to switch studios instead of understanding root cause"
+      ],
+      "rules_to_follow": {
+        "before_starting_any_cloud_job": [
+          "1. Check studio.machine - is it GPU or CPU?",
+          "2. If CPU, STOP and alert user immediately",
+          "3. Verify nvidia-smi works on the studio",
+          "4. Only then proceed with uploads and job start"
+        ],
+        "verification_code": "\nstudio = Studio(name=NAME, teamspace=TS, user=USER)\nprint(f\"Machine: {studio.machine}\")\nif studio.machine == \"CPU\" or \"CPU\" in str(studio.machine):\n    print(\"ERROR: No GPU - cannot run vLLM/training jobs\")\n    exit(1)\n# Also verify on the studio itself:\nstudio.run(\"nvidia-smi\")\n"
+      },
+      "never_do": [
+        "Start vLLM or training jobs without verifying GPU first",
+        "Assume cloud config is same as before",
+        "Debug package errors before checking hardware"
+      ]
+    },
+    {
+      "id": "DRI-017",
+      "date": "2026-01-19",
+      "title": "ALWAYS Use check_studio.py to Check Training Status",
+      "root_cause": "Wasted time manually running SSH commands and piping echo statements to check studio status. Got wrong studio, wrong log, wrong info multiple times.",
+      "my_failures": [
+        "Invented ad-hoc SSH commands instead of using existing script",
+        "Checked old monitor_loop.log instead of actual training log",
+        "Confused different training runs",
+        "Made user repeat themselves multiple times"
+      ],
+      "solution": {
+        "script": "check_studio.py",
+        "usage": "python3 check_studio.py [studio_name]",
+        "what_it_shows": [
+          "Studio status and machine type",
+          "GPU utilization and memory",
+          "Running processes",
+          "Screen sessions",
+          "Training progress with parsed metrics"
+        ]
+      },
+      "rules_to_follow": {
+        "when_asked_to_check_training": [
+          "1. ALWAYS run: python3 check_studio.py",
+          "2. NEVER manually run SSH commands",
+          "3. NEVER read monitor_loop.log for current status",
+          "4. If script is missing or broken, fix it first"
+        ]
+      },
+      "never_do": [
+        "Run echo 'command' | lightning studio ssh",
+        "Grep memory.json for training status",
+        "Assume training status from old logs"
+      ]
     }
   ],
   "model_evaluations": {
@@ -1842,6 +2528,18 @@
       "verdict": "CURRENT BEST",
       "submitted_as": "307752",
       "early_results": "~146 ACPL (3/100 matches)"
+    },
+    "v6_rs_merged": {
+      "eval_date": "2026-01-17",
+      "acpl_100pos": 78.1,
+      "acpl_with_penalty": 133.4,
+      "legal_rate": 0.94,
+      "best_move_rate": 0.064,
+      "verdict": "NEW BEST - SUBMIT THIS!",
+      "improvement": "-114 CP from baseline (192.3 -> 78.1)",
+      "training": "1 epoch on 39K RS positions, LoRA r=64 alpha=128, lr=1e-5",
+      "path": "models/v6_rs_merged",
+      "note": "Same model as v6_rs_proof_merged, earlier 4-pos test was statistically unreliable"
     }
   },
   "infrastructure_research": {
@@ -1934,6 +2632,606 @@
         "progress": "14% (12030/83307 steps)",
         "how_to_check": "Use Lightning SDK: studio.run('tail -30 /teamspace/studios/this_studio/train_3b_fixed.log')"
       }
+    }
+  },
+  "local_model_inventory": {
+    "inventory_date": "2026-01-16T05:00:00Z",
+    "note": "Created after crash recovery to document all local assets",
+    "7b_models": {
+      "v6_checkpoint_4000": {
+        "path": "models/v6_checkpoint_4000",
+        "type": "LoRA adapter",
+        "base_model": "Qwen/Qwen2.5-7B",
+        "size_mb": 616,
+        "local_acpl": 192.3,
+        "aicrowd_acpl": 202,
+        "submission_id": 307752,
+        "status": "BEST PERFORMING ON AICROWD",
+        "files": [
+          "adapter_config.json",
+          "adapter_model.safetensors"
+        ],
+        "aicrowd_acpl_note": "Early result was ~146 (3/100 matches), final was 202 (100/100 matches)"
+      },
+      "v6_checkpoint_8000": {
+        "path": "models/v6_checkpoint_8000",
+        "type": "LoRA adapter",
+        "base_model": "Qwen/Qwen2.5-7B",
+        "size_mb": 624,
+        "local_acpl": 215.5,
+        "status": "CONFIRMED REGRESSION - 23 ACPL worse than ckpt-4000",
+        "legal_rate": 0.98,
+        "best_move_rate": 0.0,
+        "eval_date": "2026-01-16"
+      },
+      "v6_checkpoint_8000_merged": {
+        "path": "models/v6_checkpoint_8000_merged",
+        "type": "Full merged model",
+        "base_model": "Qwen/Qwen2.5-7B",
+        "size_gb": 14,
+        "local_acpl": "NOT EVALUATED"
+      },
+      "v6_merged": {
+        "path": "models/v6_merged",
+        "type": "Full merged model (checkpoint-4000)",
+        "base_model": "Qwen/Qwen2.5-7B",
+        "size_gb": 14,
+        "local_acpl": 192.3
+      },
+      "v6_7b_8k_merged": {
+        "path": "v6_7b_8k_merged",
+        "type": "Full merged model",
+        "base_model": "Qwen/Qwen2.5-7B",
+        "size_gb": 14,
+        "local_acpl": "NOT EVALUATED",
+        "note": "Standalone directory, appears to be checkpoint-8000 merged"
+      },
+      "v4_final": {
+        "path": "models/v4_final",
+        "type": "LoRA adapter",
+        "base_model": "Qwen/Qwen2.5-7B",
+        "size_mb": 631,
+        "local_acpl": 257.75,
+        "status": "NOT USABLE"
+      }
+    },
+    "3b_models": {
+      "qwen3b-checkpoint-12000": {
+        "path": "models/qwen3b-checkpoint-12000",
+        "type": "LoRA adapter",
+        "base_model": "Qwen/Qwen2.5-3B",
+        "size_mb": 473,
+        "local_acpl": 186.1,
+        "training_progress": "14.4% (12000/83307 steps)",
+        "status": "Better local ACPL than V6, but AIcrowd results pending"
+      },
+      "qwen3b-12k-merged": {
+        "path": "models/qwen3b-12k-merged",
+        "type": "Full merged model",
+        "base_model": "Qwen/Qwen2.5-3B",
+        "size_gb": 5.8
+      }
+    },
+    "dpo_models": {
+      "v6_dpo_local_test": {
+        "path": "models/v6_dpo_local_test",
+        "checkpoints": [
+          "checkpoint-20",
+          "checkpoint-250"
+        ],
+        "status": "Test run only"
+      },
+      "v6_dpo_v2": {
+        "path": "models/v6_dpo_v2",
+        "checkpoints": [
+          "checkpoint-100"
+        ],
+        "local_acpl": 198.5,
+        "status": "WORSE than base - DPO failed"
+      }
+    },
+    "older_models": {
+      "checkpoint-500": {
+        "path": "models/checkpoint-500",
+        "type": "LoRA",
+        "size_mb": 701
+      },
+      "checkpoint-1000": {
+        "path": "models/checkpoint-1000",
+        "type": "LoRA",
+        "size_mb": 701
+      },
+      "checkpoint-2000": {
+        "path": "models/checkpoint-2000",
+        "type": "LoRA",
+        "size_mb": 701
+      },
+      "checkpoint-4000": {
+        "path": "models/checkpoint-4000",
+        "type": "LoRA",
+        "size_mb": 244
+      },
+      "chess-lora-v1": {
+        "path": "models/chess-lora-v1",
+        "type": "LoRA",
+        "size_gb": 1.4
+      },
+      "sf1_e4_r128": {
+        "path": "models/sf1_e4_r128_20260112_0454",
+        "type": "LoRA",
+        "size_mb": 924
+      },
+      "sf3_e4_r128": {
+        "path": "models/sf3_e4_r128_20260111_0833",
+        "type": "LoRA",
+        "size_mb": 924
+      }
+    },
+    "huggingface_repos": {
+      "chess-v6-aicrowd": {
+        "url": "https://huggingface.co/ericksoa/chess-v6-aicrowd",
+        "model_type": "Full merged 7B",
+        "source": "v6_checkpoint_4000 merged",
+        "files": [
+          "model-00001-of-00004.safetensors",
+          "model-00002-of-00004.safetensors",
+          "model-00003-of-00004.safetensors",
+          "model-00004-of-00004.safetensors",
+          "config.json",
+          "tokenizer_config.json",
+          "chat_template.jinja"
+        ]
+      },
+      "chess-qwen3b-12k": {
+        "url": "https://huggingface.co/ericksoa/chess-qwen3b-12k",
+        "model_type": "Full merged 3B",
+        "source": "qwen3b-checkpoint-12000 merged",
+        "files": [
+          "model-00001-of-00002.safetensors",
+          "model-00002-of-00002.safetensors",
+          "config.json",
+          "tokenizer_config.json",
+          "chat_template.jinja"
+        ]
+      }
+    },
+    "evaluation_results_summary": {
+      "v6_checkpoint_4000_7B": {
+        "local_acpl": 192.3,
+        "aicrowd_acpl": 202,
+        "legal_rate": 0.98,
+        "aicrowd_note": "Final score after 100 matches"
+      },
+      "v6_checkpoint_8000_7B": {
+        "local_acpl": 215.5,
+        "legal_rate": 0.98,
+        "best_move_rate": 0.0,
+        "status": "REGRESSION CONFIRMED"
+      },
+      "qwen3b_checkpoint_12000": {
+        "local_acpl": 186.1,
+        "aicrowd_acpl": "pending",
+        "legal_rate": 0.98
+      },
+      "v4_final": {
+        "local_acpl": 257.75,
+        "legal_rate": 0.96,
+        "status": "NOT USABLE"
+      },
+      "dpo_v2": {
+        "local_acpl": 198.5,
+        "status": "WORSE than base"
+      }
+    },
+    "key_insight": "V6 checkpoint-4000 is our best AIcrowd performer (~146 ACPL). User reports checkpoint-8000 regressed - NEED TO EVALUATE LOCALLY to confirm."
+  },
+  "critical_regression_finding": {
+    "date": "2026-01-16",
+    "finding": "V6 checkpoint-4000 regressed from ~146 ACPL (early) to 202 ACPL (final)",
+    "local_acpl": 192.3,
+    "aicrowd_acpl": 202,
+    "gap": "10 ACPL worse on AIcrowd than local",
+    "hypothesis": [
+      "Variance in match opponents",
+      "Early matches may have been against weaker opponents",
+      "Local eval uses different position set than AIcrowd"
+    ]
+  },
+  "v6_training_regression": {
+    "discovery_date": "2026-01-16",
+    "finding": "V6 7B training is OVERFITTING - checkpoint-8000 is WORSE than checkpoint-4000",
+    "evidence": {
+      "checkpoint_4000": {
+        "local_acpl": 192.3,
+        "aicrowd_acpl": 202
+      },
+      "checkpoint_8000": {
+        "local_acpl": 215.5,
+        "aicrowd_acpl": "not tested"
+      }
+    },
+    "regression_magnitude": "23 ACPL worse locally (12% degradation)",
+    "implications": [
+      "Training past checkpoint-4000 is HARMFUL",
+      "V6 r128 7B training on chess-llm-v5 should probably be STOPPED",
+      "Best V6 checkpoint is 4000, not later ones",
+      "Training data may be too small or hyperparameters wrong"
+    ],
+    "possible_causes": [
+      "Overfitting to training data",
+      "Learning rate too high for later training",
+      "Training data too small for 7B model",
+      "r128 LoRA rank too high causing memorization"
+    ],
+    "recommended_actions": [
+      "DO NOT submit checkpoint-8000 or later to AIcrowd",
+      "Focus on 3B model which may be better sized for our data",
+      "Consider early stopping for future training runs",
+      "Investigate if curriculum or data augmentation helps"
+    ]
+  },
+  "current_state": {
+    "as_of": "2026-01-17T16:02:55Z",
+    "best_model": "v6_rs_merged",
+    "best_local_acpl": 78.1,
+    "best_aicrowd_acpl": "TBD - submission 307892 evaluating",
+    "hf_repo": "ericksoa/chess-v6-rs",
+    "improvement_from_baseline": "192.3 -> 78.1 = 2.5x better",
+    "previous_best": {
+      "model": "v6_checkpoint_4000",
+      "local_acpl": 192.3,
+      "aicrowd_acpl": 202
+    }
+  },
+  "model_inventory": {
+    "7b_checkpoints": {
+      "v6_checkpoint_4000": {
+        "local_acpl": 192.3,
+        "aicrowd_acpl": 202,
+        "status": "BEST"
+      },
+      "v6_checkpoint_8000": {
+        "local_acpl": 215.5,
+        "status": "REGRESSED"
+      }
+    },
+    "3b_checkpoints": {
+      "qwen3b_checkpoint_12000": {
+        "local_acpl": 587.5,
+        "local_acpl_legal_only": 296.3,
+        "legal_rate": 0.97,
+        "best_move_rate": 0.03,
+        "aicrowd_acpl": "not_submitted",
+        "status": "POOR - do not submit",
+        "verified_date": "2026-01-16",
+        "note": "Much worse than V6 7B. Previous 186.1 figure was WRONG."
+      },
+      "qwen3b_checkpoint_16000": {
+        "local_acpl": 573.5,
+        "local_acpl_legal_only": 282.0,
+        "legal_rate": 0.97,
+        "best_move_rate": 0.02,
+        "eval_loss": 0.3841,
+        "training_step": 16000,
+        "epoch": 0.576,
+        "status": "POOR - limited by chat-tuning ceiling",
+        "verified_date": "2026-01-16"
+      }
+    },
+    "hf_repos": {
+      "ericksoa/chess-v6-aicrowd": "7B merged from ckpt-4000 (192.3 ACPL)",
+      "ericksoa/chess-qwen3b-12k": "3B merged from ckpt-12000 (poor)",
+      "ericksoa/chess-v6-rs": "7B rejection-sampled (78.1 ACPL) - CURRENT BEST",
+      "ericksoa/chess-v6-rs-v2": "7B RS model with correct config (submission 307900)"
+    },
+    "local_paths": {
+      "v6_ckpt4000": "models/v6_checkpoint_4000",
+      "v6_ckpt8000": "models/v6_checkpoint_8000",
+      "qwen3b_12k": "models/qwen3b-checkpoint-12000"
+    }
+  },
+  "active_processes": {
+    "filter": {
+      "name": "winning_moves_filter",
+      "check": "ps aux | grep filter_winning_moves | grep -v grep",
+      "restart": "nohup python3 filter_winning_moves.py --input data/training_sf3_500k.jsonl --output data/training_winning_moves_500k.jsonl --workers 2 --resume > filter_winning_moves.log 2>&1 &"
+    },
+    "cloud_training": {
+      "chess-llm-v4": "Qwen 3B training",
+      "chess-llm-v5": "V6 7B r128 training (MAY NEED TO STOP - regression)"
+    },
+    "rejection_sampling_training": {
+      "studio": "chess-llm-v4",
+      "script": "train_rs_proof.py",
+      "log": "train_rs.log",
+      "progress": "100%",
+      "step": "2468/2468",
+      "running": false,
+      "last_checked": "2026-01-18T15:47:01.901921"
+    }
+  },
+  "pending_rca": {
+    "status": "IN_PROGRESS",
+    "task": "Root cause analysis of checkpoint-8000 regression",
+    "output_key": "v6_regression_root_cause_analysis"
+  },
+  "v6_regression_root_cause_analysis": {
+    "analysis_date": "2026-01-16",
+    "problem_statement": "V6 checkpoint-8000 (215.5 ACPL) is 23 ACPL worse than checkpoint-4000 (192.3 ACPL) despite 2x more training",
+    "training_metrics": {
+      "training_loss_at_4000": 0.47,
+      "training_loss_at_8000": 0.4358,
+      "eval_loss_at_4000": 0.6,
+      "eval_loss_at_8000": 0.5554,
+      "token_accuracy_at_4000": 0.8597,
+      "token_accuracy_at_8000": 0.872,
+      "observation": "ALL standard training metrics IMPROVED from step 4000 to 8000. Lower loss, higher accuracy. This is the classic 'overfitting to wrong objective' pattern."
+    },
+    "position_level_analysis": {
+      "sample_size": 10,
+      "same_moves": 4,
+      "different_moves": 6,
+      "findings": [
+        "Position 1: BOTH illegal moves",
+        "Position 2: ckpt-8000 better (175 vs 218 CP loss)",
+        "Position 3: ckpt-4000 better (251 vs 598 CP loss)",
+        "Position 4: BOTH illegal moves",
+        "Position 5: ckpt-4000 better (454 vs 629 CP loss)",
+        "Position 6: BOTH illegal moves"
+      ],
+      "key_observation": "Out of 6 differing positions: 3 had BOTH models making illegal moves, 2 favored ckpt-4000, 1 favored ckpt-8000"
+    },
+    "patterns_in_regressions": [
+      "ckpt-8000 makes MORE illegal moves on some positions that ckpt-4000 handled correctly",
+      "When both are legal, ckpt-8000 tends to make LARGER centipawn losses",
+      "ckpt-8000 outputs look grammatically better but chess-quality worse",
+      "Both checkpoints struggle with positions requiring precise calculation"
+    ],
+    "confirmed_root_cause": "TASK-METRIC MISMATCH: The model optimizes for token prediction accuracy (next token in training data) rather than chess move quality. As training continues, the model gets better at mimicking the FORMAT of training data but WORSE at the underlying chess task. This is evidenced by: (1) eval_loss continuously improving while chess ACPL regresses, (2) 60% move divergence between checkpoints showing model is learning different patterns, not refining good ones, (3) illegal move rate staying constant at 2% despite training - model isn't learning move validity constraints.",
+    "contributing_factors": [
+      {
+        "factor": "Training data noise",
+        "evidence": "61.5% of positions have ambiguous best move (per earlier analysis). Extended training amplifies learning from noisy labels.",
+        "impact": "HIGH"
+      },
+      {
+        "factor": "Generic rationale in training data",
+        "evidence": "All rationales are 'Strong opening/middlegame/endgame move' - no chess reasoning. Model learns to parrot format, not understand chess.",
+        "impact": "HIGH"
+      },
+      {
+        "factor": "Eval metric mismatch",
+        "evidence": "We optimize cross-entropy loss on tokens but care about ACPL. These objectives diverge after initial format learning.",
+        "impact": "CRITICAL"
+      },
+      {
+        "factor": "No illegal move penalty in training",
+        "evidence": "Illegal move rate stays constant at 2% from step 4000 to 8000. Model has no signal to avoid illegal moves.",
+        "impact": "MEDIUM"
+      }
+    ],
+    "hyperparameters": {
+      "model": "Qwen/Qwen2.5-7B",
+      "lora_rank": 128,
+      "lora_alpha": 256,
+      "learning_rate": 1e-05,
+      "warmup_ratio": 0.05,
+      "batch_size": 1,
+      "grad_accum": 16,
+      "effective_batch": 16,
+      "save_steps": 4000,
+      "eval_steps": 2000
+    },
+    "recommended_actions": [
+      {
+        "action": "USE CHECKPOINT-4000 FOR SUBMISSIONS",
+        "rationale": "Lower ACPL, before overfitting begins",
+        "priority": "IMMEDIATE"
+      },
+      {
+        "action": "Add ACPL-based early stopping",
+        "rationale": "Stop training when ACPL starts rising even if loss continues falling",
+        "priority": "HIGH"
+      },
+      {
+        "action": "Filter training data to clear best-move positions only",
+        "rationale": "Remove 61.5% of positions with ambiguous best moves",
+        "priority": "HIGH"
+      },
+      {
+        "action": "Add RL fine-tuning with Stockfish reward",
+        "rationale": "Align training objective with actual chess quality",
+        "priority": "MEDIUM"
+      },
+      {
+        "action": "Consider smaller LoRA rank for less overfitting",
+        "rationale": "r=128 may have too much capacity for task complexity",
+        "priority": "LOW"
+      }
+    ],
+    "additional_observations": {
+      "training_data_phase_distribution": {
+        "opening": "24.5%",
+        "middle": "59.1%",
+        "endgame": "16.4%"
+      },
+      "eval_positions_phase_distribution": {
+        "opening": "30.0%",
+        "middle": "70.0%",
+        "endgame": "0.0%"
+      },
+      "note": "Eval has NO endgame positions, slight mismatch with training but doesn't explain regression"
+    }
+  },
+  "chess_llm_research_findings": {
+    "date": "2026-01-16",
+    "status": "FOR_ANALYST_REVIEW",
+    "key_discoveries": {
+      "gpt35_turbo_instruct_success": {
+        "elo": 1750,
+        "why_good": [
+          "Trained on complete PGN games filtered to 1800+ Elo players",
+          "Completion model NOT chat-tuned (RLHF hurts chess)",
+          "Illegal move rate under 0.1%"
+        ],
+        "critical_insight": "A 50M parameter model trained on chess data got within 300 Elo of GPT-3.5 performance",
+        "source": "https://news.ycombinator.com/item?id=37564604"
+      },
+      "qwen_3b_grpo_research": {
+        "source": "https://arxiv.org/html/2507.00726v2",
+        "models_tested": [
+          "Qwen2.5-3B",
+          "Qwen2.5-7B",
+          "Llama3.1-8B"
+        ],
+        "results": {
+          "puzzle_accuracy": "25-30% (vs 60-80% human 1800 Elo)",
+          "sparse_rewards": "FAILED completely for 3B and 8B models",
+          "dense_rewards": "Worked better - continuous scores from win probability network"
+        },
+        "conclusion": "Ceiling is from insufficient chess domain knowledge in pretraining, not reasoning ability"
+      },
+      "complete_games_matter": {
+        "source": "https://arxiv.org/abs/2501.17186",
+        "venue": "NAACL 2025",
+        "finding": "Long-round (complete games) supervision gives +350 Elo over short-round (position-action pairs)",
+        "best_result": "1788 Elo with 10 sampling attempts against Stockfish"
+      },
+      "chat_tuning_hurts_chess": {
+        "source": "https://dynomight.net/more-chess/",
+        "finding": "RLHF chat training makes models worse at chess",
+        "evidence": "GPT-4 chat much worse than gpt-3.5-turbo-instruct completion model"
+      }
+    },
+    "implications_for_our_training": {
+      "why_3b_is_bad": {
+        "current_acpl": 573.5,
+        "worse_than_random": true,
+        "likely_causes": [
+          "Using position-action format instead of complete games (-350 Elo)",
+          "Qwen2.5-3B is instruction-tuned (chat damage)",
+          "Insufficient chess knowledge in pretraining creates hard ceiling"
+        ]
+      },
+      "3b_ceiling_estimate": {
+        "best_case_puzzle_accuracy": "25-30%",
+        "best_case_elo": "1200-1400",
+        "best_case_acpl": "250-350",
+        "note": "Even with perfect training, limited by pretraining"
+      },
+      "better_approaches": [
+        {
+          "option": "Use completion model (not instruct/chat)",
+          "rationale": "RLHF damages chess ability",
+          "candidates": [
+            "Llama-3 base",
+            "Qwen base (not instruct)"
+          ]
+        },
+        {
+          "option": "Train on complete PGN games",
+          "rationale": "+350 Elo vs position-action pairs",
+          "data_needed": "Millions of complete games from 1800+ players"
+        },
+        {
+          "option": "Train smaller model from scratch on chess",
+          "rationale": "50M model got within 300 Elo of GPT-3.5",
+          "benefit": "No chat damage, pure chess focus"
+        },
+        {
+          "option": "Use dense rewards for RL",
+          "rationale": "Sparse rewards failed for 3B/8B models",
+          "implementation": "Win probability network, not binary correct/incorrect"
+        }
+      ]
+    },
+    "current_model_status": {
+      "v6_7b_ckpt4000": {
+        "acpl": 192.3,
+        "status": "BEST - meets RL baseline requirement",
+        "training": "STOPPED (was overfitting)"
+      },
+      "qwen_3b_ckpt16000": {
+        "acpl": 573.5,
+        "status": "POOR - worse than random",
+        "training": "RUNNING on chess-llm-v4",
+        "ceiling": "Limited by chat-tuning and pretraining"
+      }
+    },
+    "recommendations": [
+      "Consider using V6 7B ckpt-4000 for RL (already 192 ACPL)",
+      "If continuing 3B, use DENSE rewards not sparse",
+      "Long-term: train completion model on complete PGN games",
+      "Illegal move penalty must be heavy in RL"
+    ],
+    "open_questions_for_analyst": [
+      "Should we pivot to a completion model base?",
+      "Is 3B training worth continuing given hard ceiling?",
+      "Should we train a small (50-500M) chess-specific model from scratch?",
+      "How do we get dense reward signal - train our own eval network?"
+    ]
+  },
+  "rejection_sampling_poc": {
+    "experiment_name": "RS Proof-of-Concept",
+    "description": "Fine-tune v6_merged on 39K rejection-sampled positions (1 epoch)",
+    "studio": "chess-llm-v4",
+    "base_model": "models/final/v6_merged",
+    "training_data": "data/training_rejection_sampled.jsonl (39,488 positions)",
+    "baseline_acpl": 192.3,
+    "target": "Any ACPL improvement proves rejection sampling works",
+    "status": {
+      "studio_status": "Running",
+      "machine": "H100",
+      "checked_at": "2026-01-18T15:47:01.901921",
+      "log_tail": "100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2589| 2466/2468 [7:56:29<00:23, 11.77s/it]\n100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2589| 2467/2468 [7:56:39<00:11, 11.50s/it]\n100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 2468/2468 [7:56:52<00:00, 11.75s/it]\n100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 2468/2468 [7:56:52<00:00, 11.75s/it]\n100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 2468/2468 [7:56:52<00:00, 11.59s/it]",
+      "progress_pct": 100,
+      "current_step": 2468,
+      "total_steps": 2468,
+      "time_info": "7:56:52<00:00, 11.59s/it",
+      "error": ""
+    },
+    "next_steps": [
+      "When training completes: run merge_rs.py",
+      "Then run eval_rs.py to get ACPL",
+      "Compare to baseline 192.3 ACPL"
+    ]
+  },
+  "rs_v2_plan": {
+    "created": "2026-01-17T10:46:40.099234",
+    "status": "READY TO LAUNCH",
+    "rationale": {
+      "problem": "RS V1 improved ACPL (192->78) but legal rate dropped (98%->94%)",
+      "root_cause": "81.2% SF-fallback rate destabilized output format",
+      "solution": "Mix RS data with original SFT data (70/30) to maintain format compliance"
+    },
+    "configuration": {
+      "input_data": "training_winning_moves_500k.jsonl (190K positions)",
+      "expected_rs_output": "~70-80K examples (higher model correct rate with better base)",
+      "training_mix": "70% RS + 30% original SFT",
+      "epochs": 2,
+      "lora": "r=64, alpha=128",
+      "lr": "1e-5",
+      "base_model": "v6_rs_merged"
+    },
+    "scripts": {
+      "rs_v2_generate.py": "Generate RS data from 190K winning_moves (run on chess-llm-v5)",
+      "rs_v2_prepare_data.py": "Combine RS data with SFT data (70/30 mix)",
+      "rs_v2_train.py": "Train on mixed data (run on chess-llm-v4)",
+      "rs_v2_merge.py": "Merge LoRA into base model",
+      "rs_v2_launch.py": "Launcher script for Lightning studios"
+    },
+    "pipeline": [
+      "1. python rs_v2_launch.py --step generate  # Start RS generation on v5",
+      "2. Wait for generation to complete (~4-6 hours for 190K positions)",
+      "3. python rs_v2_launch.py --step train     # Start training on v4",
+      "4. Wait for training to complete (~8-10 hours for 2 epochs)",
+      "5. Download merged model from studio",
+      "6. python submit_model.py --local-model models/v6_rs_v2_merged --repo-name ericksoa/chess-v6-rs-v3"
+    ],
+    "success_criteria": {
+      "acpl": "< 78.1 (improve on RS V1)",
+      "legal_rate": ">= 98% (restore format compliance)",
+      "aicrowd_target": "< 150 ACPL (beat baseline 202)"
     }
   }
 }
