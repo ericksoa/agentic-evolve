@@ -328,12 +328,215 @@ def memory_main():
         help="Watch for new messages (poll every 2 seconds)",
     )
 
+    # DRIs command - list and search Don't Repeat Incidents
+    dris_parser = subparsers.add_parser("dris", help="List and search Don't Repeat Incidents")
+    dris_parser.add_argument(
+        "--relevant",
+        metavar="TASK",
+        help="Find DRIs relevant to a task (semantic search)",
+    )
+    dris_parser.add_argument(
+        "--action",
+        metavar="TYPE",
+        help="Filter by action type (e.g., submission, huggingface_upload)",
+    )
+    dris_parser.add_argument(
+        "--limit",
+        type=int,
+        default=20,
+        help="Maximum DRIs to show (default: 20)",
+    )
+    dris_parser.add_argument(
+        "--project",
+        type=Path,
+        default=Path("."),
+        help="Project directory (default: current)",
+    )
+
+    # Add DRI command
+    add_dri_parser = subparsers.add_parser("add-dri", help="Add a new Don't Repeat Incident")
+    add_dri_parser.add_argument(
+        "--id",
+        required=True,
+        help="DRI ID (e.g., DRI-015)",
+    )
+    add_dri_parser.add_argument(
+        "--title",
+        required=True,
+        help="Short title describing the incident",
+    )
+    add_dri_parser.add_argument(
+        "--root-cause",
+        required=True,
+        help="WHY it failed (most important field)",
+    )
+    add_dri_parser.add_argument(
+        "--submissions-wasted",
+        type=int,
+        default=0,
+        help="Number of submissions wasted",
+    )
+    add_dri_parser.add_argument(
+        "--rules",
+        nargs="+",
+        help="Rules to follow to avoid this incident",
+    )
+    add_dri_parser.add_argument(
+        "--verify",
+        nargs="+",
+        help="Commands to verify the incident won't repeat",
+    )
+    add_dri_parser.add_argument(
+        "--tags",
+        nargs="+",
+        help="Tags for categorization",
+    )
+    add_dri_parser.add_argument(
+        "--project",
+        type=Path,
+        default=Path("."),
+        help="Project directory (default: current)",
+    )
+
+    # Submissions command
+    submissions_parser = subparsers.add_parser("submissions", help="List competition submissions")
+    submissions_parser.add_argument(
+        "--recent",
+        type=int,
+        default=10,
+        help="Number of recent submissions to show (default: 10)",
+    )
+    submissions_parser.add_argument(
+        "--status",
+        choices=["succeeded", "failed", "pending", "timeout"],
+        help="Filter by status",
+    )
+    submissions_parser.add_argument(
+        "--project",
+        type=Path,
+        default=Path("."),
+        help="Project directory (default: current)",
+    )
+
+    # Evaluations command
+    evals_parser = subparsers.add_parser("evaluations", help="List model evaluations")
+    evals_parser.add_argument(
+        "--model",
+        metavar="NAME",
+        help="Filter by model name",
+    )
+    evals_parser.add_argument(
+        "--limit",
+        type=int,
+        default=10,
+        help="Maximum evaluations to show (default: 10)",
+    )
+    evals_parser.add_argument(
+        "--project",
+        type=Path,
+        default=Path("."),
+        help="Project directory (default: current)",
+    )
+
+    # Pre-check command - run before major actions
+    precheck_parser = subparsers.add_parser("precheck", help="Run pre-action safety checks")
+    precheck_parser.add_argument(
+        "action",
+        help="Action type (e.g., submission, huggingface_upload, evaluation)",
+    )
+    precheck_parser.add_argument(
+        "--description",
+        default="",
+        help="Description of the specific action",
+    )
+    precheck_parser.add_argument(
+        "--project",
+        type=Path,
+        default=Path("."),
+        help="Project directory (default: current)",
+    )
+
+    # Migrate command - migrate existing memory.json to new format
+    migrate_parser = subparsers.add_parser("migrate", help="Migrate existing memory.json to new format")
+    migrate_parser.add_argument(
+        "json_path",
+        type=Path,
+        help="Path to the memory.json file to migrate",
+    )
+    migrate_parser.add_argument(
+        "--project",
+        type=Path,
+        help="Project directory (default: inferred from json_path)",
+    )
+    migrate_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Analyze without making changes",
+    )
+    migrate_parser.add_argument(
+        "-y", "--yes",
+        action="store_true",
+        help="Skip confirmation prompt",
+    )
+
     args = parser.parse_args()
 
     if not args.command:
         parser.print_help()
         sys.exit(1)
 
+    # New project-based commands (use MemoryManager, not EvolutionMemory)
+    if args.command == "dris":
+        cmd_dris(
+            project=args.project,
+            relevant=args.relevant,
+            action=args.action,
+            limit=args.limit,
+        )
+        return
+    elif args.command == "add-dri":
+        cmd_add_dri(
+            project=args.project,
+            dri_id=args.id,
+            title=args.title,
+            root_cause=args.root_cause,
+            submissions_wasted=args.submissions_wasted,
+            rules=args.rules,
+            verify=args.verify,
+            tags=args.tags,
+        )
+        return
+    elif args.command == "submissions":
+        cmd_submissions(
+            project=args.project,
+            recent=args.recent,
+            status=args.status,
+        )
+        return
+    elif args.command == "evaluations":
+        cmd_evaluations(
+            project=args.project,
+            model=args.model,
+            limit=args.limit,
+        )
+        return
+    elif args.command == "precheck":
+        cmd_precheck(
+            project=args.project,
+            action=args.action,
+            description=args.description,
+        )
+        return
+    elif args.command == "migrate":
+        cmd_migrate(
+            json_path=args.json_path,
+            project=args.project,
+            dry_run=args.dry_run,
+            yes=args.yes,
+        )
+        return
+
+    # Legacy evolution-based commands (use EvolutionMemory)
     evolve_dir = args.evolve_dir
 
     # Find memory stores
@@ -651,6 +854,341 @@ def cmd_messages(
                     print("\nWatching for new messages (Ctrl+C to exit)...")
         except KeyboardInterrupt:
             print("\nStopped watching.")
+
+
+# ==================== Project Memory Commands (DRIs, Submissions, etc.) ====================
+
+def cmd_dris(
+    project: Path,
+    relevant: str | None = None,
+    action: str | None = None,
+    limit: int = 20,
+):
+    """List and search Don't Repeat Incidents."""
+    try:
+        from .memory import MemoryManager
+    except ImportError:
+        print("Error: Memory module not available. Install with: pip install evolve-sdk[memory]")
+        sys.exit(1)
+
+    try:
+        memory = MemoryManager(project)
+    except Exception as e:
+        print(f"Error: Could not load project memory: {e}")
+        sys.exit(1)
+
+    print("=" * 70)
+    print("DON'T REPEAT INCIDENTS (DRIs)")
+    print("=" * 70)
+
+    if relevant:
+        # Semantic search
+        print(f"\nSearching for DRIs relevant to: '{relevant}'\n")
+        dris = memory.get_relevant_dris(relevant, limit=limit)
+    elif action:
+        # Filter by action type
+        print(f"\nDRIs for action type: '{action}'\n")
+        dris = memory.get_dris_for_action(action)[:limit]
+    else:
+        # Show all
+        dris = memory.get_all_dris()[:limit]
+
+    if not dris:
+        print("\nNo DRIs found.")
+        print("\nTo add a DRI:")
+        print("  evolve-sdk memory add-dri --id DRI-001 --title '...' --root-cause '...'")
+        return
+
+    for dri in dris:
+        wasted = f" [WASTED {dri.submissions_wasted} submissions]" if dri.submissions_wasted > 0 else ""
+        print(f"\n{dri.id}: {dri.title}{wasted}")
+        print(f"  Root cause: {dri.root_cause}")
+
+        if dri.rules_to_follow:
+            print("  Rules:")
+            for rule in dri.rules_to_follow[:3]:
+                print(f"    - {rule}")
+
+        if dri.verification_commands:
+            print("  Verify:")
+            for cmd in dri.verification_commands[:2]:
+                print(f"    $ {cmd}")
+
+        if dri.tags:
+            print(f"  Tags: {', '.join(dri.tags)}")
+
+    print("\n" + "-" * 70)
+    print(f"Total: {len(dris)} DRI(s)")
+    memory.close()
+
+
+def cmd_add_dri(
+    project: Path,
+    dri_id: str,
+    title: str,
+    root_cause: str,
+    submissions_wasted: int = 0,
+    rules: list[str] | None = None,
+    verify: list[str] | None = None,
+    tags: list[str] | None = None,
+):
+    """Add a new Don't Repeat Incident."""
+    try:
+        from .memory import MemoryManager, DRI
+    except ImportError:
+        print("Error: Memory module not available. Install with: pip install evolve-sdk[memory]")
+        sys.exit(1)
+
+    try:
+        memory = MemoryManager(project)
+    except Exception as e:
+        print(f"Error: Could not load project memory: {e}")
+        sys.exit(1)
+
+    dri = DRI(
+        id=dri_id,
+        title=title,
+        root_cause=root_cause,
+        submissions_wasted=submissions_wasted,
+        rules_to_follow=rules or [],
+        verification_commands=verify or [],
+        tags=tags or [],
+    )
+
+    try:
+        frame_id = memory.add_dri(dri)
+        print(f"Added DRI: {dri.id}")
+        print(f"  Title: {dri.title}")
+        print(f"  Root cause: {dri.root_cause}")
+        if submissions_wasted > 0:
+            print(f"  Submissions wasted: {submissions_wasted}")
+        print(f"  Frame ID: {frame_id}")
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+    finally:
+        memory.close()
+
+
+def cmd_submissions(
+    project: Path,
+    recent: int = 10,
+    status: str | None = None,
+):
+    """List competition submissions."""
+    try:
+        from .memory import MemoryManager
+    except ImportError:
+        print("Error: Memory module not available. Install with: pip install evolve-sdk[memory]")
+        sys.exit(1)
+
+    try:
+        memory = MemoryManager(project)
+    except Exception as e:
+        print(f"Error: Could not load project memory: {e}")
+        sys.exit(1)
+
+    print("=" * 70)
+    print("SUBMISSIONS")
+    print("=" * 70)
+
+    submissions = memory.get_recent_submissions(limit=recent)
+
+    if status:
+        submissions = [s for s in submissions if s.status == status]
+
+    if not submissions:
+        print("\nNo submissions found.")
+        return
+
+    # Group by status
+    succeeded = [s for s in submissions if s.status == "succeeded"]
+    failed = [s for s in submissions if s.status == "failed"]
+    other = [s for s in submissions if s.status not in ("succeeded", "failed")]
+
+    if succeeded:
+        print(f"\n[+] SUCCEEDED ({len(succeeded)}):")
+        for s in succeeded[:5]:
+            metrics_str = ", ".join(f"{k}={v}" for k, v in list(s.metrics.items())[:3])
+            print(f"  {s.id}: {s.model_path}")
+            if metrics_str:
+                print(f"    Metrics: {metrics_str}")
+
+    if failed:
+        print(f"\n[x] FAILED ({len(failed)}):")
+        for s in failed[:5]:
+            print(f"  {s.id}: {s.model_path}")
+            if s.failure_reason:
+                print(f"    Reason: {s.failure_reason[:60]}...")
+
+    if other:
+        print(f"\n[?] OTHER ({len(other)}):")
+        for s in other[:5]:
+            print(f"  {s.id}: {s.model_path} ({s.status})")
+
+    print("\n" + "-" * 70)
+    print(f"Total: {len(submissions)} submission(s)")
+    memory.close()
+
+
+def cmd_evaluations(
+    project: Path,
+    model: str | None = None,
+    limit: int = 10,
+):
+    """List model evaluations."""
+    try:
+        from .memory import MemoryManager
+    except ImportError:
+        print("Error: Memory module not available. Install with: pip install evolve-sdk[memory]")
+        sys.exit(1)
+
+    try:
+        memory = MemoryManager(project)
+    except Exception as e:
+        print(f"Error: Could not load project memory: {e}")
+        sys.exit(1)
+
+    print("=" * 70)
+    print("MODEL EVALUATIONS")
+    print("=" * 70)
+
+    evals = memory.get_model_evaluations(model_name=model)[:limit]
+
+    if not evals:
+        print("\nNo evaluations found.")
+        return
+
+    for eval in evals:
+        print(f"\n{eval.model_name}:")
+        print(f"  Date: {eval.eval_date[:10]}")
+        print(f"  Sample size: {eval.sample_size}")
+
+        metrics_str = ", ".join(f"{k}={v}" for k, v in list(eval.metrics.items())[:5])
+        print(f"  Metrics: {metrics_str}")
+
+        print(f"  Verdict: {eval.verdict}")
+
+        if eval.sample_size < 100:
+            print(f"  WARNING: Sample size {eval.sample_size} < 100 - conclusions may be unreliable")
+
+    print("\n" + "-" * 70)
+    print(f"Total: {len(evals)} evaluation(s)")
+    memory.close()
+
+
+def cmd_precheck(
+    project: Path,
+    action: str,
+    description: str = "",
+):
+    """Run pre-action safety checks."""
+    try:
+        from .memory import MemoryManager
+    except ImportError:
+        print("Error: Memory module not available. Install with: pip install evolve-sdk[memory]")
+        sys.exit(1)
+
+    try:
+        memory = MemoryManager(project)
+    except Exception as e:
+        print(f"Error: Could not load project memory: {e}")
+        sys.exit(1)
+
+    print("=" * 70)
+    print(f"PRE-ACTION CHECK: {action}")
+    print("=" * 70)
+
+    check = memory.pre_action_check(action, description)
+
+    if check["warnings"]:
+        print("\n!! WARNINGS - Review before proceeding !!")
+        print("-" * 40)
+        for warning in check["warnings"]:
+            print(f"  - {warning}")
+
+    if check["relevant_dris"]:
+        print(f"\nRelevant DRIs ({len(check['relevant_dris'])}):")
+        print("-" * 40)
+        for dri in check["relevant_dris"]:
+            print(f"\n  {dri.id}: {dri.title}")
+            print(f"    Root cause: {dri.root_cause}")
+            if dri.verification_commands:
+                print(f"    Verify: {dri.verification_commands[0]}")
+
+    if not check["warnings"] and not check["relevant_dris"]:
+        print("\nNo relevant DRIs or warnings found.")
+        print("Proceed with caution - this doesn't mean there are no risks.")
+
+    print("\n" + "-" * 70)
+    if check["warnings"]:
+        print("RECOMMENDATION: Review the warnings above before proceeding.")
+    else:
+        print("Pre-check complete.")
+
+    memory.close()
+
+
+def cmd_migrate(
+    json_path: Path,
+    project: Path | None = None,
+    dry_run: bool = False,
+    yes: bool = False,
+):
+    """Migrate existing memory.json to new format."""
+    try:
+        from .memory.migration import (
+            migrate_memory_json,
+            analyze_memory_json,
+            print_migration_report,
+        )
+    except ImportError:
+        print("Error: Memory module not available. Install with: pip install evolve-sdk[memory]")
+        sys.exit(1)
+
+    if not json_path.exists():
+        print(f"Error: File not found: {json_path}")
+        sys.exit(1)
+
+    # Analyze first
+    print("Analyzing memory file...")
+    try:
+        analysis = analyze_memory_json(json_path)
+    except Exception as e:
+        print(f"Error analyzing file: {e}")
+        sys.exit(1)
+
+    print(f"\nSource: {analysis['file_path']}")
+    print(f"Size: {analysis['file_size_bytes']:,} bytes (~{analysis['estimated_tokens']:,} tokens)")
+    print(f"\nFound:")
+    print(f"  - {analysis['dris']['count']} DRIs")
+    print(f"  - {analysis['submissions']['count']} submissions ({analysis['submissions']['succeeded']} succeeded, {analysis['submissions']['failed']} failed)")
+    print(f"  - {analysis['evaluations']['count']} evaluations")
+
+    if analysis["other_data"]:
+        print(f"\nOther data (won't be migrated): {', '.join(analysis['other_data'][:5])}")
+
+    if dry_run:
+        print("\n[DRY RUN] No changes will be made.")
+        return
+
+    # Confirm
+    if not yes:
+        response = input("\nProceed with migration? [y/N] ")
+        if response.lower() != "y":
+            print("Migration cancelled.")
+            return
+
+    # Run migration
+    print("\nMigrating...")
+    try:
+        stats = migrate_memory_json(json_path, project, dry_run=False)
+    except Exception as e:
+        print(f"Error during migration: {e}")
+        sys.exit(1)
+
+    # Print results
+    print_migration_report(stats, analysis)
 
 
 if __name__ == "__main__":

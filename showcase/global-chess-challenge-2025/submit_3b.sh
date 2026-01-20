@@ -52,7 +52,7 @@ echo "============================================"
 
 # Configuration - UPDATE THESE FOR EACH SUBMISSION
 CHALLENGE="global-chess-challenge-2025"
-HF_REPO="ericksoa/chess-qwen3b-12k"  # <-- UPDATE: HuggingFace repo with merged model
+HF_REPO="ericksoa/chess-rs-70k-black-v1"  # <-- UPDATE: HuggingFace repo with merged model
 
 echo ""
 echo "1. Checking chat_template.jinja system prompt..."

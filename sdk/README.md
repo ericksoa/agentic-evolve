@@ -162,6 +162,19 @@ calibration = get_trust_calibration(memory)
 | **Cross-Problem Transfer** | Apply patterns from one problem to another |
 | **Trust Calibration** | Tune thresholds based on historical decisions |
 
+### Memory Usage Philosophy
+
+**Update memory liberally.** There are no context limits on memory storage, so agents should record:
+
+- Every significant decision and its rationale
+- All lessons learned (both successes and failures)
+- Checkpoints at every state change
+- Research findings and external references
+- Strategy discussions and hypotheses being tested
+- Timeline milestones and ETAs
+
+The memory serves as the evolution's "institutional knowledge" - it enables crash recovery, cross-session continuity, and pattern learning. When in doubt, write it to memory. Future agents (and human operators) will thank you for the detailed context.
+
 ## Inter-Agent Messaging
 
 The SDK includes a messaging system that enables agents to communicate with each other and keep the human operator informed in real-time.

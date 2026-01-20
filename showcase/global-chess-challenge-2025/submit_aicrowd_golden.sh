@@ -36,7 +36,11 @@
 # Examples:
 #   ./submit_aicrowd_golden.sh 160000
 #   ./submit_aicrowd_golden.sh 170000
-#   ./submit_aicrowd_golden.sh 180000
+#   ./submit_aicrowd_golden.sh 190000
+#
+# The script auto-detects checkpoint location in:
+#   - checkpoints/aicrowd_full_v1/  (active training)
+#   - checkpoints/preserved/        (archived checkpoints)
 #
 # =============================================================================
 
@@ -61,7 +65,9 @@ NUM_GAMES="1"
 
 # Lightning.ai studio where checkpoints live
 STUDIO_NAME="chess-llm-v4"
-CHECKPOINT_BASE_PATH="checkpoints/aicrowd_full_v1"
+
+# Checkpoint directories to search (in order of priority)
+CHECKPOINT_DIRS="checkpoints/aicrowd_full_v1 checkpoints/preserved"
 
 # =============================================================================
 # ARGUMENT PARSING
@@ -75,13 +81,15 @@ if [ -z "$1" ]; then
     echo "Examples:"
     echo "  $0 160000"
     echo "  $0 170000"
+    echo "  $0 190000"
     echo ""
+    echo "Searches in: ${CHECKPOINT_DIRS}"
     exit 1
 fi
 
 CHECKPOINT_NUM="$1"
-CHECKPOINT_PATH="${CHECKPOINT_BASE_PATH}/checkpoint-${CHECKPOINT_NUM}"
 HF_REPO="ericksoa/chess-qwen3-${CHECKPOINT_NUM}"
+# CHECKPOINT_PATH will be set by the Python script after auto-detection
 
 echo "============================================"
 echo -e "${GREEN}GOLDEN PATH SUBMISSION${NC}"
@@ -90,6 +98,7 @@ echo "Checkpoint: ${CHECKPOINT_NUM}"
 echo "HF Repo: ${HF_REPO}"
 echo "Model Type: ${MODEL_TYPE}"
 echo "Prompt Template: ${PROMPT_TEMPLATE}"
+echo "Search dirs: ${CHECKPOINT_DIRS}"
 echo "============================================"
 echo ""
 
@@ -142,7 +151,7 @@ from lightning_sdk import Studio
 from huggingface_hub import HfApi
 
 CHECKPOINT_NUM = "${CHECKPOINT_NUM}"
-CHECKPOINT_PATH = "${CHECKPOINT_PATH}"
+CHECKPOINT_DIRS = "${CHECKPOINT_DIRS}".split()
 HF_REPO = "${HF_REPO}"
 STUDIO_NAME = "${STUDIO_NAME}"
 
@@ -153,10 +162,21 @@ studio = Studio(
     user=os.environ.get('LIGHTNING_AI_USERNAME'),
 )
 
-# Verify checkpoint exists
-result = studio.run(f"ls /teamspace/studios/this_studio/{CHECKPOINT_PATH}/model.safetensors 2>/dev/null && echo EXISTS || echo MISSING")
-if "MISSING" in result:
-    print(f"ERROR: Checkpoint not found at {CHECKPOINT_PATH}")
+# Auto-detect checkpoint location
+CHECKPOINT_PATH = None
+print(f"Searching for checkpoint-{CHECKPOINT_NUM}...")
+for base_dir in CHECKPOINT_DIRS:
+    candidate = f"{base_dir}/checkpoint-{CHECKPOINT_NUM}"
+    result = studio.run(f"ls /teamspace/studios/this_studio/{candidate}/model.safetensors 2>/dev/null && echo EXISTS || echo MISSING")
+    if "EXISTS" in result:
+        CHECKPOINT_PATH = candidate
+        print(f"  Found at: {CHECKPOINT_PATH}")
+        break
+    else:
+        print(f"  Not in: {base_dir}/")
+
+if CHECKPOINT_PATH is None:
+    print(f"ERROR: Checkpoint-{CHECKPOINT_NUM} not found in any of: {CHECKPOINT_DIRS}")
     sys.exit(1)
 
 print(f"Checkpoint verified on studio")
@@ -237,10 +257,10 @@ if [[ "$CONFIG_CHECK" != *"qwen3"* ]]; then
 fi
 echo -e "${GREEN}  OK: model_type is qwen3${NC}"
 
-# Check tokenizer has chess tokens
-TOKENIZER_CHECK=$(curl -s "https://huggingface.co/${HF_REPO}/raw/main/added_tokens.json" | grep -c "chess_position" || true)
+# Check tokenizer has chess tokens (check for piece tokens, not chess_position which is just text)
+TOKENIZER_CHECK=$(curl -s "https://huggingface.co/${HF_REPO}/raw/main/added_tokens.json" | grep -c "White_Pawn" || true)
 if [ "$TOKENIZER_CHECK" -lt 1 ]; then
-    echo -e "${RED}ERROR: Tokenizer missing chess special tokens${NC}"
+    echo -e "${RED}ERROR: Tokenizer missing chess special tokens (no White_Pawn found)${NC}"
     exit 1
 fi
 echo -e "${GREEN}  OK: Chess special tokens present${NC}"
