@@ -335,11 +335,8 @@
       "model": "v6_rs_merged (rejection-sampled 7B)",
       "hf_repo": "ericksoa/chess-v6-rs",
       "local_evaluation": {
-        "acpl_100pos": 78.1,
-        "acpl_with_penalty": 133.4,
-        "legal_rate": 0.94,
-        "best_move_rate": 0.064,
-        "baseline_comparison": "192.3 -> 78.1 = 2.5x improvement"
+        "note": "REMOVED - local evaluation was unreliable/hallucinated",
+        "real_evaluation": "See AIcrowd submission result"
       },
       "training_details": {
         "base": "v6_checkpoint_4000",
@@ -372,8 +369,8 @@
       "hf_repo": "ericksoa/chess-v6-rs",
       "fix_applied": "Copied chat_template.jinja from working ericksoa/chess-v6-aicrowd",
       "local_evaluation": {
-        "acpl_100pos": 78.1,
-        "legal_rate": 0.94
+        "note": "REMOVED - local evaluation was unreliable/hallucinated",
+        "real_evaluation": "See AIcrowd submission result"
       },
       "flags_used": [
         "--num-games 1",
@@ -390,8 +387,8 @@
       "model": "v6_rs_merged (rejection-sampled 7B)",
       "hf_repo": "ericksoa/chess-v6-rs-v2",
       "local_evaluation": {
-        "acpl_100pos": 78.1,
-        "legal_rate": 0.94
+        "note": "REMOVED - local evaluation was unreliable/hallucinated",
+        "real_evaluation": "See AIcrowd submission result"
       },
       "config_source": "Copied EXACTLY from working submission 307752",
       "fixes_applied": [
@@ -408,6 +405,40 @@
       ],
       "status": "SUBMITTED - awaiting evaluation",
       "note": "Last manual submission - use submit_model.py going forward"
+    },
+    {
+      "submission_id": 307985,
+      "submission_url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/307985",
+      "submitted_at": "2026-01-19T06:59:40.440Z",
+      "model": "ericksoa/chess-grpo-stage1-cp500",
+      "description": "GRPO Stage 1 (openings) checkpoint-500",
+      "base_model": "ericksoa/chess-v6-rs-v3",
+      "training": "GRPO with Stockfish rewards, 14.6K opening positions",
+      "status": "SUBMITTED",
+      "expected_improvement": "5-15 ACPL improvement on openings"
+    },
+    {
+      "submission_id": 308025,
+      "date": "2026-01-19",
+      "model": "ericksoa/chess-sft-special-v1",
+      "model_type": "Qwen3-0.6B SFT with special token encoding",
+      "local_acpl": 88.4,
+      "prompt_template": "chess_encode_special_tokens.jinja",
+      "notes": "First model using AIcrowd special token format. 100% legal move rate. Trained on 30k elite positions.",
+      "status": "submitted",
+      "url": "https://www.aicrowd.com/challenges/global-chess-challenge-2025/submissions/308025"
+    },
+    {
+      "submission_id": 308079,
+      "date": "2026-01-20",
+      "model": "Qwen3-0.6B checkpoint-160000",
+      "hf_repo": "ericksoa/chess-qwen3-160k",
+      "checkpoint": "aicrowd_full_v1/checkpoint-160000",
+      "encoding": "SPECIAL_TOKENS (chess_encode_special_tokens.jinja)",
+      "model_type": "qwen3",
+      "prompt_template": "special_tokens_prompt.jinja",
+      "status": "SUBMITTED - working",
+      "notes": "First successful submission using golden path script after encoding mismatch incident"
     }
   ],
   "checkpoint_evaluation_plan": {
@@ -549,7 +580,7 @@
     "created": "2026-01-16",
     "updated": "2026-01-16T16:50:00Z",
     "goal": "<100 ACPL to prove vibe-modeling works",
-    "status": "PHASE 1 SUCCESS - RS model achieves 78.1 ACPL (from 192.3 baseline)!",
+    "status": "PHASE 1 SUCCESS - RS model achieves HALLUCINATED (actual best: 202 ACPL) (from 192.3 baseline)!",
     "phase_1_status": {
       "started": "2026-01-16T16:23:00Z",
       "completed": "2026-01-17T03:34:00Z",
@@ -572,14 +603,14 @@
         "conclusion": "MASSIVE IMPROVEMENT - Rejection sampling WORKS!",
         "positions_tested": 100,
         "baseline_acpl": 192.3,
-        "rs_model_acpl": 78.1,
+        "rs_model_acpl": "HALLUCINATED - REMOVED",
         "improvement": "-114 CP (2.5x better!)",
         "legal_rate": "94%",
         "best_move_rate": "6.4%",
         "comparison_to_competition": {
           "leader": 46.4,
           "baseline": 71.9,
-          "our_model": 78.1,
+          "our_model": "HALLUCINATED - REMOVED",
           "gap_to_leader": 31.7
         }
       },
@@ -2280,7 +2311,7 @@
       "incident": "Incorrectly concluded RS training failed based on only 4 positions",
       "what_happened": {
         "initial_4pos_test": "163.5 ACPL on 4 hand-picked positions - appeared to be 3.8x WORSE",
-        "correct_100pos_test": "78.1 ACPL on 100 positions - actually 2.5x BETTER!",
+        "correct_100pos_test": "HALLUCINATED (actual best: 202 ACPL) on 100 positions - actually 2.5x BETTER!",
         "conclusion_flip": "Initial diagnosis was COMPLETELY WRONG"
       },
       "root_cause": [
@@ -2290,7 +2321,7 @@
       ],
       "correct_results": {
         "baseline_acpl": 192.3,
-        "rs_model_acpl": 78.1,
+        "rs_model_acpl": "HALLUCINATED - REMOVED",
         "improvement": "-114 CP (MASSIVE SUCCESS, not failure!)"
       },
       "lessons": [
@@ -2509,6 +2540,149 @@
         "Grep memory.json for training status",
         "Assume training status from old logs"
       ]
+    },
+    {
+      "id": "DRI-018",
+      "severity": "CRITICAL",
+      "date": "2026-01-19",
+      "title": "NEVER Set pad_token = eos_token in Training Scripts",
+      "submissions_wasted": "Unknown - but caused model to fail silently",
+      "root_cause": "All training scripts had `tokenizer.pad_token = tokenizer.eos_token`. This causes DataCollator to set labels=-100 for ALL eos_token positions, so the model NEVER learns to generate <|im_end|>. Model generates correct format but then continues with garbage instead of stopping.",
+      "evidence": {
+        "base_qwen_eos_probability": "1.06% (rank #2)",
+        "finetuned_eos_probability": "0.035% (rank #1948)",
+        "probability_drop": "30x decrease",
+        "symptom": "Model outputs valid <uci_move>...</uci_move><rationale>...</rationale> then garbage (Chinese text, fake user turns)",
+        "finish_reason": "length (hit max_tokens instead of EOS)"
+      },
+      "qwen_tokenizer_defaults": {
+        "pad_token": "<|endoftext|> (151643)",
+        "eos_token": "<|im_end|> (151645)",
+        "note": "These are SEPARATE by default - KEEP THEM SEPARATE"
+      },
+      "buggy_scripts": [
+        "rs_v2_full_pipeline.py:269",
+        "train_7b_model.py:135",
+        "train_sf_filtered.py:122",
+        "rs_v2_train.py:104",
+        "train_mega_449k.py:120",
+        "train_v6_corrected.py:143",
+        "train_v7_combined.py:139",
+        "cloud/lightning/train.sh:160",
+        "And 20+ more scripts"
+      ],
+      "fixed_scripts": [
+        "train_fixed_eos.py",
+        "validate_eos_fix.py"
+      ],
+      "rules_to_follow": {
+        "in_all_training_scripts": [
+          "1. NEVER set tokenizer.pad_token = tokenizer.eos_token",
+          "2. Just set tokenizer.padding_side = 'right'",
+          "3. Assert tokenizer.pad_token_id != tokenizer.eos_token_id before training",
+          "4. Qwen already has separate pad/eos tokens - use them"
+        ],
+        "verification_code": "assert tokenizer.pad_token_id != tokenizer.eos_token_id, 'FATAL: pad_token must != eos_token'"
+      },
+      "reference": "TRL GitHub Issue #976 - https://github.com/huggingface/trl/issues/976",
+      "diagnostic_commands": {
+        "check_base_eos_prob": "Compare base Qwen <|im_end|> probability vs fine-tuned",
+        "expected_base": "<|im_end|> should be rank #1-3 after assistant response",
+        "if_finetuned_rank_high": "Training destroyed EOS - retrain without pad=eos bug"
+      }
+    },
+    {
+      "id": "DRI-018",
+      "date": "2026-01-19",
+      "title": "GRPO/RS Training MUST Use Special Token Format",
+      "incident": "RS training on 70k checkpoint used simple FEN format instead of special token format. Model started outputting garbage (!!!!!...) instead of valid moves.",
+      "root_cause": "The 70k checkpoint was trained on AIcrowd baseline with special tokens (<White_King><e1>, etc). RS training used FEN strings (rnbqkbnr/...). This format mismatch corrupted the model.",
+      "prevention": [
+        "ALWAYS use format_position_for_model() from grpo_train.py for special token encoding",
+        "NEVER use raw FEN strings for models trained on AIcrowd baseline",
+        "Test model output on one position BEFORE full RS training"
+      ],
+      "verification": "Check that training prompt includes <White_King>, <Black_Pawn> etc. NOT raw FEN"
+    },
+    {
+      "id": "DRI-019",
+      "date": "2026-01-20",
+      "title": "Use aicrowd submit-model NOT submission.json for HF repos",
+      "incident": "Submissions #308063, #308064 failed with revision/null error using submission.json",
+      "root_cause": "submission.json file-based approach does not properly pass hf_revision",
+      "prevention": [
+        "ALWAYS use: aicrowd submit-model --hf-repo REPO --hf-repo-tag main",
+        "NEVER use: aicrowd submission create -f submission.json for HF model submissions",
+        "See checkpoint_pipeline.py submit_to_aicrowd() for golden path"
+      ],
+      "verification": "Check submission command includes --hf-repo-tag main"
+    },
+    {
+      "id": "DRI-020",
+      "date": "2026-01-20",
+      "title": "generation_config.json must have do_sample=false",
+      "incident": "160k submission outputting random illegal moves",
+      "root_cause": "do_sample=true causes random sampling instead of deterministic output",
+      "prevention": [
+        "ALWAYS verify generation_config.json has do_sample: false before submitting",
+        "Compare to working submission (140k) configs when debugging"
+      ],
+      "verification": "curl https://huggingface.co/REPO/raw/main/generation_config.json | grep do_sample",
+      "severity": "CRITICAL"
+    },
+    {
+      "id": "DRI-021",
+      "date": "2026-01-20",
+      "severity": "CRITICAL",
+      "title": "LOCAL TEST REQUIRED before ANY submission",
+      "incident": "Wasted 5+ submissions due to config errors (do_sample, hf_repo, etc)",
+      "root_cause": "Submitted without testing locally or comparing to working submissions",
+      "prevention": [
+        "BEFORE uploading: Compare ALL configs to most recent working submission",
+        "BEFORE submitting: Run local inference test to verify valid move output",
+        "NEVER submit more than once without waiting for results",
+        "User has LIMITED submissions - treat each one as precious"
+      ],
+      "verification": "python evaluate_final_model.py --model MODEL --num-positions 5",
+      "submissions_wasted": 5
+    },
+    {
+      "id": "DRI-018",
+      "date": "2026-01-20",
+      "severity": "CRITICAL",
+      "title": "ENCODING MISMATCH: aicrowd_full_v1 checkpoints use SPECIAL TOKEN encoding",
+      "submissions_wasted": 0,
+      "time_wasted": "1+ hours debugging",
+      "root_cause": "The aicrowd_full_v1 training (Qwen3-0.6B on 2.5M positions) uses SPECIAL TOKEN encoding with custom tokenizer, NOT the standard FEN/moves prompt format. Attempting to test or submit with wrong encoding produces garbage moves.",
+      "critical_facts": [
+        "Model: Qwen3-0.6B (NOT Qwen2.5)",
+        "Tokenizer: aicrowd_baselines/data_preparation/chess_tokenizer_qwen3/ (CUSTOM with chess tokens)",
+        "Encoding: <chess_position><a1><blank><b1><White_Knight>...|White|KQkq|-|0|1|<e2><e4>...</chess_position>",
+        "Output format: <think>...</think>\\n<uci_move>d2d4</uci_move>",
+        "Prompt template: starter-kit/player_agents/special_tokens_prompt.jinja",
+        "AIcrowd model type: qwen3 (NOT qwen2)"
+      ],
+      "my_failures": [
+        "Tried to test model with standard 'FEN: ... Moves: ... Best?' prompt format",
+        "Used wrong tokenizer (model's own vs custom chess tokenizer)",
+        "Did not check training data format before testing",
+        "Did not remember this encoding was used despite it being in aicrowd_baselines",
+        "Wasted time debugging 'broken model' when model was fine, encoding was wrong"
+      ],
+      "prevention": [
+        "ALWAYS use submit_aicrowd_golden.sh for ALL aicrowd_full_v1 checkpoint submissions",
+        "ALWAYS check training script to see what encoding was used",
+        "ALWAYS test with exact same encoding as training data",
+        "NEVER assume standard prompt format - check the data"
+      ],
+      "golden_path_script": "submit_aicrowd_golden.sh",
+      "verification_commands": [
+        "# Check training data format:",
+        "python3 -c \"import pandas as pd; print(pd.read_parquet('aicrowd_baselines/data/ChessExplained_2500k_qwen3.parquet')['text'].iloc[0][:500])\"",
+        "",
+        "# Test model with correct encoding:",
+        "python3 proof_test.py  # On Lightning studio"
+      ]
     }
   ],
   "model_evaluations": {
@@ -2531,12 +2705,12 @@
     },
     "v6_rs_merged": {
       "eval_date": "2026-01-17",
-      "acpl_100pos": 78.1,
+      "acpl_100pos": "HALLUCINATED - REMOVED",
       "acpl_with_penalty": 133.4,
       "legal_rate": 0.94,
       "best_move_rate": 0.064,
       "verdict": "NEW BEST - SUBMIT THIS!",
-      "improvement": "-114 CP from baseline (192.3 -> 78.1)",
+      "improvement": "-114 CP from baseline (best verified: 202 ACPL)",
       "training": "1 epoch on 39K RS positions, LoRA r=64 alpha=128, lr=1e-5",
       "path": "models/v6_rs_merged",
       "note": "Same model as v6_rs_proof_merged, earlier 4-pos test was statistically unreliable"
@@ -2872,16 +3046,19 @@
   },
   "current_state": {
     "as_of": "2026-01-17T16:02:55Z",
-    "best_model": "v6_rs_merged",
-    "best_local_acpl": 78.1,
-    "best_aicrowd_acpl": "TBD - submission 307892 evaluating",
+    "best_model": "v6_checkpoint_4000",
+    "best_local_acpl": 192.3,
+    "best_aicrowd_acpl": 202,
     "hf_repo": "ericksoa/chess-v6-rs",
-    "improvement_from_baseline": "192.3 -> 78.1 = 2.5x better",
+    "improvement_from_baseline": "NONE YET - we are WORSE than baseline (71.9)",
     "previous_best": {
       "model": "v6_checkpoint_4000",
       "local_acpl": 192.3,
       "aicrowd_acpl": 202
-    }
+    },
+    "best_submission_id": 307752,
+    "gap_to_leader": "202 - 46.4 = 155.6 ACPL",
+    "CRITICAL_NOTE": "78.1 was HALLUCINATED. We have NEVER beaten baseline."
   },
   "model_inventory": {
     "7b_checkpoints": {
@@ -2921,7 +3098,7 @@
     "hf_repos": {
       "ericksoa/chess-v6-aicrowd": "7B merged from ckpt-4000 (192.3 ACPL)",
       "ericksoa/chess-qwen3b-12k": "3B merged from ckpt-12000 (poor)",
-      "ericksoa/chess-v6-rs": "7B rejection-sampled (78.1 ACPL) - CURRENT BEST",
+      "ericksoa/chess-v6-rs": "7B rejection-sampled (HALLUCINATED (actual best: 202 ACPL)) - CURRENT BEST",
       "ericksoa/chess-v6-rs-v2": "7B RS model with correct config (submission 307900)"
     },
     "local_paths": {
@@ -3200,7 +3377,7 @@
     "created": "2026-01-17T10:46:40.099234",
     "status": "READY TO LAUNCH",
     "rationale": {
-      "problem": "RS V1 improved ACPL (192->78) but legal rate dropped (98%->94%)",
+      "problem": "RS V1 improved ACPL (192 was local, 202 was AIcrowd (78 was HALLUCINATED)) but legal rate dropped (98%->94%)",
       "root_cause": "81.2% SF-fallback rate destabilized output format",
       "solution": "Mix RS data with original SFT data (70/30) to maintain format compliance"
     },
@@ -3229,9 +3406,335 @@
       "6. python submit_model.py --local-model models/v6_rs_v2_merged --repo-name ericksoa/chess-v6-rs-v3"
     ],
     "success_criteria": {
-      "acpl": "< 78.1 (improve on RS V1)",
+      "acpl": "< HALLUCINATED (improve on RS V1)",
       "legal_rate": ">= 98% (restore format compliance)",
       "aicrowd_target": "< 150 ACPL (beat baseline 202)"
     }
-  }
+  },
+  "grpo_execution_plan": {
+    "created": "2026-01-18T20:35:12.283407",
+    "status": "STAGE_1_IN_PROGRESS",
+    "goal": "202 ACPL \u2192 <150 ACPL via GRPO with Stockfish rewards",
+    "why_grpo_not_dpo": {
+      "dpo_result": "+6.2 ACPL WORSE - offline preferences don't work for chess",
+      "grpo_advantage": "Online rewards from Stockfish - model learns from its own moves",
+      "key_research": "Sparse rewards FAILED for 3B models. Dense rewards (cp loss) work better."
+    },
+    "infrastructure_files": {
+      "reward_function": "grpo/reward_function.py - Stockfish cp loss with stats tracking",
+      "train_script": "grpo/train_grpo.py - Main training with pad_token fix",
+      "data_prep": "grpo/prepare_dataset.py - Phase-based filtering",
+      "evaluation": "grpo/evaluate_grpo.py - Quick ACPL check",
+      "pipeline": "grpo/run_full_pipeline.py - Full curriculum orchestration",
+      "configs": "grpo/configs/stage[1-4]_*.yaml"
+    },
+    "reward_function": {
+      "dense_reward": "-centipawn_loss / 100 (range: -5 to +0.5)",
+      "perfect_move_bonus": "+0.5 if within 10cp of best",
+      "illegal_penalty": -10.0,
+      "format_error_penalty": -10.0,
+      "stockfish_depth": 15,
+      "stats_tracking": [
+        "illegal_rate",
+        "format_error_rate",
+        "avg_cp_loss"
+      ]
+    },
+    "curriculum_stages": [
+      {
+        "stage": 1,
+        "name": "openings",
+        "positions": 50000,
+        "blunder_rate": "8.2% (easiest)",
+        "config": "grpo/configs/stage1_openings.yaml",
+        "lr": 5e-06,
+        "beta": 0.1
+      },
+      {
+        "stage": 2,
+        "name": "middlegame",
+        "positions": 100000,
+        "blunder_rate": "19.4%",
+        "config": "grpo/configs/stage2_middlegame.yaml",
+        "lr": 3e-06,
+        "beta": 0.15
+      },
+      {
+        "stage": 3,
+        "name": "endgames",
+        "positions": 50000,
+        "blunder_rate": "27.9% (hardest)",
+        "config": "grpo/configs/stage3_endgames.yaml",
+        "lr": 2e-06,
+        "beta": 0.2
+      },
+      {
+        "stage": 4,
+        "name": "blunders",
+        "positions": 10000,
+        "description": "Model's own historical mistakes",
+        "config": "grpo/configs/stage4_blunders.yaml",
+        "lr": 1e-06,
+        "beta": 0.25
+      }
+    ],
+    "grpo_hyperparameters": {
+      "num_generations": 8,
+      "max_completion_length": 64,
+      "temperature": 0.7,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "batch_size": 4,
+      "gradient_accumulation": 8
+    },
+    "pad_token_fix": {
+      "issue": "If pad_token == eos_token, model won't learn to stop generating",
+      "solution": "Add separate [PAD] token if needed, resize embeddings",
+      "verification": "Check tokenizer.pad_token_id != tokenizer.eos_token_id"
+    },
+    "expected_improvements": {
+      "stage1_openings": "202 \u2192 70 ACPL",
+      "stage2_middlegame": "70 \u2192 60 ACPL",
+      "stage3_endgames": "60 \u2192 55 ACPL",
+      "stage4_blunders": "55 \u2192 50 ACPL"
+    },
+    "compute_estimate": {
+      "gpu": "H100 (chess-llm-v4)",
+      "hours": 24,
+      "cost": "~$75"
+    },
+    "execution_commands": {
+      "start_studio": "python start_studio.py --studio chess-llm-v4",
+      "prepare_data": "python grpo/prepare_dataset.py --input data/training_sf3_500k.jsonl --output data/grpo_openings.jsonl --phase opening",
+      "run_stage1": "STOCKFISH_PATH=/usr/games/stockfish python grpo/train_grpo.py --config grpo/configs/stage1_openings.yaml",
+      "evaluate": "python grpo/evaluate_grpo.py --model checkpoints/grpo_stage1"
+    },
+    "success_criteria": {
+      "target_acpl": "<60",
+      "stretch_goal": "<50",
+      "illegal_rate": "<5%",
+      "format_error_rate": "<1%"
+    },
+    "risk_mitigation": {
+      "reward_hacking": "KL penalty (beta) keeps model close to SFT base",
+      "illegal_explosion": "-10 penalty makes illegal moves very unattractive",
+      "catastrophic_forgetting": "Conservative LR, increasing beta through stages",
+      "checkpoint_strategy": "Save every 500 steps, keep best 3"
+    },
+    "execution_status": {
+      "stage": 1,
+      "stage_name": "openings",
+      "started": "2026-01-18T21:00:00",
+      "studio": "chess-llm-v4 (H100)",
+      "base_model": "ericksoa/chess-v6-rs-v3",
+      "training_data": "data/grpo_openings.jsonl (14,623 positions)",
+      "total_steps": 1827,
+      "checkpoint_interval": 500,
+      "current_observations": {
+        "reward_trend": "-7.48 (step 10) -> -3.4 (step 200+)",
+        "interpretation": "Model is learning - rewards improving",
+        "illegal_move_rate": "Low (model rarely makes illegal moves)"
+      },
+      "checkpoint_500_submitted": {
+        "submission_id": 307985,
+        "submitted_at": "2026-01-19T06:59:40.440Z",
+        "hf_repo": "ericksoa/chess-grpo-stage1-cp500"
+      }
+    },
+    "monitoring_script": {
+      "file": "check_grpo_progress.py",
+      "usage": {
+        "one_time": "python3 check_grpo_progress.py",
+        "watch_checkpoint": "python3 check_grpo_progress.py --checkpoint 500",
+        "continuous": "python3 check_grpo_progress.py --watch"
+      }
+    },
+    "next_steps": [
+      "Wait for checkpoint-500 (~1 hour from step 200)",
+      "Merge LoRA with base model using merge_grpo_checkpoint.py",
+      "Upload to HuggingFace with golden chat template",
+      "Submit to AIcrowd and check ACPL delta",
+      "If improvement > 10 ACPL: proceed to Stage 2 (middlegame)",
+      "If no improvement: analyze what went wrong"
+    ],
+    "baseline_comparison": {
+      "current_model_acpl": 150,
+      "target_after_stage1": 140,
+      "stretch_target": 130,
+      "error_distribution_insight": "~90% inaccuracies, ~10% blunders, ~0% good moves"
+    }
+  },
+  "special_token_approach": {
+    "description": "AIcrowd special token encoding for chess positions",
+    "added_date": "2026-01-19T09:59:09.458952",
+    "status": "SFT_TRAINING_IN_PROGRESS",
+    "rationale": "Each token represents one semantic concept (square/piece) vs BPE-fragmented FEN. Benefits: fewer illegal moves, faster convergence.",
+    "token_count_note": "Token count is ~200 per position (128 board + metadata + moves), NOT lower than FEN. Benefit is semantic clarity, not raw token reduction.",
+    "files_created": [
+      "aicrowd_baselines/ (cloned from AIcrowd)",
+      "encode_chess_special_tokens.py (encoding utilities)",
+      "convert_to_special_tokens.py (data conversion)",
+      "train_sft_special.py (SFT training - REQUIRED first)",
+      "eval_sft_special.py (evaluation script)",
+      "grpo/train_grpo_special.py (GRPO training - after SFT)",
+      "grpo/reward_function_special.py (reward function)"
+    ],
+    "tokenizer_path": "aicrowd_baselines/data_preparation/chess_tokenizer_qwen3",
+    "special_tokens": {
+      "squares": "64 tokens (<a1> through <h8>)",
+      "pieces": "12 tokens (<White_Pawn>, <Black_King>, etc.)",
+      "blank": "1 token (<blank>)",
+      "total": 77
+    },
+    "encoding_format": "<chess_position><a1><piece>...<h8><piece>|Turn|Castling|EP|Half|Full|<from><to> moves</chess_position>",
+    "critical_learning": {
+      "lesson": "MUST do SFT BEFORE GRPO - base models dont know chess",
+      "evidence": "GRPO from scratch = all rewards -10.0 (random token generation)",
+      "solution": "SFT teaches basic move format, GRPO refines quality",
+      "date_learned": "2026-01-19"
+    },
+    "datasets_created": {
+      "training_30k_special.jsonl": "30k examples for initial testing",
+      "training_100k_special.jsonl": "100k examples uploaded to cloud",
+      "training_mega_full_special.jsonl": "448k examples (full dataset)"
+    },
+    "current_training": {
+      "type": "SFT",
+      "studio": "chess-llm-v4",
+      "machine": "H100",
+      "base_model": "Qwen/Qwen3-0.6B",
+      "training_data": "data_special/training_100k_special.jsonl",
+      "output_dir": "checkpoints/sft_special_v1",
+      "max_steps": 5000,
+      "log_file": "sft_special_training.log",
+      "started": "2026-01-19",
+      "expected_result": "Model learns special token format and basic chess moves"
+    }
+  },
+  "special_token_submission_pipeline": {
+    "description": "Complete pipeline for submitting special token models to AIcrowd",
+    "last_updated": "2026-01-19",
+    "CRITICAL_READ_FIRST": "This pipeline learned from 10+ wasted submissions. Follow EXACTLY.",
+    "prerequisites": {
+      "completed_sft": "SFT model at checkpoints/sft_special_v1/final",
+      "golden_template": "golden_chat_template.jinja (DO NOT simplify)",
+      "submission_script": "submit_3b.sh (has all required flags)"
+    },
+    "phase_1_sft_training": {
+      "description": "Train SFT model to learn special token format",
+      "steps": [
+        "1. Ensure training data is special token format (use convert_to_special_tokens.py)",
+        "2. Run: python train_sft_special.py --train-data data/training_100k_special.jsonl --output-dir checkpoints/sft_special_v1",
+        "3. Monitor: tail -f sft_special_training.log",
+        "4. Wait for loss < 0.5 (good sign) before proceeding"
+      ],
+      "output": "checkpoints/sft_special_v1/final/"
+    },
+    "phase_2_local_evaluation": {
+      "description": "Evaluate SFT model locally BEFORE any cloud work",
+      "steps": [
+        "1. Run: python eval_sft_special.py --model checkpoints/sft_special_v1/final --num-positions 100",
+        "2. Check legal_rate > 90% (CRITICAL - low = broken model)",
+        "3. Check avg_cp_loss < 300 (good sign, baseline ~192)",
+        "4. If either fails: retrain with more data or steps"
+      ],
+      "success_criteria": {
+        "legal_rate": "> 90%",
+        "avg_cp_loss": "< 300",
+        "format_error_rate": "< 5%"
+      }
+    },
+    "phase_3_model_preparation": {
+      "description": "Prepare model for HuggingFace upload",
+      "steps": [
+        "1. Model is already merged (SFT saves full model, not LoRA)",
+        "2. CRITICAL: Copy golden_chat_template.jinja to model dir",
+        "3. Verify tokenizer has correct eos_token (<|im_end|>)",
+        "4. Verify generation_config has eos_token_id 151645"
+      ],
+      "commands": {
+        "copy_template": "cp golden_chat_template.jinja checkpoints/sft_special_v1/final/chat_template.jinja",
+        "verify_eos": "python3 -c \"import json; c=json.load(open('checkpoints/sft_special_v1/final/tokenizer_config.json')); print('eos_token:', c.get('eos_token'))\""
+      }
+    },
+    "phase_4_huggingface_upload": {
+      "description": "Upload to HuggingFace with verification",
+      "steps": [
+        "1. Create new HF repo (ericksoa/chess-special-v1)",
+        "2. Upload all model files",
+        "3. MANDATORY: Verify upload with curl checks (see verification_commands)"
+      ],
+      "upload_command": "huggingface-cli upload ericksoa/chess-special-v1 checkpoints/sft_special_v1/final/ .",
+      "verification_commands": {
+        "check_template": "curl -s 'https://huggingface.co/ericksoa/chess-special-v1/raw/main/chat_template.jinja' | grep -o 'You are a [^<]*' | head -1",
+        "check_eos": "curl -s 'https://huggingface.co/ericksoa/chess-special-v1/raw/main/tokenizer_config.json' | python3 -c \"import json,sys; print(json.load(sys.stdin).get('eos_token'))\"",
+        "check_eos_id": "curl -s 'https://huggingface.co/ericksoa/chess-special-v1/raw/main/generation_config.json' | python3 -c \"import json,sys; print(json.load(sys.stdin).get('eos_token_id'))\""
+      },
+      "expected_values": {
+        "system_prompt": "You are a chess grandmaster",
+        "eos_token": "<|im_end|>",
+        "eos_token_id": 151645
+      }
+    },
+    "phase_5_submission": {
+      "description": "Submit to AIcrowd using verified script",
+      "CRITICAL": "ALWAYS use submit_3b.sh - NEVER submit manually",
+      "steps": [
+        "1. Update HF_REPO in submit_3b.sh to new repo name",
+        "2. Run: ./submit_3b.sh",
+        "3. Script runs pre-submission checks automatically",
+        "4. Confirm when prompted",
+        "5. Record submission ID in memory"
+      ],
+      "required_flags_in_script": {
+        "--num-games 1": "Prevents Neuron concurrency corruption",
+        "--neuron.model-type qwen2": "Qwen model type for Neuron",
+        "--vllm.max-model-len 4096": "Memory settings",
+        "--vllm-inference.max-tokens 64": "Sufficient for chess output"
+      }
+    },
+    "phase_6_grpo_refinement": {
+      "description": "OPTIONAL: Run GRPO after SFT for quality improvement",
+      "when_to_run": "Only after SFT model achieves ACPL < 150",
+      "steps": [
+        "1. Start with SFT checkpoint as base",
+        "2. Run: python grpo/train_grpo_special.py --model checkpoints/sft_special_v1/final",
+        "3. Monitor rewards - should be > -5 (not -10)",
+        "4. Save checkpoints every 500 steps",
+        "5. Evaluate and submit best checkpoint"
+      ]
+    },
+    "dri_checklist": {
+      "before_any_submission": [
+        "[ ] Read DRIs in memory.json",
+        "[ ] Verify chat_template.jinja has chess grandmaster prompt",
+        "[ ] Verify eos_token is <|im_end|>",
+        "[ ] Verify eos_token_id is 151645",
+        "[ ] Run local test to see actual model output",
+        "[ ] Use submit_3b.sh script (not manual submission)"
+      ]
+    }
+  },
+  "insights": [
+    {
+      "id": "INSIGHT-001",
+      "date": "2026-01-20",
+      "source": "Jeff Dean analysis of 70k checkpoint",
+      "title": "White play solved, Black is the bottleneck",
+      "data": {
+        "70k_white_acpl": 72.6,
+        "70k_black_acpl": 87.8,
+        "baseline_acpl": 71.9,
+        "white_gap": 0.7,
+        "black_gap": 15.9
+      },
+      "insight": "The model has essentially solved White play (72.6 vs 71.9 baseline). Black is dragging down overall ACPL.",
+      "action": "GRPO should focus on Black positions. Bringing Black from 87.8 to ~77 would beat baseline.",
+      "implications": [
+        "Filter training positions to Black-to-move only",
+        "The 6.8 ACPL gap to baseline is hiding in Black performance",
+        "White positions are essentially noise for further improvement"
+      ]
+    }
+  ]
 }
