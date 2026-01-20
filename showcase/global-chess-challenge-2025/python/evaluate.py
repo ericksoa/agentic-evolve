@@ -23,9 +23,9 @@ from pathlib import Path
 from typing import Optional, Tuple, List, Callable
 from datetime import datetime
 
-# Stockfish path - update for your system
-STOCKFISH_PATH = "/opt/homebrew/bin/stockfish"  # macOS Homebrew
-# STOCKFISH_PATH = "/usr/bin/stockfish"  # Linux
+# Stockfish path - update for your system or set STOCKFISH_PATH env var
+import os
+STOCKFISH_PATH = os.environ.get("STOCKFISH_PATH", "/opt/homebrew/bin/stockfish")
 
 
 @dataclass

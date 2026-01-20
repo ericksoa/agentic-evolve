@@ -26,8 +26,8 @@ DEFAULT_BASE_MODEL = "Qwen/Qwen2.5-3B"
 DEFAULT_LORA_PATH = Path(__file__).parent / "models" / "final"
 
 
-def load_model(lora_path: Path = None, base_model: str = None, device: str = "auto"):
-    """Load base model with LoRA adapter"""
+def load_model(lora_path: Path = None, base_model: str = None, device: str = "auto", merged: bool = False):
+    """Load base model with LoRA adapter, or load merged model directly"""
     from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import PeftModel
 
@@ -36,8 +36,11 @@ def load_model(lora_path: Path = None, base_model: str = None, device: str = "au
     if base_model is None:
         base_model = DEFAULT_BASE_MODEL
 
-    print(f"Loading base model: {base_model}")
-    print(f"LoRA adapter: {lora_path}")
+    # Auto-detect merged model (no adapter_config.json)
+    if not merged and lora_path.is_dir():
+        if not (lora_path / "adapter_config.json").exists() and (lora_path / "config.json").exists():
+            print(f"Auto-detected merged model (no adapter_config.json)")
+            merged = True
 
     # Determine device
     if device == "auto":
@@ -50,22 +53,36 @@ def load_model(lora_path: Path = None, base_model: str = None, device: str = "au
 
     print(f"Using device: {device}")
 
-    # Load tokenizer from base model (has chat template)
-    # LoRA checkpoints may not preserve the chat template
-    tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
+    if merged:
+        # Load merged model directly
+        print(f"Loading merged model: {lora_path}")
+        model = AutoModelForCausalLM.from_pretrained(
+            str(lora_path),
+            torch_dtype=torch.float16 if device != "cpu" else torch.float32,
+            device_map={"": device} if device in ["mps", "cpu"] else "auto",
+            trust_remote_code=True
+        )
+        tokenizer = AutoTokenizer.from_pretrained(str(lora_path), trust_remote_code=True)
+    else:
+        # Load base model + LoRA adapter
+        print(f"Loading base model: {base_model}")
+        print(f"LoRA adapter: {lora_path}")
 
-    # Load base model
-    model = AutoModelForCausalLM.from_pretrained(
-        base_model,
-        torch_dtype=torch.float16 if device != "cpu" else torch.float32,
-        device_map={"": device} if device in ["mps", "cpu"] else "auto",
-        trust_remote_code=True
-    )
+        # Load tokenizer from base model (has chat template)
+        tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
 
-    print(f"Loading LoRA adapter from: {lora_path}")
-    model = PeftModel.from_pretrained(model, str(lora_path))
+        # Load base model
+        model = AutoModelForCausalLM.from_pretrained(
+            base_model,
+            torch_dtype=torch.float16 if device != "cpu" else torch.float32,
+            device_map={"": device} if device in ["mps", "cpu"] else "auto",
+            trust_remote_code=True
+        )
+
+        print(f"Loading LoRA adapter from: {lora_path}")
+        model = PeftModel.from_pretrained(model, str(lora_path))
+
     model.eval()
-
     return model, tokenizer, device
 
 
@@ -133,6 +150,7 @@ def main():
     parser.add_argument("--positions", type=int, default=100, help="Number of positions to evaluate")
     parser.add_argument("--depth", type=int, default=15, help="Stockfish depth")
     parser.add_argument("--device", type=str, default="auto", help="Device (auto/cuda/mps/cpu)")
+    parser.add_argument("--merged", action="store_true", help="Model is already merged (not a LoRA adapter)")
     parser.add_argument("--output", type=str, default=None, help="Output JSON file")
     args = parser.parse_args()
 
@@ -156,7 +174,7 @@ def main():
     print()
 
     # Load model
-    model, tokenizer, device = load_model(lora_path, base_model, args.device)
+    model, tokenizer, device = load_model(lora_path, base_model, args.device, args.merged)
     print()
 
     # Create model function

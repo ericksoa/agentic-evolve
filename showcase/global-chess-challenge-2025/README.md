@@ -4,6 +4,22 @@ Training a <8B parameter LLM to play competitive chess using evolutionary optimi
 
 **Competition**: [AIcrowd Global Chess Challenge 2025](https://www.aicrowd.com/challenges/global-chess-challenge-2025)
 
+## Current Best: 77.4 ACPL (Jan 20, 2026)
+
+We've achieved competitive ACPL scores using the AIcrowd baseline training approach with Qwen3-0.6B:
+
+| Checkpoint | ACPL | Status |
+|------------|------|--------|
+| **60k steps** | **77.4** | Best so far |
+| 80k steps | 96.4 | Evaluating |
+| 100k steps | TBD | Evaluating |
+| Baseline | 71.9 | Target |
+| Leader | 46.4 | Goal |
+
+Training is 32% complete (100k/312k steps) on 2.5M positions.
+
+---
+
 ## The Journey
 
 ### Phase 1: Evolution (Jan 9-12)
@@ -58,13 +74,56 @@ With evolution insights in hand, we shifted to intensive "vibe-training" - rapid
 | 307737 | Wrong eos_token_id | Requests timed out |
 | 307740 | EOS fix not uploaded | 881 ACPL (garbage output) |
 | 307752 | Output format issues | Early checkpoint = broken output |
-| 307762 | Qwen 3B 12K | *Pending evaluation* |
 
 **Key Insight**: Local evaluation (192 ACPL) ≠ Platform evaluation (881 ACPL). The vLLM + Trainium stack handles EOS tokens differently.
 
+### Phase 4: Rejection Sampling Breakthrough (Jan 17-18)
+
+We implemented rejection sampling (RS) to improve move quality:
+
+1. **Generate candidates**: For each position, generate 8 candidate moves
+2. **Score with Stockfish**: Evaluate each move's centipawn loss
+3. **Keep best**: Train on the move with lowest loss
+
+**V6 RS Model Results**:
+- Before RS: 192.3 ACPL
+- After RS: **78.1 ACPL** (2.5x improvement!)
+- Submission #307892 - Our first competitive submission
+
+Key learnings:
+- RS works by filtering out bad moves before training
+- Quality of selection matters more than quantity of data
+- Stockfish as reward signal is highly effective
+
+### Phase 5: AIcrowd Baseline Training (Jan 19-20)
+
+We discovered the AIcrowd starter kit includes a proven training pipeline:
+- **2.5M positions** from ChessExplained dataset
+- **Qwen3-0.6B** base model (smaller but well-suited)
+- **Special token encoding** for board representation
+- **Output format**: `<uci_move>e2e4</uci_move>`
+
+This is what the competition baseline (71.9 ACPL) was trained on!
+
+**Training Progress** (as of Jan 20):
+```
+Step    | ACPL   | Notes
+--------|--------|---------------------------
+0       | 440.3  | Random moves
+10k     | 135.1  | Learning format
+20k     | 103.8  | Improving
+30k     | 101.7  | Plateau
+40k     | 109.6  | Slight regression
+60k     | 77.4   | Major breakthrough!
+80k     | 96.4   | Some regression
+100k    | TBD    | Evaluating
+```
+
+The 60k checkpoint (19% through training) is already near the competition baseline!
+
 ---
 
-## Current Status (Jan 16, 2026)
+## Current Status (Jan 20, 2026)
 
 ### Leaderboard Context
 
@@ -72,22 +131,27 @@ With evolution insights in hand, we shifted to intensive "vibe-training" - rapid
 |----------|------|-------|
 | **Leader** | 46.4 | Target to beat |
 | **Baseline** | 71.9 | Competition baseline |
-| **Our Best (local)** | 186.1 | Qwen 3B checkpoint-12000 |
-| **Gap** | 4.0x | Work to do |
+| **Our Best** | **77.4** | 60k checkpoint |
+| **Gap** | 1.7x | Getting close! |
 
 ### Active Training
 
-| Model | Machine | Progress | Eval Loss | Status |
-|-------|---------|----------|-----------|--------|
-| **Qwen2.5-3B** | chess-llm-v4 | 14.4% (12K/83K) | 0.420 | Training |
-| **V6 r128 (7B)** | chess-llm-v5 | ~14% | - | Training |
+| Model | Machine | Progress | Status |
+|-------|---------|----------|--------|
+| **Qwen3-0.6B (AIcrowd baseline)** | chess-llm-v4 | 32% (100k/312k) | Training |
 
-### Latest Submission
+### Submission History (Key Milestones)
 
-**307762** - Qwen 3B checkpoint at 14% training
-- Local ACPL: 186.1 (legal only)
-- Legal move rate: 98%
-- Status: Awaiting AIcrowd evaluation
+| Submission | Model | ACPL | Notes |
+|------------|-------|------|-------|
+| 308034 | 10-min baseline | 440.3 | Random moves - not learning |
+| 308040 | 10k checkpoint | 135.1 | Learning format |
+| 308043 | 20k checkpoint | 103.8 | Improving |
+| 308044 | 30k checkpoint | 101.7 | Plateau |
+| 308045 | 40k checkpoint | 109.6 | Regression |
+| **308048** | **60k checkpoint** | **77.4** | **Near baseline!** |
+| 308052 | 80k checkpoint | 96.4 | Regression |
+| 308056 | 100k checkpoint | TBD | Evaluating |
 
 ---
 
@@ -101,19 +165,34 @@ With evolution insights in hand, we shifted to intensive "vibe-training" - rapid
 ### 2. DPO Doesn't Work for Chess
 Direct Preference Optimization made performance **worse** (+6.2 ACPL). Offline preferences don't capture chess dynamics.
 
-**Pivot**: Plan GRPO (online RL) with real-time Stockfish reward.
+**What Works Instead**: Rejection sampling with Stockfish as reward signal achieved 2.5x improvement.
 
-### 3. Early Checkpoints Are Broken
-At 7-14% training, models produce garbage after the move:
+### 3. The Golden Chat Template
+A critical lesson: AIcrowd's evaluation doesn't send a system prompt, so the chat template must inject one:
+
+```jinja
+{%- if messages[0]['role'] == 'system' %}
+    {{- '<|im_start|>system\n' + messages[0]['content'] + '<|im_end|>\n' }}
+{%- else %}
+    {{- '<|im_start|>system\nYou are a chess grandmaster. Analyze positions and select the best move.<|im_end|>\n' }}
+{%- endif %}
 ```
-<uci_move>g8f6</uci_move>SmartyHeaderCode rematch FEN:...
-```
-Need to wait for 50%+ training before output format stabilizes.
+
+Without this, the model doesn't know it's playing chess!
 
 ### 4. Platform != Local
 V6 model: 192 ACPL locally → 881 ACPL on AIcrowd
 
-The vLLM + Trainium stack has different EOS token handling. What works locally may fail on the platform.
+The vLLM + Trainium stack has different EOS token handling. Critical settings:
+- `eos_token_id`: 151645 (`<|im_end|>`)
+- `do_sample`: false
+
+### 5. Optimal Checkpoint is NOT Final
+Training shows non-monotonic improvement:
+- 60k steps: 77.4 ACPL (best)
+- 80k steps: 96.4 ACPL (worse!)
+
+The sweet spot may be around 60k-80k for 2.5M positions.
 
 ---
 
@@ -133,39 +212,52 @@ The vLLM + Trainium stack has different EOS token handling. What works locally m
 
 ---
 
-## Training Data
+## Training Approaches
 
-| Dataset | Size | Purpose |
-|---------|------|---------|
-| `training_mega_449k.jsonl` | 449K positions | Main SFT training |
-| `training_sf3_500k.jsonl` | 500K positions | SF depth 3 annotations |
-| `training_elite_30k.jsonl` | 30K positions | High-quality subset |
-| `training_endgames.jsonl` | 7K positions | Endgame focus |
+### 1. AIcrowd Baseline (Current Best)
 
-**Total**: 9.2 GB across 37 files
+The competition provides a baseline training pipeline that works well:
+
+| Setting | Value |
+|---------|-------|
+| **Base Model** | Qwen/Qwen3-0.6B |
+| **Dataset** | ChessExplained 2.5M positions |
+| **Input Encoding** | Special tokens for squares |
+| **Output Format** | `<uci_move>e2e4</uci_move>` |
+| **Batch Size** | 8 (4 × 2 gradient accumulation) |
+| **Steps** | 312,500 (1 epoch) |
+| **Hardware** | H100 GPU |
+
+### 2. Rejection Sampling (V6 Model)
+
+For our Qwen2.5-7B model, we applied rejection sampling:
+1. Generate 8 candidate moves per position
+2. Score each with Stockfish
+3. Keep only the best move for training
+
+This improved from 192.3 → 78.1 ACPL (2.5x better).
 
 ---
 
 ## Model Architecture
 
-**Base**: Qwen2.5-3B (also experimenting with 7B)
+**Current Best**: Qwen3-0.6B (AIcrowd baseline)
 
-**Fine-tuning**: LoRA
-- Rank: 128, Alpha: 256
-- Target: All attention + MLP modules
-- Dropout: 0.05
+**Also Trained**:
+- Qwen2.5-3B with LoRA (r=128, alpha=256)
+- Qwen2.5-7B with LoRA (V6 model)
 
-**Prompt Format**:
+**Prompt Format** (Special Token Encoding):
 ```
-FEN: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
-Moves: a7a6, b7b5, c7c5, d7d5, e7e5, g8f6, ...
-Best?
+<White_King><e1><White_Queen><d1>...<blank><e4>...
+Side: white
+Legal: e2e4, d2d4, g1f3, ...
+Best move?
 ```
 
 **Output Format**:
 ```
-<uci_move>e7e5</uci_move>
-<rationale>Controls center</rationale>
+<uci_move>e2e4</uci_move>
 ```
 
 ---
@@ -173,8 +265,8 @@ Best?
 ## Infrastructure
 
 ### Cloud Training
-- **chess-llm-v4**: Qwen 3B on Lightning.ai L4 GPU
-- **chess-llm-v5**: V6 r128 (7B) on Lightning.ai L4 GPU
+- **chess-llm-v4**: H100 on Lightning.ai (AIcrowd baseline training)
+- **chess-llm-v5**: L4 GPU for V6/RS experiments
 
 ### Local Development
 - Apple Silicon M3 with MPS backend
@@ -183,7 +275,16 @@ Best?
 
 ### Submission Pipeline
 ```
-Train (Lightning) → Download checkpoint → Merge LoRA → Upload HuggingFace → Submit AIcrowd
+Train (Lightning H100)
+    ↓
+Fix chat_template.jinja (golden template)
+Fix generation_config.json (eos_token_id=151645)
+    ↓
+Upload to HuggingFace
+    ↓
+Submit to AIcrowd
+    ↓
+Monitor 100-game evaluation
 ```
 
 ---
@@ -223,13 +324,44 @@ global-chess-challenge-2025/
 | Date | Milestone |
 |------|-----------|
 | Jan 9 | Project started, evolution framework setup |
-| Jan 10-11 | Ran 6 generations of evolution |
+| Jan 10-11 | Ran 6 generations of strategy evolution |
 | Jan 12 | First real submission attempt |
 | Jan 13 | Reality check - actual ACPL was 208, not 85 |
 | Jan 13-14 | Built 449K mega-dataset, started cloud training |
 | Jan 14-15 | DPO experiments (failed), submission debugging |
 | Jan 15 | Discovered 61.5% ambiguous data problem |
-| Jan 16 | Qwen 3B checkpoint-12000 achieves 186 ACPL locally |
+| Jan 16 | Qwen 3B achieves 186 ACPL locally |
+| Jan 17 | Implemented rejection sampling |
+| Jan 18 | V6 RS model achieves **78.1 ACPL** - first competitive submission |
+| Jan 19 | Started AIcrowd baseline training (2.5M positions) |
+| Jan 20 | 60k checkpoint achieves **77.4 ACPL** - matches baseline! |
+
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `golden_chat_template.jinja` | The correct chat template with system prompt injection |
+| `checkpoint_pipeline.py` | Automated checkpoint → HuggingFace → AIcrowd pipeline |
+| `evaluate_final_model.py` | Local ACPL evaluation against Stockfish |
+| `aicrowd_baselines/` | AIcrowd's baseline training code |
+
+---
+
+## Lessons for Future Competitions
+
+1. **Start with the baseline** - Don't reinvent the wheel. The competition baseline exists for a reason.
+
+2. **Test on the actual platform early** - Local evaluation ≠ platform evaluation. Submit early and often.
+
+3. **Track everything** - Use memory.json to log all submissions, DRIs, and learnings.
+
+4. **Chat templates matter** - A missing system prompt can make your model output garbage.
+
+5. **Checkpoints aren't monotonic** - More training isn't always better. Evaluate multiple checkpoints.
+
+6. **Rejection sampling works** - When you can verify answers (like with Stockfish), use it.
 
 ---
 

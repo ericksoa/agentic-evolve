@@ -1,5 +1,67 @@
 # Global Chess Challenge 2025 - Evolve SDK Project
 
+## CRITICAL: Read Memory EFFICIENTLY (Don't Context Dump)
+
+The memory file (`.evolve-sdk/evolve_chess_training_strategy/memory.json`) is **40K+ tokens**. DO NOT read it all at once.
+
+### How to Read Memory Based on Task
+
+**For SUBMISSIONS:**
+```bash
+# 1. FIRST: Read DRIs (required before ANY submission)
+grep -A 50 '"dont_repeat_incidents"' memory.json | head -100
+
+# 2. List existing HuggingFace repos (USE THE API, not grep!)
+python3 -c "from huggingface_hub import HfApi; [print(m.id) for m in HfApi().list_models(author='ericksoa')]"
+
+# 3. Check recent submissions
+grep -B 2 -A 20 '"submission_id"' memory.json | tail -60
+```
+
+**For TRAINING STATUS:**
+```bash
+grep -A 30 '"active_processes"' memory.json
+grep -A 20 '"rejection_sampling_training"' memory.json
+```
+
+**For MODEL INVENTORY:**
+```bash
+grep -A 40 '"model_inventory"' memory.json
+grep -A 10 '"hf_repos"' memory.json
+```
+
+**For EVALUATION RESULTS:**
+```bash
+grep -A 15 '"model_evaluations"' memory.json
+```
+
+### Priority Order When Starting a Task
+
+1. **READ DRIs FIRST** - Always. No exceptions.
+2. **Check what already exists** - Use APIs (HuggingFace, Lightning) not memory grep
+3. **Read only relevant memory sections** - Use targeted grep, not full file reads
+4. **Use proper tools** - `huggingface_hub` Python API, not curl workarounds
+
+## CRITICAL: Golden Template for All Models
+
+**NEVER write your own chat_template.jinja. ALWAYS use the golden template.**
+
+- **Golden template**: `golden_chat_template.jinja` (copied from working ericksoa/chess-v6-aicrowd)
+- **Why**: Simplified templates don't inject system prompt when AIcrowd sends no system message
+- **Script**: `checkpoint_pipeline.py` uses this automatically via `CHESS_CHAT_TEMPLATE_FILE`
+
+If you see a chat_template.jinja that's shorter than 2000 chars, it's probably broken.
+
+## CRITICAL: DRI Instructions Override Everything
+
+The `dont_repeat_incidents` array contains HARD-LEARNED LESSONS from wasted submissions.
+
+**BEFORE any submission or major action:**
+1. Read the DRIs section
+2. Verify your planned action doesn't repeat a past incident
+3. Follow the verification commands in each DRI
+4. For new HF repos: verify chat_template.jinja matches golden template
+
 ## CRITICAL: Use Evolve SDK Memory System
 
 **DO NOT create random .md files to store learnings, DRIs, roadmaps, or project state.**
@@ -12,8 +74,6 @@ Always use the evolve-sdk memory system:
 - **Roadmaps go in**: `memory.json` → `comprehensive_roadmap` object
 - **Credentials**: Always check `.env` file FIRST for API keys
 
-Before any HuggingFace submission, CHECK the DRIs in memory.json to avoid repeating past mistakes.
-
 **NEVER create these files** (use memory.json instead):
 - IMPROVEMENT_PLAN.md
 - WORK_IN_PROGRESS.md
@@ -24,15 +84,16 @@ Before any HuggingFace submission, CHECK the DRIs in memory.json to avoid repeat
 
 **Target: <100 ACPL for competitive submission**
 
-| Model | ACPL | Status |
-|-------|------|--------|
-| V6 checkpoint-4000 (local) | **192.3** | Best local eval |
-| Submission 307752 (early) | **~146** | Evaluating (3/100 matches) |
-| V4 completed model | TBD | Ready to evaluate |
+| Model | ACPL (AIcrowd verified) | Status |
+|-------|-------------------------|--------|
+| **V6 checkpoint-4000** | **202** | BEST (submission 307752) |
+| Baseline | 71.9 | Competition baseline |
+| Leader | 46.4 | Target to beat |
 
-- Leader: 46.4 ACPL, Baseline: 71.9 ACPL
-- We're ~3-4x behind leaders
-- Current level: ~1400 Elo (weak amateur)
+- **CRITICAL**: 78.1 ACPL was HALLUCINATED. It was never real.
+- Our actual best verified AIcrowd result is **202 ACPL**
+- We are WORSE than baseline (71.9 ACPL)
+- Gap to leader: 155.6 ACPL
 
 ## Competition Overview
 - **Platform**: AIcrowd
