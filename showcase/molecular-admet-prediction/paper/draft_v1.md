@@ -1,6 +1,6 @@
 # EvolveML: Automated Discovery of Competitive hERG Toxicity Predictors Through Evolutionary Algorithm Design
 
-**Authors:** Aaron Erickson*
+**Authors:** Aaron Erickson
 
 **Date:** January 2026
 
