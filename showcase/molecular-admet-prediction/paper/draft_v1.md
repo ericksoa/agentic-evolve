@@ -3,7 +3,6 @@
 **Authors:** Aaron Erickson¹*
 
 **Affiliations:**
-¹ NVIDIA Corporation
 * Corresponding author: aerickson@nvidia.com
 
 **Date:** January 2026
