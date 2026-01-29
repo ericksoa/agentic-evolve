@@ -1,0 +1,17 @@
+{
+  "main_upper": [0.38, 0.28, 0.13, 0.17],
+  "main_lower": [-0.20, -0.15, -0.04, -0.01],
+  "main_angle": 15.5,
+  "flap_upper": [0.30, 0.32, 0.17, 0.08],
+  "flap_lower": [-0.16, -0.13, -0.04, -0.01],
+  "flap_angle": 14.5,
+  "flap_gap": 0.022,
+  "_fitness": 66.35,
+  "_improvement": "+6.4% from trust-aware evolution (8 generations)",
+  "_confidence": 0.962,
+  "_trust_score": 0.90,
+  "_adversary_validated": true,
+  "_mutation_path": "high_camber → reflex_high_le → extreme_le → ultra_le → mega_le → max_le",
+  "_circuits_tested": ["silverstone", "monaco", "monza"],
+  "_key_innovation": "High leading edge camber with reflex trailing edge - front-loaded lift distribution"
+}

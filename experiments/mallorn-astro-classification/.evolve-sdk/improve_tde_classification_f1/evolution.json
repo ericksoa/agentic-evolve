@@ -1,0 +1,76 @@
+{
+  "problem": "Improve TDE classification F1 score on MALLORN astronomical challenge",
+  "mode": "ml",
+  "generation": 14,
+  "population": [
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/mallorn-astro-classification/.evolve-sdk/improve_tde_classification_f1/mutations/gen11_champion.py",
+      "fitness": 0.5296,
+      "approach": "Gen11_Champion - LogReg + polynomial interactions (C=0.05, t=0.43)"
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/mallorn-astro-classification/.evolve-sdk/improve_tde_classification_f1/mutations/gen11b_threshold42.py",
+      "fitness": 0.527,
+      "approach": "Gen11b - Interactions with threshold=0.42"
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/mallorn-astro-classification/.evolve-sdk/improve_tde_classification_f1/mutations/gen11c_weaker_reg.py",
+      "fitness": 0.5259,
+      "approach": "Gen11c - Interactions with C=0.08"
+    }
+  ],
+  "champion": {
+    "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/mallorn-astro-classification/.evolve-sdk/improve_tde_classification_f1/mutations/gen11_champion.py",
+    "fitness": 0.5296,
+    "approach": "Gen11_Champion - LogReg + polynomial interactions (C=0.05, t=0.43)"
+  },
+  "history": [
+    {
+      "generation": 10,
+      "timestamp": "2026-01-07T12:55:00.000000",
+      "population_size": 1,
+      "best_fitness": 0.5025,
+      "mutations_tried": 0,
+      "mutations_valid": 0
+    },
+    {
+      "generation": 11,
+      "timestamp": "2026-01-07T13:30:00.000000",
+      "population_size": 3,
+      "best_fitness": 0.5296,
+      "mutations_tried": 5,
+      "mutations_valid": 3,
+      "notes": "Feature interactions + threshold optimization"
+    },
+    {
+      "generation": 12,
+      "timestamp": "2026-01-07T14:49:58.102201",
+      "population_size": 3,
+      "best_fitness": 0.5296,
+      "mutations_tried": 4,
+      "mutations_valid": 0
+    },
+    {
+      "generation": 13,
+      "timestamp": "2026-01-07T14:57:49.228284",
+      "population_size": 3,
+      "best_fitness": 0.5296,
+      "mutations_tried": 4,
+      "mutations_valid": 0
+    },
+    {
+      "generation": 14,
+      "timestamp": "2026-01-07T15:03:38.281089",
+      "population_size": 3,
+      "best_fitness": 0.5296,
+      "mutations_tried": 4,
+      "mutations_valid": 0
+    }
+  ],
+  "config": {
+    "max_generations": 14,
+    "population_size": 10,
+    "elite_count": 3
+  },
+  "updated_at": "2026-01-07T15:03:38.289739"
+}

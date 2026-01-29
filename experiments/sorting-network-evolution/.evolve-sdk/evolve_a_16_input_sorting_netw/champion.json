@@ -1,0 +1,20 @@
+{
+  "file": ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen1x.py",
+  "parents_used": [
+    "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/sorting-network-evolution/.evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen0_a.py",
+    "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/sorting-network-evolution/.evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen0_e.py",
+    "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/sorting-network-evolution/.evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen0_d.py"
+  ],
+  "from_each_parent": {
+    "gen0_e.py": "Knuth's gap sequence generation and shell sort gap-based comparison logic for initial long-distance ordering",
+    "gen0_d.py": "Odd-even transposition alternating pass structure for systematic neighboring comparisons",
+    "gen0_a.py": "Bubble sort sequential comparison pattern for final cleanup and completeness guarantee"
+  },
+  "description": "Created a three-stage hybrid network: (1) Shell sort with large gaps (\u22654) for efficient initial long-distance comparisons, (2) Reduced odd-even passes (n/2 instead of n) for systematic neighboring element sorting, (3) Limited bubble sort cleanup (4 passes max) for final guarantee. This combines shell sort's gap efficiency, odd-even's parallelizable structure, and bubble sort's reliability while reducing redundant comparisons between stages.",
+  "variant": "x",
+  "mutation_type": "crossover",
+  "valid": true,
+  "fitness": 855.8,
+  "error": null,
+  "notes": "Valid sorting network with 141 comparators, depth 32, passed all 75536 tests"
+}

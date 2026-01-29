@@ -1,3 +1,0 @@
-# KernelBench Evolution requirements
-torch>=2.0.0
-triton>=2.1.0

@@ -1,0 +1,158 @@
+{
+  "problem": "string_search_algorithms",
+  "description": "Evolve fast string search from naive O(nm) to optimized O(n/m)",
+  "results": {
+    "baseline": {
+      "valid": true,
+      "fitness": 59.855314762635686,
+      "metric": "searches/sec"
+    },
+    "gen0_early_exit": {
+      "valid": true,
+      "fitness": 130.91127093847996,
+      "metric": "searches/sec"
+    },
+    "gen1_kmp": {
+      "valid": true,
+      "fitness": 72.21404535220891,
+      "metric": "searches/sec"
+    },
+    "gen2_boyer_moore": {
+      "valid": true,
+      "fitness": 170.64513919715517,
+      "metric": "searches/sec"
+    },
+    "gen3_rabin_karp": {
+      "valid": true,
+      "fitness": 55.41454610028859,
+      "metric": "searches/sec"
+    },
+    "gen4_champion": {
+      "valid": true,
+      "fitness": 215.9308373158508,
+      "metric": "searches/sec"
+    }
+  },
+  "mutation_history": [
+    {
+      "generation": 0,
+      "mutation_type": "baseline",
+      "success": true,
+      "fitness_delta": 0
+    },
+    {
+      "generation": 1,
+      "mutation_type": "parameter_tweak",
+      "success": true,
+      "fitness_delta": 71.05595617584427
+    },
+    {
+      "generation": 1,
+      "mutation_type": "parameter_tweak",
+      "success": false,
+      "fitness_delta": 0
+    },
+    {
+      "generation": 1,
+      "mutation_type": "parameter_tweak",
+      "success": false,
+      "fitness_delta": 0
+    },
+    {
+      "generation": 2,
+      "mutation_type": "parameter_tweak",
+      "success": false,
+      "fitness_delta": 0
+    },
+    {
+      "generation": 2,
+      "mutation_type": "structural",
+      "success": false,
+      "fitness_delta": 0
+    },
+    {
+      "generation": 2,
+      "mutation_type": "parameter_tweak",
+      "success": false,
+      "fitness_delta": 0
+    },
+    {
+      "generation": 3,
+      "mutation_type": "algorithm_swap",
+      "success": false,
+      "fitness_delta": 0
+    },
+    {
+      "generation": 3,
+      "mutation_type": "parameter_tweak",
+      "success": false,
+      "fitness_delta": 0
+    },
+    {
+      "generation": 4,
+      "mutation_type": "algorithm_swap",
+      "success": true,
+      "fitness_delta": 98.43109384494626
+    },
+    {
+      "generation": 4,
+      "mutation_type": "structural",
+      "success": false,
+      "fitness_delta": 0
+    },
+    {
+      "generation": 5,
+      "mutation_type": "algorithm_swap",
+      "success": false,
+      "fitness_delta": 0
+    },
+    {
+      "generation": 5,
+      "mutation_type": "parameter_tweak",
+      "success": false,
+      "fitness_delta": 0
+    },
+    {
+      "generation": 6,
+      "mutation_type": "structural",
+      "success": true,
+      "fitness_delta": 45.28569811869562
+    }
+  ],
+  "effectiveness": {
+    "baseline": {
+      "attempts": 1,
+      "successes": 1,
+      "success_rate": 1.0,
+      "avg_impact": 0.0,
+      "effectiveness": 0.0
+    },
+    "parameter_tweak": {
+      "attempts": 7,
+      "successes": 1,
+      "success_rate": 0.143,
+      "avg_impact": 71.056,
+      "effectiveness": 10.151
+    },
+    "structural": {
+      "attempts": 3,
+      "successes": 1,
+      "success_rate": 0.333,
+      "avg_impact": 45.286,
+      "effectiveness": 15.095
+    },
+    "algorithm_swap": {
+      "attempts": 3,
+      "successes": 1,
+      "success_rate": 0.333,
+      "avg_impact": 98.431,
+      "effectiveness": 32.81
+    }
+  },
+  "summary": {
+    "baseline_fitness": 59.855314762635686,
+    "champion_name": "gen4_champion",
+    "champion_fitness": 215.9308373158508,
+    "improvement_pct": 260.7546600868337
+  }
+}

@@ -1,0 +1,35 @@
+# Evolution state (regenerated per run)
+.evolve-sdk/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Results (regenerate per hardware)
+results/baselines.json
+
+# Virtual environment
+venv/
+.venv/
+
+# Secrets - NEVER commit these!
+.env
+.env.local
+.env.*.local
+
+# Keep the example
+!.env.example
+
+# Browser automation artifacts
+.browser_profile/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

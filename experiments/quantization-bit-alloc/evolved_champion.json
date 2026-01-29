@@ -1,0 +1,32 @@
+{
+  "_comment": "Evolved GPT-2 quantization strategy - 20 generations of evolution",
+  "_strategy": "all_int8_attn: ALL attention INT8, only h.1-3 MLP FP16",
+  "_fitness": 1.246,
+  "_verified_fitness": 1.246,
+  "_compression": "1.794x (138.7MB vs 248.9MB baseline)",
+  "_perplexity_degradation": "5.48% on verify corpus (30.043 vs 28.4805)",
+  "_key_insights": [
+    "Embeddings (wte, wpe) can be INT8",
+    "ALL attention can be INT8 - even h.11!",
+    "Only h.1-3 MLP need FP16 for quality",
+    "MLP compensation works throughout the entire network",
+    "No attention layer needs FP16 protection",
+    "LayerNorm always FP32 for numerical stability"
+  ],
+
+  "wte": "int8",
+  "wpe": "int8",
+  "h.0.ln_1": "fp32", "h.0.ln_2": "fp32", "h.0.attn": "int8", "h.0.mlp": "int8",
+  "h.1.ln_1": "fp32", "h.1.ln_2": "fp32", "h.1.attn": "int8", "h.1.mlp": "fp16",
+  "h.2.ln_1": "fp32", "h.2.ln_2": "fp32", "h.2.attn": "int8", "h.2.mlp": "fp16",
+  "h.3.ln_1": "fp32", "h.3.ln_2": "fp32", "h.3.attn": "int8", "h.3.mlp": "fp16",
+  "h.4.ln_1": "fp32", "h.4.ln_2": "fp32", "h.4.attn": "int8", "h.4.mlp": "int8",
+  "h.5.ln_1": "fp32", "h.5.ln_2": "fp32", "h.5.attn": "int8", "h.5.mlp": "int8",
+  "h.6.ln_1": "fp32", "h.6.ln_2": "fp32", "h.6.attn": "int8", "h.6.mlp": "int8",
+  "h.7.ln_1": "fp32", "h.7.ln_2": "fp32", "h.7.attn": "int8", "h.7.mlp": "int8",
+  "h.8.ln_1": "fp32", "h.8.ln_2": "fp32", "h.8.attn": "int8", "h.8.mlp": "int8",
+  "h.9.ln_1": "fp32", "h.9.ln_2": "fp32", "h.9.attn": "int8", "h.9.mlp": "int8",
+  "h.10.ln_1": "fp32", "h.10.ln_2": "fp32", "h.10.attn": "int8", "h.10.mlp": "int8",
+  "h.11.ln_1": "fp32", "h.11.ln_2": "fp32", "h.11.attn": "int8", "h.11.mlp": "int8",
+  "ln_f": "fp32"
+}

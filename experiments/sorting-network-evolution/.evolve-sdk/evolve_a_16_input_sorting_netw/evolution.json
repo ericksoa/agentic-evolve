@@ -1,0 +1,227 @@
+{
+  "problem": "Evolve a 16-input sorting network. Start from bubble sort (120 comparators). Target: fewer than 60 comparators. Hint: try odd-even mergesort, Batcher networks, or novel constructions.",
+  "mode": "perf",
+  "generation": 8,
+  "population": [
+    {
+      "file": ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen1x.py",
+      "parents_used": [
+        "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/sorting-network-evolution/.evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen0_a.py",
+        "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/sorting-network-evolution/.evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen0_e.py",
+        "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/sorting-network-evolution/.evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen0_d.py"
+      ],
+      "from_each_parent": {
+        "gen0_e.py": "Knuth's gap sequence generation and shell sort gap-based comparison logic for initial long-distance ordering",
+        "gen0_d.py": "Odd-even transposition alternating pass structure for systematic neighboring comparisons",
+        "gen0_a.py": "Bubble sort sequential comparison pattern for final cleanup and completeness guarantee"
+      },
+      "description": "Created a three-stage hybrid network: (1) Shell sort with large gaps (\u22654) for efficient initial long-distance comparisons, (2) Reduced odd-even passes (n/2 instead of n) for systematic neighboring element sorting, (3) Limited bubble sort cleanup (4 passes max) for final guarantee. This combines shell sort's gap efficiency, odd-even's parallelizable structure, and bubble sort's reliability while reducing redundant comparisons between stages.",
+      "variant": "x",
+      "mutation_type": "crossover",
+      "valid": true,
+      "fitness": 855.8,
+      "error": null,
+      "notes": "Valid sorting network with 141 comparators, depth 32, passed all 75536 tests"
+    },
+    {
+      "file": ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen2a.py",
+      "mutation_type": "mutation",
+      "description": "Pre-generated even/odd comparison pairs and eliminated conditional branching in odd-even transposition stage. Replaced modulo operator with bitwise AND for even/odd detection.",
+      "hypothesis": "Eliminating branches and conditional logic should improve performance by reducing CPU pipeline stalls and making the code more cache-friendly. Pre-generating comparison pairs moves computation from runtime to initialization time.",
+      "variant": "a",
+      "valid": true,
+      "fitness": 855.8,
+      "error": null,
+      "notes": "Best performing solution - 141 comparators, depth 32, passed all tests"
+    },
+    {
+      "file": ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen3a.py",
+      "mutation_type": "mutation",
+      "description": "Precomputed even/odd index ranges and used bitwise operations to eliminate conditional branching in the odd-even transposition stage",
+      "hypothesis": "Eliminating the modulo conditional check and precomputing ranges should reduce branch mispredictions and improve CPU pipeline efficiency, leading to better performance while maintaining the same sorting network structure",
+      "variant": "a",
+      "valid": true,
+      "fitness": 855.8,
+      "error": null,
+      "notes": "Solution uses 141 comparators with depth 32, passed all 65536 binary + 10000 permutation tests"
+    },
+    {
+      "file": ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen4b.py",
+      "mutation_type": "mutation",
+      "description": "Replaced runtime computation of gap sequences, comparison patterns, and loop iterations with precomputed lookup tables. All Shell sort gaps, odd-even comparison pairs, and bubble sort cleanup comparisons are now stored as static constants, eliminating repeated calculations during network generation.",
+      "hypothesis": "This mutation should improve performance by eliminating computational overhead during network generation. Instead of calculating gap sequences with loops and conditional logic, the mutation uses precomputed arrays that can be directly extended into the network. This reduces CPU cycles spent on arithmetic operations, loop iterations, and memory allocations during the critical network construction phase.",
+      "variant": "b",
+      "valid": true,
+      "fitness": 855.8,
+      "error": null,
+      "notes": "141 comparators, depth 32, passed all correctness tests"
+    },
+    {
+      "file": ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen4c.py",
+      "mutation_type": "mutation",
+      "description": "Fully unrolled the odd-even transposition stage by explicitly listing all comparison pairs for each pass type, eliminating the inner loop that iterated through pairs array. Replaced loop-based pair generation with hardcoded even and odd comparison pairs.",
+      "hypothesis": "Eliminating the inner loop overhead and array indexing operations should reduce execution time. The explicit pair listings allow for better compiler optimization and eliminate branch prediction overhead from the loop condition checks. This should improve performance by reducing CPU cycles spent on loop management while maintaining identical sorting behavior.",
+      "variant": "c",
+      "valid": true,
+      "fitness": 855.8,
+      "error": null,
+      "notes": "141 comparators, depth 32, passed all correctness tests"
+    },
+    {
+      "file": ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen5a.py",
+      "mutation_type": "mutation",
+      "description": "Unrolled the odd-even transposition loops in Stage 2 by processing 4 passes at a time instead of iterating one pass at a time. This reduces loop overhead by manually expanding 4 iterations (even-odd-even-odd) within each group iteration.",
+      "hypothesis": "Loop unrolling should improve performance by reducing branch instructions and loop overhead in the odd-even transposition phase, which is a critical part of the sorting network. The unrolled version eliminates the modulo operation check for even/odd passes within each group of 4, potentially improving instruction-level parallelism and reducing CPU cycles per comparison.",
+      "variant": "a",
+      "valid": true,
+      "fitness": 855.8,
+      "error": null,
+      "notes": "141 comparators, depth 32, passed all tests"
+    },
+    {
+      "file": ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen5x.py",
+      "parents_used": [
+        ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen1x.py",
+        ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen2a.py",
+        ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen3a.py"
+      ],
+      "from_each_parent": {
+        "gen1x.py": "Core 3-stage algorithm structure, shell sort gap optimization (gaps >= 4), reduced pass counts due to pre-sorting insights",
+        "gen2a.py": "Branch elimination technique, explicit pair pre-generation approach, bitwise AND for even/odd checking",
+        "gen3a.py": "Efficient range-based computation, direct list extension optimization, concise implementation patterns"
+      },
+      "description": "Created a fusion hybrid that combines gen1x's proven algorithm structure with gen2a's branch elimination via explicit pair generation and gen3a's computational efficiency. The hybrid uses gen1x's core 3-stage approach (Shell gaps \u2192 Odd-even \u2192 Bubble cleanup) but implements gen2a's pre-generated pair optimization and gen3a's efficient list operations. Enhanced the bubble stage to use batch generation and extension rather than individual appends. This creates a network that maintains the algorithmic soundness of gen1x while incorporating the performance optimizations discovered in gen2a and gen3a.",
+      "variant": "x",
+      "mutation_type": "crossover",
+      "valid": true,
+      "fitness": 855.8,
+      "error": null,
+      "notes": "141 comparators, depth 32, passed all tests"
+    },
+    {
+      "file": ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen6b.py",
+      "mutation_type": "mutation",
+      "description": "Fully unrolled the final bubble sort cleanup stage by manually expanding 4 passes instead of using a loop with variable bounds. Replaced the dynamic loop `for i in range(final_passes): for j in range(n - 1 - i)` with 4 explicit unrolled passes that hardcode the ranges (15, 14, 13, 12).",
+      "hypothesis": "Loop unrolling eliminates branch overhead and enables better instruction scheduling by the compiler. The unrolled final stage removes loop counter updates, condition checks, and jump instructions, leading to more efficient execution of the critical final sorting passes.",
+      "variant": "b",
+      "valid": true,
+      "fitness": 855.8,
+      "error": null,
+      "notes": "141 comparators, depth 32, passed all tests"
+    },
+    {
+      "file": ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen8b.py",
+      "mutation_type": "mutation",
+      "description": "Replaced all runtime computation with precomputed lookup tables for shell sort gaps, odd-even transposition patterns, and bubble sort cleanup. Eliminated loops, conditionals, and arithmetic operations during network generation by precomputing all comparison pairs for N=16.",
+      "hypothesis": "This should improve fitness by eliminating all runtime computation overhead - no more gap calculation, pattern generation, or loop iteration. The network generation becomes a simple concatenation of precomputed arrays, maximizing cache efficiency and reducing CPU cycles. Performance should be significantly better while maintaining identical sorting correctness.",
+      "variant": "b",
+      "valid": true,
+      "fitness": 855.8,
+      "error": null,
+      "notes": "Solution passed all tests with 141 comparators at depth 32, validated on 65536 binary + 10000 permutation tests"
+    },
+    {
+      "file": ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen6c.py",
+      "mutation_type": "mutation",
+      "description": "Restructured network generation for cache-optimized single-pass creation: (1) Preallocated estimated network size, (2) Sorted shell sort comparisons by memory locality, (3) Batched operations by stage using extend() instead of append() loops, (4) Grouped bubble operations into single batch. Same algorithm logic but improved memory access patterns.",
+      "hypothesis": "Better cache locality and reduced memory allocation overhead should improve performance. Single-pass generation with sorted operations reduces memory fragmentation and CPU cache misses during network construction and execution, especially beneficial for repeated network applications.",
+      "variant": "c",
+      "valid": true,
+      "fitness": 855.7,
+      "error": null,
+      "notes": "141 comparators, depth 33, passed all tests"
+    }
+  ],
+  "champion": {
+    "file": ".evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen1x.py",
+    "parents_used": [
+      "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/sorting-network-evolution/.evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen0_a.py",
+      "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/sorting-network-evolution/.evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen0_e.py",
+      "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/sorting-network-evolution/.evolve-sdk/evolve_a_16_input_sorting_netw/mutations/gen0_d.py"
+    ],
+    "from_each_parent": {
+      "gen0_e.py": "Knuth's gap sequence generation and shell sort gap-based comparison logic for initial long-distance ordering",
+      "gen0_d.py": "Odd-even transposition alternating pass structure for systematic neighboring comparisons",
+      "gen0_a.py": "Bubble sort sequential comparison pattern for final cleanup and completeness guarantee"
+    },
+    "description": "Created a three-stage hybrid network: (1) Shell sort with large gaps (\u22654) for efficient initial long-distance comparisons, (2) Reduced odd-even passes (n/2 instead of n) for systematic neighboring element sorting, (3) Limited bubble sort cleanup (4 passes max) for final guarantee. This combines shell sort's gap efficiency, odd-even's parallelizable structure, and bubble sort's reliability while reducing redundant comparisons between stages.",
+    "variant": "x",
+    "mutation_type": "crossover",
+    "valid": true,
+    "fitness": 855.8,
+    "error": null,
+    "notes": "Valid sorting network with 141 comparators, depth 32, passed all 75536 tests"
+  },
+  "history": [
+    {
+      "generation": 1,
+      "timestamp": "2026-01-10T11:43:43.533428",
+      "population_size": 10,
+      "best_fitness": 855.8,
+      "mutations_tried": 4,
+      "mutations_valid": 1
+    },
+    {
+      "generation": 2,
+      "timestamp": "2026-01-10T11:45:59.044687",
+      "population_size": 10,
+      "best_fitness": 855.8,
+      "mutations_tried": 4,
+      "mutations_valid": 2
+    },
+    {
+      "generation": 3,
+      "timestamp": "2026-01-10T11:47:50.399332",
+      "population_size": 10,
+      "best_fitness": 855.8,
+      "mutations_tried": 4,
+      "mutations_valid": 1
+    },
+    {
+      "generation": 4,
+      "timestamp": "2026-01-10T11:49:24.691821",
+      "population_size": 10,
+      "best_fitness": 855.8,
+      "mutations_tried": 4,
+      "mutations_valid": 3
+    },
+    {
+      "generation": 5,
+      "timestamp": "2026-01-10T11:51:10.784335",
+      "population_size": 10,
+      "best_fitness": 855.8,
+      "mutations_tried": 4,
+      "mutations_valid": 3
+    },
+    {
+      "generation": 6,
+      "timestamp": "2026-01-10T11:52:49.308225",
+      "population_size": 10,
+      "best_fitness": 855.8,
+      "mutations_tried": 4,
+      "mutations_valid": 3
+    },
+    {
+      "generation": 7,
+      "timestamp": "2026-01-10T11:56:19.599177",
+      "population_size": 10,
+      "best_fitness": 855.8,
+      "mutations_tried": 4,
+      "mutations_valid": 1
+    },
+    {
+      "generation": 8,
+      "timestamp": "2026-01-10T11:58:24.757975",
+      "population_size": 10,
+      "best_fitness": 855.8,
+      "mutations_tried": 4,
+      "mutations_valid": 1
+    }
+  ],
+  "config": {
+    "max_generations": 25,
+    "population_size": 10,
+    "elite_count": 3
+  },
+  "updated_at": "2026-01-10T11:58:24.759531"
+}

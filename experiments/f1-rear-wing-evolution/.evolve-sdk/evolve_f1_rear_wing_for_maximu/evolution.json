@@ -1,0 +1,68 @@
+{
+  "problem": "Evolve F1 rear wing for maximum performance. Optimize downforce, drag, and lap time for specified circuit.",
+  "mode": "perf",
+  "generation": 1,
+  "population": [
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/f1-rear-wing-evolution/.evolve-sdk/evolve_f1_rear_wing_for_maximu/mutations/gen0_a.py",
+      "fitness": 0,
+      "approach": "discovered"
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/f1-rear-wing-evolution/.evolve-sdk/evolve_f1_rear_wing_for_maximu/mutations/gen0_e.py",
+      "fitness": 0,
+      "approach": "discovered"
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/f1-rear-wing-evolution/.evolve-sdk/evolve_f1_rear_wing_for_maximu/mutations/gen0_d.py",
+      "fitness": 0,
+      "approach": "discovered"
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/f1-rear-wing-evolution/.evolve-sdk/evolve_f1_rear_wing_for_maximu/mutations/gen0_h.py",
+      "fitness": 0,
+      "approach": "discovered"
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/f1-rear-wing-evolution/.evolve-sdk/evolve_f1_rear_wing_for_maximu/mutations/gen0_g.py",
+      "fitness": 0,
+      "approach": "discovered"
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/f1-rear-wing-evolution/.evolve-sdk/evolve_f1_rear_wing_for_maximu/mutations/gen0_c.py",
+      "fitness": 0,
+      "approach": "discovered"
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/f1-rear-wing-evolution/.evolve-sdk/evolve_f1_rear_wing_for_maximu/mutations/gen0_b.py",
+      "fitness": 0,
+      "approach": "discovered"
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/f1-rear-wing-evolution/.evolve-sdk/evolve_f1_rear_wing_for_maximu/mutations/gen0_f.py",
+      "fitness": 0,
+      "approach": "discovered"
+    }
+  ],
+  "champion": {
+    "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/f1-rear-wing-evolution/.evolve-sdk/evolve_f1_rear_wing_for_maximu/mutations/gen0_a.py",
+    "fitness": 0,
+    "approach": "discovered"
+  },
+  "history": [
+    {
+      "generation": 1,
+      "timestamp": "2026-01-11T07:37:03.616889",
+      "population_size": 8,
+      "best_fitness": 0,
+      "mutations_tried": 4,
+      "mutations_valid": 0
+    }
+  ],
+  "config": {
+    "max_generations": 15,
+    "population_size": 8,
+    "elite_count": 3
+  },
+  "updated_at": "2026-01-11T07:37:03.616947"
+}

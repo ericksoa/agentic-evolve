@@ -1,0 +1,63 @@
+{
+  "gpu": "Tesla T4",
+  "platform": "Lightning.ai",
+  "timestamp": "2025-01-07T05:15:00",
+  "baseline": {
+    "32x512": 0.009273,
+    "32x1024": 0.008919,
+    "32x2048": 0.009215,
+    "64x512": 0.009428,
+    "64x1024": 0.008991,
+    "64x2048": 0.008759,
+    "128x512": 0.008486,
+    "128x1024": 0.008622,
+    "128x2048": 0.008854
+  },
+  "generations": {
+    "Gen 0 (Basic)": {
+      "times": {
+        "32x512": 0.032533,
+        "32x1024": 0.033144,
+        "32x2048": 0.033249,
+        "64x512": 0.032543,
+        "64x1024": 0.032924,
+        "64x2048": 0.032215,
+        "128x512": 0.031903,
+        "128x1024": 0.032353,
+        "128x2048": 0.032459
+      },
+      "avg_speedup": 0.275
+    },
+    "Gen 1 (Online)": {
+      "times": {
+        "32x512": 0.033999,
+        "32x1024": 0.033596,
+        "32x2048": 0.033608,
+        "64x512": 0.033248,
+        "64x1024": 0.033185,
+        "64x2048": 0.032607,
+        "128x512": 0.032471,
+        "128x1024": 0.032413,
+        "128x2048": 0.032557
+      },
+      "avg_speedup": 0.271
+    },
+    "Gen 2 (Vectorized)": {
+      "times": {
+        "32x512": 0.033380,
+        "32x1024": 0.033214,
+        "32x2048": 0.033575,
+        "64x512": 0.033904,
+        "64x1024": 0.033097,
+        "64x2048": 0.032675,
+        "128x512": 0.032583,
+        "128x1024": 0.032763,
+        "128x2048": 0.032488
+      },
+      "avg_speedup": 0.271
+    }
+  },
+  "best_generation": "Gen 0 (Basic)",
+  "best_speedup": 0.275,
+  "notes": "PyTorch baseline is highly optimized for small sizes. Triton overhead dominates at microsecond scale. For better results, use larger batch/sequence sizes or target operations with less cuDNN optimization."
+}

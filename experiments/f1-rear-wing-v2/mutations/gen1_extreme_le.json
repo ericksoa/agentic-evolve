@@ -1,0 +1,11 @@
+{
+  "main_upper": [0.38, 0.28, 0.13, 0.17],
+  "main_lower": [-0.20, -0.15, -0.04, -0.01],
+  "main_angle": 15.5,
+  "flap_upper": [0.30, 0.32, 0.17, 0.08],
+  "flap_lower": [-0.16, -0.13, -0.04, -0.01],
+  "flap_angle": 14.5,
+  "flap_gap": 0.022,
+  "_mutation": "extreme_leading_edge",
+  "_hypothesis": "v1 champion configuration - maximum high LE with reflex"
+}

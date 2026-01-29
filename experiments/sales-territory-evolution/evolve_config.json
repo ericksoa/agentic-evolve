@@ -1,0 +1,87 @@
+{
+  "description": "Evolve sales territory assignment algorithms to optimize coverage, workload balance, and geographic compactness.",
+
+  "mode": "perf",
+
+  "problem": {
+    "goal": "Assign 25 sales accounts to 4 reps, maximizing coverage, balance, and territory compactness",
+    "domain": "Sales operations / Territory planning",
+    "accounts": 25,
+    "reps": 4,
+    "fitness_components": {
+      "coverage": "% of total revenue assigned (weight: 0.4)",
+      "balance": "1 - coefficient of variation of rep revenues (weight: 0.3)",
+      "compactness": "Geographic tightness of territories (weight: 0.3)"
+    },
+    "current_best": {
+      "fitness": 0.88,
+      "generation": "Gen0 (baseline)",
+      "breakdown": {
+        "coverage": 1.0,
+        "balance": 0.71,
+        "compactness": 0.89
+      }
+    },
+    "target": {
+      "fitness": 0.95,
+      "notes": "Near-optimal with better revenue balance (0.90+ balance score)"
+    }
+  },
+
+  "evaluation": {
+    "test_command": "python evaluate.py {solution} --json",
+    "fitness_key": "fitness",
+    "valid_key": "valid",
+    "higher_is_better": true,
+    "timeout_seconds": 30
+  },
+
+  "starter_solutions": ["baseline.py"],
+
+  "optimization_strategies": [
+    {
+      "name": "revenue_weighted_clustering",
+      "description": "Weight account positions by revenue when computing centroids",
+      "hint": "High-value accounts should anchor territory centers"
+    },
+    {
+      "name": "swap_optimization",
+      "description": "After initial assignment, swap accounts between reps to improve balance",
+      "hint": "Greedy swaps that reduce revenue variance while maintaining compactness"
+    },
+    {
+      "name": "simulated_annealing",
+      "description": "Use SA to escape local optima in territory configurations",
+      "hint": "Temperature schedule for accepting worse swaps early, then refining"
+    },
+    {
+      "name": "constrained_voronoi",
+      "description": "Use Voronoi diagrams with capacity constraints",
+      "hint": "Generate Voronoi cells then redistribute accounts to balance revenue"
+    },
+    {
+      "name": "genetic_crossover",
+      "description": "Combine good partial assignments from different solutions",
+      "hint": "Preserve high-performing rep assignments while recombining others"
+    }
+  ],
+
+  "constraints": [
+    "Must implement assign_territories(accounts: list[dict], num_reps: int) -> dict[int, list[int]]",
+    "Each account can be assigned to at most one rep",
+    "All accounts should be assigned for maximum coverage score",
+    "Pure Python only - no external optimization libraries (scipy.optimize, cvxpy, etc.)",
+    "Must complete within 10 seconds for 25 accounts"
+  ],
+
+  "memory": {
+    "enabled": true,
+    "inject_mutation_context": true,
+    "store_successful_mutations": true
+  },
+
+  "resource_constraints": {
+    "max_local_threads": 4,
+    "prefer_cloud": false
+  }
+}

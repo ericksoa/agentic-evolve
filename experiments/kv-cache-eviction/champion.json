@@ -1,0 +1,49 @@
+{
+  "id": "gen4_layer_aware_full",
+  "generation": 4,
+  "discovered_at": "2025-12-27T22:30:00Z",
+  "code_path": "rust/src/evolved.rs",
+  "metrics": {
+    "train": {
+      "avg_error": 0.444671,
+      "improvement_pct": 7.07
+    },
+    "valid": {
+      "avg_error": 0.446670,
+      "improvement_pct": 6.87
+    },
+    "test": {
+      "avg_error": 0.446341,
+      "improvement_pct": 6.85
+    }
+  },
+  "baseline": {
+    "name": "hybrid_baseline",
+    "train_avg_error": 0.478524,
+    "valid_avg_error": 0.479622,
+    "test_avg_error": 0.479161
+  },
+  "lineage": [
+    "baseline (0.6/0.4 weights, 0.3 position power)",
+    "gen2_layer_aware (dynamic 0.7→0.5/0.3→0.5 weights)",
+    "gen3_key_norm (+ 0.1 * key_norm penalty)",
+    "gen3_position_power (+ layer-adaptive 0.25→0.35 power)",
+    "gen4_layer_aware_recency (+ layer-adaptive 0.15→0.25 recency)"
+  ],
+  "key_innovations": [
+    "Layer-aware attention weighting: early layers favor recent attention, late layers balance recent/cumulative",
+    "Key norm penalty: penalize outlier tokens with large key norms (KnormPress-inspired)",
+    "Layer-adaptive position correction: stronger position bias correction for late layers",
+    "Layer-aware recency bonus: stronger recency for late layers with focused attention patterns"
+  ],
+  "formula": {
+    "attention_weights": {
+      "recent": "0.7 - 0.2 * layer_ratio",
+      "cumulative": "0.3 + 0.2 * layer_ratio"
+    },
+    "position_correction": "(pos/seq_len)^(0.25 + 0.1 * layer_ratio)",
+    "recency_bonus": "(0.15 + 0.1 * layer_ratio) * (1 - rel_pos/128) for rel_pos < 128",
+    "key_norm_penalty": "0.1 * min(key_norm, 2.0)"
+  },
+  "reproduce_command": "cd .evolve/kv-cache-eviction/rust && cargo run --release --bin micro_bench"
+}

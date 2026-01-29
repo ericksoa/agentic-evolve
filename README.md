@@ -121,24 +121,29 @@ The memory system provides persistent storage for evolution runs, enabling:
 | Problem | Mode | Result | Improvement |
 |---------|------|--------|-------------|
 | **N-Queens** | perf | 20,407 sol/sec | **14,000x** vs baseline |
-| KV-Cache Eviction | perf | 6.65% error reduction | Layer-aware scoring |
 | hERG Toxicity | ml | 0.890 ROC-AUC | +4.5% from baseline |
 | ARC task 0520fde7 | size | 57 bytes | -29% from baseline |
-| Bin Packing | perf | Weibull 5K benchmark | Novel heuristics |
+| Airfoil Design | perf | 44% L/D improvement | 3D-printable output |
+| Chess Challenge | ml | 77.4 ACPL | AIcrowd competition |
 
 ## Showcases
 
 | Showcase | Description | Key Result |
 |----------|-------------|------------|
-| [deceptive-landscape-escape](showcase/deceptive-landscape-escape/) | Escaping local optima traps | Diversity Guardian demo |
-| [regex_golf](showcase/regex_golf/) | Debugger + Plateau Breaker demo | 33% failure diagnosis |
-| [string-search-evolution](showcase/string-search-evolution/) | String search algorithm evolution | 3.6x speedup, Meta-Strategist |
+| [regex_golf](showcase/regex_golf/) | Debugger + Plateau Breaker demo | 36% shorter regex |
+| [linkage-evolution](showcase/linkage-evolution/) | Mechanical linkage optimization | 25% improvement, 3D-printable |
+| [cuopt_lp_autotuner](showcase/cuopt_lp_autotuner/) | NVIDIA cuOpt LP autotuner | 1.07x speedup, 73% improved |
 | [nqueens-evolution](showcase/nqueens-evolution/) | N-Queens solver with memory demo | 14,000x speedup |
-| [kv-cache-eviction](showcase/kv-cache-eviction/) | LLM KV-cache eviction policy | 6.65% improvement |
 | [molecular-admet-prediction](showcase/molecular-admet-prediction/) | hERG cardiac toxicity | 0.890 ROC-AUC |
-| [code-golf](showcase/code-golf/) | ARC-AGI minimal solutions | 75+ tasks solved |
-| [santa-2025-packing](showcase/santa-2025-packing/) | Kaggle bin packing | Competition entry |
-| [kernelbench-triton-evolution](showcase/kernelbench-triton-evolution/) | GPU kernel optimization | Triton kernels |
+| [code-golf](showcase/code-golf/) | ARC-AGI minimal solutions | 72 tasks, 163K points |
+| [santa-2025-packing](showcase/santa-2025-packing/) | Kaggle bin packing | 120 generations tracked |
+| [global-chess-challenge-2025](showcase/global-chess-challenge-2025/) | AIcrowd chess competition | 77.4 ACPL |
+| [airfoil-evolution](showcase/airfoil-evolution/) | Airfoil shape optimization | 44% L/D improvement |
+| [openml-automl-benchmark](showcase/openml-automl-benchmark/) | OpenML-CC18 AutoML benchmark | 2.38% avg improvement |
+
+## Experiments
+
+Exploratory and work-in-progress projects live in [`experiments/`](experiments/). These include early-stage explorations, projects still being tuned, and documented negative results.
 
 ## Project Structure
 
@@ -168,11 +173,14 @@ agentic-evolve/
 │       │   ├── queries.py     # Pre-built query patterns
 │       │   └── embeddings.py  # Code similarity matching
 │       └── hooks/             # Validation hooks
-├── showcase/                   # Example evolution runs
+├── showcase/                   # Verified showcase projects (10)
 │   ├── nqueens-evolution/     # Memory system demo (14,000x speedup)
-│   ├── kv-cache-eviction/     # KV-cache scoring (6.65% improvement)
 │   ├── molecular-admet-prediction/ # hERG toxicity (0.890 ROC-AUC)
-│   ├── code-golf/             # ARC-AGI solutions (75+ tasks)
+│   ├── code-golf/             # ARC-AGI solutions (72 tasks)
+│   └── ...
+├── experiments/                # WIP/exploratory projects (16)
+│   ├── kv-cache-eviction/     # KV-cache scoring
+│   ├── kernelbench-triton-evolution/ # GPU kernel optimization
 │   └── ...
 └── .evolve-sdk/                # Evolution state (created per run)
     └── <problem>/

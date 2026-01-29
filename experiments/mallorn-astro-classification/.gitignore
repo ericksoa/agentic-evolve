@@ -1,0 +1,42 @@
+# Competition data (not allowed to be published per contest rules)
+data/
+*.csv
+!sample_submission.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.env
+*.egg-info/
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Model artifacts
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+
+# Logs
+*.log
+logs/

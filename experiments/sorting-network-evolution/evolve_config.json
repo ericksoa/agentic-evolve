@@ -1,0 +1,73 @@
+{
+  "description": "Evolve minimal sorting networks - digital circuits that sort fixed-size inputs using compare-and-swap operations. Optimize for fewer comparators (gates) and lower depth (latency).",
+
+  "mode": "perf",
+
+  "evaluation": {
+    "test_command": "python3 evaluate.py {solution} --json",
+    "fitness_key": "fitness",
+    "valid_key": "valid",
+    "higher_is_better": true
+  },
+
+  "starter_solutions": [
+    "baseline_n16_bubblesort.py"
+  ],
+
+  "target_file": "evolved_network.py",
+
+  "optimization_strategies": [
+    {
+      "name": "comparator_elimination",
+      "description": "Remove redundant comparators that don't affect correctness",
+      "hint": "Some comparators may be redundant given the sequence of prior comparisons"
+    },
+    {
+      "name": "comparator_reordering",
+      "description": "Reorder comparators to reduce depth while maintaining correctness",
+      "hint": "Comparators on disjoint wires can be parallelized in the same stage"
+    },
+    {
+      "name": "alternative_constructions",
+      "description": "Try different sorting network constructions (odd-even, bitonic, Bose-Nelson, etc.)",
+      "hint": "Different base algorithms may yield different comparator/depth tradeoffs"
+    },
+    {
+      "name": "local_optimization",
+      "description": "Make small local changes to comparator pairs",
+      "hint": "Swapping or adjusting individual comparators may improve the network"
+    },
+    {
+      "name": "hybrid_networks",
+      "description": "Combine elements from different sorting network families",
+      "hint": "Mixing constructions may find novel efficient networks"
+    }
+  ],
+
+  "constraints": [
+    "Network must correctly sort ALL possible inputs (verified via zero-one principle)",
+    "Comparators must be (i, j) tuples with 0 <= i < j < N",
+    "Solution must define N (input count) and NETWORK (list of comparators)",
+    "Primary goal: minimize comparator count",
+    "Secondary goal: minimize depth (parallel stages)"
+  ],
+
+  "references": [
+    "https://en.wikipedia.org/wiki/Sorting_network",
+    "https://oeis.org/A003075 (optimal comparator counts)",
+    "Knuth, The Art of Computer Programming Vol 3, Section 5.3.4"
+  ],
+
+  "known_bounds": {
+    "n4": {"optimal_comparators": 5, "optimal_depth": 3},
+    "n5": {"optimal_comparators": 9, "optimal_depth": 5},
+    "n6": {"optimal_comparators": 12, "optimal_depth": 5},
+    "n8": {"optimal_comparators": 19, "optimal_depth": 6},
+    "n16": {"best_known_comparators": 60, "lower_bound": 53, "best_depth": 10}
+  },
+
+  "resource_constraints": {
+    "max_local_threads": 4,
+    "prefer_cloud": false
+  }
+}

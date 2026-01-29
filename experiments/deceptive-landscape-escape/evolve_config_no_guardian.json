@@ -1,0 +1,23 @@
+{
+  "description": "Evolve optimal bit string solutions - WITHOUT diversity guardian (control)",
+  "mode": "perf",
+  "evaluation": {
+    "test_command": "python evaluate.py {solution} --json"
+  },
+  "memory": {
+    "enabled": true,
+    "inject_mutation_context": true,
+    "store_failed_mutations": true
+  },
+  "trust": {
+    "enabled": true,
+    "require_adversary_for_champion": true
+  },
+  "diversity": {
+    "enabled": false
+  },
+  "starter_solutions": ["baseline.py"],
+  "max_generations": 10,
+  "population_size": 6,
+  "mutation_variants": 3
+}

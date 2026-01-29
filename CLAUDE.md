@@ -36,9 +36,14 @@ agentic-evolve/
 │   ├── tests/              # SDK unit tests
 │   └── README.md           # SDK documentation
 │
-├── showcase/               # ALL showcase/demo projects
+├── showcase/               # Verified showcase projects (polished results + docs)
 │   ├── regex_golf/
 │   ├── nqueens-evolution/
+│   └── ...
+│
+├── experiments/            # WIP/exploratory projects (not yet verified)
+│   ├── phase1_demo/
+│   ├── sorting-network-evolution/
 │   └── ...
 │
 ├── plugin-package/         # Claude Code plugin packaging
@@ -47,8 +52,9 @@ agentic-evolve/
 
 ### Rules
 1. **Always check existing patterns first** - run `ls` to see where similar files/directories live before creating new ones
-2. **Showcases**: Top-level `showcase/` directory
-3. **SDK code**: `sdk/evolve_sdk/` only - nothing else in sdk/ except tests and docs
+2. **Showcases**: `showcase/` for verified projects with polished results and documentation
+3. **Experiments**: `experiments/` for WIP, exploratory, or unverified projects
+4. **SDK code**: `sdk/evolve_sdk/` only - nothing else in sdk/ except tests and docs
 4. **Tests**: SDK tests in `sdk/tests/`, showcase-specific tests stay with their showcase
 5. **When in doubt**: Look at 2-3 existing examples before deciding where to put something new
 
@@ -58,9 +64,17 @@ agentic-evolve/
 - Place diagram SVGs near the content they document (e.g., `showcase/nqueens-evolution/evolution-factory.svg`)
 - Reference SVGs in markdown with `![Alt text](path/to/diagram.svg)`
 
-## Showcase Projects
+## Showcase Projects (verified results)
 - `regex_golf/` - Phase 1 agents demonstration (Debugger + Plateau Breaker)
+- `linkage-evolution/` - 25% improvement, 3D-printable output
+- `cuopt_lp_autotuner/` - 1.07x speedup, 73% problems improved
 - `santa-2025-packing/` - Kaggle Christmas tree packing challenge
-- `mallorn-astro-classification/` - Astronomy classification
-- `kernelbench-triton-evolution/` - GPU kernel optimization
-- `code-golf/` - Code size optimization
+- `code-golf/` - 72 ARC tasks solved, 163K points
+- `nqueens-evolution/` - 14,000x speedup, memory system demo
+- `global-chess-challenge-2025/` - 77.4 ACPL, AIcrowd competition
+- `airfoil-evolution/` - 44% L/D improvement, 3D-printable
+- `molecular-admet-prediction/` - 0.890 ROC-AUC, TDC benchmark
+- `openml-automl-benchmark/` - OpenML-CC18 protocol, 2.38% avg improvement
+
+## Experiment Projects (WIP/exploratory)
+Located in `experiments/` — projects that are still being tuned, have limited docs, or unverified results.
