@@ -162,6 +162,7 @@ class EvolutionConfig:
     # Problem definition
     problem: str
     mode: Literal["size", "perf", "ml"] = "size"
+    minimize: bool = False  # If True, lower fitness is better (e.g., nodes expanded, error rate)
 
     # Budget controls
     max_generations: int = 50
@@ -212,6 +213,16 @@ class EvolutionConfig:
     def __post_init__(self):
         if isinstance(self.evolve_dir, str):
             self.evolve_dir = Path(self.evolve_dir)
+
+    def is_better(self, a: float, b: float) -> bool:
+        """Return True if fitness `a` is better than fitness `b`."""
+        if self.minimize:
+            return a < b
+        return a > b
+
+    def sort_key_reverse(self) -> bool:
+        """Return the `reverse` parameter for sorting population by fitness (best first)."""
+        return not self.minimize
 
     @classmethod
     def from_config_file(cls, config_path: Path | str, **overrides) -> "EvolutionConfig":
@@ -321,10 +332,14 @@ class EvolutionConfig:
             risk_tolerance=strategic_data.get("risk_tolerance", "medium"),
         )
 
+        # Extract minimize flag
+        minimize = data.get("minimize", False)
+
         # Build config with file data and overrides
         config = cls(
             problem=overrides.get("problem", problem),
             mode=overrides.get("mode", mode),
+            minimize=overrides.get("minimize", minimize),
             max_generations=overrides.get("max_generations", 50),
             plateau_threshold=overrides.get("plateau_threshold", 5),
             population_size=overrides.get("population_size", 10),

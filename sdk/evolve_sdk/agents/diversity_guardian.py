@@ -103,6 +103,7 @@ def get_diversity_guardian_prompt(
     mode: str = "perf",
     problem_description: str = "",
     recent_mutations: list[dict] | None = None,
+    minimize: bool = False,
 ) -> str:
     """Generate the prompt for diversity guardian analysis.
 
@@ -120,7 +121,7 @@ def get_diversity_guardian_prompt(
     mode_guidance = get_mode_guidance(mode, "diversity_guardian")
 
     # Build population summary
-    pop_summary = _format_population(population_snapshot)
+    pop_summary = _format_population(population_snapshot, minimize=minimize)
 
     # Build diversity summary
     div_summary = _format_diversity_metrics(diversity_metrics)
@@ -392,7 +393,7 @@ def should_alert_diversity(
         return False, "none"
 
 
-def _format_population(population: list[dict]) -> str:
+def _format_population(population: list[dict], minimize: bool = False) -> str:
     """Format population snapshot for prompt."""
     if not population:
         return "Population is empty."
@@ -402,8 +403,8 @@ def _format_population(population: list[dict]) -> str:
         "|----------|---------|---------------------|",
     ]
 
-    # Sort by fitness descending
-    sorted_pop = sorted(population, key=lambda x: x.get("fitness", 0), reverse=True)
+    # Sort by fitness (best first)
+    sorted_pop = sorted(population, key=lambda x: x.get("fitness", 0), reverse=not minimize)
 
     for p in sorted_pop[:10]:  # Top 10
         name = Path(p.get("file", "unknown")).name if p.get("file") else "unknown"

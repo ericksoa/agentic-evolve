@@ -125,7 +125,7 @@ class EvolutionRunner:
         self.log_file = self.work_dir / "tool_usage.jsonl"
 
         # Progress display
-        self.progress = ProgressDisplay(width=72)
+        self.progress = ProgressDisplay(width=72, minimize=self.config.minimize)
 
         # Trust system components
         self._init_trust_system()
@@ -379,6 +379,7 @@ class EvolutionRunner:
             max_generations=self.config.max_generations,
             population_size=self.config.population_size,
             plateau_threshold=self.config.plateau_threshold,
+            minimize=self.config.minimize,
         )
 
         # Setup directories
@@ -386,11 +387,13 @@ class EvolutionRunner:
         self.mutations_dir.mkdir(parents=True, exist_ok=True)
 
         # Start reporter agent if memory is enabled
+        # Suppress runner messages since the runner already prints its own output
         if self.memory:
             self.reporter = ReporterAgent(
                 memory=self.memory,
                 poll_interval=2.0,
                 min_priority="info",
+                quiet_agents=["runner"],
             )
             await self.reporter.start()
 
@@ -443,10 +446,11 @@ class EvolutionRunner:
             gen_best = await self._run_generation()
 
             # Track improvement
-            if gen_best and gen_best["fitness"] > best_fitness:
-                improvement = gen_best["fitness"] - best_fitness
-                improvement_pct = (improvement / best_fitness * 100) if best_fitness > 0 else 0
-                print(f"  Improvement: {best_fitness:.4f} -> {gen_best['fitness']:.4f} (+{improvement:.4f})")
+            if gen_best and self.config.is_better(gen_best["fitness"], best_fitness):
+                improvement = abs(gen_best["fitness"] - best_fitness)
+                improvement_pct = (improvement / abs(best_fitness) * 100) if best_fitness != 0 else 0
+                direction = "-" if self.config.minimize else "+"
+                print(f"  Improvement: {best_fitness:.4f} -> {gen_best['fitness']:.4f} ({direction}{improvement:.4f})")
                 best_fitness = gen_best["fitness"]
                 plateau_count = 0
                 self._tactical_stall_count = 0  # Reset tactical stall on improvement
@@ -549,8 +553,8 @@ class EvolutionRunner:
         Returns:
             Best solution from this generation
         """
-        # Sort population by fitness
-        self.population.sort(key=lambda x: x.get("fitness", 0), reverse=True)
+        # Sort population by fitness (best first)
+        self.population.sort(key=lambda x: x.get("fitness", 0), reverse=self.config.sort_key_reverse())
         top_n = self.population[: self.config.elite_count]
 
         if not top_n:
@@ -568,7 +572,8 @@ class EvolutionRunner:
             variant = chr(ord("a") + i)
             output_file = str(self.mutations_dir / f"gen{self.generation}{variant}.py")
             parent_name = parent.get("file", "").split("/")[-1]
-            agents_info.append((variant, "mutation", parent_name))
+            parent_fitness = parent.get("fitness", 0)
+            agents_info.append((variant, "mutation", parent_name, parent_fitness))
             task = self._spawn_mutator(parent, output_file, variant)
             mutation_tasks.append(task)
             task_variants.append(variant)
@@ -579,7 +584,8 @@ class EvolutionRunner:
         mutation_tasks.append(crossover_task)
         task_variants.append("x")
         parent_names = "+".join(p.get("file", "").split("/")[-1][:8] for p in top_n[:2])
-        agents_info.append(("x", "crossover", parent_names))
+        crossover_fitnesses = [p.get("fitness", 0) for p in top_n[:2]]
+        agents_info.append(("x", "crossover", parent_names, max(crossover_fitnesses) if crossover_fitnesses else 0))
 
         # Show agents starting
         self.progress.show_agents_starting(agents_info)
@@ -633,6 +639,12 @@ class EvolutionRunner:
             parent_map[output_file] = parent
 
         if valid_mutations:
+            n_valid = len(valid_mutations)
+            n_failed = len(gen_results)
+            status_parts = [f"{n_valid} candidate{'s' if n_valid > 1 else ''}"]
+            if n_failed:
+                status_parts.append(f"{n_failed} failed")
+            print(f"\n  Evaluating {', '.join(status_parts)}...")
             files_to_eval = [m["file"] for m in valid_mutations]
             evaluations = await self._spawn_evaluator(files_to_eval)
 
@@ -722,14 +734,18 @@ class EvolutionRunner:
                         pass  # Memory storage errors are not critical
 
         # Selection: keep top N
-        self.population.sort(key=lambda x: x.get("fitness", 0), reverse=True)
+        kept = sum(1 for r in gen_results if r.get("decision") == "KEEP")
+        dropped = sum(1 for r in gen_results if r.get("decision") == "DROP")
+        if kept or dropped:
+            print(f"\n  Selection: kept {kept}, dropped {dropped} (population: {len(self.population)})")
+        self.population.sort(key=lambda x: x.get("fitness", 0), reverse=self.config.sort_key_reverse())
         self.population = self.population[: self.config.population_size]
 
         # Update champion
         new_champion = None
         if self.population:
             best = self.population[0]
-            if not self.champion or best["fitness"] > self.champion["fitness"]:
+            if not self.champion or self.config.is_better(best["fitness"], self.champion["fitness"]):
                 old_fitness = self.champion["fitness"] if self.champion else 0
                 self.champion = best.copy()
                 new_champion = self.champion
@@ -737,11 +753,12 @@ class EvolutionRunner:
 
                 # Announce new champion!
                 champion_file = new_champion.get("file", "").split("/")[-1]
-                improvement = new_champion["fitness"] - old_fitness if old_fitness > 0 else 0
-                improvement_pct = (improvement / old_fitness * 100) if old_fitness > 0 else 0
+                improvement = abs(new_champion["fitness"] - old_fitness) if old_fitness != 0 else 0
+                improvement_pct = (improvement / abs(old_fitness) * 100) if old_fitness != 0 else 0
+                direction = "-" if self.config.minimize else "+"
                 self._msg_milestone(
                     title=f"New champion: {champion_file}",
-                    content=f"Fitness: {new_champion['fitness']:.4f}" + (f" (+{improvement_pct:.1f}%)" if improvement_pct > 0 else ""),
+                    content=f"Fitness: {new_champion['fitness']:.4f}" + (f" ({direction}{improvement_pct:.1f}%)" if improvement_pct > 0 else ""),
                     related_file=new_champion.get("file", ""),
                     related_fitness=new_champion["fitness"],
                 )
@@ -820,9 +837,15 @@ class EvolutionRunner:
             except Exception:
                 pass  # Memory context is not critical
 
+        parent_name = parent.get("file", "").split("/")[-1]
+        parent_fitness = parent.get("fitness", 0)
+        has_memory = memory_context is not None
+        memory_hint = " (with memory context)" if has_memory else ""
+        print(f"  [mutator-{variant}] Mutating {parent_name} ({parent_fitness:.2f}x){memory_hint}", flush=True)
+
         prompt = get_mutator_prompt(
             parent_file=parent["file"],
-            parent_fitness=parent.get("fitness", 0),
+            parent_fitness=parent_fitness,
             output_file=output_file,
             mode=self.config.mode,
             generation=self.generation,
@@ -845,6 +868,11 @@ class EvolutionRunner:
         self, parents: list[dict], output_file: str
     ) -> dict[str, Any]:
         """Spawn a dedicated crossover agent (clean context)."""
+        parent_desc = " + ".join(
+            f"{p.get('file', '').split('/')[-1]} ({p.get('fitness', 0):.2f}x)"
+            for p in parents[:3]
+        )
+        print(f"  [crossover] Combining: {parent_desc}", flush=True)
         prompt = get_crossover_prompt(
             parent_files=[p["file"] for p in parents],
             parent_fitnesses=[p.get("fitness", 0) for p in parents],
@@ -866,6 +894,8 @@ class EvolutionRunner:
 
     async def _spawn_evaluator(self, files: list[str]) -> list[dict[str, Any]]:
         """Spawn a dedicated evaluator agent (clean context)."""
+        file_names = [f.split("/")[-1] for f in files]
+        print(f"  [evaluator] Testing: {', '.join(file_names)}", flush=True)
         prompt = get_evaluator_prompt(
             solution_files=files,
             mode=self.config.mode,
@@ -1067,8 +1097,8 @@ class EvolutionRunner:
             print(f"  Fitness:   {fitness:.4f}  (current champion: {champion_fitness:.4f})")
             print(f"  Trust:     {trust_score:.2f}  (threshold: {trust_cfg.reject_threshold})")
 
-            if fitness > champion_fitness:
-                improvement = ((fitness - champion_fitness) / champion_fitness * 100) if champion_fitness > 0 else 100
+            if self.config.is_better(fitness, champion_fitness):
+                improvement = (abs(fitness - champion_fitness) / abs(champion_fitness) * 100) if champion_fitness != 0 else 100
                 print(f"  Status:    POTENTIAL NEW CHAMPION (+{improvement:.1f}%)")
             else:
                 print(f"  Status:    Below champion")
@@ -1299,15 +1329,16 @@ class EvolutionRunner:
                 continue
 
             # Check for suspicious fitness jump
-            if parent and parent.get("fitness", 0) > 0:
-                jump_pct = ((fitness - parent["fitness"]) / parent["fitness"]) * 100
-                if jump_pct > trust_cfg.suspicious_jump_pct:
+            if parent and parent.get("fitness", 0) != 0:
+                jump_pct = abs(fitness - parent["fitness"]) / abs(parent["fitness"]) * 100
+                # Only flag if the jump is an improvement (in the right direction)
+                if jump_pct > trust_cfg.suspicious_jump_pct and self.config.is_better(fitness, parent["fitness"]):
                     needs_review = True
                     all_flags.append(f"Suspicious jump: {jump_pct:.1f}%")
                     print(f"  [trust] Suspicious jump: {jump_pct:.1f}% > {trust_cfg.suspicious_jump_pct}%")
 
             # Check if this would be a new champion
-            if trust_cfg.require_adversary_for_champion and fitness > population_best:
+            if trust_cfg.require_adversary_for_champion and self.config.is_better(fitness, population_best):
                 needs_review = True
                 print(f"  [trust] New champion candidate: {fitness:.4f} > {population_best:.4f}")
 
@@ -1419,7 +1450,7 @@ class EvolutionRunner:
                     and fitness > trust_cfg.human_escalation_min_fitness
                 ):
                     # Check if this is a potential champion being rejected
-                    is_potential_champion = fitness > population_best
+                    is_potential_champion = self.config.is_better(fitness, population_best)
                     is_borderline = trust_score >= (trust_cfg.reject_threshold * 0.5)  # Within 50% of threshold
 
                     should_escalate = (
@@ -1551,6 +1582,34 @@ class EvolutionRunner:
 
         return hooks
 
+    # Phase mapping: tool name -> semantic phase label
+    _TOOL_PHASES = {
+        "Read": "Analyzing",
+        "Glob": "Analyzing",
+        "Grep": "Analyzing",
+        "Write": "Implementing",
+        "Edit": "Implementing",
+        "NotebookEdit": "Implementing",
+        "Task": "Delegating",
+        "WebFetch": "Researching",
+        "WebSearch": "Researching",
+    }
+
+    @staticmethod
+    def _tool_phase(tool_name: str, has_implemented: bool) -> str:
+        """Map a tool name to a semantic phase label.
+
+        Bash is context-dependent: 'Testing' after implementation,
+        'Exploring' otherwise.
+        """
+        from evolve_sdk.runner import EvolutionRunner
+        phase = EvolutionRunner._TOOL_PHASES.get(tool_name)
+        if phase:
+            return phase
+        if tool_name == "Bash":
+            return "Testing" if has_implemented else "Exploring"
+        return "Working"
+
     async def _run_agent(
         self,
         system: str,
@@ -1582,6 +1641,20 @@ class EvolutionRunner:
         print(f"  [{agent_name}] Starting...", flush=True)
 
         result_text = ""
+        seen_phases: set[str] = set()
+        has_implemented = False
+        tool_counts: dict[str, int] = {}
+
+        def _show_phase(tool_name: str):
+            """Print phase transition, only once per unique phase."""
+            nonlocal has_implemented
+            phase = self._tool_phase(tool_name, has_implemented)
+            if tool_name in ("Write", "Edit", "NotebookEdit"):
+                has_implemented = True
+            tool_counts[tool_name] = tool_counts.get(tool_name, 0) + 1
+            if phase not in seen_phases:
+                seen_phases.add(phase)
+                print(f"  [{agent_name}] {phase}...", flush=True)
 
         options = ClaudeAgentOptions(
             system_prompt=system,
@@ -1610,18 +1683,18 @@ class EvolutionRunner:
                         if hasattr(block, 'text'):
                             result_text += block.text
                         elif hasattr(block, 'name') and hasattr(block, 'id'):
-                            # ToolUseBlock — show tool invocation
-                            print(f"  [{agent_name}] -> {block.name}", flush=True)
+                            # ToolUseBlock — show phase transition
+                            _show_phase(block.name)
                         elif hasattr(block, 'thinking'):
                             logger.debug("[%s] Thinking...", agent_name)
                 elif hasattr(message, 'event') and message.__class__.__name__ == 'StreamEvent':
-                    # Real-time streaming — show tool starts as they happen
+                    # Real-time streaming — show phase transitions
                     event = message.event
                     if isinstance(event, dict):
                         if event.get("type") == "content_block_start":
                             cb = event.get("content_block", {})
                             if cb.get("type") == "tool_use":
-                                print(f"  [{agent_name}] -> {cb.get('name', '?')}", flush=True)
+                                _show_phase(cb.get('name', '?'))
                 elif hasattr(message, 'result') and message.__class__.__name__ == 'ResultMessage':
                     # Prefer structured output if available
                     if hasattr(message, 'structured_output') and message.structured_output is not None:
@@ -1858,7 +1931,7 @@ class EvolutionRunner:
                     recent = self.history[-self.config.plateau_threshold:]
                     if len(recent) >= 2:
                         improvements = [
-                            h.get("best_fitness", 0) > self.history[i-1].get("best_fitness", 0)
+                            self.config.is_better(h.get("best_fitness", 0), self.history[i-1].get("best_fitness", 0))
                             for i, h in enumerate(recent[1:], 1)
                         ]
                         plateau_count = len(recent) - sum(improvements) - 1
@@ -1885,6 +1958,7 @@ class EvolutionRunner:
                 "max_generations": self.config.max_generations,
                 "population_size": self.config.population_size,
                 "elite_count": self.config.elite_count,
+                "minimize": self.config.minimize,
             },
             "updated_at": datetime.now().isoformat(),
         }

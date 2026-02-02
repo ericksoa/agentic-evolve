@@ -106,6 +106,7 @@ def get_meta_strategist_prompt(
     population_snapshot: list[dict] | None = None,
     mode: str = "perf",
     analysis_window: int = 5,
+    minimize: bool = False,
 ) -> str:
     """Generate the prompt for meta-strategist analysis.
 
@@ -156,7 +157,7 @@ def get_meta_strategist_prompt(
 """
 
     if population_snapshot:
-        pop_summary = _summarize_population(population_snapshot)
+        pop_summary = _summarize_population(population_snapshot, minimize=minimize)
         prompt += f"""
 ## Current Population
 
@@ -451,15 +452,15 @@ def _summarize_fitness(fitness_history: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def _summarize_population(population: list[dict]) -> str:
+def _summarize_population(population: list[dict], minimize: bool = False) -> str:
     """Create a text summary of current population."""
     if not population:
         return "Population is empty."
 
     diversity = compute_diversity_index(population)
 
-    # Sort by fitness descending
-    sorted_pop = sorted(population, key=lambda x: x.get("fitness", 0), reverse=True)
+    # Sort by fitness (best first)
+    sorted_pop = sorted(population, key=lambda x: x.get("fitness", 0), reverse=not minimize)
 
     lines = [f"**Population Size**: {len(population)}",
              f"**Diversity (phenotypic)**: {diversity['phenotypic']:.2f}",

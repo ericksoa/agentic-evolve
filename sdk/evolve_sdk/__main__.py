@@ -87,6 +87,11 @@ def main():
         help="Run mutations sequentially instead of in parallel",
     )
     parser.add_argument(
+        "--minimize",
+        action="store_true",
+        help="Optimize for lower fitness values (e.g., error rate, latency). Default is to maximize.",
+    )
+    parser.add_argument(
         "--model",
         default="claude-opus-4-5-20251101",
         help="Model to use for subagents (default: claude-opus-4-5-20251101)",
@@ -120,12 +125,13 @@ def main():
         if result is None:
             print("No evolution found to resume")
             sys.exit(1)
-        problem, mode = result
-        print(f"Resuming: {problem} (mode: {mode})")
+        problem, mode, minimize = result
+        print(f"Resuming: {problem} (mode: {mode}, minimize: {minimize})")
         # Create runner for resume
         runner = EvolutionRunner(
             problem=problem,
             mode=mode,
+            minimize=minimize,
             max_generations=args.max_generations,
             population_size=args.population_size,
             plateau_threshold=args.plateau,
@@ -150,12 +156,16 @@ def main():
         # Override mode if explicitly provided
         if args.mode != "size":  # size is default, so only override if explicitly set
             config.mode = args.mode
+        # CLI --minimize overrides config
+        if args.minimize:
+            config.minimize = True
         print(f"Loaded config: {config.problem} (mode: {config.mode})")
         if config.test_command:
             print(f"Benchmark: {config.test_command}")
         runner = EvolutionRunner(
             problem=config.problem,
             mode=config.mode,
+            minimize=config.minimize,
             max_generations=config.max_generations,
             population_size=config.population_size,
             plateau_threshold=config.plateau_threshold,
@@ -177,6 +187,7 @@ def main():
         runner = EvolutionRunner(
             problem=problem,
             mode=mode,
+            minimize=args.minimize,
             max_generations=args.max_generations,
             population_size=args.population_size,
             plateau_threshold=args.plateau,
@@ -197,8 +208,8 @@ def main():
         sys.exit(1)
 
 
-def resume_evolution(evolve_dir: Path) -> tuple[str, str] | None:
-    """Find and resume the most recent evolution."""
+def resume_evolution(evolve_dir: Path) -> tuple[str, str, bool] | None:
+    """Find and resume the most recent evolution. Returns (problem, mode, minimize)."""
     from datetime import datetime
 
     if not evolve_dir.exists():
@@ -221,7 +232,8 @@ def resume_evolution(evolve_dir: Path) -> tuple[str, str] | None:
     evolutions.sort(reverse=True)
     _, _, state = evolutions[0]
 
-    return state.get("problem", "unknown"), state.get("mode", "size")
+    minimize = state.get("config", {}).get("minimize", False)
+    return state.get("problem", "unknown"), state.get("mode", "size"), minimize
 
 
 def memory_main():

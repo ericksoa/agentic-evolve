@@ -45,6 +45,7 @@ class ReporterAgent:
         min_priority: str = "info",
         show_agent_prefix: bool = True,
         quiet_types: list[str] | None = None,
+        quiet_agents: list[str] | None = None,
     ):
         """
         Initialize the reporter agent.
@@ -55,12 +56,14 @@ class ReporterAgent:
             min_priority: Minimum priority level to display (default: info)
             show_agent_prefix: Whether to show agent name prefix
             quiet_types: Message types to suppress (e.g., ["status"])
+            quiet_agents: Agent names to suppress (e.g., ["runner"])
         """
         self.memory = memory
         self.poll_interval = poll_interval
         self.min_priority = min_priority
         self.show_agent_prefix = show_agent_prefix
         self.quiet_types = quiet_types or []
+        self.quiet_agents = quiet_agents or []
 
         # Track displayed messages to avoid duplicates
         self._displayed_ids: set[str] = set()
@@ -173,6 +176,11 @@ class ReporterAgent:
         # Type filter
         msg_type = msg.get("message_type", "status")
         if msg_type in self.quiet_types:
+            return False
+
+        # Agent filter
+        from_agent = msg.get("from_agent", "")
+        if from_agent in self.quiet_agents:
             return False
 
         return True

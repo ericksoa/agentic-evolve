@@ -33,8 +33,9 @@ class AgentProgress:
 class ProgressDisplay:
     """Manages progress display for evolution runs."""
 
-    def __init__(self, width: int = 72, use_unicode: bool = True):
+    def __init__(self, width: int = 72, use_unicode: bool = True, minimize: bool = False):
         self.width = width
+        self.minimize = minimize
         self.agents: dict[str, AgentProgress] = {}
 
     def generation_header(self, gen: int, champion_name: str, champion_fitness: float,
@@ -73,15 +74,29 @@ class ProgressDisplay:
         if error is not None:
             agent.error = error
 
-    def show_agents_starting(self, agents: list[tuple[str, str, str]]):
+    def show_agents_starting(self, agents: list[tuple]):
         """Show agents that are starting.
 
         Args:
-            agents: List of (variant, mutation_type, parent_name) tuples
+            agents: List of (variant, mutation_type, parent_name) or
+                    (variant, mutation_type, parent_name, parent_fitness) tuples
         """
-        print(f"  Mutations starting ({len(agents)} parallel):")
-        for variant, mutation_type, parent_name in agents:
-            print(f"    [{variant.upper()}] {mutation_type} (parent: {parent_name})")
+        n_mutations = sum(1 for a in agents if a[1] == "mutation")
+        n_crossover = sum(1 for a in agents if a[1] == "crossover")
+        parts = []
+        if n_mutations:
+            parts.append(f"{n_mutations} mutation{'s' if n_mutations > 1 else ''}")
+        if n_crossover:
+            parts.append(f"{n_crossover} crossover")
+        print(f"  Spawning {' + '.join(parts)}:")
+        for agent in agents:
+            variant, mutation_type, parent_name = agent[0], agent[1], agent[2]
+            fitness = agent[3] if len(agent) > 3 else None
+            fitness_str = f" @ {fitness:.2f}x" if fitness else ""
+            if mutation_type == "crossover":
+                print(f"    [{variant.upper()}] crossover: combining {parent_name}{fitness_str}")
+            else:
+                print(f"    [{variant.upper()}] mutate: {parent_name}{fitness_str}")
         print()
 
     def show_agent_result(self, variant: str, mutation_type: str, fitness: float,
@@ -91,7 +106,14 @@ class ProgressDisplay:
         if error:
             print(f"  [{variant.upper()}] {mutation_type[:20]:<20} FAIL  {error[:30]}")
         else:
-            delta = ((fitness / champion_fitness) - 1) * 100 if champion_fitness > 0 else 0
+            if champion_fitness != 0:
+                if self.minimize:
+                    # For minimization: improvement means fitness went down
+                    delta = ((champion_fitness - fitness) / abs(champion_fitness)) * 100
+                else:
+                    delta = ((fitness / champion_fitness) - 1) * 100
+            else:
+                delta = 0
             delta_str = f"+{delta:.1f}%" if delta >= 0 else f"{delta:.1f}%"
             print(f"  [{variant.upper()}] {mutation_type[:20]:<20} {fitness:.2f}x ({delta_str}) {decision}")
 
@@ -117,7 +139,14 @@ class ProgressDisplay:
             original_fitness = r.get("original_fitness")
 
             if old_champion:
-                delta = ((fitness / old_champion.get("fitness", 1)) - 1) * 100
+                old_fit = old_champion.get("fitness", 1)
+                if old_fit != 0:
+                    if self.minimize:
+                        delta = ((old_fit - fitness) / abs(old_fit)) * 100
+                    else:
+                        delta = ((fitness / old_fit) - 1) * 100
+                else:
+                    delta = 0
                 delta_str = f"+{delta:.1f}%" if delta >= 0 else f"{delta:.1f}%"
             else:
                 delta_str = ""
@@ -144,7 +173,10 @@ class ProgressDisplay:
 
             if old_champion and new_champion.get("file") != old_champion.get("file"):
                 old_fitness = old_champion.get("fitness", 0)
-                improvement = ((champ_fitness / old_fitness) - 1) * 100 if old_fitness > 0 else 0
+                if old_fitness != 0:
+                    improvement = abs(champ_fitness - old_fitness) / abs(old_fitness) * 100
+                else:
+                    improvement = 0
                 print(f"  Champion: {champ_name} ({champ_fitness:.2f}x) [+{improvement:.1f}% improvement]")
             else:
                 print(f"  Champion: {champ_name} ({champ_fitness:.2f}x) [unchanged]")
@@ -169,11 +201,12 @@ BANNER = r"""
 
 def print_evolution_header(problem: str, mode: str, work_dir: str, model: str = "",
                            max_generations: int = 0, population_size: int = 0,
-                           plateau_threshold: int = 0):
+                           plateau_threshold: int = 0, minimize: bool = False):
     """Print the evolution start header with banner."""
     print(BANNER)
     print(f"  Problem:    {problem}")
-    print(f"  Mode:       {mode}")
+    direction = "minimize" if minimize else "maximize"
+    print(f"  Mode:       {mode} ({direction})")
     if model:
         # Show short model name
         short_model = model.split("/")[-1] if "/" in model else model
