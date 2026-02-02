@@ -348,3 +348,97 @@ class TestRunAgentMessageHandling:
                 )
 
         assert "plain text response" in result
+
+
+class TestParseJsonListGuard:
+    """Ensure callers of _parse_json_from_result don't crash when it returns a list."""
+
+    @pytest.fixture
+    def runner(self):
+        """Create a minimal EvolutionRunner for testing parse guards."""
+        with patch.dict("sys.modules", {
+            "claude_agent_sdk": MagicMock(),
+        }):
+            from evolve_sdk.runner import EvolutionRunner
+            with patch.object(EvolutionRunner, "__init__", lambda self, *a, **kw: None):
+                r = EvolutionRunner.__new__(EvolutionRunner)
+                r.config = MagicMock()
+                r.config.model = "test-model"
+                r.config.trust = MagicMock()
+                r.config.trust.enabled = False
+                r.config.mode = "size"
+                r.config.max_turns_per_agent = 10
+                r.cwd = "/tmp"
+                r.mutations_dir = MagicMock()
+                r.work_dir = MagicMock()
+                r.generation = 1
+                r.memory = None
+                r.champion = {"file": "/tmp/champion.py", "fitness": 1.0}
+                return r
+
+    def test_parse_json_returns_list(self, runner):
+        """_parse_json_from_result should return a list when given a JSON array."""
+        result = runner._parse_json_from_result('[1, 2, 3]')
+        assert isinstance(result, list)
+
+    def test_parse_json_returns_dict(self, runner):
+        """_parse_json_from_result should return a dict when given a JSON object."""
+        result = runner._parse_json_from_result('{"key": "value"}')
+        assert isinstance(result, dict)
+
+    @pytest.mark.asyncio
+    async def test_spawn_mutator_handles_list_response(self, runner, capsys):
+        """_spawn_mutator should return error dict when agent returns a JSON array."""
+        async def mock_query(**kwargs):
+            yield MockResultMessage(result='[1, 2, 3]', num_turns=1)
+
+        with patch("evolve_sdk.runner.query", mock_query):
+            with patch("evolve_sdk.runner.SDK_AVAILABLE", True):
+                result = await runner._spawn_mutator(
+                    parent={"file": "/tmp/test.py", "fitness": 1.0},
+                    output_file="/tmp/out.py",
+                    variant="a",
+                )
+
+        # Should get a safe fallback dict, not crash with 'list' has no .get()
+        assert isinstance(result, dict)
+        assert "error" in result
+
+    @pytest.mark.asyncio
+    async def test_spawn_crossover_handles_list_response(self, runner, capsys):
+        """_spawn_crossover should return error dict when agent returns a JSON array."""
+        async def mock_query(**kwargs):
+            yield MockResultMessage(result='[1, 2, 3]', num_turns=1)
+
+        with patch("evolve_sdk.runner.query", mock_query):
+            with patch("evolve_sdk.runner.SDK_AVAILABLE", True):
+                result = await runner._spawn_crossover(
+                    parents=[
+                        {"file": "/tmp/a.py", "fitness": 1.0},
+                        {"file": "/tmp/b.py", "fitness": 0.8},
+                    ],
+                    output_file="/tmp/out.py",
+                )
+
+        # Should get a safe fallback dict, not crash with 'list' has no .get()
+        assert isinstance(result, dict)
+        assert "error" in result
+
+    @pytest.mark.asyncio
+    async def test_spawn_adversary_handles_list_response(self, runner, capsys):
+        """_spawn_adversary should return default dict when agent returns a JSON array."""
+        async def mock_query(**kwargs):
+            yield MockResultMessage(result='[1, 2, 3]', num_turns=1)
+
+        with patch("evolve_sdk.runner.query", mock_query):
+            with patch("evolve_sdk.runner.SDK_AVAILABLE", True):
+                result = await runner._spawn_adversary(
+                    candidate={"file": "/tmp/test.py", "fitness": 2.0},
+                    parent={"file": "/tmp/parent.py", "fitness": 1.0},
+                    evaluation_result={"fitness": 2.0, "valid": True},
+                )
+
+        # Should get the default fallback dict, not crash with 'list' has no .get()
+        assert isinstance(result, dict)
+        assert "trust_score" in result
+        assert result["trust_score"] == 0.5  # default fallback
