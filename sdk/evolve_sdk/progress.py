@@ -1,9 +1,9 @@
 """Progress display for evolution runs.
 
 Provides organized, real-time progress output for parallel agent execution.
+All user-visible output uses print() to stdout.
 """
 
-import sys
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -33,63 +33,18 @@ class AgentProgress:
 class ProgressDisplay:
     """Manages progress display for evolution runs."""
 
-    # Box-drawing characters (with ASCII fallback)
-    BOX_TL = "╔"
-    BOX_TR = "╗"
-    BOX_BL = "╚"
-    BOX_BR = "╝"
-    BOX_H = "═"
-    BOX_V = "║"
-    BOX_TL_LIGHT = "┌"
-    BOX_TR_LIGHT = "┐"
-    BOX_BL_LIGHT = "└"
-    BOX_BR_LIGHT = "┘"
-    BOX_H_LIGHT = "─"
-    BOX_V_LIGHT = "│"
-
     def __init__(self, width: int = 72, use_unicode: bool = True):
         self.width = width
-        self.use_unicode = use_unicode
         self.agents: dict[str, AgentProgress] = {}
-
-        if not use_unicode:
-            self._use_ascii_fallback()
-
-    def _use_ascii_fallback(self):
-        """Use ASCII characters instead of Unicode."""
-        self.BOX_TL = self.BOX_TR = self.BOX_BL = self.BOX_BR = "+"
-        self.BOX_H = "="
-        self.BOX_V = "|"
-        self.BOX_TL_LIGHT = self.BOX_TR_LIGHT = "+"
-        self.BOX_BL_LIGHT = self.BOX_BR_LIGHT = "+"
-        self.BOX_H_LIGHT = "-"
-        self.BOX_V_LIGHT = "|"
-
-    def _box_line(self, left: str, fill: str, right: str, content: str = "") -> str:
-        """Create a box line with optional content."""
-        if content:
-            padding = self.width - len(content) - 2
-            return f"{left}{content}{' ' * padding}{right}"
-        return f"{left}{fill * (self.width - 2)}{right}"
-
-    def _progress_bar(self, pct: int, width: int = 10) -> str:
-        """Create a progress bar."""
-        filled = int(pct / 100 * width)
-        return "█" * filled + "░" * (width - filled)
 
     def generation_header(self, gen: int, champion_name: str, champion_fitness: float,
                          population_size: int, plateau_count: int, plateau_threshold: int):
         """Display generation header."""
         print()
-        print(self._box_line(self.BOX_TL, self.BOX_H, self.BOX_TR))
-
-        title = f"  GENERATION {gen}"
-        print(self._box_line(self.BOX_V, " ", self.BOX_V, title))
-
-        status = f"  Champion: {champion_name} ({champion_fitness:.2f}x) | Pop: {population_size} | Plateau: {plateau_count}/{plateau_threshold}"
-        print(self._box_line(self.BOX_V, " ", self.BOX_V, status))
-
-        print(self._box_line(self.BOX_BL, self.BOX_H, self.BOX_BR))
+        print("=" * 60)
+        print(f"  GENERATION {gen}")
+        print(f"  Champion: {champion_name} ({champion_fitness:.2f}x) | Pop: {population_size} | Plateau: {plateau_count}/{plateau_threshold}")
+        print("=" * 60)
         print()
 
     def register_agent(self, variant: str, mutation_type: str, parent: str,
@@ -124,71 +79,33 @@ class ProgressDisplay:
         Args:
             agents: List of (variant, mutation_type, parent_name) tuples
         """
-        print(self._box_line(self.BOX_TL_LIGHT, self.BOX_H_LIGHT, self.BOX_TR_LIGHT))
-        title = f"  MUTATIONS IN PROGRESS ({len(agents)} parallel)"
-        print(self._box_line(self.BOX_V_LIGHT, " ", self.BOX_V_LIGHT, title))
-        print(self._box_line(self.BOX_V_LIGHT, self.BOX_H_LIGHT, self.BOX_V_LIGHT,
-                            self.BOX_H_LIGHT * (self.width - 2)))
-        print(self._box_line(self.BOX_V_LIGHT, " ", self.BOX_V_LIGHT))
-
-        # Display agents in pairs
-        for i in range(0, len(agents), 2):
-            left = agents[i]
-            right = agents[i + 1] if i + 1 < len(agents) else None
-
-            # First line: variant and type
-            left_str = f"  [{left[0].upper()}] {left[1][:22]:<22}"
-            right_str = f"  [{right[0].upper()}] {right[1][:22]:<22}" if right else ""
-            print(f"{self.BOX_V_LIGHT}{left_str}{right_str:<34}{self.BOX_V_LIGHT}")
-
-            # Second line: parent
-            left_parent = f"      Parent: {left[2][:18]:<18}"
-            right_parent = f"      Parent: {right[2][:18]:<18}" if right else ""
-            print(f"{self.BOX_V_LIGHT}{left_parent}{right_parent:<34}{self.BOX_V_LIGHT}")
-
-            # Third line: status (initially running)
-            left_status = f"      Status: {self._progress_bar(10)} 10%"
-            right_status = f"      Status: {self._progress_bar(10)} 10%" if right else ""
-            print(f"{self.BOX_V_LIGHT}{left_status:<34}{right_status:<34}{self.BOX_V_LIGHT}")
-
-            print(self._box_line(self.BOX_V_LIGHT, " ", self.BOX_V_LIGHT))
-
-        print(self._box_line(self.BOX_BL_LIGHT, self.BOX_H_LIGHT, self.BOX_BR_LIGHT))
+        print(f"  Mutations starting ({len(agents)} parallel):")
+        for variant, mutation_type, parent_name in agents:
+            print(f"    [{variant.upper()}] {mutation_type} (parent: {parent_name})")
         print()
 
     def show_agent_result(self, variant: str, mutation_type: str, fitness: float,
                          champion_fitness: float, decision: str,
                          per_size_results: dict = None, error: str = None):
         """Show result for a single agent."""
-        delta = ((fitness / champion_fitness) - 1) * 100 if champion_fitness > 0 else 0
-        delta_str = f"+{delta:.1f}%" if delta >= 0 else f"{delta:.1f}%"
-
-        status_icon = "✓" if decision == "KEEP" else "✗" if decision == "DROP" else "!"
-
         if error:
             print(f"  [{variant.upper()}] {mutation_type[:20]:<20} FAIL  {error[:30]}")
         else:
-            print(f"  [{variant.upper()}] {mutation_type[:20]:<20} {fitness:.2f}x ({delta_str}) {decision} {status_icon}")
+            delta = ((fitness / champion_fitness) - 1) * 100 if champion_fitness > 0 else 0
+            delta_str = f"+{delta:.1f}%" if delta >= 0 else f"{delta:.1f}%"
+            print(f"  [{variant.upper()}] {mutation_type[:20]:<20} {fitness:.2f}x ({delta_str}) {decision}")
 
-        # Show per-size breakdown if available
-        if per_size_results and decision == "KEEP":
-            for size, result in list(per_size_results.items())[:4]:
-                print(f"       {size}: {result:.2f}x")
+            # Show per-size breakdown if available
+            if per_size_results and decision == "KEEP":
+                for size, result in list(per_size_results.items())[:4]:
+                    print(f"       {size}: {result:.2f}x")
 
     def generation_summary(self, gen: int, results: list[dict],
                           new_champion: dict = None, old_champion: dict = None,
                           plateau_count: int = 0):
         """Display generation summary."""
         print()
-        print(self._box_line(self.BOX_TL_LIGHT, self.BOX_H_LIGHT, self.BOX_TR_LIGHT))
-        print(self._box_line(self.BOX_V_LIGHT, " ", self.BOX_V_LIGHT,
-                            f"  GENERATION {gen} COMPLETE"))
-        print(self._box_line(self.BOX_V_LIGHT, self.BOX_H_LIGHT, self.BOX_V_LIGHT,
-                            self.BOX_H_LIGHT * (self.width - 2)))
-        print(self._box_line(self.BOX_V_LIGHT, " ", self.BOX_V_LIGHT))
-
-        # Results
-        print(self._box_line(self.BOX_V_LIGHT, " ", self.BOX_V_LIGHT, "  Results:"))
+        print(f"--- Generation {gen} Summary ---")
 
         for r in results:
             variant = r.get("variant", "?")
@@ -206,23 +123,19 @@ class ProgressDisplay:
                 delta_str = ""
 
             is_new_champ = new_champion and r.get("file") == new_champion.get("file")
-            champ_marker = " ← NEW CHAMPION" if is_new_champ else ""
+            champ_marker = " <- NEW CHAMPION" if is_new_champ else ""
 
             # Add trust indicator if present
             trust_str = ""
             if trust_score is not None and original_fitness is not None:
                 trust_str = f" [T:{trust_score:.1f}]"
                 if trust_score < 1.0:
-                    champ_marker = f"{champ_marker} (adj:{original_fitness:.2f}→{fitness:.2f})"
+                    champ_marker = f"{champ_marker} (adj:{original_fitness:.2f}->{fitness:.2f})"
 
             if error:
-                line = f"    [{variant.upper()}] {mutation_type:<18} FAIL   {error[:25]}"
+                print(f"  [{variant.upper()}] {mutation_type:<18} FAIL   {error[:25]}")
             else:
-                line = f"    [{variant.upper()}] {mutation_type:<16} {fitness:.2f}x {delta_str:>7}{trust_str} {decision}{champ_marker}"
-
-            print(self._box_line(self.BOX_V_LIGHT, " ", self.BOX_V_LIGHT, line))
-
-        print(self._box_line(self.BOX_V_LIGHT, " ", self.BOX_V_LIGHT))
+                print(f"  [{variant.upper()}] {mutation_type:<16} {fitness:.2f}x {delta_str:>7}{trust_str} {decision}{champ_marker}")
 
         # Champion update
         if new_champion:
@@ -232,57 +145,45 @@ class ProgressDisplay:
             if old_champion and new_champion.get("file") != old_champion.get("file"):
                 old_fitness = old_champion.get("fitness", 0)
                 improvement = ((champ_fitness / old_fitness) - 1) * 100 if old_fitness > 0 else 0
-                line = f"  Champion: {champ_name} ({champ_fitness:.2f}x) [+{improvement:.1f}% improvement]"
+                print(f"  Champion: {champ_name} ({champ_fitness:.2f}x) [+{improvement:.1f}% improvement]")
             else:
-                line = f"  Champion: {champ_name} ({champ_fitness:.2f}x) [unchanged]"
-
-            print(self._box_line(self.BOX_V_LIGHT, " ", self.BOX_V_LIGHT, line))
+                print(f"  Champion: {champ_name} ({champ_fitness:.2f}x) [unchanged]")
 
         # Plateau status
         if plateau_count > 0:
-            print(self._box_line(self.BOX_V_LIGHT, " ", self.BOX_V_LIGHT,
-                                f"  Plateau: {plateau_count} generations without improvement"))
-        else:
-            print(self._box_line(self.BOX_V_LIGHT, " ", self.BOX_V_LIGHT,
-                                "  Plateau: RESET"))
+            print(f"  Plateau: {plateau_count} generations without improvement")
 
-        print(self._box_line(self.BOX_V_LIGHT, " ", self.BOX_V_LIGHT))
-        print(self._box_line(self.BOX_BL_LIGHT, self.BOX_H_LIGHT, self.BOX_BR_LIGHT))
         print()
 
-    def compact_progress(self, results: list[dict], running: list[str],
-                        waiting: list[str], best_so_far: dict = None):
-        """Compact progress display for many agents."""
-        # Done agents
-        done_str = " ".join(
-            f"[{r['variant'].upper()}]{r.get('fitness', 0):.1f}x{'✓' if r.get('decision') == 'KEEP' else '✗'}"
-            for r in results
-        )
-        print(f"  DONE: {done_str}")
 
-        # Running agents
-        run_str = " ".join(f"[{v.upper()}]████░░" for v in running)
-        print(f"  RUN:  {run_str}")
-
-        # Waiting agents
-        if waiting:
-            wait_str = " ".join(f"[{v.upper()}]░░░░░░" for v in waiting)
-            print(f"  WAIT: {wait_str}")
-
-        # Best so far
-        if best_so_far:
-            print(f"\n  Best so far: [{best_so_far.get('variant', '?').upper()}] "
-                  f"{best_so_far.get('fitness', 0):.2f}x")
+BANNER = r"""
+================================================================
+    _                    _   _        _____            _
+   / \   __ _  ___ _ __ | |_(_) ___  | ____|_   _____ | |_   _____
+  / _ \ / _` |/ _ \ '_ \| __| |/ __| |  _| \ \ / / _ \| \ \ / / _ \
+ / ___ \ (_| |  __/ | | | |_| | (__  | |___ \ V / (_) | |\ V /  __/
+/_/   \_\__, |\___|_| |_|\__|_|\___| |_____| \_/ \___/|_| \_/ \___|
+        |___/
+================================================================"""
 
 
-def print_evolution_header(problem: str, mode: str, work_dir: str):
-    """Print the evolution start header."""
-    print()
-    print("=" * 60)
-    print(f"EVOLUTION: {problem}")
-    print(f"Mode: {mode}")
-    print(f"Work dir: {work_dir}")
-    print("=" * 60)
+def print_evolution_header(problem: str, mode: str, work_dir: str, model: str = "",
+                           max_generations: int = 0, population_size: int = 0,
+                           plateau_threshold: int = 0):
+    """Print the evolution start header with banner."""
+    print(BANNER)
+    print(f"  Problem:    {problem}")
+    print(f"  Mode:       {mode}")
+    if model:
+        # Show short model name
+        short_model = model.split("/")[-1] if "/" in model else model
+        print(f"  Model:      {short_model}")
+    if max_generations:
+        print(f"  Generations: {max_generations} max (plateau: {plateau_threshold})")
+    if population_size:
+        print(f"  Population: {population_size}")
+    print(f"  Work dir:   {work_dir}")
+    print("=" * 64)
     print()
 
 

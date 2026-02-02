@@ -9,7 +9,7 @@ Design:
 - Polls memory.get_human_messages() at configurable intervals
 - Tracks displayed message IDs to avoid duplicates
 - Filters by priority level (default: important+)
-- Formats messages with colors and emojis for terminal visibility
+- Formats messages with clean text for terminal visibility
 - Can be paused/resumed during critical operations
 
 Usage:
@@ -38,35 +38,6 @@ class ReporterAgent:
     # Priority levels in order (for filtering)
     PRIORITY_LEVELS = ["debug", "info", "important", "urgent", "critical"]
 
-    # ANSI color codes for message types
-    COLORS = {
-        "milestone": "\033[1;33m",   # Bold yellow
-        "discovery": "\033[1;32m",   # Bold green
-        "warning": "\033[1;31m",     # Bold red
-        "error": "\033[1;31m",       # Bold red
-        "result": "\033[1;36m",      # Bold cyan
-        "status": "\033[0;37m",      # Light gray
-        "strategy": "\033[1;35m",    # Bold magenta
-        "question": "\033[1;34m",    # Bold blue
-        "guidance": "\033[1;34m",    # Bold blue
-    }
-    RESET = "\033[0m"
-
-    # Agent emojis
-    AGENT_EMOJIS = {
-        "runner": "🎯",
-        "mutator": "🧬",
-        "mutator_a": "🧬",
-        "mutator_b": "🧬",
-        "mutator_c": "🧬",
-        "crossover": "🔀",
-        "evaluator": "📊",
-        "adversary": "🛡️",
-        "human": "👤",
-        "system": "⚙️",
-        "reporter": "📢",
-    }
-
     def __init__(
         self,
         memory: "EvolutionMemory",
@@ -82,7 +53,7 @@ class ReporterAgent:
             memory: EvolutionMemory instance to poll for messages
             poll_interval: Seconds between polls (default: 2.0)
             min_priority: Minimum priority level to display (default: info)
-            show_agent_prefix: Whether to show agent name/emoji prefix
+            show_agent_prefix: Whether to show agent name prefix
             quiet_types: Message types to suppress (e.g., ["status"])
         """
         self.memory = memory
@@ -183,7 +154,7 @@ class ReporterAgent:
                 self._displayed_ids.add(msg_id)
                 self.messages_displayed += 1
 
-        except Exception as e:
+        except Exception:
             # Silently ignore errors during polling
             pass
 
@@ -216,25 +187,21 @@ class ReporterAgent:
         generation = msg.get("generation", 0)
         fitness = msg.get("related_fitness")
 
-        # Get styling
-        emoji = self.AGENT_EMOJIS.get(from_agent, "📝")
-        color = self.COLORS.get(msg_type, "")
-
         # Priority indicator
         priority_marker = ""
         if priority == "urgent":
-            priority_marker = "❗ "
+            priority_marker = "! "
         elif priority == "critical":
-            priority_marker = "🚨 "
+            priority_marker = "!! "
 
         # Build the output
         lines = []
 
         # Header line
         if self.show_agent_prefix:
-            header = f"\n  {emoji} [{from_agent.upper()}] {priority_marker}{color}{title}{self.RESET}"
+            header = f"\n  [{from_agent.upper()}] {priority_marker}{title}"
         else:
-            header = f"\n  {priority_marker}{color}{title}{self.RESET}"
+            header = f"\n  {priority_marker}{title}"
         lines.append(header)
 
         # Content (if different from title and not too long)
@@ -261,9 +228,8 @@ class ReporterAgent:
 
     def _print_system_message(self, text: str, is_error: bool = False):
         """Print a system message from the reporter itself."""
-        emoji = "📢"
-        color = "\033[1;31m" if is_error else "\033[0;36m"
-        print(f"\n  {emoji} [REPORTER] {color}{text}{self.RESET}")
+        prefix = "ERROR: " if is_error else ""
+        print(f"\n  [reporter] {prefix}{text}")
 
     def inject_message(self, title: str, content: str = "", priority: str = "info"):
         """
@@ -297,21 +263,6 @@ def report_to_operator(
     Use this when you don't have a running ReporterAgent but need
     to surface something to the human.
     """
-    # Get styling
-    emojis = {
-        "runner": "🎯", "mutator": "🧬", "evaluator": "📊",
-        "adversary": "🛡️", "crossover": "🔀", "system": "⚙️",
-    }
-    colors = {
-        "milestone": "\033[1;33m", "discovery": "\033[1;32m",
-        "warning": "\033[1;31m", "error": "\033[1;31m",
-        "result": "\033[1;36m",
-    }
-
-    emoji = emojis.get(from_agent, "📝")
-    color = colors.get(message_type, "")
-    reset = "\033[0m"
-
-    print(f"\n  {emoji} [{from_agent.upper()}] {color}{title}{reset}")
+    print(f"\n  [{from_agent.upper()}] {title}")
     if content and content != title:
         print(f"     {content[:150]}")

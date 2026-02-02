@@ -14,11 +14,14 @@ Trust System Components:
 
 import asyncio
 import json
+import logging
 import re
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger("evolve_sdk")
 
 # NOTE: claude_agent_sdk import is conditional - allows testing structure without SDK installed
 try:
@@ -147,7 +150,7 @@ class EvolutionRunner:
             return
 
         if not MEMORY_AVAILABLE:
-            print("[MEMORY] Memory module not available - using JSON state only")
+            print("  [memory] Memory module not available - using JSON state only")
             return
 
         try:
@@ -159,12 +162,12 @@ class EvolutionRunner:
                 problem_id=self.problem_id,
                 mode=self.config.mode,
             )
-            print(f"[MEMORY] Initialized: {self.memory.stats()['store_path']}")
+            print(f"  [memory] Initialized: {self.memory.stats()['store_path']}")
 
             # Display critical notes at startup - these should never be forgotten
             self._display_critical_notes()
         except Exception as e:
-            print(f"[MEMORY] Failed to initialize: {e}")
+            print(f"  [memory] Failed to initialize: {e}")
             self.memory = None
 
     def _display_critical_notes(self):
@@ -222,19 +225,6 @@ class EvolutionRunner:
             related_fitness: Associated fitness value
             print_to_terminal: Whether to print to stdout (important+ always print)
         """
-        # Get agent emoji
-        agent_info = {
-            "runner": ("Evolution Runner", "🎯"),
-            "mutator": ("Mutator", "🧬"),
-            "mutator_a": ("Mutator A", "🧬"),
-            "mutator_b": ("Mutator B", "🧬"),
-            "mutator_c": ("Mutator C", "🧬"),
-            "crossover": ("Crossover", "🔀"),
-            "evaluator": ("Evaluator", "📊"),
-            "adversary": ("Adversary", "🛡️"),
-        }.get(from_agent, (from_agent, "📝"))
-        emoji = agent_info[1]
-
         # Print to terminal for important+ or if explicitly requested
         priority_levels = ["debug", "info", "important", "urgent", "critical"]
         should_print = (
@@ -243,16 +233,7 @@ class EvolutionRunner:
         ) or message_type in ("milestone", "warning", "error", "discovery")
 
         if should_print:
-            # Color based on message type
-            colors = {
-                "milestone": "\033[1;33m",  # Bold yellow
-                "discovery": "\033[1;32m",  # Bold green
-                "warning": "\033[1;31m",    # Bold red
-                "error": "\033[1;31m",      # Bold red
-            }
-            color = colors.get(message_type, "")
-            reset = "\033[0m" if color else ""
-            print(f"\n  {emoji} [{from_agent.upper()}] {color}{title}{reset}")
+            print(f"\n  [{from_agent.upper()}] {title}")
             if content and content != title:
                 print(f"     {content[:100]}")
 
@@ -283,8 +264,8 @@ class EvolutionRunner:
         related_fitness: float | None = None,
     ):
         """Announce a significant milestone - always printed to terminal."""
-        # Always print milestones with prominent formatting
-        print(f"\n  🏆 \033[1;33m[MILESTONE]\033[0m {title}")
+        # Always print milestones prominently
+        print(f"\n  * MILESTONE: {title}")
         if content:
             print(f"     {content}")
 
@@ -392,7 +373,13 @@ class EvolutionRunner:
         Returns:
             Final results including champion solution
         """
-        print_evolution_header(self.config.problem, self.config.mode, str(self.work_dir))
+        print_evolution_header(
+            self.config.problem, self.config.mode, str(self.work_dir),
+            model=self.config.model,
+            max_generations=self.config.max_generations,
+            population_size=self.config.population_size,
+            plateau_threshold=self.config.plateau_threshold,
+        )
 
         # Setup directories
         self.work_dir.mkdir(parents=True, exist_ok=True)
@@ -459,7 +446,7 @@ class EvolutionRunner:
             if gen_best and gen_best["fitness"] > best_fitness:
                 improvement = gen_best["fitness"] - best_fitness
                 improvement_pct = (improvement / best_fitness * 100) if best_fitness > 0 else 0
-                print(f"[+] Improvement: {best_fitness:.4f} -> {gen_best['fitness']:.4f} (+{improvement:.4f})")
+                print(f"  Improvement: {best_fitness:.4f} -> {gen_best['fitness']:.4f} (+{improvement:.4f})")
                 best_fitness = gen_best["fitness"]
                 plateau_count = 0
                 self._tactical_stall_count = 0  # Reset tactical stall on improvement
@@ -474,7 +461,7 @@ class EvolutionRunner:
             else:
                 plateau_count += 1
                 self._tactical_stall_count += 1
-                print(f"[=] No improvement (plateau: {plateau_count}/{self.config.plateau_threshold})")
+                print(f"  No improvement (plateau: {plateau_count}/{self.config.plateau_threshold})")
 
                 # Note plateau status
                 self._msg(
@@ -494,7 +481,7 @@ class EvolutionRunner:
                     tactical_stall_threshold=self.config.strategic.tactical_stall_threshold,
                 )
             ):
-                print(f"\n[STRATEGY] Analyzing strategic directions...")
+                print(f"\n  [strategy] Analyzing strategic directions...")
                 direction_result = await self._run_direction_analysis()
                 if direction_result and not direction_result.get("error"):
                     self._tactical_stall_count = 0  # Reset stall count after analysis
@@ -506,7 +493,7 @@ class EvolutionRunner:
 
     async def _initialize_population(self):
         """Bootstrap initial population with dedicated agent."""
-        print("\n[Gen 0] Initializing population...")
+        print("\n  Initializing population...")
 
         # Use absolute path for output_dir so subagents can find it
         output_dir = self.mutations_dir.resolve() if self.mutations_dir.is_absolute() else (Path(self.cwd or ".") / self.mutations_dir).resolve()
@@ -523,6 +510,7 @@ class EvolutionRunner:
             prompt=prompt,
             tools=["Read", "Write", "Bash", "Glob"],
             max_turns=25,
+            agent_name="initializer",
         )
 
         # Parse results
@@ -531,8 +519,8 @@ class EvolutionRunner:
             self.population = parsed["solutions"]
             if parsed.get("best"):
                 self.champion = parsed["best"]
-            print(f"[Gen 0] Created {len(self.population)} initial solutions")
-            print(f"[Gen 0] Best initial fitness: {self.champion['fitness'] if self.champion else 'N/A'}")
+            print(f"  Created {len(self.population)} initial solutions")
+            print(f"  Best initial fitness: {self.champion['fitness'] if self.champion else 'N/A'}")
 
             # Notify operator
             self._msg(
@@ -541,7 +529,7 @@ class EvolutionRunner:
                 related_fitness=self.champion['fitness'] if self.champion else None,
             )
         else:
-            print("[Gen 0] Warning: Could not parse initialization results")
+            print("  WARNING: Could not parse initialization results")
             # Try to discover any created files
             await self._discover_population()
 
@@ -566,7 +554,7 @@ class EvolutionRunner:
         top_n = self.population[: self.config.elite_count]
 
         if not top_n:
-            print("[!] No population to evolve from")
+            print("  ERROR: No population to evolve from")
             return None
 
         # Build agent list for display
@@ -650,7 +638,7 @@ class EvolutionRunner:
 
             # Run adversary challenge on evaluations (if trust system enabled)
             if self.config.trust.enabled:
-                print("\n  [TRUST] Running adversary validation...")
+                print("\n  [trust] Running adversary validation...")
                 evaluations = await self._challenge_candidates(
                     candidates=valid_mutations,
                     parent_map=parent_map,
@@ -847,6 +835,7 @@ class EvolutionRunner:
             prompt=prompt,
             tools=["Read", "Write", "Edit", "Bash"],
             max_turns=self.config.max_turns_per_agent,
+            agent_name=f"mutator-{variant}",
         )
 
         parsed = self._parse_json_from_result(result)
@@ -869,6 +858,7 @@ class EvolutionRunner:
             prompt=prompt,
             tools=["Read", "Write", "Edit"],
             max_turns=self.config.max_turns_per_agent,
+            agent_name="crossover",
         )
 
         parsed = self._parse_json_from_result(result)
@@ -887,6 +877,7 @@ class EvolutionRunner:
             prompt=prompt,
             tools=["Read", "Bash", "Glob"],
             max_turns=self.config.max_turns_per_agent + 5,  # Extra turns for multiple evals
+            agent_name="evaluator",
         )
 
         parsed = self._parse_json_from_result(result)
@@ -925,6 +916,7 @@ class EvolutionRunner:
             prompt=prompt,
             tools=["Read", "Bash", "Glob"],
             max_turns=self.config.max_turns_per_agent,
+            agent_name="adversary",
         )
 
         parsed = self._parse_json_from_result(result)
@@ -965,6 +957,7 @@ class EvolutionRunner:
             prompt=prompt,
             tools=["Read", "Bash", "Glob"],
             max_turns=self.config.max_turns_per_agent + 5,  # Extra turns for thorough testing
+            agent_name="escalation",
         )
 
         parsed = self._parse_json_from_result(result)
@@ -1024,6 +1017,7 @@ class EvolutionRunner:
             prompt=prompt,
             tools=["Read"],  # Read-only access for code review
             max_turns=5,  # Quick analysis, not deep investigation
+            agent_name="arbitrator",
         )
 
         return result
@@ -1232,7 +1226,7 @@ class EvolutionRunner:
                             threshold=0.85,
                         )
                         if similar_exploits:
-                            print(f"  [MEMORY] Found {len(similar_exploits)} similar exploit patterns!")
+                            print(f"  [memory] Found {len(similar_exploits)} similar exploit patterns!")
                             for exp in similar_exploits[:2]:
                                 all_flags.append(
                                     f"Similar to known exploit: {exp.get('pattern_type', 'unknown')} "
@@ -1252,7 +1246,7 @@ class EvolutionRunner:
 
             # Critical exploit = immediate rejection
             if self.exploit_detector.has_critical(exploit_results):
-                print(f"  [EXPLOIT] Critical exploit detected: {exploit_flags}")
+                print(f"  [trust] Critical exploit detected: {exploit_flags}")
                 eval_result["trust_score"] = 0.0
                 eval_result["adversary_reviewed"] = True
                 eval_result["adversary_recommendation"] = "reject"
@@ -1279,7 +1273,7 @@ class EvolutionRunner:
                             flags=exploit_flags,
                             claimed_fitness=fitness,
                         )
-                        print(f"  [MEMORY] Exploit pattern stored for future detection")
+                        print(f"  [memory] Exploit pattern stored for future detection")
                     except Exception:
                         pass  # Memory storage is not critical
 
@@ -1310,17 +1304,17 @@ class EvolutionRunner:
                 if jump_pct > trust_cfg.suspicious_jump_pct:
                     needs_review = True
                     all_flags.append(f"Suspicious jump: {jump_pct:.1f}%")
-                    print(f"  [!] Suspicious jump: {jump_pct:.1f}% > {trust_cfg.suspicious_jump_pct}%")
+                    print(f"  [trust] Suspicious jump: {jump_pct:.1f}% > {trust_cfg.suspicious_jump_pct}%")
 
             # Check if this would be a new champion
             if trust_cfg.require_adversary_for_champion and fitness > population_best:
                 needs_review = True
-                print(f"  [!] New champion candidate: {fitness:.4f} > {population_best:.4f}")
+                print(f"  [trust] New champion candidate: {fitness:.4f} > {population_best:.4f}")
 
             # Check if exploit detection raised warnings
             if exploit_flags:
                 needs_review = True
-                print(f"  [!] Exploit warnings: {exploit_flags}")
+                print(f"  [trust] Exploit warnings: {exploit_flags}")
 
             if not needs_review:
                 # No review needed - keep original fitness
@@ -1333,7 +1327,7 @@ class EvolutionRunner:
             # === VARIANCE GATES (A) ===
             # Run multiple evaluations if configured
             if trust_cfg.n_evaluations > 1:
-                print(f"  [VARIANCE] Running {trust_cfg.n_evaluations} evaluations...")
+                print(f"  [trust] Running {trust_cfg.n_evaluations} variance evaluations...")
                 # Note: For now, we use the single fitness value
                 # In a full implementation, this would re-run the evaluator N times
                 # For demonstration, we simulate with the single value
@@ -1344,7 +1338,7 @@ class EvolutionRunner:
                 all_flags.extend(variance_flags)
 
                 if not variance_stats.passed and trust_cfg.require_variance_gate:
-                    print(f"  [VARIANCE] FAILED: CV={variance_stats.cv:.4f} > {trust_cfg.variance_threshold}")
+                    print(f"  [trust] Variance FAILED: CV={variance_stats.cv:.4f} > {trust_cfg.variance_threshold}")
                     eval_result["trust_score"] = 0.0
                     eval_result["adversary_reviewed"] = True
                     eval_result["adversary_recommendation"] = "reject"
@@ -1367,7 +1361,7 @@ class EvolutionRunner:
                     continue
 
             # === ADVERSARY AGENT REVIEW ===
-            print(f"  [ADVERSARY] Challenging: {file_path.split('/')[-1]}")
+            print(f"  [adversary] Challenging: {file_path.split('/')[-1]}")
             trust_result = await self._spawn_adversary(
                 candidate=candidate or {"file": file_path},
                 parent=parent,
@@ -1380,7 +1374,7 @@ class EvolutionRunner:
             adversary_flags = trust_result.get("flags", [])
             all_flags.extend(adversary_flags)
 
-            print(f"  [ADVERSARY] Trust: {trust_score:.2f}, Rec: {recommendation}, Flags: {len(adversary_flags)}")
+            print(f"  [adversary] Trust: {trust_score:.2f}, Rec: {recommendation}, Flags: {len(adversary_flags)}")
 
             # === ESCALATION LADDER (C) ===
             escalation_history = []
@@ -1389,7 +1383,7 @@ class EvolutionRunner:
                 and escalation_level > 0
                 and escalation_level <= trust_cfg.max_escalation_level
             ):
-                print(f"  [ESCALATION] Level {escalation_level} validation...")
+                print(f"  [escalation] Level {escalation_level} validation...")
                 escalation_result = await self._run_escalation(
                     candidate=candidate or {"file": file_path},
                     trust_result=trust_result,
@@ -1407,12 +1401,12 @@ class EvolutionRunner:
                     trust_score = escalation_result.get("revised_trust", trust_score)
                     fitness = escalation_result.get("revised_fitness", fitness)
                     recommendation = escalation_result.get("final_recommendation", "accept")
-                    print(f"  [ESCALATION] Passed! Revised trust: {trust_score:.2f}")
+                    print(f"  [escalation] Passed! Revised trust: {trust_score:.2f}")
                 else:
                     recommendation = "reject"
                     trust_score = 0.0
                     all_flags.extend(escalation_result.get("failures", []))
-                    print(f"  [ESCALATION] Failed: {escalation_result.get('failures', [])}")
+                    print(f"  [escalation] Failed: {escalation_result.get('failures', [])}")
 
             # Apply trust adjustment
             if recommendation == "reject" or trust_score < trust_cfg.reject_threshold:
@@ -1434,10 +1428,10 @@ class EvolutionRunner:
                     )
 
                     if should_escalate:
-                        print(f"  [HUMAN] Escalating to human review...")
+                        print(f"  [human] Escalating to human review...")
 
                         # Spawn arbitrator agent for neutral analysis
-                        print(f"  [ARBITRATOR] Getting neutral assessment...")
+                        print(f"  [arbitrator] Getting neutral assessment...")
                         arbitrator_analysis = await self._spawn_arbitrator(
                             candidate_file=file_path,
                             fitness=fitness,
@@ -1463,7 +1457,7 @@ class EvolutionRunner:
                             trust_score = human_result.get("adjusted_trust", trust_cfg.accept_threshold)
                             recommendation = "accept"
                             all_flags.append(f"human_override: accepted with trust {trust_score:.2f}")
-                            print(f"  [HUMAN] Override accepted - trust adjusted to {trust_score:.2f}")
+                            print(f"  [human] Override accepted - trust adjusted to {trust_score:.2f}")
                         elif human_result["decision"] == "reject":
                             all_flags.append(f"human_confirmed_rejection: {human_result.get('reason', 'explicit')}")
                         # If decision is "adjust", trust_score was already set above
@@ -1521,51 +1515,129 @@ class EvolutionRunner:
 
         return updated_evals
 
+    def _build_hooks(self) -> dict:
+        """Build hooks dict for SDK agent options.
+
+        Returns a dict with PreToolUse and PostToolUse HookMatcher entries
+        for validation and logging hooks.
+        """
+        hooks = {}
+        pre_tool_hooks = []
+        post_tool_hooks = []
+
+        # Validation hook — blocks dangerous patterns
+        validation_cb = create_validation_hook(
+            blocked_patterns=None,  # use defaults
+            allowed_paths=[str(self.mutations_dir.resolve())],
+        )
+        pre_tool_hooks.append(validation_cb)
+
+        # Logging hook
+        log_file = self.work_dir / "tool_usage.jsonl"
+        logging_cb = create_logging_hook(log_file, self.generation)
+        pre_tool_hooks.append(logging_cb)
+        post_tool_hooks.append(logging_cb)
+
+        if pre_tool_hooks:
+            hooks["PreToolUse"] = [HookMatcher(
+                matcher="Bash|Write|Edit",
+                hooks=pre_tool_hooks,
+            )]
+        if post_tool_hooks:
+            hooks["PostToolUse"] = [HookMatcher(
+                matcher=None,  # match all tools
+                hooks=post_tool_hooks,
+            )]
+
+        return hooks
+
     async def _run_agent(
         self,
         system: str,
         prompt: str,
         tools: list[str],
         max_turns: int = 15,
+        agent_name: str = "agent",
+        output_schema: dict | None = None,
     ) -> str:
         """
         Run a single agent query with clean context.
 
         Each call creates a fresh agent - no session resume.
         This ensures each subagent has clean, focused context.
+
+        Args:
+            system: System prompt for the agent
+            prompt: User prompt for the agent
+            tools: List of allowed tool names
+            max_turns: Maximum agentic turns
+            agent_name: Identifying name printed in progress output
+            output_schema: Optional JSON schema for structured output
         """
         if not SDK_AVAILABLE:
             raise RuntimeError(
                 "Claude Agent SDK not installed. Run: pip install claude-agent-sdk"
             )
 
+        print(f"  [{agent_name}] Starting...", flush=True)
+
         result_text = ""
 
-        # Note: hooks disabled for now due to SDK compatibility issues
-        # TODO: Re-enable when claude_agent_sdk hook interface is clarified
+        options = ClaudeAgentOptions(
+            system_prompt=system,
+            allowed_tools=tools,
+            permission_mode="acceptEdits",
+            max_turns=max_turns,
+            model=self.config.model,
+            cwd=self.cwd,
+            include_partial_messages=True,
+            stderr=lambda line: logger.debug("[%s stderr] %s", agent_name, line),
+        )
+
+        # Wire up hooks if trust system is enabled
+        if self.config.trust.enabled:
+            options.hooks = self._build_hooks()
+
+        # Structured output if schema provided
+        if output_schema:
+            options.output_format = {"type": "json_schema", "schema": output_schema}
 
         try:
-            async for message in query(
-                prompt=prompt,
-                options=ClaudeAgentOptions(
-                    system_prompt=system,
-                    allowed_tools=tools,
-                    permission_mode="acceptEdits",
-                    max_turns=max_turns,
-                    model=self.config.model,
-                    cwd=self.cwd,
-                ),
-            ):
-                # Collect result text
-                if hasattr(message, "content"):
-                    result_text += str(message.content)
-                elif hasattr(message, "result"):
-                    result_text += str(message.result)
+            async for message in query(prompt=prompt, options=options):
+                # SDK message type dispatch
+                if hasattr(message, 'content') and hasattr(message, '__class__') and message.__class__.__name__ == 'AssistantMessage':
+                    for block in message.content:
+                        if hasattr(block, 'text'):
+                            result_text += block.text
+                        elif hasattr(block, 'name') and hasattr(block, 'id'):
+                            # ToolUseBlock — show tool invocation
+                            print(f"  [{agent_name}] -> {block.name}", flush=True)
+                        elif hasattr(block, 'thinking'):
+                            logger.debug("[%s] Thinking...", agent_name)
+                elif hasattr(message, 'event') and message.__class__.__name__ == 'StreamEvent':
+                    # Real-time streaming — show tool starts as they happen
+                    event = message.event
+                    if isinstance(event, dict):
+                        if event.get("type") == "content_block_start":
+                            cb = event.get("content_block", {})
+                            if cb.get("type") == "tool_use":
+                                print(f"  [{agent_name}] -> {cb.get('name', '?')}", flush=True)
+                elif hasattr(message, 'result') and message.__class__.__name__ == 'ResultMessage':
+                    # Prefer structured output if available
+                    if hasattr(message, 'structured_output') and message.structured_output is not None:
+                        result_text = json.dumps(message.structured_output)
+                    elif message.result:
+                        result_text = message.result
+                    # Print completion status
+                    status = "ERROR" if getattr(message, 'is_error', False) else "Done"
+                    num_turns = getattr(message, 'num_turns', '?')
+                    print(f"  [{agent_name}] {status} ({num_turns} turns)", flush=True)
                 elif isinstance(message, str):
                     result_text += message
 
         except Exception as e:
-            print(f"[!] Agent error: {e}")
+            print(f"  [{agent_name}] FAILED: {e}", flush=True)
+            logger.error("[%s] Agent error: %s", agent_name, e)
             return f'{{"error": "{str(e)}"}}'
 
         return result_text
@@ -1609,19 +1681,19 @@ class EvolutionRunner:
                     insights=self.champion.get("insights", []),
                     problem_description=self.config.problem,
                 )
-                print(f"[MEMORY] Champion stored in memory")
+                print(f"  [memory] Champion stored in memory")
             except Exception as e:
-                print(f"[MEMORY] Failed to store champion: {e}")
+                print(f"  [memory] Failed to store champion: {e}")
 
         # Print memory stats
         if self.memory:
             stats = self.memory.stats()
-            print(f"[MEMORY] Final stats: {stats['total_frames']} frames stored")
+            print(f"  [memory] Final stats: {stats['total_frames']} frames stored")
 
         # Generate trust dossier if enabled
         if self.config.trust.generate_dossier:
             self.dossier.save(include_history=self.config.trust.dossier_include_history)
-            print(f"[TRUST] Dossier saved to: {self.dossier.dossier_path}")
+            print(f"  [trust] Dossier saved to: {self.dossier.dossier_path}")
 
         # Stop reporter agent
         if self.reporter:
@@ -1645,7 +1717,7 @@ class EvolutionRunner:
         Returns:
             True if all canaries were correctly rejected
         """
-        print("\n[CANARY] Running trust system verification...")
+        print("\n  [trust] Running canary test verification...")
 
         # Create canary directory
         canary_dir = self.work_dir / "canary_tests"
@@ -1674,9 +1746,9 @@ class EvolutionRunner:
         all_passed = self.canary_test.all_passed()
 
         if all_passed:
-            print(f"[CANARY] PASSED: {passed}/{total} canaries correctly rejected")
+            print(f"  [trust] Canary PASSED: {passed}/{total} canaries correctly rejected")
         else:
-            print(f"[CANARY] FAILED: Only {passed}/{total} canaries rejected")
+            print(f"  [trust] Canary FAILED: Only {passed}/{total} canaries rejected")
             for failure in self.canary_test.get_failures():
                 print(f"  - {failure.canary_type}: trust={failure.canary_trust:.2f}, rejected={failure.canary_rejected}")
 
@@ -1691,8 +1763,8 @@ class EvolutionRunner:
         pattern = str(mutations_path / "gen0_*.py")
         files = glob.glob(pattern)
 
-        print(f"[Gen 0] Discovering files in: {mutations_path}")
-        print(f"[Gen 0] Found {len(files)} files")
+        print(f"  Discovering files in: {mutations_path}")
+        print(f"  Found {len(files)} files")
 
         for f in files:
             self.population.append({
@@ -1748,11 +1820,11 @@ class EvolutionRunner:
                             self.history = state.get("history", [])
                         except Exception:
                             self.history = []
-                    print(f"[MEMORY] Recovered from checkpoint: gen {self.generation}, "
+                    print(f"  [memory] Recovered from checkpoint: gen {self.generation}, "
                           f"operation: {recovered.get('operation', 'unknown')}")
                     return True
             except Exception as e:
-                print(f"[MEMORY] Recovery failed: {e}, trying JSON state")
+                print(f"  [memory] Recovery failed: {e}, trying JSON state")
 
         # Fall back to JSON state file
         state_file = self.work_dir / "evolution.json"
@@ -1767,7 +1839,7 @@ class EvolutionRunner:
             self.history = state.get("history", [])
             return True
         except Exception as e:
-            print(f"[!] Could not load state: {e}")
+            print(f"  ERROR: Could not load state: {e}")
             return False
 
     def _save_state(self, operation: str = "save"):
@@ -1799,7 +1871,7 @@ class EvolutionRunner:
                     plateau_count=plateau_count,
                 )
             except Exception as e:
-                print(f"[MEMORY] Checkpoint failed: {e}")
+                print(f"  [memory] Checkpoint failed: {e}")
 
         # Also save to JSON for backwards compatibility
         state = {
@@ -1875,6 +1947,7 @@ class EvolutionRunner:
             prompt=prompt,
             tools=["Read", "Glob"],
             max_turns=10,
+            agent_name="direction-advisor",
         )
 
         parsed = self._parse_json_from_result(result)

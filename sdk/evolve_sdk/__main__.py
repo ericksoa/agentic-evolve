@@ -12,6 +12,7 @@ Usage:
 import argparse
 import asyncio
 import json
+import logging
 import sys
 from pathlib import Path
 
@@ -95,8 +96,23 @@ def main():
         type=Path,
         help="Path to evolve_config.json file (loads problem, mode, and evaluation settings)",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose debug output to stderr",
+    )
 
     args = parser.parse_args()
+
+    # Configure logging: user-visible progress uses print() to stdout,
+    # logging goes to stderr for debug/verbose detail only
+    logging.basicConfig(
+        level=logging.WARNING,
+        format="[%(name)s] %(message)s",
+        stream=sys.stderr,
+    )
+    if args.verbose:
+        logging.getLogger("evolve_sdk").setLevel(logging.DEBUG)
 
     # Handle resume
     if args.resume:
@@ -174,10 +190,10 @@ def main():
         result = asyncio.run(runner.run())
         print_final_results(result)
     except KeyboardInterrupt:
-        print("\n[!] Evolution interrupted. State saved.")
+        print("\nEvolution interrupted. State saved.")
         sys.exit(130)
     except Exception as e:
-        print(f"\n[!] Evolution failed: {e}")
+        print(f"\nERROR: Evolution failed: {e}")
         sys.exit(1)
 
 
@@ -776,7 +792,8 @@ def cmd_messages(
     def display_messages(messages, clear=False):
         """Display messages in a formatted feed."""
         if clear:
-            print("\033[2J\033[H", end="")  # Clear screen
+            # Print separator instead of ANSI clear screen
+            print("\n" + "=" * 70)
 
         print("=" * 70)
         print("EVOLUTION MESSAGE FEED")
@@ -789,7 +806,6 @@ def cmd_messages(
         for msg in messages:
             problem = msg.get("_problem", "unknown")
             from_agent = msg.get("from_agent", "unknown")
-            emoji = msg.get("agent_emoji", "")
             msg_type = msg.get("message_type", "status")
             priority = msg.get("priority", "info")
             title = msg.get("title", "")
@@ -807,23 +823,8 @@ def cmd_messages(
             }
             indicator = priority_indicators.get(priority, "  ")
 
-            # Color based on message type
-            type_colors = {
-                "milestone": "\033[1;33m",  # Bold yellow
-                "discovery": "\033[1;32m",  # Bold green
-                "warning": "\033[1;31m",    # Bold red
-                "error": "\033[1;31m",      # Bold red
-                "result": "\033[1;36m",     # Bold cyan
-                "status": "\033[0m",        # Normal
-                "strategy": "\033[1;35m",   # Bold magenta
-                "question": "\033[1;34m",   # Bold blue
-                "guidance": "\033[1;34m",   # Bold blue
-            }
-            color = type_colors.get(msg_type, "\033[0m")
-            reset = "\033[0m"
-
-            # Format: [time] indicator emoji Agent: title
-            header = f"\n{indicator}[Gen {gen}] {emoji} {from_agent}: {color}{title}{reset}"
+            # Format: indicator [Gen N] Agent: title
+            header = f"\n{indicator}[Gen {gen}] {from_agent}: {title}"
             print(header)
 
             if content and content != title:
