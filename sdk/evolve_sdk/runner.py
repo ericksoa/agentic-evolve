@@ -862,7 +862,7 @@ class EvolutionRunner:
         )
 
         parsed = self._parse_json_from_result(result)
-        return parsed if parsed else {"file": None, "error": "Failed to parse"}
+        return parsed if isinstance(parsed, dict) else {"file": None, "error": "Failed to parse"}
 
     async def _spawn_crossover(
         self, parents: list[dict], output_file: str
@@ -890,7 +890,7 @@ class EvolutionRunner:
         )
 
         parsed = self._parse_json_from_result(result)
-        return parsed if parsed else {"file": None, "error": "Failed to parse"}
+        return parsed if isinstance(parsed, dict) else {"file": None, "error": "Failed to parse"}
 
     async def _spawn_evaluator(self, files: list[str]) -> list[dict[str, Any]]:
         """Spawn a dedicated evaluator agent (clean context)."""
@@ -950,10 +950,10 @@ class EvolutionRunner:
         )
 
         parsed = self._parse_json_from_result(result)
-        if parsed:
+        if isinstance(parsed, dict):
             return parsed
 
-        # Default response if parsing fails
+        # Default response if parsing fails or returns non-dict
         return {
             "trust_score": 0.5,
             "escalation_level": 0,
@@ -991,10 +991,10 @@ class EvolutionRunner:
         )
 
         parsed = self._parse_json_from_result(result)
-        if parsed:
+        if isinstance(parsed, dict):
             return parsed
 
-        # Default to rejection if parsing fails during escalation
+        # Default to rejection if parsing fails or returns non-dict
         return {
             "escalation_passed": False,
             "revised_fitness": 0,
@@ -2025,7 +2025,7 @@ class EvolutionRunner:
         )
 
         parsed = self._parse_json_from_result(result)
-        if parsed:
+        if isinstance(parsed, dict):
             # Update state
             self._last_direction_gen = self.generation
             self._active_direction = parsed.get("recommended_action", {})
