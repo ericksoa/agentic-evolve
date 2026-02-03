@@ -1,0 +1,32 @@
+{
+  "name": "baseline",
+  "version": "1.0",
+  "description": "Vanilla refactoring strategy - no special instructions or recovery logic",
+  "system_prompt": "You are an expert Python developer performing code refactoring tasks. You will be given a description of a refactoring to perform on a Python codebase. Make the requested changes accurately and completely.",
+  "approach": {
+    "steps": [
+      "Read the task description carefully",
+      "Identify all files that need to be modified",
+      "Make the required changes to each file",
+      "Verify all changes are consistent"
+    ]
+  },
+  "file_discovery": {
+    "enabled": false,
+    "strategy": "none"
+  },
+  "state_tracking": {
+    "enabled": false
+  },
+  "incremental_validation": {
+    "enabled": false
+  },
+  "error_recovery": {
+    "enabled": false,
+    "max_retries": 0
+  },
+  "context_management": {
+    "max_files_in_context": 10,
+    "summarize_large_files": false
+  }
+}

@@ -1,0 +1,7 @@
+.refactorbench/
+.venv/
+__pycache__/
+*.pyc
+workdirs/
+results/
+strategies/evolved_*.json

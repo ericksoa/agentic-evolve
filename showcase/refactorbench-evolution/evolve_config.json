@@ -1,0 +1,82 @@
+{
+  "description": "Evolve refactoring agent strategy to maximize pass rate on Microsoft's RefactorBench (ICLR 2025). Current SOTA: 35% (Claude 3.5 Sonnet with descriptive prompts). Target: 60%+. The solution is a JSON strategy file that controls the agent's system prompt, step-by-step approach, file discovery, state tracking, incremental validation, error recovery, and context management.",
+  "mode": "ml",
+  "evaluation": {
+    "test_command": "cd /Users/aerickson/Documents/Claude\\ Code\\ Projects/agentic-evolve/showcase/refactorbench-evolution && .venv/bin/python3 evaluate.py {solution} --json --subset 30 --parallel 2",
+    "fitness_key": "fitness",
+    "valid_key": "valid",
+    "higher_is_better": true
+  },
+  "starter_solutions": ["baseline_strategy.json"],
+  "solution_format": {
+    "description": "A JSON file defining the refactoring agent strategy. Must be valid JSON loadable by refactor_agent.py. Key fields: name, system_prompt, approach.steps, file_discovery, state_tracking, incremental_validation, error_recovery, context_management. Can also include custom_* string fields for additional strategy sections.",
+    "example_structure": {
+      "name": "strategy_name",
+      "system_prompt": "System prompt text guiding the refactoring agent",
+      "approach": {
+        "steps": ["Step 1", "Step 2"]
+      },
+      "file_discovery": {
+        "enabled": true,
+        "strategy": "Instructions for how to discover relevant files"
+      },
+      "state_tracking": {
+        "enabled": true,
+        "instructions": "Instructions for tracking refactoring progress"
+      },
+      "incremental_validation": {
+        "enabled": true,
+        "instructions": "Instructions for when to run tests"
+      },
+      "error_recovery": {
+        "enabled": true,
+        "max_retries": 3,
+        "instructions": "Instructions for recovering from test failures"
+      },
+      "context_management": {
+        "max_files_in_context": 15,
+        "strategy": "Instructions for managing context window"
+      }
+    }
+  },
+  "optimization_strategies": [
+    {
+      "name": "systematic_file_discovery",
+      "description": "Add systematic file discovery before editing: search for all imports, usages, and references of the target symbol across the entire codebase before making any changes",
+      "hint": "The #1 failure mode in RefactorBench is missing files that need updating. Use search_files aggressively to find ALL references before editing anything."
+    },
+    {
+      "name": "state_tracking",
+      "description": "Add explicit state tracking: maintain a mental checklist of files found, files modified, and files remaining. This prevents the agent from losing track in multi-file refactors.",
+      "hint": "Have the agent explicitly list which files it has found and modified after each edit. This prevents forgetting files."
+    },
+    {
+      "name": "incremental_validation",
+      "description": "Run tests after each file edit, not just at the end. This catches errors early before they compound.",
+      "hint": "Intermediate broken states are a key failure mode. Running tests incrementally helps catch issues early."
+    },
+    {
+      "name": "error_recovery",
+      "description": "Add retry logic: when tests fail, analyze the error output, identify what went wrong, and make targeted fixes.",
+      "hint": "Many tasks fail because the agent makes small mistakes that could be caught and fixed with a retry loop."
+    },
+    {
+      "name": "decomposition",
+      "description": "Break multi-file refactoring into ordered sub-steps: (1) find all affected files, (2) plan the order of changes, (3) execute changes in dependency order, (4) validate.",
+      "hint": "Multi-file refactors often fail because changes are made in the wrong order. Plan the dependency order first."
+    },
+    {
+      "name": "system_prompt_engineering",
+      "description": "Optimize the system prompt with specific expertise: deep knowledge of Python AST, import resolution, and common refactoring patterns like rename, move, extract, combine.",
+      "hint": "The tests are AST-based. The agent should understand that tests check for specific AST patterns (import names, function names, class definitions) and ensure its changes produce the expected AST structure."
+    }
+  ],
+  "constraints": [
+    "Strategy must be valid JSON loadable by Python's json.load()",
+    "Strategy must have a 'system_prompt' string field",
+    "Strategy must have an 'approach.steps' list field",
+    "Agent gets max 15 turns per task",
+    "Max 4 parallel task evaluations",
+    "Evolved strategy must work with the existing refactor_agent.py tool interface"
+  ]
+}
