@@ -1,0 +1,148 @@
+{
+  "problem": "Evolve a messy, hard-to-read Python transaction summarizer into clean, performant, Martin-Fowler-approved code. The function takes a list of transaction dicts (with 'type', 'amount', 'customer', 'category' keys) and returns a summary dict with 'total', 'count', 'avg', 'top_customers', 'categories', and 'has_whale'. It must pass all correctness tests while maximizing readability and performance.",
+  "mode": "perf",
+  "generation": 5,
+  "population": [
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-readability-evolution/.evolve-sdk/evolve_a_messy_hard_to_read_p/mutations/gen0_a.py",
+      "approach": "Clean defaultdict single-pass with good docstring",
+      "fitness": 94.0
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-readability-evolution/.evolve-sdk/evolve_a_messy_hard_to_read_p/mutations/gen0_c.py",
+      "approach": "heapq.nlargest for top-k, dict.get for accumulation",
+      "fitness": 94.0
+    },
+    {
+      "file": ".evolve-sdk/evolve_a_messy_hard_to_read_p/mutations/gen1b.py",
+      "mutation_type": "mutation",
+      "description": "Replaced manual dict.get(key, 0.0) + assignment pattern with collections.defaultdict(float) and direct += operator for customer total accumulation",
+      "hypothesis": "defaultdict(float) eliminates per-iteration method call overhead from dict.get() while producing more Pythonic code. The += operator on defaultdict avoids creating temporary values and reassigning, which should be slightly faster. Performance is already maxed at 100/100 (~2ms), and readability stays at 90/100, yielding stable 94.0 fitness.",
+      "variant": "b",
+      "valid": true,
+      "fitness": 94.0,
+      "error": null,
+      "notes": "Lowest fitness. Readability: 90 (weakest complexity=6, but best structure=14). Performance: 100 (2.01ms, fastest).",
+      "trust_score": 1.0,
+      "adversary_reviewed": false,
+      "exploit_checks": {
+        "output_integrity": {
+          "check_name": "output_integrity",
+          "passed": true,
+          "details": "Fitness value valid: 94.0",
+          "severity": "info",
+          "value": 94.0
+        }
+      }
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-readability-evolution/.evolve-sdk/evolve_a_messy_hard_to_read_p/mutations/gen0_f.py",
+      "approach": "Partition-first: separate sales/refunds then aggregate",
+      "fitness": 93.4
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-readability-evolution/.evolve-sdk/evolve_a_messy_hard_to_read_p/mutations/gen0_g.py",
+      "approach": "Max-readability focus: verbose names, rich docstring",
+      "fitness": 93.4
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-readability-evolution/.evolve-sdk/evolve_a_messy_hard_to_read_p/mutations/gen0_d.py",
+      "approach": "Dataclass-based aggregator pattern (OOP)",
+      "fitness": 92.8
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-readability-evolution/.evolve-sdk/evolve_a_messy_hard_to_read_p/mutations/gen0_i.py",
+      "approach": "operator.itemgetter for fast field extraction",
+      "fitness": 92.8
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-readability-evolution/.evolve-sdk/evolve_a_messy_hard_to_read_p/mutations/gen0_e.py",
+      "approach": "Local variable caching for speed, inline whale check",
+      "fitness": 92.2
+    },
+    {
+      "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-readability-evolution/.evolve-sdk/evolve_a_messy_hard_to_read_p/mutations/gen0_h.py",
+      "approach": "Dict-based dispatch with early whale detection",
+      "fitness": 92.2
+    },
+    {
+      "file": ".evolve-sdk/evolve_a_messy_hard_to_read_p/mutations/gen2c.py",
+      "mutation_type": "mutation",
+      "description": "Replaced manual dict key-check (if category in category_data / else) with two separate defaultdicts (category_revenue and category_orders), eliminating one nested if/else branch. Also unified the sale/refund amount calculation using a signed amount variable to reduce code in the else branch.",
+      "hypothesis": "Reducing the number of branches and nesting depth lowers the cyclomatic complexity penalty in readability scoring (complexity went 6\u21929/15), improving overall fitness while maintaining max performance score. Fitness improved 94.0 \u2192 95.8.",
+      "variant": "c",
+      "valid": true,
+      "fitness": 91.00999999999999,
+      "error": null,
+      "notes": "Readability: 93/100 (names=25, docstring=15, pythonic=20, complexity=9, structure=14, type_hints=10). Performance: 100/100 (2.87ms).",
+      "trust_score": 0.95,
+      "original_fitness": 95.8,
+      "adversary_reviewed": true,
+      "adversary_recommendation": "accept",
+      "adversary_flags": [],
+      "adversary_analysis": "Legitimate refactoring that reduces cyclomatic complexity. The diff shows: (1) replaced manual dict+if/else category accumulation with two defaultdicts, eliminating one branch and one nesting level; (2) collapsed the sale/refund if/else into a unified signed-amount computation, removing the else clause. Branch count drops from 3\u21922 and max nesting from 3\u21922, yielding complexity penalty reduction from 8.4\u21925.6 and complexity sub-score improvement 6\u21929 (+3 pts on readability). Since fitness = 0.6*readability + 0.4*performance, and performance is unchanged at 100, the +1.8 fitness gain is exactly 0.6*3 = 1.8, fully explained by the scoring formula. The code is semantically equivalent\u2014no hardcoded values, no lookup tables, no evaluator gaming. The improvement is small (+1.9%), incremental, and mechanistically traceable. High trust.",
+      "exploit_checks": {
+        "output_integrity": {
+          "check_name": "output_integrity",
+          "passed": true,
+          "details": "Fitness value valid: 95.8",
+          "severity": "info",
+          "value": 95.8
+        }
+      }
+    }
+  ],
+  "champion": {
+    "file": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/code-readability-evolution/.evolve-sdk/evolve_a_messy_hard_to_read_p/mutations/gen0_a.py",
+    "fitness": 94.0
+  },
+  "history": [
+    {
+      "generation": 1,
+      "timestamp": "2026-02-02T17:12:37.752012",
+      "population_size": 10,
+      "best_fitness": 94.0,
+      "mutations_tried": 4,
+      "mutations_valid": 3
+    },
+    {
+      "generation": 2,
+      "timestamp": "2026-02-02T17:17:31.854322",
+      "population_size": 10,
+      "best_fitness": 94.0,
+      "mutations_tried": 4,
+      "mutations_valid": 2
+    },
+    {
+      "generation": 3,
+      "timestamp": "2026-02-02T17:22:04.131620",
+      "population_size": 10,
+      "best_fitness": 94.0,
+      "mutations_tried": 4,
+      "mutations_valid": 2
+    },
+    {
+      "generation": 4,
+      "timestamp": "2026-02-02T17:27:45.946893",
+      "population_size": 10,
+      "best_fitness": 94.0,
+      "mutations_tried": 4,
+      "mutations_valid": 3
+    },
+    {
+      "generation": 5,
+      "timestamp": "2026-02-02T17:32:40.175846",
+      "population_size": 10,
+      "best_fitness": 94.0,
+      "mutations_tried": 4,
+      "mutations_valid": 2
+    }
+  ],
+  "config": {
+    "max_generations": 50,
+    "population_size": 10,
+    "elite_count": 3,
+    "minimize": false
+  },
+  "updated_at": "2026-02-02T17:34:09.310209"
+}

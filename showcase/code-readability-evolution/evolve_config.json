@@ -1,0 +1,66 @@
+{
+  "description": "Evolve a messy, hard-to-read Python transaction summarizer into clean, performant, Martin-Fowler-approved code. The function takes a list of transaction dicts (with 'type', 'amount', 'customer', 'category' keys) and returns a summary dict with 'total', 'count', 'avg', 'top_customers', 'categories', and 'has_whale'. It must pass all correctness tests while maximizing readability and performance.",
+
+  "mode": "perf",
+
+  "evaluation": {
+    "test_command": "python3 evaluate.py {solution} --json",
+    "fitness_key": "fitness",
+    "valid_key": "valid",
+    "higher_is_better": true
+  },
+
+  "starter_solutions": ["baseline.py"],
+
+  "optimization_strategies": [
+    {
+      "name": "clean_naming",
+      "description": "Replace all cryptic variable names with descriptive, intention-revealing names. Function name should describe what it does.",
+      "hint": "Think about what Martin Fowler would name these variables. 'd' -> 'transactions', 't' -> 'total_revenue', 'zz' -> 'customer_totals'. The function name should be a verb phrase like 'summarize_transactions'."
+    },
+    {
+      "name": "pythonic_idioms",
+      "description": "Replace anti-patterns with Pythonic constructs: direct iteration, defaultdict, Counter, comprehensions.",
+      "hint": "Replace range(len(x)) with direct iteration. Use collections.defaultdict or Counter instead of manual dict building. Use dict/list comprehensions where they improve clarity."
+    },
+    {
+      "name": "extract_helpers",
+      "description": "Extract logical sub-operations into well-named helper functions to reduce complexity.",
+      "hint": "Consider extracting: _aggregate_by_customer(), _aggregate_by_category(), _find_top_customers(). Each helper should do one thing well. Keep the main function as a clear orchestrator."
+    },
+    {
+      "name": "add_documentation",
+      "description": "Add a proper docstring with parameter descriptions, return type, and brief examples.",
+      "hint": "Use Google or NumPy docstring style. Document the expected input format and output structure. Add type hints to the function signature."
+    },
+    {
+      "name": "optimize_performance",
+      "description": "Eliminate redundant iterations, use efficient data structures, reduce algorithmic complexity.",
+      "hint": "The baseline does O(n*c) work for categories due to linear scans inside loops. A single pass with dicts can do O(n). Use sorted() with key= instead of manual sorting."
+    }
+  ],
+
+  "constraints": [
+    "The function MUST accept a list of dicts with keys: 'type', 'amount', 'customer', 'category'",
+    "The function MUST return a dict with keys: 'total', 'count', 'avg', 'top_customers', 'categories', 'has_whale'",
+    "'top_customers' must be a list of (name, amount) tuples, sorted descending by amount, limited to 5",
+    "'categories' must be a dict mapping category name to {'revenue': float, 'orders': int, 'avg': float}",
+    "'has_whale' must be True if any customer spent more than 10000",
+    "The function must handle empty input lists gracefully",
+    "Refunds subtract from total and from customer totals, but do NOT create category entries",
+    "Only standard library imports allowed (collections, typing, dataclasses, etc.)"
+  ],
+
+  "memory": {
+    "enabled": true,
+    "inject_mutation_context": true,
+    "store_successful_mutations": true,
+    "store_failed_mutations": true
+  },
+
+  "trust": {
+    "enabled": true,
+    "suspicious_jump_pct": 30.0,
+    "require_adversary_for_champion": true
+  }
+}
