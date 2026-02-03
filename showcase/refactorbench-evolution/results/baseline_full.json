@@ -1,0 +1,610 @@
+{
+  "fitness": 0.53,
+  "valid": true,
+  "passed": 53,
+  "total": 100,
+  "pass_rate_pct": 53.0,
+  "elapsed_seconds": 9096.3,
+  "task_details": [
+    {
+      "repo": "ansible_refactor",
+      "task": "add-log-parameter-get-group-vars",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "add-log-parameter-is-systemd-managed",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "combine-namespace-compat",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "data-to-inventory-data",
+      "passed": true,
+      "turns_used": 26
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "move-quoting-splitter",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "new-inventory-patterns",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "new-utils-class-connection",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "new-utils-from-basic",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "parse_key_value",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "rename-lenient-lowercase",
+      "passed": true,
+      "turns_used": 27
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "sort-groups-to-group-sort",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "add-log-parameter-get-digest-algorithm",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "add-log-parameter-node-format",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "annotation-utils",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "autoretry-to-retry",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "combine-unpickle-task",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "dump-message-to-serialization",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "ensure_serialize",
+      "passed": true,
+      "turns_used": 21
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "evaluate-promises-to-serialization",
+      "passed": true,
+      "turns_used": 21
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "expand-router-string-to-utils",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "object-mro-lookup",
+      "passed": true,
+      "turns_used": 12
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "rename-host-format",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "truncate-text",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "add-log-parameter-constant-time-compare",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "add-log-parameter-get-resolver",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "add-log-parameter-resolve-error-handler",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "add-none-handling-duration-string",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "combine-utils-dates-dateformat",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "combine-utils-hashable-itercompat",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-converter-to-python-class",
+      "passed": true,
+      "turns_used": 22
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-path-traversal-exception",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-reference-context-field-class",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-reference-context-graph-class",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-timezone-class",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-utils-adapt-method-mode",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-utils-check-response",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-utils-path-from-module",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "remove-core-cache-utils",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "remove-db-models-constants",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "rename-file-move-safe",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "django_refactor",
+      "task": "split-parse-apps-and-model-labels",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "fastapi_refactor",
+      "task": "add-log-parameter-generate-option-id-for-path",
+      "passed": true,
+      "turns_used": 14
+    },
+    {
+      "repo": "fastapi_refactor",
+      "task": "exception-handlers-to-handlers",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "fastapi_refactor",
+      "task": "get-auth-scheme-param",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "fastapi_refactor",
+      "task": "openapi-get-utils",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "fastapi_refactor",
+      "task": "params-to-param",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "fastapi_refactor",
+      "task": "value-is-a-sequence",
+      "passed": true,
+      "turns_used": 19
+    },
+    {
+      "repo": "flask_refactor",
+      "task": "add-log-parameter-get-debug-flag",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "flask_refactor",
+      "task": "add-log-parameter-get-flashed-messages",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "flask_refactor",
+      "task": "debughelpers-to-helpers.py",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "flask_refactor",
+      "task": "rename-send-from-directory",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "flask_refactor",
+      "task": "render-template-str",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "flask_refactor",
+      "task": "stream-template-str",
+      "passed": true,
+      "turns_used": 13
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "add-log-parameter-get-encoding-from-headers",
+      "passed": true,
+      "turns_used": 19
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "add-log-parameter-resolve-proxies",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "add-log-parameter-select-proxy",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "combine-from-key-to-key",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "combine-internal-utils-utils",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "move-hooks-sessions",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "new-cookie-utils-class",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "rename-lookup-dict-dict-lookup",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "rename-super-len-complex-len",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "split-warnings-exceptions",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "add-log-parameter-delete-directory",
+      "passed": true,
+      "turns_used": 21
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "add-log-parameter-get-capability-definitions",
+      "passed": true,
+      "turns_used": 17
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "add-log-parameter-recursive-diff",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "cant-create",
+      "passed": true,
+      "turns_used": 19
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "channel-to-transport",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "ex-pillar-fail",
+      "passed": true,
+      "turns_used": 20
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "ex-state-fail",
+      "passed": true,
+      "turns_used": 18
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "exactly-n-boto-mod",
+      "passed": true,
+      "turns_used": 19
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "get-unavail",
+      "passed": true,
+      "turns_used": 21
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "iam-to-aws",
+      "passed": true,
+      "turns_used": 15
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "mksls-to-specific",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "namecheap-xmlutil",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "paged-call-boto-mod",
+      "passed": false,
+      "turns_used": 14
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "pem-fingerprint",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "perm-denied",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "add-log-parameter-disconnect-all",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "add-log-parameter-job-dir",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "add-log-parameter-xmliter",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "genspider-functions-to-utils-url",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "new-downloadermiddlewares-utils",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "new-spider-utils-in-spiders",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "new-verify-reactor-class",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "not-supported-exception-to-unsupported",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "parameterize-gunzip",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "rename-description-commands",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "rename-engine-status",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "rename-processtest-testproc",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "sitemap-url-to-url",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "global-objects",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "log-utils",
+      "passed": true,
+      "turns_used": 20
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "option-parser-with-pretty-print",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "options-utils",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "remove-locale-data",
+      "passed": true,
+      "turns_used": 13
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "rename-http1connection",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "rename-to-camel-case",
+      "passed": true,
+      "turns_used": 16
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "resolvers-as-separate",
+      "passed": false,
+      "turns_used": 16
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "tcpclient-connect-params",
+      "passed": false,
+      "turns_used": 16
+    }
+  ]
+}
