@@ -1,0 +1,16 @@
+{
+  "description": "Evolve an A* maze solver heuristic function for 50x50 grid mazes. The heuristic must be admissible (never overestimate true shortest path distance). Fitness = minimize total nodes expanded by A* across 20 test mazes. Lower is better.",
+  "mode": "perf",
+  "solution_file": "solution.py",
+  "baseline_file": "baseline.py",
+  "eval_command": "python3 evaluate.py {solution}",
+  "eval_parse_regex": "SCORE:\\s*([\\d.]+)",
+  "minimize": true,
+  "solution_template": "def heuristic(row, col, goal_row, goal_col, grid, size):\n    \"\"\"Return admissible heuristic estimate. Must never overestimate true distance.\n    Args: row,col = current position; goal_row,goal_col = target; grid = 2D list (1=obstacle); size = grid dimension\n    Returns: float, admissible h-value\"\"\"\n    return abs(row - goal_row) + abs(col - goal_col)",
+  "trust": {
+    "enabled": true,
+    "accept_threshold": 0.7,
+    "suspicious_jump_pct": 25.0,
+    "max_escalation_level": 1
+  }
+}
