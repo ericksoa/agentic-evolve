@@ -1,0 +1,14 @@
+--- a/celery/app/utils.py
++++ b/celery/app/utils.py
+@@ -422,11 +422,3 @@
+         else:
+             return found
+     return sym
+-
+-
+-def expand_router_string(router):
+-    router = symbol_by_name(router)
+-    if hasattr(router, 'route_for_task'):
+-        # need to instantiate pre 4.0 router classes
+-        router = router()
+-    return router

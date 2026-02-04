@@ -1,0 +1,165 @@
+--- a/celery/canvas.py
++++ b/celery/canvas.py
+@@ -31,7 +31,7 @@
+ from celery.utils.functional import chunks as _chunks
+ from celery.utils.functional import is_list, maybe_list, regen, seq_concat_item, seq_concat_seq
+ from celery.utils.objects import getitem_property
+-from celery.utils.text import remove_repeating_from_task, truncate
++from celery.utils.text import remove_repeating_from_task, truncate_text
+ 
+ __all__ = (
+     'Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
+@@ -1405,7 +1405,7 @@
+ 
+     def __repr__(self):
+         task, it = self._unpack_args(self.kwargs)
+-        return f'[{task.task}(x) for x in {truncate(repr(it), 100)}]'
++        return f'[{task.task}(x) for x in {truncate_text(repr(it), 100)}]'
+ 
+ 
+ @Signature.register_type()
+@@ -1416,7 +1416,7 @@
+ 
+     def __repr__(self):
+         task, it = self._unpack_args(self.kwargs)
+-        return f'[{task.task}(*x) for x in {truncate(repr(it), 100)}]'
++        return f'[{task.task}(*x) for x in {truncate_text(repr(it), 100)}]'
+ 
+ 
+ @Signature.register_type()
+
+--- a/celery/concurrency/base.py
++++ b/celery/concurrency/base.py
+@@ -12,7 +12,7 @@
+ from celery.exceptions import WorkerShutdown, WorkerTerminate, reraise
+ from celery.utils import timer2
+ from celery.utils.log import get_logger
+-from celery.utils.text import truncate
++from celery.utils.text import truncate_text
+ 
+ __all__ = ('BasePool', 'apply_target')
+ 
+@@ -147,8 +147,8 @@
+         args = [] if not args else args
+         if self._does_debug:
+             logger.debug('TaskPool: Apply %s (args:%s kwargs:%s)',
+-                         target, truncate(safe_repr(args), 1024),
+-                         truncate(safe_repr(kwargs), 1024))
++                         target, truncate_text(safe_repr(args), 1024),
++                         truncate_text(safe_repr(kwargs), 1024))
+ 
+         return self.on_apply(target, args, kwargs,
+                              waitforslot=self.putlocks,
+
+--- a/celery/contrib/testing/manager.py
++++ b/celery/contrib/testing/manager.py
+@@ -12,7 +12,7 @@
+ from celery import states
+ from celery.exceptions import TimeoutError
+ from celery.result import AsyncResult, ResultSet  # noqa
+-from celery.utils.text import truncate
++from celery.utils.text import truncate_text
+ from celery.utils.time import humanize_seconds as _humanize_seconds
+ 
+ E_STILL_WAITING = 'Still waiting for {0}.  Trying again {when}: {exc!r}'
+@@ -125,7 +125,7 @@
+                 self.remark(
+                     'Still waiting for {}/{}: [{}]: {!r}'.format(
+                         len(r) - len(received), len(r),
+-                        truncate(', '.join(waiting_for)), exc), '!',
++                        truncate_text(', '.join(waiting_for)), exc), '!',
+                 )
+             except self.connerrors as exc:
+                 self.remark(f'join: connection lost: {exc!r}', '!')
+
+--- a/celery/utils/saferepr.py
++++ b/celery/utils/saferepr.py
+@@ -17,7 +17,7 @@
+ from pprint import _recursion
+ from typing import Any, AnyStr, Callable, Dict, Iterator, List, Optional, Sequence, Set, Tuple  # noqa
+ 
+-from .text import truncate
++from .text import truncate_text
+ 
+ __all__ = ('saferepr', 'reprstream')
+ 
+@@ -143,7 +143,7 @@
+     if isinstance(val, bytes):  # pragma: no cover
+         return _format_binary_bytes(val, maxlen)
+     else:
+-        return "'{}'".format(truncate(val, maxlen).replace("'", "\\'"))
++        return "'{}'".format(truncate_text(val, maxlen).replace("'", "\\'"))
+ 
+ 
+ def _repr(obj):
+@@ -172,7 +172,7 @@
+         elif isinstance(token, _quoted):
+             val = _format_chars(token.value, maxlen)
+         else:
+-            val = _safetext(truncate(token, maxlen))
++            val = _safetext(truncate_text(token, maxlen))
+         yield val
+         if maxlen is not None:
+             maxlen -= len(val)
+
+--- a/celery/utils/text.py
++++ b/celery/utils/text.py
+@@ -13,7 +13,7 @@
+     'abbr', 'abbrtask', 'dedent', 'dedent_initial',
+     'ensure_newlines', 'ensure_sep',
+     'fill_paragraphs', 'indent', 'join',
+-    'pluralize', 'pretty', 'str_to_list', 'simple_format', 'truncate',
++    'pluralize', 'pretty', 'str_to_list', 'simple_format', 'truncate_text',
+ )
+ 
+ UNKNOWN_SIMPLE_FORMAT_KEY = """
+@@ -86,7 +86,7 @@
+     return sep.join(' ' * indent + p for p in t.split(sep))
+ 
+ 
+-def truncate(s: str, maxlen: int = 128, suffix: str = '...') -> str:
++def truncate_text(s: str, maxlen: int = 128, suffix: str = '...') -> str:
+     """Truncate text to a maximum number of characters."""
+     if maxlen and len(s) >= maxlen:
+         return s[:maxlen].rsplit(' ', 1)[0] + suffix
+
+--- a/celery/worker/consumer/consumer.py
++++ b/celery/worker/consumer/consumer.py
+@@ -28,7 +28,7 @@
+ from celery.utils.log import get_logger
+ from celery.utils.nodenames import gethostname
+ from celery.utils.objects import Bunch
+-from celery.utils.text import truncate
++from celery.utils.text import truncate_text
+ from celery.utils.time import humanize_seconds, rate
+ from celery.worker import loops
+ from celery.worker.state import active_requests, maybe_shutdown, requests, reserved_requests, task_reserved
+@@ -131,7 +131,7 @@
+     """Format message body for debugging purposes."""
+     # v2 protocol does not deserialize body
+     body = m.body if body is None else body
+-    return '{} ({}b)'.format(truncate(safe_repr(body), 1024),
++    return '{} ({}b)'.format(truncate_text(safe_repr(body), 1024),
+                              len(m.body))
+ 
+ 
+
+--- a/t/unit/utils/test_text.py
++++ b/t/unit/utils/test_text.py
+@@ -1,6 +1,6 @@
+ import pytest
+ 
+-from celery.utils.text import abbr, abbrtask, ensure_newlines, indent, pretty, truncate
++from celery.utils.text import abbr, abbrtask, ensure_newlines, indent, pretty, truncate_text
+ 
+ RANDTEXT = """\
+ The quick brown
+@@ -55,7 +55,7 @@
+ 
+ ])
+ def test_truncate_text(s, maxsize, expected):
+-    assert truncate(s, maxsize) == expected
++    assert truncate_text(s, maxsize) == expected
+ 
+ 
+ @pytest.mark.parametrize('args,expected', [

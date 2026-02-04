@@ -1,0 +1,43 @@
+--- a/celery/app/annotations.py
++++ b/celery/app/annotations.py
+@@ -12,7 +12,7 @@
+ _first_match = firstmethod('annotate')
+ _first_match_any = firstmethod('annotate_any')
+ 
+-__all__ = ('MapAnnotation', 'prepare', 'resolve_all')
++__all__ = ('MapAnnotation', 'prepare')
+ 
+ 
+ class MapAnnotation(dict):
+@@ -47,6 +47,3 @@
+     return [expand_annotation(anno) for anno in annotations]
+ 
+ 
+-def resolve_all(anno, task):
+-    """Resolve all pending annotations."""
+-    return (x for x in (_first_match(anno, task), _first_match_any(anno)) if x)
+
+--- a/celery/app/annotations_utils.py
++++ b/celery/app/annotations_utils.py
+@@ -0,0 +1,9 @@
++"""Annotation utilities."""
++from celery.app.annotations import _first_match, _first_match_any
++
++__all__ = ('resolve_all')
++
++
++def resolve_all(anno, task):
++    """Resolve all pending annotations."""
++    return (x for x in (_first_match(anno, task), _first_match_any(anno)) if x)
+
+--- a/celery/app/task.py
++++ b/celery/app/task.py
+@@ -18,7 +18,7 @@
+ from celery.utils.nodenames import gethostname
+ from celery.utils.serialization import raise_with_context
+ 
+-from .annotations import resolve_all as resolve_all_annotations
++from .annotations_utils import resolve_all as resolve_all_annotations
+ from .registry import _unpickle_task_v2
+ from .utils import appstr
+ 

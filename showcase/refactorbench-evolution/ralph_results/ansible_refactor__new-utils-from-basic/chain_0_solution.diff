@@ -1,0 +1,314 @@
+--- a/lib/ansible/module_utils/basic.py
++++ b/lib/ansible/module_utils/basic.py
+@@ -230,69 +230,7 @@
+ # End compat shims
+ 
+ 
+-def heuristic_log_sanitize(data, no_log_values=None):
+-    ''' Remove strings that look like passwords from log messages '''
+-    # Currently filters:
+-    # user:pass@foo/whatever and http://username:pass@wherever/foo
+-    # This code has false positives and consumes parts of logs that are
+-    # not passwds
+-
+-    # begin: start of a passwd containing string
+-    # end: end of a passwd containing string
+-    # sep: char between user and passwd
+-    # prev_begin: where in the overall string to start a search for
+-    #   a passwd
+-    # sep_search_end: where in the string to end a search for the sep
+-    data = to_native(data)
+-
+-    output = []
+-    begin = len(data)
+-    prev_begin = begin
+-    sep = 1
+-    while sep:
+-        # Find the potential end of a passwd
+-        try:
+-            end = data.rindex('@', 0, begin)
+-        except ValueError:
+-            # No passwd in the rest of the data
+-            output.insert(0, data[0:begin])
+-            break
+-
+-        # Search for the beginning of a passwd
+-        sep = None
+-        sep_search_end = end
+-        while not sep:
+-            # URL-style username+password
+-            try:
+-                begin = data.rindex('://', 0, sep_search_end)
+-            except ValueError:
+-                # No url style in the data, check for ssh style in the
+-                # rest of the string
+-                begin = 0
+-            # Search for separator
+-            try:
+-                sep = data.index(':', begin + 3, end)
+-            except ValueError:
+-                # No separator; choices:
+-                if begin == 0:
+-                    # Searched the whole string so there's no password
+-                    # here.  Return the remaining data
+-                    output.insert(0, data[0:prev_begin])
+-                    break
+-                # Search for a different beginning of the password field.
+-                sep_search_end = begin
+-                continue
+-        if sep:
+-            # Password was found; remove it.
+-            output.insert(0, data[end:prev_begin])
+-            output.insert(0, '********')
+-            output.insert(0, data[begin:sep + 1])
+-            prev_begin = begin
+-
+-    output = ''.join(output)
+-    if no_log_values:
+-        output = remove_values(output, no_log_values)
+-    return output
++from ansible.module_utils.utils import heuristic_log_sanitize  # noqa: E402
+ 
+ 
+ def _load_params():
+@@ -343,18 +281,7 @@
+         sys.exit(1)
+ 
+ 
+-def missing_required_lib(library, reason=None, url=None):
+-    hostname = platform.node()
+-    msg = "Failed to import the required Python library (%s) on %s's Python %s." % (library, hostname, sys.executable)
+-    if reason:
+-        msg += " This is required %s." % reason
+-    if url:
+-        msg += " See %s for more info." % url
+-
+-    msg += (" Please read the module documentation and install it in the appropriate location."
+-            " If the required library is installed, but Ansible is using the wrong Python interpreter,"
+-            " please consult the documentation on ansible_python_interpreter")
+-    return msg
++from ansible.module_utils.utils import missing_required_lib  # noqa: E402,F811
+ 
+ 
+ class AnsibleModule(object):
+
+--- a/lib/ansible/module_utils/facts/packages.py
++++ b/lib/ansible/module_utils/facts/packages.py
+@@ -8,7 +8,7 @@
+ from abc import ABCMeta, abstractmethod
+ 
+ from ansible.module_utils.six import with_metaclass
+-from ansible.module_utils.basic import missing_required_lib
++from ansible.module_utils.utils import missing_required_lib
+ from ansible.module_utils.common.process import get_bin_path
+ from ansible.module_utils.common.respawn import has_respawned, probe_interpreters_for_module, respawn_module
+ from ansible.module_utils.common._utils import get_all_subclasses
+
+--- a/lib/ansible/module_utils/urls.py
++++ b/lib/ansible/module_utils/urls.py
+@@ -64,7 +64,7 @@
+ else:
+     GzipFile = gzip.GzipFile  # type: ignore[assignment,misc]
+ 
+-from ansible.module_utils.basic import missing_required_lib
++from ansible.module_utils.utils import missing_required_lib
+ from ansible.module_utils.common.collections import Mapping, is_sequence
+ from ansible.module_utils.common.text.converters import to_bytes, to_native, to_text
+ 
+
+--- a/lib/ansible/module_utils/utils.py
++++ b/lib/ansible/module_utils/utils.py
+@@ -0,0 +1,90 @@
++# Copyright (c), Michael DeHaan <michael.dehaan@gmail.com>, 2012-2013
++# Copyright (c), Toshio Kuratomi <tkuratomi@ansible.com> 2016
++# Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause)
++
++from __future__ import annotations
++
++import platform
++import sys
++
++from ansible.module_utils._text import to_native
++from ansible.module_utils.common.parameters import remove_values
++
++
++def heuristic_log_sanitize(data, no_log_values=None):
++    ''' Remove strings that look like passwords from log messages '''
++    # Currently filters:
++    # user:pass@foo/whatever and http://username:pass@wherever/foo
++    # This code has false positives and consumes parts of logs that are
++    # not passwds
++
++    # begin: start of a passwd containing string
++    # end: end of a passwd containing string
++    # sep: char between user and passwd
++    # prev_begin: where in the overall string to start a search for
++    #   a passwd
++    # sep_search_end: where in the string to end a search for the sep
++    data = to_native(data)
++
++    output = []
++    begin = len(data)
++    prev_begin = begin
++    sep = 1
++    while sep:
++        # Find the potential end of a passwd
++        try:
++            end = data.rindex('@', 0, begin)
++        except ValueError:
++            # No passwd in the rest of the data
++            output.insert(0, data[0:begin])
++            break
++
++        # Search for the beginning of a passwd
++        sep = None
++        sep_search_end = end
++        while not sep:
++            # URL-style username+password
++            try:
++                begin = data.rindex('://', 0, sep_search_end)
++            except ValueError:
++                # No url style in the data, check for ssh style in the
++                # rest of the string
++                begin = 0
++            # Search for separator
++            try:
++                sep = data.index(':', begin + 3, end)
++            except ValueError:
++                # No separator; choices:
++                if begin == 0:
++                    # Searched the whole string so there's no password
++                    # here.  Return the remaining data
++                    output.insert(0, data[0:prev_begin])
++                    break
++                # Search for a different beginning of the password field.
++                sep_search_end = begin
++                continue
++        if sep:
++            # Password was found; remove it.
++            output.insert(0, data[end:prev_begin])
++            output.insert(0, '********')
++            output.insert(0, data[begin:sep + 1])
++            prev_begin = begin
++
++    output = ''.join(output)
++    if no_log_values:
++        output = remove_values(output, no_log_values)
++    return output
++
++
++def missing_required_lib(library, reason=None, url=None):
++    hostname = platform.node()
++    msg = "Failed to import the required Python library (%s) on %s's Python %s." % (library, hostname, sys.executable)
++    if reason:
++        msg += " This is required %s." % reason
++    if url:
++        msg += " See %s for more info." % url
++
++    msg += (" Please read the module documentation and install it in the appropriate location."
++            " If the required library is installed, but Ansible is using the wrong Python interpreter,"
++            " please consult the documentation on ansible_python_interpreter")
++    return msg
+
+--- a/lib/ansible/modules/deb822_repository.py
++++ b/lib/ansible/modules/deb822_repository.py
+@@ -233,7 +233,7 @@
+ import traceback
+ 
+ from ansible.module_utils.basic import AnsibleModule
+-from ansible.module_utils.basic import missing_required_lib
++from ansible.module_utils.utils import missing_required_lib
+ from ansible.module_utils.common.collections import is_sequence
+ from ansible.module_utils.common.file import S_IRWXU_RXG_RXO, S_IRWU_RG_RO
+ from ansible.module_utils.common.text.converters import to_bytes
+
+--- a/lib/ansible/modules/expect.py
++++ b/lib/ansible/modules/expect.py
+@@ -130,7 +130,8 @@
+     PEXPECT_IMP_ERR = traceback.format_exc()
+     HAS_PEXPECT = False
+ 
+-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
++from ansible.module_utils.basic import AnsibleModule
++from ansible.module_utils.utils import missing_required_lib
+ from ansible.module_utils.common.text.converters import to_bytes, to_native
+ from ansible.module_utils.common.validation import check_type_int
+ 
+
+--- a/lib/ansible/modules/pip.py
++++ b/lib/ansible/modules/pip.py
+@@ -322,7 +322,8 @@
+         pass
+ 
+ from ansible.module_utils.common.text.converters import to_native
+-from ansible.module_utils.basic import AnsibleModule, is_executable, missing_required_lib
++from ansible.module_utils.basic import AnsibleModule, is_executable
++from ansible.module_utils.utils import missing_required_lib
+ from ansible.module_utils.common.locale import get_best_parsable_locale
+ 
+ 
+
+--- a/lib/ansible/modules/wait_for.py
++++ b/lib/ansible/modules/wait_for.py
+@@ -235,7 +235,8 @@
+ import time
+ import traceback
+ 
+-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
++from ansible.module_utils.basic import AnsibleModule
++from ansible.module_utils.utils import missing_required_lib
+ from ansible.module_utils.common.sys_info import get_platform_subclass
+ from ansible.module_utils.common.text.converters import to_bytes, to_native
+ from ansible.module_utils.compat.datetime import utcnow
+
+--- a/lib/ansible/plugins/netconf/__init__.py
++++ b/lib/ansible/plugins/netconf/__init__.py
+@@ -24,7 +24,7 @@
+ from ansible.errors import AnsibleError
+ from ansible.plugins import AnsiblePlugin
+ from ansible.module_utils.common.text.converters import to_native
+-from ansible.module_utils.basic import missing_required_lib
++from ansible.module_utils.utils import missing_required_lib
+ 
+ try:
+     from ncclient.operations import RPCError
+
+--- a/test/integration/targets/missing_required_lib/library/missing_required_lib.py
++++ b/test/integration/targets/missing_required_lib/library/missing_required_lib.py
+@@ -4,7 +4,8 @@
+ 
+ from __future__ import annotations
+ 
+-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
++from ansible.module_utils.basic import AnsibleModule
++from ansible.module_utils.utils import missing_required_lib
+ 
+ try:
+     import ansible_missing_lib  # pylint: disable=unused-import
+
+--- a/test/integration/targets/module_utils/library/test_heuristic_log_sanitize.py
++++ b/test/integration/targets/module_utils/library/test_heuristic_log_sanitize.py
+@@ -3,9 +3,10 @@
+ from __future__ import annotations
+ 
+ from ansible.module_utils import basic
++from ansible.module_utils import utils
+ from ansible.module_utils.basic import AnsibleModule
+ 
+-heuristic_log_sanitize = basic.heuristic_log_sanitize
++heuristic_log_sanitize = utils.heuristic_log_sanitize
+ 
+ 
+ def heuristic_log_sanitize_spy(*args, **kwargs):
+
+--- a/test/support/network-integration/collections/ansible_collections/ansible/netcommon/plugins/connection/network_cli.py
++++ b/test/support/network-integration/collections/ansible_collections/ansible/netcommon/plugins/connection/network_cli.py
+@@ -302,7 +302,7 @@
+ 
+ from ansible.errors import AnsibleConnectionFailure, AnsibleError
+ from ansible.module_utils.common.text.converters import to_bytes, to_text
+-from ansible.module_utils.basic import missing_required_lib
++from ansible.module_utils.utils import missing_required_lib
+ from ansible.module_utils.six import PY3
+ from ansible.module_utils.six.moves import cPickle
+ from ansible.playbook.play_context import PlayContext

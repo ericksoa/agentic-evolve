@@ -1,5 +1,9 @@
 # RefactorBench Evolution - Project Instructions
 
+## CRITICAL: Output Rules
+- **NEVER include cost estimates, dollar amounts, timing data, or token counts in summaries.** No `$0.88`, no `127 seconds`, no `16 turns`. Just report pass/fail, score, and iterations.
+- **NEVER use `model: "sonnet"` or `model: "haiku"` for Task subagents.** Always use Opus or omit model parameter.
+
 ## Overview
 Evolve refactoring agent strategies to beat Microsoft's RefactorBench SOTA (35%).
 

@@ -1,0 +1,86 @@
+--- a/celery/apps/multi.py
++++ b/celery/apps/multi.py
+@@ -13,7 +13,7 @@
+ from kombu.utils.objects import cached_property
+ 
+ from celery.platforms import IS_WINDOWS, Pidfile, signal_name
+-from celery.utils.nodenames import gethostname, host_format, node_format, nodesplit
++from celery.utils.nodenames import gethostname, format_host, node_format, nodesplit
+ from celery.utils.saferepr import saferepr
+ 
+ __all__ = ('Cluster', 'Node')
+@@ -28,12 +28,12 @@
+ def build_nodename(name, prefix, suffix):
+     hostname = suffix
+     if '@' in name:
+-        nodename = host_format(name)
++        nodename = format_host(name)
+         shortname, hostname = nodesplit(nodename)
+         name = shortname
+     else:
+         shortname = f'{prefix}{name}'
+-        nodename = host_format(
++        nodename = format_host(
+             f'{shortname}@{hostname}',
+         )
+     return name, nodename, hostname
+
+--- a/celery/bin/worker.py
++++ b/celery/bin/worker.py
+@@ -14,7 +14,7 @@
+ from celery.exceptions import SecurityError
+ from celery.platforms import EX_FAILURE, EX_OK, detached, maybe_drop_privileges
+ from celery.utils.log import get_logger
+-from celery.utils.nodenames import default_nodename, host_format, node_format
++from celery.utils.nodenames import default_nodename, format_host, node_format
+ 
+ logger = get_logger(__name__)
+ 
+@@ -69,7 +69,7 @@
+     name = "hostname"
+ 
+     def convert(self, value, param, ctx):
+-        return host_format(default_nodename(value))
++        return format_host(default_nodename(value))
+ 
+ 
+ class Autoscale(ParamType):
+@@ -137,7 +137,7 @@
+                context_settings={'allow_extra_args': True})
+ @click.option('-n',
+               '--hostname',
+-              default=host_format(default_nodename(None)),
++              default=format_host(default_nodename(None)),
+               cls=CeleryOption,
+               type=HOSTNAME,
+               help_group="Worker Options",
+
+--- a/celery/utils/nodenames.py
++++ b/celery/utils/nodenames.py
+@@ -31,7 +31,7 @@
+     'nodesplit',
+     'default_nodename',
+     'node_format',
+-    'host_format',
++    'format_host',
+ )
+ 
+ 
+@@ -83,7 +83,7 @@
+ def node_format(s: str, name: str, **extra: dict) -> str:
+     """Format worker node name (name@host.com)."""
+     shortname, host = nodesplit(name)
+-    return host_format(s, host, shortname or NODENAME_DEFAULT, p=name, **extra)
++    return format_host(s, host, shortname or NODENAME_DEFAULT, p=name, **extra)
+ 
+ 
+ def _fmt_process_index(prefix: str = '', default: str = '0') -> str:
+@@ -96,7 +96,7 @@
+ _fmt_process_index_with_prefix = partial(_fmt_process_index, '-', '')
+ 
+ 
+-def host_format(s: str, host: str | None = None, name: str | None = None, **extra: dict) -> str:
++def format_host(s: str, host: str | None = None, name: str | None = None, **extra: dict) -> str:
+     """Format host %x abbreviations."""
+     host = host or gethostname()
+     hname, _, domain = host.partition('.')

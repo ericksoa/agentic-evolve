@@ -1,0 +1,66 @@
+--- a/celery/app/registry.py
++++ b/celery/app/registry.py
+@@ -58,11 +58,7 @@
+                 if getattr(task, 'type', 'regular') == type}
+ 
+ 
+-def _unpickle_task(name):
+-    return get_current_app().tasks[name]
+-
+-
+-def _unpickle_task_v2(name, module=None):
++def _unpickle_task(name, module=None):
+     if module:
+         import_module(module)
+     return get_current_app().tasks[name]
+
+--- a/celery/app/task.py
++++ b/celery/app/task.py
+@@ -19,7 +19,7 @@
+ from celery.utils.serialization import raise_with_context
+ 
+ from .annotations import resolve_all as resolve_all_annotations
+-from .registry import _unpickle_task_v2
++from .registry import _unpickle_task
+ from .utils import appstr
+ 
+ __all__ = ('Context', 'Task')
+@@ -421,7 +421,7 @@
+         # - it will work even if the task hasn't been registered.
+         mod = type(self).__module__
+         mod = mod if mod and mod in sys.modules else None
+-        return (_unpickle_task_v2, (self.name, mod), None)
++        return (_unpickle_task, (self.name, mod), None)
+ 
+     def run(self, *args, **kwargs):
+         """The body of the task executed by workers."""
+
+--- a/t/unit/app/test_registry.py
++++ b/t/unit/app/test_registry.py
+@@ -1,6 +1,6 @@
+ import pytest
+ 
+-from celery.app.registry import _unpickle_task, _unpickle_task_v2
++from celery.app.registry import _unpickle_task
+ from celery.exceptions import InvalidTaskError
+ 
+ 
+@@ -11,14 +11,14 @@
+ @pytest.mark.usefixtures('depends_on_current_app')
+ class test_unpickle_task:
+ 
+-    def test_unpickle_v1(self, app):
++    def test_unpickle(self, app):
+         app.tasks['txfoo'] = 'bar'
+         assert _unpickle_task('txfoo') == 'bar'
+ 
+-    def test_unpickle_v2(self, app):
++    def test_unpickle_with_module(self, app):
+         app.tasks['txfoo1'] = 'bar1'
+-        assert _unpickle_task_v2('txfoo1') == 'bar1'
+-        assert _unpickle_task_v2('txfoo1', module='celery') == 'bar1'
++        assert _unpickle_task('txfoo1') == 'bar1'
++        assert _unpickle_task('txfoo1', module='celery') == 'bar1'
+ 
+ 
+ class test_TaskRegistry:

@@ -1,0 +1,84 @@
+--- a/scrapy/utils/testproc.py
++++ b/scrapy/utils/testproc.py
+@@ -12,7 +12,7 @@
+     from twisted.python.failure import Failure
+ 
+ 
+-class ProcessTest:
++class TestProc:
+     command: Optional[str] = None
+     prefix = [sys.executable, "-m", "scrapy.cmdline"]
+     cwd = os.getcwd()  # trial chdirs to temp dir
+
+--- a/tests/test_command_fetch.py
++++ b/tests/test_command_fetch.py
+@@ -1,11 +1,11 @@
+ from twisted.internet import defer
+ from twisted.trial import unittest
+ 
+-from scrapy.utils.testproc import ProcessTest
++from scrapy.utils.testproc import TestProc
+ from scrapy.utils.testsite import SiteTest
+ 
+ 
+-class FetchTest(ProcessTest, SiteTest, unittest.TestCase):
++class FetchTest(TestProc, SiteTest, unittest.TestCase):
+     command = "fetch"
+ 
+     @defer.inlineCallbacks
+
+--- a/tests/test_command_parse.py
++++ b/tests/test_command_parse.py
+@@ -7,7 +7,7 @@
+ from scrapy.commands import parse
+ from scrapy.settings import Settings
+ from scrapy.utils.python import to_unicode
+-from scrapy.utils.testproc import ProcessTest
++from scrapy.utils.testproc import TestProc
+ from scrapy.utils.testsite import SiteTest
+ from tests.test_commands import CommandTest
+ 
+@@ -18,7 +18,7 @@
+     return to_unicode(bstr).replace(os.linesep, "\n")
+ 
+ 
+-class ParseCommandTest(ProcessTest, SiteTest, CommandTest):
++class ParseCommandTest(TestProc, SiteTest, CommandTest):
+     command = "parse"
+ 
+     def setUp(self):
+
+--- a/tests/test_command_shell.py
++++ b/tests/test_command_shell.py
+@@ -7,13 +7,13 @@
+ from twisted.internet import defer
+ from twisted.trial import unittest
+ 
+-from scrapy.utils.testproc import ProcessTest
++from scrapy.utils.testproc import TestProc
+ from scrapy.utils.testsite import SiteTest
+ from tests import NON_EXISTING_RESOLVABLE, tests_datadir
+ from tests.mockserver import MockServer
+ 
+ 
+-class ShellTest(ProcessTest, SiteTest, unittest.TestCase):
++class ShellTest(TestProc, SiteTest, unittest.TestCase):
+     command = "shell"
+ 
+     @defer.inlineCallbacks
+
+--- a/tests/test_command_version.py
++++ b/tests/test_command_version.py
+@@ -4,10 +4,10 @@
+ from twisted.trial import unittest
+ 
+ import scrapy
+-from scrapy.utils.testproc import ProcessTest
++from scrapy.utils.testproc import TestProc
+ 
+ 
+-class VersionTest(ProcessTest, unittest.TestCase):
++class VersionTest(TestProc, unittest.TestCase):
+     command = "version"
+ 
+     @defer.inlineCallbacks
