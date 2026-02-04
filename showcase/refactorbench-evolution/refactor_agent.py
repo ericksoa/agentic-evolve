@@ -52,11 +52,18 @@ def get_task_info(repo_name: str, task_name: str) -> dict:
     if test_file is None:
         test_file = _find_test_from_mapping(repo_name, task_name)
 
+    # Count test functions in the test file (ground truth denominator)
+    num_tests = 0
+    if test_file and Path(test_file).exists():
+        import re as _re
+        num_tests = len(_re.findall(r'^\s*def test_', Path(test_file).read_text(), _re.MULTILINE))
+
     return {
         "repo_name": repo_name,
         "task_name": task_name,
         "description": task_description,
         "test_file": str(test_file) if test_file else None,
+        "num_tests": num_tests,
     }
 
 

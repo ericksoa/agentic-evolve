@@ -90,8 +90,12 @@ def init_progress(task_id: str, chain_id: int) -> dict:
 # Test result parsing
 # ---------------------------------------------------------------------------
 
-def compute_granular_fitness(test_result: dict) -> dict:
+def compute_granular_fitness(test_result: dict, num_tests: int = 0) -> dict:
     """Parse pytest -v output to count individual test passes/failures.
+
+    Args:
+        test_result: dict with stdout/stderr/passed from pytest run.
+        num_tests: ground-truth test count from the test file itself.
 
     Returns dict with:
         tests_passed: int
@@ -100,16 +104,6 @@ def compute_granular_fitness(test_result: dict) -> dict:
         error_summary: str
     """
     stdout = test_result.get("stdout", "")
-
-    # Get authoritative total from pytest's "collected N items" line.
-    # Format: "collected 3 items" or "collected 2 items / 1 error"
-    collected_match = re.search(r'collected\s+(\d+)\s+items?', stdout)
-    collection_err_match = re.search(r'collected\s+\d+\s+items?\s*/\s*(\d+)\s+errors?', stdout)
-    collected_total = 0
-    if collected_match:
-        collected_total = int(collected_match.group(1))
-    if collection_err_match:
-        collected_total += int(collection_err_match.group(1))
 
     # Parse individual test results from pytest -v output
     # Pattern: scripts/test_file.py::test_name PASSED/FAILED
@@ -120,22 +114,14 @@ def compute_granular_fitness(test_result: dict) -> dict:
     if test_lines:
         tests_passed = sum(1 for _, status in test_lines if status == "PASSED")
         failing_tests = [name for name, status in test_lines if status != "PASSED"]
-        # Use collected total (includes collection errors) when available
-        tests_total = max(collected_total, len(test_lines))
     else:
         # Fall back to summary line: "X passed, Y failed"
         passed_match = re.search(r'(\d+)\s+passed', stdout)
-        failed_match = re.search(r'(\d+)\s+failed', stdout)
-        error_match = re.search(r'(\d+)\s+error', stdout)
-
         tests_passed = int(passed_match.group(1)) if passed_match else 0
-        tests_failed = int(failed_match.group(1)) if failed_match else 0
-        tests_errored = int(error_match.group(1)) if error_match else 0
-        tests_total = max(collected_total, tests_passed + tests_failed + tests_errored)
         failing_tests = []
 
-        if tests_total == 0 and not test_result.get("passed"):
-            tests_total = 1  # at least 1 test existed
+    # Use the ground-truth count from the test file; fall back to parsed count
+    tests_total = num_tests if num_tests > 0 else max(len(test_lines), 1)
 
     # Extract error summary
     error_summary = ""
@@ -294,7 +280,7 @@ class RALPHRunner:
                                    task_info["repo_name"])
 
             # Parse granular fitness
-            granular = compute_granular_fitness(test_result)
+            granular = compute_granular_fitness(test_result, num_tests=task_info.get("num_tests", 0))
 
             # Update progress
             progress["iteration"] = iteration
