@@ -10,6 +10,8 @@ Constructs iteration-aware prompts:
 import json
 from pathlib import Path
 
+from refactor_agent import PYTHON_EXE
+
 
 def build_prompt(
     task_info: dict,
@@ -149,10 +151,7 @@ def _iteration_context(progress: dict, iteration: int, max_iterations: int) -> s
 
 def _validation_section(task_info: dict, workdir: Path) -> str:
     """Validation/test instructions."""
-    # Find pytest executable
-    project_dir = Path(__file__).parent.resolve()
-    venv_python = project_dir / ".venv" / "bin" / "python3"
-    python_exe = str(venv_python) if venv_python.exists() else "python3"
+    python_exe = PYTHON_EXE
 
     test_file = task_info.get("test_file", "")
     test_filename = Path(test_file).name if test_file else "test.py"

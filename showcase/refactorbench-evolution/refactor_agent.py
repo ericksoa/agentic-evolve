@@ -17,6 +17,12 @@ BENCH_ROOT = Path(__file__).parent / ".refactorbench"
 DEFAULT_MODEL = "sonnet"
 MAX_TURNS = 15
 
+# Use Python 3.12 for running AST-based tests.
+# RefactorBench repos target Python 3.8-3.12; Python 3.13+ has AST changes
+# that cause false failures. This MUST stay within the supported version envelope.
+_PROJECT_DIR = Path(__file__).parent.resolve()
+PYTHON_EXE = str(_PROJECT_DIR / ".venv-3.12" / "bin" / "python3")
+
 
 def load_strategy(strategy_path: str) -> dict:
     with open(strategy_path) as f:
@@ -113,10 +119,7 @@ def run_test(test_file: str, workdir: Path, repo_name: str) -> dict:
         repo_conftest.rename(repo_conftest_bak)
         conftest_moved = True
 
-    # Find pytest - prefer the venv one if available
-    project_dir = Path(__file__).parent.resolve()
-    venv_python = project_dir / ".venv" / "bin" / "python3"
-    python_exe = str(venv_python) if venv_python.exists() else sys.executable
+    python_exe = PYTHON_EXE
 
     try:
         result = subprocess.run(
@@ -193,10 +196,7 @@ def build_agent_prompt(strategy: dict, task_info: dict, workdir: Path) -> str:
     strategy_text = "\n".join(parts)
 
     # Build the task-specific prompt
-    # Find venv python for test command
-    project_dir = Path(__file__).parent.resolve()
-    venv_python = project_dir / ".venv" / "bin" / "python3"
-    python_exe = str(venv_python) if venv_python.exists() else "python3"
+    python_exe = PYTHON_EXE
 
     test_file = task_info.get("test_file", "")
     test_filename = Path(test_file).name if test_file else "test.py"

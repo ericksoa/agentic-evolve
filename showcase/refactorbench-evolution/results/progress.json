@@ -1,9 +1,9 @@
 {
   "baseline_passed": 53,
   "baseline_total": 100,
-  "current_passed": 54,
+  "current_passed": 61,
   "current_total": 100,
-  "updated_at": "2026-02-04T04:41:09.266992",
+  "updated_at": "2026-02-04T05:59:27.297734",
   "tasks": [
     {
       "repo": "ansible_refactor",
@@ -249,9 +249,9 @@
       "repo": "django_refactor",
       "task": "new-path-traversal-exception",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "django_refactor",
@@ -265,9 +265,9 @@
       "repo": "django_refactor",
       "task": "new-reference-context-graph-class",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration 2"
     },
     {
       "repo": "django_refactor",
@@ -665,33 +665,33 @@
       "repo": "scrapy_refactor",
       "task": "new-downloadermiddlewares-utils",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "scrapy_refactor",
       "task": "new-spider-utils-in-spiders",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "scrapy_refactor",
       "task": "new-verify-reactor-class",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "scrapy_refactor",
       "task": "not-supported-exception-to-unsupported",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "scrapy_refactor",
@@ -729,9 +729,9 @@
       "repo": "scrapy_refactor",
       "task": "sitemap-url-to-url",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "tornado_refactor",

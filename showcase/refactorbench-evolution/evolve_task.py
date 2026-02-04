@@ -26,7 +26,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from refactor_agent import get_task_info, run_test, setup_workdir
+from refactor_agent import get_task_info, run_test, setup_workdir, PYTHON_EXE
 
 # SDK imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "sdk"))
@@ -41,14 +41,24 @@ def compute_granular_fitness(test_result: dict) -> dict:
     """Parse pytest -v output to count individual test passes/failures."""
     stdout = test_result.get("stdout", "")
 
+    # Get authoritative total from pytest's "collected N items" line.
+    # Format: "collected 3 items" or "collected 2 items / 1 error"
+    collected_match = re.search(r'collected\s+(\d+)\s+items?', stdout)
+    collection_err_match = re.search(r'collected\s+\d+\s+items?\s*/\s*(\d+)\s+errors?', stdout)
+    collected_total = 0
+    if collected_match:
+        collected_total = int(collected_match.group(1))
+    if collection_err_match:
+        collected_total += int(collection_err_match.group(1))
+
     test_lines = re.findall(
         r'([\w/\.\-]+::[\w\[\]\-]+)\s+(PASSED|FAILED|ERROR)', stdout
     )
 
     if test_lines:
-        tests_total = len(test_lines)
         tests_passed = sum(1 for _, status in test_lines if status == "PASSED")
         failing_tests = [name for name, status in test_lines if status != "PASSED"]
+        tests_total = max(collected_total, len(test_lines))
     else:
         passed_match = re.search(r'(\d+)\s+passed', stdout)
         failed_match = re.search(r'(\d+)\s+failed', stdout)
@@ -57,7 +67,7 @@ def compute_granular_fitness(test_result: dict) -> dict:
         tests_passed = int(passed_match.group(1)) if passed_match else 0
         tests_failed = int(failed_match.group(1)) if failed_match else 0
         tests_errored = int(error_match.group(1)) if error_match else 0
-        tests_total = tests_passed + tests_failed + tests_errored
+        tests_total = max(collected_total, tests_passed + tests_failed + tests_errored)
         failing_tests = []
 
         if tests_total == 0 and not test_result.get("passed"):
@@ -179,11 +189,9 @@ def main():
     task_id = f"{args.repo}/{args.task}"
 
     # Build workspace_test_command for the evaluator agent
-    venv_python = project_dir / ".venv" / "bin" / "python3"
-    python_exe = str(venv_python) if venv_python.exists() else "python3"
     test_script = project_dir / "workspace_test.py"
     workspace_test_cmd = (
-        f"{python_exe} {test_script} {{workspace}} "
+        f"{PYTHON_EXE} {test_script} {{workspace}} "
         f"--repo {args.repo} --task {args.task}"
     )
 
