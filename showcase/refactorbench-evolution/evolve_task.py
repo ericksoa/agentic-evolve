@@ -274,6 +274,45 @@ def main():
     result = asyncio.run(runner.run())
     print(json.dumps(result, indent=2, default=str))
 
+    # Update progress.json
+    champion_fitness = 0
+    if isinstance(result, dict):
+        champion_fitness = result.get("fitness", 0)
+
+    if champion_fitness >= 1.0:
+        update_progress(
+            args.repo, args.task, passed=True, method="evolution",
+            details=f"Solved via evolution, {args.generations} max gens",
+        )
+    else:
+        update_progress(
+            args.repo, args.task, passed=False, method="evolution_failed",
+            details=f"Failed after evolution, best fitness {champion_fitness:.4f}",
+        )
+
+
+def update_progress(repo: str, task: str, passed: bool, method: str, details: str) -> None:
+    """Update results/progress.json with the outcome of a task run."""
+    progress_file = Path(__file__).parent.resolve() / "results" / "progress.json"
+    if not progress_file.exists():
+        print(f"  WARNING: {progress_file} not found, skipping progress update")
+        return
+
+    progress = json.loads(progress_file.read_text())
+
+    for t in progress["tasks"]:
+        if t["repo"] == repo and t["task"] == task:
+            t["current_passed"] = passed
+            t["method"] = method
+            t["details"] = details
+            break
+
+    progress["current_passed"] = sum(1 for t in progress["tasks"] if t["current_passed"])
+    progress["updated_at"] = datetime.now().isoformat()
+    progress_file.write_text(json.dumps(progress, indent=2))
+
+    print(f"\n  Progress updated: {progress['current_passed']}/{progress['current_total']}")
+
 
 if __name__ == "__main__":
     main()

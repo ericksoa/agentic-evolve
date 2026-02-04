@@ -1,0 +1,809 @@
+{
+  "baseline_passed": 53,
+  "baseline_total": 100,
+  "current_passed": 54,
+  "current_total": 100,
+  "updated_at": "2026-02-04T04:41:09.266992",
+  "tasks": [
+    {
+      "repo": "ansible_refactor",
+      "task": "add-log-parameter-get-group-vars",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "add-log-parameter-is-systemd-managed",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "combine-namespace-compat",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "data-to-inventory-data",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "move-quoting-splitter",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "new-inventory-patterns",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "new-utils-class-connection",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "new-utils-from-basic",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "parse_key_value",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "rename-lenient-lowercase",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "ansible_refactor",
+      "task": "sort-groups-to-group-sort",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "add-log-parameter-get-digest-algorithm",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "add-log-parameter-node-format",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "annotation-utils",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "autoretry-to-retry",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "combine-unpickle-task",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "dump-message-to-serialization",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "ensure_serialize",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "evaluate-promises-to-serialization",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "expand-router-string-to-utils",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "object-mro-lookup",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "rename-host-format",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "celery_refactor",
+      "task": "truncate-text",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "add-log-parameter-constant-time-compare",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "add-log-parameter-get-resolver",
+      "baseline_passed": false,
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration 2"
+    },
+    {
+      "repo": "django_refactor",
+      "task": "add-log-parameter-resolve-error-handler",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "add-none-handling-duration-string",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "combine-utils-dates-dateformat",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "combine-utils-hashable-itercompat",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-converter-to-python-class",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-path-traversal-exception",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-reference-context-field-class",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-reference-context-graph-class",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-timezone-class",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-utils-adapt-method-mode",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-utils-check-response",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "new-utils-path-from-module",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "remove-core-cache-utils",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "remove-db-models-constants",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "rename-file-move-safe",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "django_refactor",
+      "task": "split-parse-apps-and-model-labels",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "fastapi_refactor",
+      "task": "add-log-parameter-generate-option-id-for-path",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "fastapi_refactor",
+      "task": "exception-handlers-to-handlers",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "fastapi_refactor",
+      "task": "get-auth-scheme-param",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "fastapi_refactor",
+      "task": "openapi-get-utils",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "fastapi_refactor",
+      "task": "params-to-param",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "fastapi_refactor",
+      "task": "value-is-a-sequence",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "flask_refactor",
+      "task": "add-log-parameter-get-debug-flag",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "flask_refactor",
+      "task": "add-log-parameter-get-flashed-messages",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "flask_refactor",
+      "task": "debughelpers-to-helpers.py",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "flask_refactor",
+      "task": "rename-send-from-directory",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "flask_refactor",
+      "task": "render-template-str",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "flask_refactor",
+      "task": "stream-template-str",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "add-log-parameter-get-encoding-from-headers",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "add-log-parameter-resolve-proxies",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "add-log-parameter-select-proxy",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "combine-from-key-to-key",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "combine-internal-utils-utils",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "move-hooks-sessions",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "new-cookie-utils-class",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "rename-lookup-dict-dict-lookup",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "rename-super-len-complex-len",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "requests_refactor",
+      "task": "split-warnings-exceptions",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "add-log-parameter-delete-directory",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "add-log-parameter-get-capability-definitions",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "add-log-parameter-recursive-diff",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "cant-create",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "channel-to-transport",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "ex-pillar-fail",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "ex-state-fail",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "exactly-n-boto-mod",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "get-unavail",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "iam-to-aws",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "mksls-to-specific",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "namecheap-xmlutil",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "paged-call-boto-mod",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "pem-fingerprint",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "salt_refactor",
+      "task": "perm-denied",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "add-log-parameter-disconnect-all",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "add-log-parameter-job-dir",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "add-log-parameter-xmliter",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "genspider-functions-to-utils-url",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "new-downloadermiddlewares-utils",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "new-spider-utils-in-spiders",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "new-verify-reactor-class",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "not-supported-exception-to-unsupported",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "parameterize-gunzip",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "rename-description-commands",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "rename-engine-status",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "rename-processtest-testproc",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "scrapy_refactor",
+      "task": "sitemap-url-to-url",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "global-objects",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "log-utils",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "option-parser-with-pretty-print",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "options-utils",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "remove-locale-data",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "rename-http1connection",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "rename-to-camel-case",
+      "baseline_passed": true,
+      "current_passed": true,
+      "method": "baseline",
+      "details": null
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "resolvers-as-separate",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    },
+    {
+      "repo": "tornado_refactor",
+      "task": "tcpclient-connect-params",
+      "baseline_passed": false,
+      "current_passed": false,
+      "method": null,
+      "details": null
+    }
+  ]
+}

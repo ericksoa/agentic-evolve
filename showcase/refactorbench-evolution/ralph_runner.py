@@ -26,6 +26,7 @@ import shutil
 import sys
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from refactor_agent import get_task_info, run_test, setup_workdir
@@ -381,6 +382,33 @@ class RALPHRunner:
 
 
 # ---------------------------------------------------------------------------
+# Progress tracking (source of truth: results/progress.json)
+# ---------------------------------------------------------------------------
+
+def update_progress(repo: str, task: str, passed: bool, method: str, details: str) -> None:
+    """Update results/progress.json with the outcome of a task run."""
+    progress_file = Path(__file__).parent.resolve() / "results" / "progress.json"
+    if not progress_file.exists():
+        print(f"  WARNING: {progress_file} not found, skipping progress update")
+        return
+
+    progress = json.loads(progress_file.read_text())
+
+    for t in progress["tasks"]:
+        if t["repo"] == repo and t["task"] == task:
+            t["current_passed"] = passed
+            t["method"] = method
+            t["details"] = details
+            break
+
+    progress["current_passed"] = sum(1 for t in progress["tasks"] if t["current_passed"])
+    progress["updated_at"] = datetime.now().isoformat()
+    progress_file.write_text(json.dumps(progress, indent=2))
+
+    print(f"\n  Progress updated: {progress['current_passed']}/{progress['current_total']}")
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -428,6 +456,21 @@ def main():
 
     runner = RALPHRunner(config, repo=args.repo, task=args.task)
     result = asyncio.run(runner.run())
+
+    # Update progress.json
+    if result.get("status") == "solved":
+        chain_id = result.get("chain_id", "?")
+        solved_iter = result.get("solved_iteration", "?")
+        update_progress(
+            args.repo, args.task, passed=True, method="ralph",
+            details=f"Solved chain {chain_id}, iteration {solved_iter}",
+        )
+    else:
+        best = result.get("best_score", 0)
+        update_progress(
+            args.repo, args.task, passed=False, method="ralph_failed",
+            details=f"Failed after {args.chains} chains, best score {best}",
+        )
 
     # Print machine-readable result
     print(json.dumps(result, indent=2))
