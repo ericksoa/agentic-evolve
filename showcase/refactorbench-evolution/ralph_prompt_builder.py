@@ -166,7 +166,7 @@ To run the test:
 2. Copy the test file: cp {test_file} scripts/{test_filename}
 3. If a conftest.py exists at the repo root, temporarily rename it: mv conftest.py conftest.py.bak (if it exists)
 4. Write a minimal scripts/conftest.py with: import os\\nimport pytest\\n\\n@pytest.fixture\\ndef chdir(tmp_path, monkeypatch):\\n    monkeypatch.chdir(tmp_path)\\n    return tmp_path
-5. Run: cd scripts && {python_exe} -m pytest {test_filename} -v --tb=short --rootdir=. --override-ini=pythonpath=
+5. Run: cd scripts && {python_exe} -m pytest {test_filename} -v --tb=short --rootdir=. --override-ini=pythonpath= -W default::DeprecationWarning -W default::PendingDeprecationWarning
 6. Restore conftest if moved: mv conftest.py.bak conftest.py (if it was moved)
 
 The tests use relative paths like ../src/flask/app.py (relative to scripts/), so ../ points to the repo root.

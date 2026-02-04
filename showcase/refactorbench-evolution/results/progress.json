@@ -1,9 +1,9 @@
 {
   "baseline_passed": 53,
   "baseline_total": 100,
-  "current_passed": 75,
+  "current_passed": 83,
   "current_total": 100,
-  "updated_at": "2026-02-04T08:43:28.231661",
+  "updated_at": "2026-02-04T09:40:25.550040",
   "tasks": [
     {
       "repo": "ansible_refactor",
@@ -209,17 +209,17 @@
       "repo": "django_refactor",
       "task": "add-log-parameter-resolve-error-handler",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "django_refactor",
       "task": "add-none-handling-duration-string",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "django_refactor",
@@ -233,9 +233,9 @@
       "repo": "django_refactor",
       "task": "combine-utils-hashable-itercompat",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "django_refactor",
@@ -273,9 +273,9 @@
       "repo": "django_refactor",
       "task": "new-timezone-class",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "django_refactor",
@@ -313,25 +313,25 @@
       "repo": "django_refactor",
       "task": "remove-db-models-constants",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "django_refactor",
       "task": "rename-file-move-safe",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "django_refactor",
       "task": "split-parse-apps-and-model-labels",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "fastapi_refactor",
@@ -361,9 +361,9 @@
       "repo": "fastapi_refactor",
       "task": "openapi-get-utils",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "fastapi_refactor",

@@ -53,10 +53,21 @@ def get_task_info(repo_name: str, task_name: str) -> dict:
         test_file = _find_test_from_mapping(repo_name, task_name)
 
     # Count test functions in the test file (ground truth denominator)
+    # Use AST parsing to only count real test methods/functions,
+    # not ones inside docstrings or comments.
     num_tests = 0
     if test_file and Path(test_file).exists():
-        import re as _re
-        num_tests = len(_re.findall(r'^\s*def test_', Path(test_file).read_text(), _re.MULTILINE))
+        import ast as _ast
+        try:
+            _tree = _ast.parse(Path(test_file).read_text())
+            for _node in _ast.walk(_tree):
+                if isinstance(_node, (_ast.FunctionDef, _ast.AsyncFunctionDef)):
+                    if _node.name.startswith("test_"):
+                        num_tests += 1
+        except SyntaxError:
+            # Fall back to regex if file can't be parsed
+            import re as _re
+            num_tests = len(_re.findall(r'^\s*def test_', Path(test_file).read_text(), _re.MULTILINE))
 
     return {
         "repo_name": repo_name,
@@ -132,7 +143,9 @@ def run_test(test_file: str, workdir: Path, repo_name: str) -> dict:
         result = subprocess.run(
             [python_exe, "-m", "pytest", str(local_test.resolve()),
              "-v", "--tb=short", f"--rootdir={scripts_dir}",
-             "--override-ini=pythonpath="],
+             "--override-ini=pythonpath=",
+             "-W", "default::DeprecationWarning",
+             "-W", "default::PendingDeprecationWarning"],
             capture_output=True,
             text=True,
             cwd=str(scripts_dir),
@@ -226,7 +239,7 @@ To run the test:
 2. Copy the test file: cp {test_file} scripts/{test_filename}
 3. If a conftest.py exists at the repo root, temporarily rename it: mv conftest.py conftest.py.bak (if it exists)
 4. Write a minimal scripts/conftest.py with: import os\\nimport pytest\\n\\n@pytest.fixture\\ndef chdir(tmp_path, monkeypatch):\\n    monkeypatch.chdir(tmp_path)\\n    return tmp_path
-5. Run: cd scripts && {python_exe} -m pytest {test_filename} -v --tb=short --rootdir=. --override-ini=pythonpath=
+5. Run: cd scripts && {python_exe} -m pytest {test_filename} -v --tb=short --rootdir=. --override-ini=pythonpath= -W default::DeprecationWarning -W default::PendingDeprecationWarning
 6. Restore conftest if moved: mv conftest.py.bak conftest.py (if it was moved)
 
 The tests use relative paths like ../src/flask/app.py (relative to scripts/), so ../ points to the repo root.
