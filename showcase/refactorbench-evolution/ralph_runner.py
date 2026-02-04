@@ -30,8 +30,14 @@ from datetime import datetime
 from pathlib import Path
 
 from refactor_agent import get_task_info, run_test, setup_workdir
+from notebook import (
+    FileSnapshot, NotebookWriter, parse_stream_json,
+    compute_solution_diff, compute_diff_stats,
+)
 
 import ralph_prompt_builder
+
+BENCH_ROOT = Path(__file__).parent / ".refactorbench"
 
 
 # ---------------------------------------------------------------------------
@@ -259,9 +265,25 @@ class RALPHRunner:
 
         task_info = get_task_info(self.repo, self.task)
 
+        # --- Engineering notebook setup ---
+        notebook_dir = chain_workdir / "notebook"
+        notebook = NotebookWriter(
+            notebook_dir,
+            task_id=self.task_id,
+            chain_id=chain_id,
+            model=self.config.model,
+            task_description=task_info.get("description", ""),
+        )
+        task_results_dir = self.results_dir / f"{self.repo}__{self.task}"
+
         for iteration in range(start_iteration, self.config.max_iterations + 1):
             print(f"    Iteration {iteration}/{self.config.max_iterations}...",
                   end=" ", flush=True)
+
+            iter_start = time.time()
+
+            # Snapshot file state before agent runs
+            pre_snapshot = FileSnapshot(workdir)
 
             # Build iteration-aware prompt
             prompt = ralph_prompt_builder.build_prompt(
@@ -272,8 +294,16 @@ class RALPHRunner:
                 max_iterations=self.config.max_iterations,
             )
 
-            # Run the agent
-            await self._run_agent(prompt, workdir)
+            # Run the agent (returns stream-json output)
+            agent_output = await self._run_agent(prompt, workdir)
+
+            # Parse agent output for notebook
+            agent_data = parse_stream_json(agent_output)
+
+            # Snapshot file state after agent runs, compute diffs
+            post_snapshot = FileSnapshot(workdir)
+            file_diffs = pre_snapshot.diff_against(post_snapshot, workdir, workdir)
+            diff_stats = compute_diff_stats(file_diffs)
 
             # Run tests
             test_result = run_test(task_info["test_file"], workdir,
@@ -281,6 +311,9 @@ class RALPHRunner:
 
             # Parse granular fitness
             granular = compute_granular_fitness(test_result, num_tests=task_info.get("num_tests", 0))
+
+            # Compute score delta
+            prev_best = progress.get("best_score", 0)
 
             # Update progress
             progress["iteration"] = iteration
@@ -310,11 +343,46 @@ class RALPHRunner:
             # Save progress to workdir
             save_progress(workdir, progress)
 
+            # --- Notebook entry ---
+            notebook.add_entry({
+                "iteration": iteration,
+                "timestamp_start": datetime.fromtimestamp(iter_start).isoformat(),
+                "timestamp_end": datetime.now().isoformat(),
+                "wall_clock_seconds": round(time.time() - iter_start, 1),
+                "num_turns": agent_data.get("num_turns", 0),
+                "cost_usd": agent_data.get("cost_usd", 0),
+                "input_tokens": agent_data.get("input_tokens", 0),
+                "output_tokens": agent_data.get("output_tokens", 0),
+                "agent_reasoning": agent_data.get("reasoning", []),
+                "tool_calls": agent_data.get("tool_calls", []),
+                "files_read": agent_data.get("files_read", []),
+                "files_modified": list(file_diffs.keys()),
+                "files_created": agent_data.get("files_created", []),
+                "grep_patterns": agent_data.get("grep_patterns", []),
+                "tests_passed": granular["tests_passed"],
+                "tests_total": granular["tests_total"],
+                "score_delta": granular["tests_passed"] - prev_best,
+                "failing_tests": granular["failing_tests"],
+                "error_summary": granular["error_summary"],
+                "file_diffs": file_diffs,
+                "diff_stats": diff_stats,
+            })
+
             # Check if solved
             if test_result["passed"]:
                 progress["status"] = "solved"
                 save_progress(workdir, progress)
                 print(f"PASSED ({granular['tests_passed']}/{granular['tests_total']})")
+
+                # Finalize notebook with solution diff
+                original_repo = BENCH_ROOT / "repositories" / self.repo
+                solution_diff = compute_solution_diff(original_repo, workdir)
+                notebook.finalize(
+                    status="solved",
+                    solution_diff=solution_diff,
+                    results_dir=task_results_dir,
+                )
+
                 return {
                     "status": "solved",
                     "chain_id": chain_id,
@@ -324,21 +392,30 @@ class RALPHRunner:
 
             print(f"{granular['tests_passed']}/{granular['tests_total']} tests")
 
-        # Chain exhausted
+        # Chain exhausted — finalize notebook
+        original_repo = BENCH_ROOT / "repositories" / self.repo
+        solution_diff = compute_solution_diff(original_repo, workdir)
+        notebook.finalize(
+            status="exhausted",
+            solution_diff=solution_diff,
+            results_dir=task_results_dir,
+        )
+
         return {
             "status": "exhausted",
             "chain_id": chain_id,
             "best_score": progress.get("best_score", 0),
         }
 
-    async def _run_agent(self, prompt: str, workdir: Path) -> None:
-        """Run claude -p as a subprocess."""
+    async def _run_agent(self, prompt: str, workdir: Path) -> str:
+        """Run claude -p as a subprocess, return raw stream-json output."""
         cmd = [
             "claude",
             "-p",
             "--model", self.config.model,
             "--allowedTools", "Bash", "Read", "Write", "Edit", "Glob", "Grep",
-            "--output-format", "json",
+            "--output-format", "stream-json",
+            "--verbose",
             "--max-turns", str(self.config.max_turns),
             prompt,
         ]
@@ -351,19 +428,22 @@ class RALPHRunner:
                 cwd=str(workdir.resolve()),
                 env={**os.environ, "CLAUDE_CODE_ENTRYPOINT": "cli"},
             )
-            await asyncio.wait_for(
+            stdout_bytes, stderr_bytes = await asyncio.wait_for(
                 proc.communicate(),
                 timeout=self.config.timeout,
             )
+            return stdout_bytes.decode("utf-8", errors="replace") if stdout_bytes else ""
         except asyncio.TimeoutError:
             try:
                 proc.kill()
                 await proc.wait()
             except Exception:
                 pass
+            return ""
         except Exception as e:
             if self.config.verbose:
                 print(f"  Agent error: {e}", file=sys.stderr)
+            return ""
 
     def _print_result(self, status: str, chain_id: int, elapsed: float,
                       best_score: int, solved_iteration: int | None = None):

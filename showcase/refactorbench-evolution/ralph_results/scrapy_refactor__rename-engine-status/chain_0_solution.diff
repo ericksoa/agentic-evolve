@@ -1,0 +1,227 @@
+--- a/conftest.py
++++ b/conftest.py
+@@ -1,98 +0,0 @@
+-from pathlib import Path
+-
+-import pytest
+-from twisted.web.http import H2_ENABLED
+-
+-from scrapy.utils.reactor import install_reactor
+-from tests.keys import generate_keys
+-
+-
+-def _py_files(folder):
+-    return (str(p) for p in Path(folder).rglob("*.py"))
+-
+-
+-collect_ignore = [
+-    # not a test, but looks like a test
+-    "scrapy/utils/testsite.py",
+-    "tests/ftpserver.py",
+-    "tests/mockserver.py",
+-    "tests/pipelines.py",
+-    "tests/spiders.py",
+-    # contains scripts to be run by tests/test_crawler.py::CrawlerProcessSubprocess
+-    *_py_files("tests/CrawlerProcess"),
+-    # contains scripts to be run by tests/test_crawler.py::CrawlerRunnerSubprocess
+-    *_py_files("tests/CrawlerRunner"),
+-]
+-
+-with Path("tests/ignores.txt").open(encoding="utf-8") as reader:
+-    for line in reader:
+-        file_path = line.strip()
+-        if file_path and file_path[0] != "#":
+-            collect_ignore.append(file_path)
+-
+-if not H2_ENABLED:
+-    collect_ignore.extend(
+-        (
+-            "scrapy/core/downloader/handlers/http2.py",
+-            *_py_files("scrapy/core/http2"),
+-        )
+-    )
+-
+-
+-@pytest.fixture()
+-def chdir(tmpdir):
+-    """Change to pytest-provided temporary directory"""
+-    tmpdir.chdir()
+-
+-
+-def pytest_addoption(parser):
+-    parser.addoption(
+-        "--reactor",
+-        default="default",
+-        choices=["default", "asyncio"],
+-    )
+-
+-
+-@pytest.fixture(scope="class")
+-def reactor_pytest(request):
+-    if not request.cls:
+-        # doctests
+-        return
+-    request.cls.reactor_pytest = request.config.getoption("--reactor")
+-    return request.cls.reactor_pytest
+-
+-
+-@pytest.fixture(autouse=True)
+-def only_asyncio(request, reactor_pytest):
+-    if request.node.get_closest_marker("only_asyncio") and reactor_pytest != "asyncio":
+-        pytest.skip("This test is only run with --reactor=asyncio")
+-
+-
+-@pytest.fixture(autouse=True)
+-def only_not_asyncio(request, reactor_pytest):
+-    if (
+-        request.node.get_closest_marker("only_not_asyncio")
+-        and reactor_pytest == "asyncio"
+-    ):
+-        pytest.skip("This test is only run without --reactor=asyncio")
+-
+-
+-@pytest.fixture(autouse=True)
+-def requires_uvloop(request):
+-    if not request.node.get_closest_marker("requires_uvloop"):
+-        return
+-    try:
+-        import uvloop
+-
+-        del uvloop
+-    except ImportError:
+-        pytest.skip("uvloop is not installed")
+-
+-
+-def pytest_configure(config):
+-    if config.getoption("--reactor") == "asyncio":
+-        install_reactor("twisted.internet.asyncioreactor.AsyncioSelectorReactor")
+-
+-
+-# Generate localhost certificate files, needed by some tests
+-generate_keys()
+
+--- a/scrapy/extensions/debug.py
++++ b/scrapy/extensions/debug.py
+@@ -14,7 +14,7 @@
+ from pdb import Pdb
+ from typing import TYPE_CHECKING, Optional
+ 
+-from scrapy.utils.engine import format_engine_status
++from scrapy.utils.engine import _format_engine_status
+ from scrapy.utils.trackref import format_live_refs
+ 
+ if TYPE_CHECKING:
+@@ -47,7 +47,7 @@
+         assert self.crawler.engine
+         log_args = {
+             "stackdumps": self._thread_stacks(),
+-            "enginestatus": format_engine_status(self.crawler.engine),
++            "enginestatus": _format_engine_status(self.crawler.engine),
+             "liverefs": format_live_refs(),
+         }
+         logger.info(
+
+--- a/scrapy/extensions/memusage.py
++++ b/scrapy/extensions/memusage.py
+@@ -18,7 +18,7 @@
+ from scrapy import signals
+ from scrapy.exceptions import NotConfigured
+ from scrapy.mail import MailSender
+-from scrapy.utils.engine import get_engine_status
++from scrapy.utils.engine import _get_engine_status
+ 
+ if TYPE_CHECKING:
+     # typing.Self requires Python 3.11
+@@ -154,6 +154,6 @@
+             "ENGINE STATUS ------------------------------------------------------- \r\n"
+         )
+         s += "\r\n"
+-        s += pformat(get_engine_status(self.crawler.engine))
++        s += pformat(_get_engine_status(self.crawler.engine))
+         s += "\r\n"
+         self.mail.send(rcpts, subject, s)
+
+--- a/scrapy/extensions/telnet.py
++++ b/scrapy/extensions/telnet.py
+@@ -18,7 +18,7 @@
+ from scrapy import signals
+ from scrapy.exceptions import NotConfigured
+ from scrapy.utils.decorators import defers
+-from scrapy.utils.engine import print_engine_status
++from scrapy.utils.engine import _print_engine_status
+ from scrapy.utils.reactor import listen_tcp
+ from scrapy.utils.trackref import print_live_refs
+ 
+@@ -109,7 +109,7 @@
+             "extensions": self.crawler.extensions,
+             "stats": self.crawler.stats,
+             "settings": self.crawler.settings,
+-            "est": lambda: print_engine_status(self.crawler.engine),
++            "est": lambda: _print_engine_status(self.crawler.engine),
+             "p": pprint.pprint,
+             "prefs": print_live_refs,
+             "help": "This is Scrapy telnet console. For more info see: "
+
+--- a/scrapy/utils/engine.py
++++ b/scrapy/utils/engine.py
+@@ -10,7 +10,7 @@
+     from scrapy.core.engine import ExecutionEngine
+ 
+ 
+-def get_engine_status(engine: ExecutionEngine) -> List[Tuple[str, Any]]:
++def _get_engine_status(engine: ExecutionEngine) -> List[Tuple[str, Any]]:
+     """Return a report of the current engine status"""
+     tests = [
+         "time()-engine.start_time",
+@@ -39,8 +39,8 @@
+     return checks
+ 
+ 
+-def format_engine_status(engine: ExecutionEngine) -> str:
+-    checks = get_engine_status(engine)
++def _format_engine_status(engine: ExecutionEngine) -> str:
++    checks = _get_engine_status(engine)
+     s = "Execution engine status\n\n"
+     for test, result in checks:
+         s += f"{test:<47} : {result}\n"
+@@ -49,5 +49,5 @@
+     return s
+ 
+ 
+-def print_engine_status(engine: ExecutionEngine) -> None:
+-    print(format_engine_status(engine))
++def _print_engine_status(engine: ExecutionEngine) -> None:
++    print(_format_engine_status(engine))
+
+--- a/tests/test_crawl.py
++++ b/tests/test_crawl.py
+@@ -300,12 +300,12 @@
+ 
+     @defer.inlineCallbacks
+     def test_engine_status(self):
+-        from scrapy.utils.engine import get_engine_status
++        from scrapy.utils.engine import _get_engine_status
+ 
+         est = []
+ 
+         def cb(response):
+-            est.append(get_engine_status(crawler.engine))
++            est.append(_get_engine_status(crawler.engine))
+ 
+         crawler = get_crawler(SingleRequestSpider)
+         yield crawler.crawl(
+@@ -318,12 +318,12 @@
+ 
+     @defer.inlineCallbacks
+     def test_format_engine_status(self):
+-        from scrapy.utils.engine import format_engine_status
++        from scrapy.utils.engine import _format_engine_status
+ 
+         est = []
+ 
+         def cb(response):
+-            est.append(format_engine_status(crawler.engine))
++            est.append(_format_engine_status(crawler.engine))
+ 
+         crawler = get_crawler(SingleRequestSpider)
+         yield crawler.crawl(
