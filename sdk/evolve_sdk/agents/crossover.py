@@ -1,5 +1,7 @@
 """Crossover agent - combines multiple parent solutions."""
 
+import json
+
 from ..skills import get_mode_guidance
 
 CROSSOVER_SYSTEM = """You are a crossover specialist for evolutionary algorithm discovery.
@@ -93,3 +95,65 @@ Return JSON:
 }}
 
 CRITICAL: The hybrid must be COMPLETE and CORRECT. Test it before returning."""
+
+
+def get_workspace_crossover_prompt(
+    parent_workspaces: list[str],
+    parent_fitnesses: list[float],
+    baseline_workspace: str,
+    output_workspace: str,
+    generation: int,
+) -> str:
+    """Generate prompt for workspace-mode crossover (directory-level evolution).
+
+    Merges changes from two parent workspace directories against the
+    baseline repository.
+
+    Args:
+        parent_workspaces: List of parent workspace directory paths
+        parent_fitnesses: List of parent fitness scores
+        baseline_workspace: Path to the unmodified baseline repository
+        output_workspace: Path to save hybrid workspace
+        generation: Current generation number
+    """
+    parents_info = "\n".join(
+        f"  - {d} (fitness: {fit:.4f})"
+        for d, fit in zip(parent_workspaces, parent_fitnesses)
+    )
+
+    return f"""Create a crossover hybrid from multiple parent workspaces.
+
+You are working in: {output_workspace}
+(This is a copy of the baseline. Apply the best changes from the parents.)
+
+Parents (read-only, for reference):
+{parents_info}
+
+Baseline (unmodified): {baseline_workspace}
+Generation: {generation}
+
+## Instructions
+1. Compare each parent workspace against the baseline to identify what changed
+2. Analyze which changes in each parent contribute to passing tests
+3. Apply non-conflicting changes from both parents into your workspace
+4. For conflicting changes, prefer the approach from the higher-fitness parent
+5. Do NOT modify the parent workspaces — only modify files in {output_workspace}
+
+## Strategy
+- Use `diff` or file comparison to identify changes from baseline
+- Merge changes file-by-file
+- Prioritize changes that fix different tests (complementary changes)
+- When parents modify the same file differently, analyze which change is more correct
+
+Return JSON:
+{{
+    "parents_used": {json.dumps(parent_workspaces)},
+    "from_each_parent": {{
+        "<parent1>": "<what was taken>",
+        "<parent2>": "<what was taken>"
+    }},
+    "description": "<how they were combined>",
+    "conflicts_resolved": [<list of files with conflicts and how resolved>]
+}}
+
+CRITICAL: The hybrid must preserve all passing tests from both parents."""

@@ -210,6 +210,13 @@ class EvolutionConfig:
     # Parallelism
     parallel_mutations: bool = True
 
+    # Workspace mode (directory-level evolution for multi-file problems)
+    workspace_mode: bool = False
+    workspace_source: str | None = None    # Path to source repository template
+    workspace_test_file: str | None = None  # Path to AST test file
+    workspace_test_command: str | None = None  # Custom test command for workspace evaluation
+    workspace_setup_command: str | None = None  # Command to setup workspace from source
+
     def __post_init__(self):
         if isinstance(self.evolve_dir, str):
             self.evolve_dir = Path(self.evolve_dir)

@@ -147,3 +147,56 @@ Return JSON:
 }}
 
 IMPORTANT: Evaluate ALL solutions listed. Be thorough but efficient."""
+
+
+def get_workspace_evaluator_prompt(
+    workspace_dirs: list[str],
+    test_command: str,
+) -> str:
+    """Generate prompt for workspace-mode evaluation (directory-level evolution).
+
+    Runs pytest against workspace directories and returns granular fitness.
+
+    Args:
+        workspace_dirs: List of workspace directory paths to evaluate
+        test_command: Command to run tests (with {workspace} placeholder)
+    """
+    dirs_list = "\n".join(f"  - {d}" for d in workspace_dirs)
+
+    return f"""Evaluate the fitness of these workspace solutions by running tests.
+
+Workspaces to evaluate:
+{dirs_list}
+
+TEST COMMAND (YOU MUST USE THIS):
+{test_command}
+
+For each workspace, replace {{workspace}} with the actual workspace path and run the command.
+
+## Instructions
+1. For EACH workspace listed above:
+   a. Run the test command with that workspace path
+   b. Parse the test output to count passed/failed tests
+   c. Calculate fitness = tests_passed / tests_total
+2. After evaluating ALL workspaces, return the combined results
+
+Return JSON:
+{{
+    "evaluations": [
+        {{
+            "file": "<workspace path>",
+            "valid": true,
+            "fitness": <tests_passed / tests_total>,
+            "tests_passed": <number>,
+            "tests_total": <number>,
+            "failing_tests": [<list of failing test names>],
+            "error": "<if evaluation failed, why>",
+            "notes": "<any observations>"
+        }},
+        ...
+    ],
+    "best": {{"file": "<workspace path>", "fitness": <score>}},
+    "ranking": ["<workspace1>", "<workspace2>", ...]
+}}
+
+CRITICAL: You MUST run the test command for each workspace. Do not skip this step."""

@@ -122,3 +122,80 @@ Return JSON:
 }}
 
 CRITICAL: The mutated solution must be COMPLETE and CORRECT. Test it before returning."""
+
+
+def get_workspace_mutator_prompt(
+    workspace_dir: str,
+    failing_tests: list[str],
+    test_output: str,
+    parent_fitness: float,
+    output_workspace: str,
+    generation: int,
+    variant: str,
+    memory_context: str | None = None,
+) -> str:
+    """Generate prompt for workspace-mode mutation (directory-level evolution).
+
+    Instead of mutating a single file, the agent modifies files within
+    a workspace directory to fix failing tests.
+
+    Args:
+        workspace_dir: Path to parent workspace directory
+        failing_tests: List of test names that are failing
+        test_output: Last pytest output (truncated)
+        parent_fitness: Parent's fitness score (tests_passed / tests_total)
+        output_workspace: Path to save mutated workspace
+        generation: Current generation number
+        variant: Mutation variant label
+        memory_context: Optional context from evolution memory
+    """
+    failing_list = "\n".join(f"  - {t}" for t in failing_tests[:20])
+
+    # Truncate test output
+    test_snippet = test_output[-1500:] if len(test_output) > 1500 else test_output
+
+    memory_section = ""
+    if memory_context:
+        memory_section = f"""
+## Memory Context (from previous evolution runs)
+{memory_context}
+"""
+
+    return f"""Fix failing tests in a multi-file Python codebase.
+
+You are working in: {output_workspace}
+(This is a copy of the parent workspace. Modify files in place.)
+
+Parent fitness: {parent_fitness:.4f}
+Generation: {generation}, Variant: {variant}
+
+## Failing Tests
+{failing_list}
+
+## Last Test Output
+```
+{test_snippet}
+```
+{memory_section}
+## Instructions
+1. Read the failing test assertions to understand what the tests expect
+2. Explore the workspace to understand the current state of the code
+3. Use Grep to find ALL references to functions/classes being modified
+4. Make targeted changes to fix as many failing tests as possible
+5. Do NOT modify test files — only modify source code
+
+## Strategy
+- Focus on ONE or TWO specific failing tests per mutation
+- Search exhaustively for all references before making changes
+- Preserve all passing tests (don't break what works)
+- Make minimal, targeted changes
+
+Return JSON:
+{{
+    "mutation_type": "<strategy used>",
+    "description": "<what specifically changed>",
+    "hypothesis": "<why this might fix the failing tests>",
+    "targeted_tests": [<list of test names targeted>]
+}}
+
+CRITICAL: The mutation must preserve all currently passing tests."""

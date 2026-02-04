@@ -3,4 +3,6 @@
 __pycache__/
 *.pyc
 workdirs/
+ralph_workdirs/
+evolve_workdirs/
 strategies/evolved_*.json

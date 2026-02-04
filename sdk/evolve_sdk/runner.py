@@ -553,6 +553,9 @@ class EvolutionRunner:
         Returns:
             Best solution from this generation
         """
+        if self.config.workspace_mode:
+            return await self._run_workspace_generation()
+
         # Sort population by fitness (best first)
         self.population.sort(key=lambda x: x.get("fitness", 0), reverse=self.config.sort_key_reverse())
         top_n = self.population[: self.config.elite_count]
@@ -801,6 +804,271 @@ class EvolutionRunner:
                 )
             except Exception:
                 pass  # Memory storage errors are not critical
+
+        return self.champion
+
+    async def _run_workspace_generation(self) -> dict[str, Any] | None:
+        """Run one generation of workspace-mode evolution.
+
+        Instead of evolving single files, this evolves entire workspace
+        directories. Used for multi-file refactoring problems.
+        """
+        from .agents.mutator import get_workspace_mutator_prompt
+        from .agents.crossover import get_workspace_crossover_prompt
+        from .agents.evaluator import get_workspace_evaluator_prompt
+
+        # Sort population by fitness (best first)
+        self.population.sort(
+            key=lambda x: x.get("fitness", 0),
+            reverse=self.config.sort_key_reverse(),
+        )
+        top_n = self.population[: self.config.elite_count]
+
+        if not top_n:
+            print("  ERROR: No population to evolve from")
+            return None
+
+        # Create mutations
+        agents_info = []
+        mutation_tasks = []
+        task_variants = []
+
+        for i, parent in enumerate(top_n):
+            if i >= self.config.mutation_variants:
+                break
+            variant = chr(ord("a") + i)
+            output_workspace = str(
+                self.mutations_dir / f"gen{self.generation}{variant}_workspace"
+            )
+            parent_workspace = parent.get("file", "")
+            parent_fitness = parent.get("fitness", 0)
+
+            # Build workspace mutator prompt
+            failing_tests = parent.get("failing_tests", [])
+            test_output = parent.get("test_output", "")
+
+            prompt = get_workspace_mutator_prompt(
+                workspace_dir=parent_workspace,
+                failing_tests=failing_tests,
+                test_output=test_output,
+                parent_fitness=parent_fitness,
+                output_workspace=output_workspace,
+                generation=self.generation,
+                variant=variant,
+            )
+
+            agents_info.append(
+                (variant, "workspace_mutation", parent_workspace, parent_fitness)
+            )
+            task = self._run_agent(
+                system=MUTATOR_SYSTEM,
+                prompt=prompt,
+                tools=["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
+                max_turns=self.config.max_turns_per_agent,
+                agent_name=f"mutator_{variant}",
+            )
+            mutation_tasks.append(task)
+            task_variants.append(variant)
+
+        # Crossover
+        if len(top_n) >= 2:
+            crossover_workspace = str(
+                self.mutations_dir / f"gen{self.generation}x_workspace"
+            )
+            crossover_prompt = get_workspace_crossover_prompt(
+                parent_workspaces=[p.get("file", "") for p in top_n[:2]],
+                parent_fitnesses=[p.get("fitness", 0) for p in top_n[:2]],
+                baseline_workspace=self.config.workspace_source or "",
+                output_workspace=crossover_workspace,
+                generation=self.generation,
+            )
+            crossover_task = self._run_agent(
+                system="You are a workspace crossover specialist.",
+                prompt=crossover_prompt,
+                tools=["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
+                max_turns=self.config.max_turns_per_agent,
+                agent_name="crossover_x",
+            )
+            mutation_tasks.append(crossover_task)
+            task_variants.append("x")
+            agents_info.append(("x", "workspace_crossover", "hybrid", 0))
+
+        # Show agents starting
+        self.progress.show_agents_starting(agents_info)
+
+        # Run mutations
+        if self.config.parallel_mutations:
+            mutations = await asyncio.gather(
+                *mutation_tasks, return_exceptions=True
+            )
+        else:
+            mutations = []
+            for task in mutation_tasks:
+                try:
+                    result = await task
+                    mutations.append(result)
+                except Exception as e:
+                    mutations.append(e)
+
+        # Parse mutation results
+        valid_workspaces = []
+        gen_results = []
+
+        for i, (m_result, variant) in enumerate(zip(mutations, task_variants)):
+            if isinstance(m_result, Exception):
+                gen_results.append({
+                    "variant": variant,
+                    "mutation_type": "workspace_mutation",
+                    "decision": "DROP",
+                    "error": str(m_result)[:50],
+                })
+            elif isinstance(m_result, str):
+                # Parse JSON from agent output
+                try:
+                    import json as _json
+                    parsed = _json.loads(m_result)
+                    workspace = parsed.get("workspace", "")
+                    if workspace and Path(workspace).is_dir():
+                        valid_workspaces.append(parsed)
+                        parsed["variant"] = variant
+                    else:
+                        gen_results.append({
+                            "variant": variant,
+                            "mutation_type": "workspace_mutation",
+                            "decision": "DROP",
+                            "error": "workspace not created",
+                        })
+                except (ValueError, KeyError):
+                    gen_results.append({
+                        "variant": variant,
+                        "mutation_type": "workspace_mutation",
+                        "decision": "DROP",
+                        "error": "invalid JSON output",
+                    })
+
+        # Evaluate workspaces
+        if valid_workspaces and self.config.workspace_test_command:
+            workspace_dirs = [w.get("workspace", "") for w in valid_workspaces]
+            eval_prompt = get_workspace_evaluator_prompt(
+                workspace_dirs=workspace_dirs,
+                test_command=self.config.workspace_test_command,
+            )
+            eval_result = await self._run_agent(
+                system="You are a workspace evaluation specialist.",
+                prompt=eval_prompt,
+                tools=["Read", "Bash", "Glob"],
+                max_turns=self.config.max_turns_per_agent + 5,
+                agent_name="evaluator",
+            )
+
+            # Parse evaluation results
+            try:
+                import json as _json
+                eval_data = _json.loads(eval_result)
+                evaluations = eval_data.get("evaluations", [])
+                eval_by_workspace = {
+                    e.get("file"): e for e in evaluations
+                }
+            except (ValueError, TypeError):
+                eval_by_workspace = {}
+
+            for w in valid_workspaces:
+                workspace = w.get("workspace", "")
+                ev = eval_by_workspace.get(workspace, {})
+                fitness = ev.get("fitness", 0)
+                is_valid = ev.get("valid", False)
+
+                if is_valid and fitness > 0:
+                    decision = "KEEP"
+                    combined = {**w, **ev, "file": workspace}
+                    self.population.append(combined)
+                else:
+                    decision = "DROP"
+
+                gen_results.append({
+                    "variant": w.get("variant", "?"),
+                    "mutation_type": "workspace_mutation",
+                    "fitness": fitness,
+                    "decision": decision,
+                    "file": workspace,
+                    "error": ev.get("error", "") if not is_valid else "",
+                })
+
+        # Selection: keep top N
+        kept = sum(1 for r in gen_results if r.get("decision") == "KEEP")
+        dropped = sum(1 for r in gen_results if r.get("decision") == "DROP")
+        if kept or dropped:
+            print(
+                f"\n  Selection: kept {kept}, dropped {dropped} "
+                f"(population: {len(self.population)})"
+            )
+        self.population.sort(
+            key=lambda x: x.get("fitness", 0),
+            reverse=self.config.sort_key_reverse(),
+        )
+        self.population = self.population[: self.config.population_size]
+
+        # Update champion
+        new_champion = None
+        if self.population:
+            best = self.population[0]
+            if not self.champion or self.config.is_better(
+                best["fitness"], self.champion["fitness"]
+            ):
+                old_fitness = (
+                    self.champion["fitness"] if self.champion else 0
+                )
+                self.champion = best.copy()
+                new_champion = self.champion
+                self._save_champion()
+
+                champion_file = new_champion.get("file", "").split("/")[-1]
+                improvement = (
+                    abs(new_champion["fitness"] - old_fitness)
+                    if old_fitness != 0
+                    else 0
+                )
+                improvement_pct = (
+                    (improvement / abs(old_fitness) * 100)
+                    if old_fitness != 0
+                    else 0
+                )
+                direction = "-" if self.config.minimize else "+"
+                self._msg_milestone(
+                    title=f"New champion: {champion_file}",
+                    content=f"Fitness: {new_champion['fitness']:.4f}"
+                    + (
+                        f" ({direction}{improvement_pct:.1f}%)"
+                        if improvement_pct > 0
+                        else ""
+                    ),
+                    related_file=new_champion.get("file", ""),
+                    related_fitness=new_champion["fitness"],
+                )
+
+        # Show generation summary
+        self.progress.generation_summary(
+            gen=self.generation,
+            results=gen_results,
+            new_champion=new_champion,
+            old_champion=None,
+            plateau_count=0,
+        )
+
+        # Record history
+        kept_count = sum(
+            1 for r in gen_results if r.get("decision") == "KEEP"
+        )
+        current_best = self.champion["fitness"] if self.champion else 0
+
+        self.history.append({
+            "generation": self.generation,
+            "timestamp": datetime.now().isoformat(),
+            "population_size": len(self.population),
+            "best_fitness": current_best,
+            "mutations_tried": len(mutation_tasks),
+            "mutations_valid": kept_count,
+        })
 
         return self.champion
 
