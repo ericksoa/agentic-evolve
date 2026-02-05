@@ -75,6 +75,7 @@ agentic-evolve/
 - `airfoil-evolution/` - 44% L/D improvement, 3D-printable
 - `molecular-admet-prediction/` - 0.890 ROC-AUC, TDC benchmark
 - `openml-automl-benchmark/` - OpenML-CC18 protocol, 2.38% avg improvement
+- `refactorbench-evolution/` - 100/100 RefactorBench (vs 35% SOTA), preliminary
 
 ## Experiment Projects (WIP/exploratory)
 Located in `experiments/` — projects that are still being tuned, have limited docs, or unverified results.
