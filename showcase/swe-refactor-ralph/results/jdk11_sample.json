@@ -1,0 +1,65 @@
+{
+  "model": "opus",
+  "n_per_type": 1,
+  "jdk_filter": "11+",
+  "started_at": "2026-02-05T05:02:33.739821",
+  "tasks": [
+    {
+      "task_id": "d9861ecdb6e487f6c352437ee823879aca3b81d4_15_40__15_34_42_45",
+      "project": "junit4",
+      "type": "Inline Method",
+      "jdk": 11,
+      "passed": true,
+      "turns_used": 21,
+      "error": null
+    },
+    {
+      "task_id": "50b21cf68b400a29369de58b9286d29e368212a7_16_18_46_49_18_20",
+      "project": "mockito",
+      "type": "Extract And Move Method",
+      "jdk": 17,
+      "passed": true,
+      "turns_used": 11,
+      "error": null
+    },
+    {
+      "task_id": "810e3560590bb807ed7113ccfff716aac21a3f33_274_297_64_67_283_306",
+      "project": "gson",
+      "type": "Extract Method",
+      "jdk": 17,
+      "passed": true,
+      "turns_used": 9,
+      "error": null
+    },
+    {
+      "task_id": "66847264765180c849f945ca13704aa0eae79c58_752_757__322_328",
+      "project": "gson",
+      "type": "Move Method",
+      "jdk": 17,
+      "passed": true,
+      "turns_used": 18,
+      "error": null
+    },
+    {
+      "task_id": "a9c3d3ac68223c83a98022eb88bbcf0f14a66863_75_92__218_235",
+      "project": "guava",
+      "type": "Move And Rename Method",
+      "jdk": 11,
+      "passed": true,
+      "turns_used": 14,
+      "error": null
+    },
+    {
+      "task_id": "72e2da2da84fae761f14ceeb822bd3e946690c78_820_877__895_952_231_234",
+      "project": "hibernate-orm",
+      "type": "Move And Inline Method",
+      "jdk": 11,
+      "passed": false,
+      "turns_used": 12,
+      "error": null
+    }
+  ],
+  "passed": 5,
+  "total": 6,
+  "updated_at": "2026-02-05T05:34:59.008556"
+}

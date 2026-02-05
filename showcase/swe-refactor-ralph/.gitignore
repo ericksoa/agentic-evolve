@@ -1,0 +1,18 @@
+# Downloaded dataset
+SWE-Refactor.zip
+SWE-Refactor/
+
+# Cloned repositories
+repos/
+
+# Working directories
+workdirs/
+ralph_workdirs/
+
+# Results (keep sample results, ignore full runs)
+# results/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
