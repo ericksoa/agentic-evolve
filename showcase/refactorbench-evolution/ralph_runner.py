@@ -324,7 +324,7 @@ class RALPHRunner:
                 "tests_total": granular["tests_total"],
                 "failing_tests": granular["failing_tests"],
                 "error_summary": granular["error_summary"],
-                "test_stdout": test_result.get("stdout", "")[-2000:],
+                "test_stdout": test_result.get("stdout", "")[-10000:],
             })
 
             if granular["tests_passed"] > progress["best_score"]:

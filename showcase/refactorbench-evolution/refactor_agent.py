@@ -157,8 +157,8 @@ def run_test(test_file: str, workdir: Path, repo_name: str) -> dict:
 
     return {
         "passed": result.returncode == 0,
-        "stdout": result.stdout[-2000:] if result.stdout else "",
-        "stderr": result.stderr[-2000:] if result.stderr else "",
+        "stdout": result.stdout[-10000:] if result.stdout else "",
+        "stderr": result.stderr[-5000:] if result.stderr else "",
         "returncode": result.returncode,
     }
 

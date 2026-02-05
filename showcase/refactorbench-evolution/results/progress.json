@@ -1,9 +1,9 @@
 {
   "baseline_passed": 53,
   "baseline_total": 100,
-  "current_passed": 83,
+  "current_passed": 100,
   "current_total": 100,
-  "updated_at": "2026-02-04T09:40:25.550040",
+  "updated_at": "2026-02-04T17:11:07.860571",
   "tasks": [
     {
       "repo": "ansible_refactor",
@@ -369,9 +369,9 @@
       "repo": "fastapi_refactor",
       "task": "params-to-param",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "fastapi_refactor",
@@ -401,17 +401,17 @@
       "repo": "flask_refactor",
       "task": "debughelpers-to-helpers.py",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "flask_refactor",
       "task": "rename-send-from-directory",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "flask_refactor",
@@ -457,33 +457,33 @@
       "repo": "requests_refactor",
       "task": "combine-from-key-to-key",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "requests_refactor",
       "task": "combine-internal-utils-utils",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "requests_refactor",
       "task": "move-hooks-sessions",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "requests_refactor",
       "task": "new-cookie-utils-class",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "requests_refactor",
@@ -529,9 +529,9 @@
       "repo": "salt_refactor",
       "task": "add-log-parameter-recursive-diff",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "salt_refactor",
@@ -609,17 +609,17 @@
       "repo": "salt_refactor",
       "task": "paged-call-boto-mod",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "salt_refactor",
       "task": "pem-fingerprint",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "salt_refactor",
@@ -633,33 +633,33 @@
       "repo": "scrapy_refactor",
       "task": "add-log-parameter-disconnect-all",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "scrapy_refactor",
       "task": "add-log-parameter-job-dir",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "scrapy_refactor",
       "task": "add-log-parameter-xmliter",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "scrapy_refactor",
       "task": "genspider-functions-to-utils-url",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "scrapy_refactor",
@@ -761,9 +761,9 @@
       "repo": "tornado_refactor",
       "task": "options-utils",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "tornado_refactor",
@@ -793,17 +793,17 @@
       "repo": "tornado_refactor",
       "task": "resolvers-as-separate",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     },
     {
       "repo": "tornado_refactor",
       "task": "tcpclient-connect-params",
       "baseline_passed": false,
-      "current_passed": false,
-      "method": null,
-      "details": null
+      "current_passed": true,
+      "method": "ralph",
+      "details": "Solved chain 0, iteration ?"
     }
   ]
 }
