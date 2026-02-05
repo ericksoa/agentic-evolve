@@ -1,0 +1,125 @@
+--- a/tornado/http1connection.py
++++ b/tornado/http1connection.py
+@@ -71,7 +71,7 @@
+ 
+ 
+ class HTTP1ConnectionParameters:
+-    """Parameters for `.HTTP1Connection` and `.HTTP1ServerConnection`."""
++    """Parameters for `.HTTP1xConnection` and `.HTTP1ServerConnection`."""
+ 
+     def __init__(
+         self,
+@@ -103,7 +103,7 @@
+         self.decompress = decompress
+ 
+ 
+-class HTTP1Connection(httputil.HTTPConnection):
++class HTTP1xConnection(httputil.HTTPConnection):
+     """Implements the HTTP/1.x protocol.
+ 
+     This class can be on its own for clients, or via `HTTP1ServerConnection`
+@@ -813,7 +813,7 @@
+     ) -> None:
+         try:
+             while True:
+-                conn = HTTP1Connection(self.stream, False, self.params, self.context)
++                conn = HTTP1xConnection(self.stream, False, self.params, self.context)
+                 request_delegate = delegate.start_request(self, conn)
+                 try:
+                     ret = await conn.read_response(request_delegate)
+
+--- a/tornado/simple_httpclient.py
++++ b/tornado/simple_httpclient.py
+@@ -9,7 +9,7 @@
+     HTTPRequest,
+ )
+ from tornado import httputil
+-from tornado.http1connection import HTTP1Connection, HTTP1ConnectionParameters
++from tornado.http1connection import HTTP1xConnection, HTTP1ConnectionParameters
+ from tornado.ioloop import IOLoop
+ from tornado.iostream import StreamClosedError, IOStream
+ from tornado.netutil import (
+@@ -496,9 +496,9 @@
+             self.io_loop.remove_timeout(self._timeout)
+             self._timeout = None
+ 
+-    def _create_connection(self, stream: IOStream) -> HTTP1Connection:
++    def _create_connection(self, stream: IOStream) -> HTTP1xConnection:
+         stream.set_nodelay(True)
+-        connection = HTTP1Connection(
++        connection = HTTP1xConnection(
+             stream,
+             True,
+             HTTP1ConnectionParameters(
+
+--- a/tornado/test/http1connection_test.py
++++ b/tornado/test/http1connection_test.py
+@@ -1,7 +1,7 @@
+ import socket
+ import typing  # noqa(F401)
+ 
+-from tornado.http1connection import HTTP1Connection
++from tornado.http1connection import HTTP1xConnection
+ from tornado.httputil import HTTPMessageDelegate
+ from tornado.iostream import IOStream
+ from tornado.locks import Event
+@@ -9,7 +9,7 @@
+ from tornado.testing import AsyncTestCase, bind_unused_port, gen_test
+ 
+ 
+-class HTTP1ConnectionTest(AsyncTestCase):
++class HTTP1xConnectionTest(AsyncTestCase):
+     code = None  # type: typing.Optional[int]
+ 
+     def setUp(self):
+@@ -37,7 +37,7 @@
+     def test_http10_no_content_length(self):
+         # Regression test for a bug in which can_keep_alive would crash
+         # for an HTTP/1.0 (not 1.1) response with no content-length.
+-        conn = HTTP1Connection(self.client_stream, True)
++        conn = HTTP1xConnection(self.client_stream, True)
+         self.server_stream.write(b"HTTP/1.0 200 Not Modified\r\n\r\nhello")
+         self.server_stream.close()
+ 
+
+--- a/tornado/test/httpserver_test.py
++++ b/tornado/test/httpserver_test.py
+@@ -7,7 +7,7 @@
+     recursive_unicode,
+     native_str,
+ )
+-from tornado.http1connection import HTTP1Connection
++from tornado.http1connection import HTTP1xConnection
+ from tornado.httpclient import HTTPError
+ from tornado.httpserver import HTTPServer
+ from tornado.httputil import (
+@@ -68,7 +68,7 @@
+         def finish(self):
+             conn.detach()  # type: ignore
+ 
+-    conn = HTTP1Connection(stream, True)
++    conn = HTTP1xConnection(stream, True)
+     delegate = Delegate()
+     await conn.read_response(delegate)
+     return delegate.start_line, delegate.headers, b"".join(chunks)
+@@ -1326,7 +1326,7 @@
+                 self.bytes_read = 0
+ 
+             def prepare(self):
+-                conn = typing.cast(HTTP1Connection, self.request.connection)
++                conn = typing.cast(HTTP1xConnection, self.request.connection)
+                 if "expected_size" in self.request.arguments:
+                     conn.set_max_body_size(int(self.get_argument("expected_size")))
+                 if "body_timeout" in self.request.arguments:
+
+--- a/tornado/test/web_test.py
++++ b/tornado/test/web_test.py
+@@ -2362,7 +2362,7 @@
+         stream.write(b"0\r\n\r\n")
+         yield self.finished
+         data = yield stream.read_until_close()
+-        # This would ideally use an HTTP1Connection to read the response.
++        # This would ideally use an HTTP1xConnection to read the response.
+         self.assertTrue(data.endswith(b"{}"))
+         stream.close()
+ 
