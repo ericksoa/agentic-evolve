@@ -413,8 +413,64 @@ def run_agent(task: dict, workdir: Path, model: str = None, verbose: bool = Fals
     }
 
 
-def run_single_task(unique_id: str, model: str = None, verbose: bool = False) -> dict:
-    """Run a single refactoring task."""
+def check_environment(task: dict, workdir: Path, verbose: bool = False) -> dict:
+    """Check if a project compiles at the original commit (before refactoring).
+
+    This detects environment issues (missing JDK, broken build configs, etc.)
+    before we attempt any refactoring.
+
+    Returns:
+        dict with:
+            ok: bool - True if environment is working
+            error: str - Error message if not ok
+    """
+    if verbose:
+        print(f"  Checking environment (pre-refactoring compile)...", file=sys.stderr)
+
+    compile_result = run_compile(task, workdir)
+
+    if compile_result["passed"]:
+        if verbose:
+            print(f"  Environment OK - project compiles", file=sys.stderr)
+        return {"ok": True}
+
+    # Check for common environment issues
+    stderr = compile_result.get("stderr", "") + compile_result.get("error", "")
+
+    if "Unable to locate a Java Runtime" in stderr:
+        return {"ok": False, "error": "env_issue: Java not found in PATH"}
+
+    if "JAVA_HOME" in stderr and "not a valid Java" in stderr:
+        return {"ok": False, "error": "env_issue: Invalid JAVA_HOME"}
+
+    if "Could not load from remote cache" in stderr:
+        return {"ok": False, "error": "env_issue: Gradle cache corruption"}
+
+    if "Failed to load cache entry" in stderr:
+        return {"ok": False, "error": "env_issue: Gradle cache issue"}
+
+    if "Unsupported class file major version" in stderr:
+        return {"ok": False, "error": "env_issue: JDK version mismatch"}
+
+    if "cannot find symbol" not in stderr and "package does not exist" not in stderr:
+        # Compilation failed but not due to code issues - likely env
+        return {"ok": False, "error": f"env_issue: Build system error - {stderr[:200]}"}
+
+    # Code-related compile errors are expected (we haven't done the refactoring yet)
+    # This shouldn't happen at the original commit, but if it does, it's still env issue
+    return {"ok": False, "error": f"env_issue: Pre-refactoring compile failed - {stderr[:200]}"}
+
+
+def run_single_task(unique_id: str, model: str = None, verbose: bool = False,
+                    check_env: bool = True) -> dict:
+    """Run a single refactoring task.
+
+    Args:
+        unique_id: Task unique ID
+        model: Model to use (default: opus)
+        verbose: Print verbose output
+        check_env: If True, check environment before running agent
+    """
     task = get_task_by_id(unique_id)
     if not task:
         return {"error": f"Task not found: {unique_id}"}
@@ -422,10 +478,24 @@ def run_single_task(unique_id: str, model: str = None, verbose: bool = False) ->
     WORKDIRS_ROOT.mkdir(parents=True, exist_ok=True)
     workdir = setup_workdir(task, WORKDIRS_ROOT)
 
+    # Check environment before running agent
+    if check_env:
+        env_check = check_environment(task, workdir, verbose=verbose)
+        if not env_check["ok"]:
+            return {
+                "passed": False,
+                "task_id": unique_id,
+                "project": task["projectName"],
+                "type": task["type"],
+                "env_issue": True,
+                "error": env_check["error"],
+            }
+
     result = run_agent(task, workdir, model=model, verbose=verbose)
     result["task_id"] = unique_id
     result["project"] = task["projectName"]
     result["type"] = task["type"]
+    result["env_issue"] = False
 
     return result
 

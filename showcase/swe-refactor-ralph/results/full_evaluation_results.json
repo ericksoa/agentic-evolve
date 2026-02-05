@@ -1,0 +1,200 @@
+{
+  "benchmark": "SWE-Refactor (JDK 11+)",
+  "completed_at": "2026-02-05T09:01:33.395066",
+  "config": {
+    "n_per_type": 3,
+    "model": "opus",
+    "ralph_chains": 5,
+    "ralph_iterations": 10
+  },
+  "summary": {
+    "total_tasks": 18,
+    "valid_tasks": 12,
+    "env_issues": 6,
+    "baseline_passed": 11,
+    "ralph_solved": 1,
+    "final_passed": 12,
+    "pass_rate_valid": "100.0%",
+    "pass_rate_total": "66.7%"
+  },
+  "tasks": [
+    {
+      "task_id": "d9861ecdb6e487f6c352437ee823879aca3b81d4_15_40__15_34_42_45",
+      "project": "junit4",
+      "type": "Inline Method",
+      "jdk": 11,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 21,
+      "baseline_error": null
+    },
+    {
+      "task_id": "67b98ab96e15fba231ca494c7ce3752cce0a9654_57_71__61_75_86_91",
+      "project": "checkstyle",
+      "type": "Inline Method",
+      "jdk": 11,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 13,
+      "baseline_error": null
+    },
+    {
+      "task_id": "c28eff3be60085078fcd6bce5613b266c3907274_96_118__96_123_120_134",
+      "project": "commons-io",
+      "type": "Inline Method",
+      "jdk": 17,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - /bin/sh: -c: line 0: unexpected EOF while looking for matching `''\n/bin/sh: -c: line 1: syntax error: unexpected end of file\n"
+    },
+    {
+      "task_id": "50b21cf68b400a29369de58b9286d29e368212a7_16_18_46_49_18_20",
+      "project": "mockito",
+      "type": "Extract And Move Method",
+      "jdk": 17,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 18,
+      "baseline_error": null
+    },
+    {
+      "task_id": "515688992bec0973288f3deb9b4538dd780c8760_103_165_98_100_103_165",
+      "project": "zxing",
+      "type": "Extract And Move Method",
+      "jdk": 17,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 18,
+      "baseline_error": null
+    },
+    {
+      "task_id": "bfb3e5f5e416211bc95799426edba4581b442d0d_98_106_399_409_98_106",
+      "project": "checkstyle",
+      "type": "Extract And Move Method",
+      "jdk": 11,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 18,
+      "baseline_error": null
+    },
+    {
+      "task_id": "810e3560590bb807ed7113ccfff716aac21a3f33_274_297_64_67_283_306",
+      "project": "gson",
+      "type": "Extract Method",
+      "jdk": 17,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 11,
+      "baseline_error": null
+    },
+    {
+      "task_id": "d4ce969fb74cae6f3729b348d281323980474c6d_34_38_126_132_45_49",
+      "project": "jadx",
+      "type": "Extract Method",
+      "jdk": 17,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 13,
+      "baseline_error": null
+    },
+    {
+      "task_id": "610155b8c22138329f0723eec22521627dbc52ae_232_251_273_292_235_255",
+      "project": "junit4",
+      "type": "Extract Method",
+      "jdk": 11,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 21,
+      "baseline_error": null
+    },
+    {
+      "task_id": "66847264765180c849f945ca13704aa0eae79c58_752_757__322_328",
+      "project": "gson",
+      "type": "Move Method",
+      "jdk": 17,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 14,
+      "baseline_error": null
+    },
+    {
+      "task_id": "65655da48ab358df81d37532cca208969a0bbded_255_258__277_280",
+      "project": "checkstyle",
+      "type": "Move Method",
+      "jdk": 11,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - "
+    },
+    {
+      "task_id": "e3cac4756acac4a961955f0312ad545ccd569e63_150_202__255_307",
+      "project": "commons-io",
+      "type": "Move Method",
+      "jdk": 17,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - /bin/sh: -c: line 0: unexpected EOF while looking for matching `''\n/bin/sh: -c: line 1: syntax error: unexpected end of file\n"
+    },
+    {
+      "task_id": "a9c3d3ac68223c83a98022eb88bbcf0f14a66863_75_92__218_235",
+      "project": "guava",
+      "type": "Move And Rename Method",
+      "jdk": 11,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 14,
+      "baseline_error": null
+    },
+    {
+      "task_id": "c1738e3fcb5ac2ded491a9ff1b9aa65e941be327_22_34__29_40",
+      "project": "hibernate-search",
+      "type": "Move And Rename Method",
+      "jdk": 17,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - M Homebrew (build 17.0.18+0, mixed mode, sharing)\nopenjdk version \"17.0.18\" 2026-01-20\nOpenJDK Runtime Environment Homebrew (build 17.0.18+0)\nOpenJDK 64-Bit Server VM Homebrew (build 17.0.18+0, mixed "
+    },
+    {
+      "task_id": "2a777a84cfdc9ccb79aa906cde80e0f44977d3a7_75_80__81_86",
+      "project": "junit5",
+      "type": "Move And Rename Method",
+      "jdk": 21,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - \nFAILURE: Build failed with an exception.\n\n* What went wrong:\nCould not determine the dependencies of task ':junit-platform-console-standalone:compileJava'.\n> Could not resolve all dependencies for co"
+    },
+    {
+      "task_id": "72e2da2da84fae761f14ceeb822bd3e946690c78_820_877__895_952_231_234",
+      "project": "hibernate-orm",
+      "type": "Move And Inline Method",
+      "jdk": 11,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 10,
+      "baseline_error": null
+    },
+    {
+      "task_id": "6b65d5b3d028b6cf672822b29edb9610db6adca4_67_70__103_163_228_230",
+      "project": "hibernate-search",
+      "type": "Move And Inline Method",
+      "jdk": 21,
+      "env_issue": false,
+      "baseline_passed": false,
+      "baseline_turns": 21,
+      "baseline_error": null,
+      "ralph_attempted": true,
+      "ralph_solved": true,
+      "ralph_chain": 0,
+      "ralph_iteration": 2
+    },
+    {
+      "task_id": "a733da4dcfa19b80f21480040aaf701e72e51bb5_103_107__114_118_28_30",
+      "project": "pmd",
+      "type": "Move And Inline Method",
+      "jdk": 11,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - he.FileAnalysisCache loadFromFile\nINFO: Analysis cache loaded\nFeb 05, 2026 8:50:12 AM net.sourceforge.pmd.cache.AbstractAnalysisCache checkValidity\nINFO: Analysis cache invalidated, execution classpat"
+    }
+  ]
+}
