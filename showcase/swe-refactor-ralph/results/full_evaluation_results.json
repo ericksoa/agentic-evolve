@@ -1,21 +1,21 @@
 {
   "benchmark": "SWE-Refactor (JDK 11+)",
-  "completed_at": "2026-02-05T09:01:33.395066",
+  "completed_at": "2026-02-05T11:57:48.413586",
   "config": {
-    "n_per_type": 3,
+    "n_per_type": 10,
     "model": "opus",
     "ralph_chains": 5,
     "ralph_iterations": 10
   },
   "summary": {
-    "total_tasks": 18,
-    "valid_tasks": 12,
-    "env_issues": 6,
-    "baseline_passed": 11,
+    "total_tasks": 47,
+    "valid_tasks": 26,
+    "env_issues": 21,
+    "baseline_passed": 25,
     "ralph_solved": 1,
-    "final_passed": 12,
+    "final_passed": 26,
     "pass_rate_valid": "100.0%",
-    "pass_rate_total": "66.7%"
+    "pass_rate_total": "55.3%"
   },
   "tasks": [
     {
@@ -195,6 +195,281 @@
       "env_issue": true,
       "baseline_passed": false,
       "baseline_error": "env_issue: Build system error - he.FileAnalysisCache loadFromFile\nINFO: Analysis cache loaded\nFeb 05, 2026 8:50:12 AM net.sourceforge.pmd.cache.AbstractAnalysisCache checkValidity\nINFO: Analysis cache invalidated, execution classpat"
+    },
+    {
+      "task_id": "bddf9a30941a266476ef88903f634c8d26c0a14f_29_35__29_35_37_39",
+      "project": "commons-lang",
+      "type": "Inline Method",
+      "jdk": 11,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 7,
+      "baseline_error": null
+    },
+    {
+      "task_id": "12d2b8eab0a0f34068997cf5ca880fe7092f7eb4_62_71__41_66_62_71",
+      "project": "guava",
+      "type": "Inline Method",
+      "jdk": 21,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - "
+    },
+    {
+      "task_id": "f8a6106ea20df36dc5c07827948a04b77243c1a6_109_160__112_189_162_181",
+      "project": "hibernate-orm",
+      "type": "Inline Method",
+      "jdk": 11,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 17,
+      "baseline_error": null
+    },
+    {
+      "task_id": "d5122d457575873143ef1afe52a80a4322bc5181_149_195__184_266_197_232",
+      "project": "hibernate-search",
+      "type": "Inline Method",
+      "jdk": 21,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 7,
+      "baseline_error": null
+    },
+    {
+      "task_id": "97240408d5c48e602a5a277a0af8e98137d32800_43_46__43_45_48_50",
+      "project": "javaparser",
+      "type": "Inline Method",
+      "jdk": 17,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 17,
+      "baseline_error": null
+    },
+    {
+      "task_id": "d05148e4bdbd876fd19a6cb6d1b905f667019217_238_245__237_273_247_283",
+      "project": "pmd",
+      "type": "Inline Method",
+      "jdk": 17,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - .NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:151)\n\tat org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)\n\tat org.junit.platform.engine"
+    },
+    {
+      "task_id": "2ae28b180d66a6118c65aad3440768a7e38d5312_91_113__109_131_91_113",
+      "project": "shenyu",
+      "type": "Inline Method",
+      "jdk": 17,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - Compile timeout (600s)"
+    },
+    {
+      "task_id": "7566f557c2fa172d7677fcde06514e8a68356f81_189_209_101_108_189_202",
+      "project": "commons-io",
+      "type": "Extract And Move Method",
+      "jdk": 17,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - /bin/sh: -c: line 0: unexpected EOF while looking for matching `''\n/bin/sh: -c: line 1: syntax error: unexpected end of file\n"
+    },
+    {
+      "task_id": "479532b83db2d7b228e4128f2db02233f91e6e91_7804_7836_1414_1448_7804_7830",
+      "project": "commons-lang",
+      "type": "Extract And Move Method",
+      "jdk": 11,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 10,
+      "baseline_error": null
+    },
+    {
+      "task_id": "96cba56591e3e8c6dabaf35d954bd5911b1471ae_123_224_87_97_128_191",
+      "project": "hibernate-orm",
+      "type": "Extract And Move Method",
+      "jdk": 21,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 16,
+      "baseline_error": null
+    },
+    {
+      "task_id": "0b4c69d582f4c29554d78da38daebbc49d9d40da_144_165_75_79_142_162",
+      "project": "hibernate-search",
+      "type": "Extract And Move Method",
+      "jdk": 21,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 14,
+      "baseline_error": null
+    },
+    {
+      "task_id": "c378a677ebcd999d853b3e5867ac7ca7cd8e73cb_359_371_187_198_357_360",
+      "project": "javaparser",
+      "type": "Extract And Move Method",
+      "jdk": 17,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 21,
+      "baseline_error": null
+    },
+    {
+      "task_id": "50b28568a20c85473460504f484ac84b0308dc5d_61_93_569_574_61_78",
+      "project": "junit5",
+      "type": "Extract And Move Method",
+      "jdk": 21,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - \nFAILURE: Build failed with an exception.\n\n* What went wrong:\nConfiguration cache state could not be cached: field `javaCompiler` of task `:junit-platform-jfr:compileJava` of type `org.gradle.api.task"
+    },
+    {
+      "task_id": "994b8402d59773888977d768d395526acfe5cf16_30_33_63_66_46_49",
+      "project": "pmd",
+      "type": "Extract And Move Method",
+      "jdk": 11,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - .NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:151)\n\tat org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)\n\tat org.junit.platform.engine"
+    },
+    {
+      "task_id": "6f4eb023ac76f2d59020f59a5a8e8c602a094235_13_31_33_45_14_22",
+      "project": "mockito",
+      "type": "Extract Method",
+      "jdk": 17,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 11,
+      "baseline_error": null
+    },
+    {
+      "task_id": "f42ae2c79ca7268535f4fa907d36572b953a88a6_33_41_58_60_31_34",
+      "project": "shiro",
+      "type": "Extract Method",
+      "jdk": 17,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 11,
+      "baseline_error": null
+    },
+    {
+      "task_id": "3b189fc700c9c7c210f4b78fc66b01f4c13ae5d2_31_36_109_111_41_45",
+      "project": "zxing",
+      "type": "Extract Method",
+      "jdk": 17,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 14,
+      "baseline_error": null
+    },
+    {
+      "task_id": "deb11214fd5790ed565fbced0dc1ce67846a0653_134_145_168_176_158_166",
+      "project": "checkstyle",
+      "type": "Extract Method",
+      "jdk": 11,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 6,
+      "baseline_error": null
+    },
+    {
+      "task_id": "f448f97af45a5e4dcbb8937499076c1538f7c81d_130_135_131_133_160_165",
+      "project": "commons-io",
+      "type": "Extract Method",
+      "jdk": 17,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - /bin/sh: -c: line 0: unexpected EOF while looking for matching `''\n/bin/sh: -c: line 1: syntax error: unexpected end of file\n"
+    },
+    {
+      "task_id": "c95ee37dffd44b01d2b816e0d943013bc7bd866c_190_210_403_420_205_216",
+      "project": "commons-lang",
+      "type": "Extract Method",
+      "jdk": 11,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - "
+    },
+    {
+      "task_id": "cdc225474e5b1663f783973bec90ab554c67d20e_188_194_196_202_191_194",
+      "project": "guava",
+      "type": "Extract Method",
+      "jdk": 21,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - "
+    },
+    {
+      "task_id": "80d7ed84cd3c78348dc4970144d43b35126a4dcd_34_40__199_207",
+      "project": "guava",
+      "type": "Move Method",
+      "jdk": 21,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - "
+    },
+    {
+      "task_id": "2b1681e3aa7954b7bc13ca4a75761f30d915b03a_60_66__72_78",
+      "project": "hibernate-search",
+      "type": "Move Method",
+      "jdk": 17,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - M Homebrew (build 17.0.18+0, mixed mode, sharing)\nopenjdk version \"17.0.18\" 2026-01-20\nOpenJDK Runtime Environment Homebrew (build 17.0.18+0)\nOpenJDK 64-Bit Server VM Homebrew (build 17.0.18+0, mixed "
+    },
+    {
+      "task_id": "9e55bc54539d393e1948c8d4a89b1511ed379fad_34_39__37_42",
+      "project": "javaparser",
+      "type": "Move Method",
+      "jdk": 17,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 10,
+      "baseline_error": null
+    },
+    {
+      "task_id": "926e03c7ce9b4a88fce274ca24102f913d747108_1278_1290__1482_1494",
+      "project": "junit5",
+      "type": "Move Method",
+      "jdk": 21,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - \nFAILURE: Build failed with an exception.\n\n* What went wrong:\nCould not determine the dependencies of task ':junit-platform-console-standalone:compileJava'.\n> Could not resolve all dependencies for co"
+    },
+    {
+      "task_id": "d5b3478c8a5d06ab221c2a8d31d976a508beb0a8_162_164__57_59",
+      "project": "pmd",
+      "type": "Move Method",
+      "jdk": 17,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - .NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:151)\n\tat org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)\n\tat org.junit.platform.engine"
+    },
+    {
+      "task_id": "1bdc817c6a81cd0e0ffffc51aec25ec8d7e1f212_117_119__63_70",
+      "project": "shardingsphere-elasticjob",
+      "type": "Move Method",
+      "jdk": 17,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended\nOpenJDK 64-Bit Server VM warning: Sharing is only supported for boot l"
+    },
+    {
+      "task_id": "2ae28b180d66a6118c65aad3440768a7e38d5312_76_84__84_94",
+      "project": "shenyu",
+      "type": "Move Method",
+      "jdk": 17,
+      "env_issue": false,
+      "baseline_passed": true,
+      "baseline_turns": 23,
+      "baseline_error": null
+    },
+    {
+      "task_id": "868883819020b0780313358e00f6132b3e8dc73f_215_224__207_216",
+      "project": "pmd",
+      "type": "Move And Rename Method",
+      "jdk": 11,
+      "env_issue": true,
+      "baseline_passed": false,
+      "baseline_error": "env_issue: Build system error - a$executeRecursively$6(NodeTestTask.java:151)\n\tat org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)\n\tat org.junit.platform.engine.support.hierarchic"
     }
   ]
 }

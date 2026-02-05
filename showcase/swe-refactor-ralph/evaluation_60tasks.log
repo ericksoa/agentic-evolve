@@ -1,0 +1,276 @@
+Cloning commons-lang (full history)...
+  Checking environment (pre-refactoring compile)...
+  Environment OK - project compiles
+  Running claude agent in /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/workdirs/commons-lang__bddf9a30941a266476ef...
+  COMPILED
+  Checking environment (pre-refactoring compile)...
+  Checking environment (pre-refactoring compile)...
+  Environment OK - project compiles
+  Running claude agent in /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/workdirs/hibernate-orm__f8a6106ea20df36dc5c0...
+  COMPILED
+  Checking environment (pre-refactoring compile)...
+  Environment OK - project compiles
+  Running claude agent in /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/workdirs/hibernate-search__d5122d457575873143ef...
+  COMPILED
+Cloning javaparser (full history)...
+  Checking environment (pre-refactoring compile)...
+  Environment OK - project compiles
+  Running claude agent in /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/workdirs/javaparser__97240408d5c48e602a5a...
+  COMPILED
+  Checking environment (pre-refactoring compile)...
+Cloning shenyu (full history)...
+  Checking environment (pre-refactoring compile)...
+  Checking environment (pre-refactoring compile)...
+  Checking environment (pre-refactoring compile)...
+  Environment OK - project compiles
+  Running claude agent in /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/workdirs/commons-lang__479532b83db2d7b228e4...
+  COMPILED
+  Checking environment (pre-refactoring compile)...
+  Environment OK - project compiles
+  Running claude agent in /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/workdirs/hibernate-orm__96cba56591e3e8c6daba...
+  COMPILED
+  Checking environment (pre-refactoring compile)...
+  Environment OK - project compiles
+  Running claude agent in /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/workdirs/hibernate-search__0b4c69d582f4c29554d7...
+  COMPILED
+  Checking environment (pre-refactoring compile)...
+  Environment OK - project compiles
+  Running claude agent in /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/workdirs/javaparser__c378a677ebcd999d853b...
+  COMPILED
+  Checking environment (pre-refactoring compile)...
+  Checking environment (pre-refactoring compile)...
+  Checking environment (pre-refactoring compile)...
+  Environment OK - project compiles
+  Running claude agent in /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/workdirs/mockito__6f4eb023ac76f2d59020...
+  COMPILED
+Cloning shiro (full history)...
+  Checking environment (pre-refactoring compile)...
+  Environment OK - project compiles
+  Running claude agent in /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/workdirs/shiro__f42ae2c79ca7268535f4...
+  COMPILED
+  Checking environment (pre-refactoring compile)...
+  Environment OK - project compiles
+  Running claude agent in /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/workdirs/zxing__3b189fc700c9c7c210f4...
+  COMPILED
+  Checking environment (pre-refactoring compile)...
+  Environment OK - project compiles
+  Running claude agent in /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/workdirs/checkstyle__deb11214fd5790ed565f...
+  COMPILED
+  Checking environment (pre-refactoring compile)...
+  Checking environment (pre-refactoring compile)...
+  Checking environment (pre-refactoring compile)...
+  Checking environment (pre-refactoring compile)...
+  Checking environment (pre-refactoring compile)...
+  Checking environment (pre-refactoring compile)...
+  Environment OK - project compiles
+  Running claude agent in /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/workdirs/javaparser__9e55bc54539d393e1948...
+  COMPILED
+  Checking environment (pre-refactoring compile)...
+  Checking environment (pre-refactoring compile)...
+Cloning shardingsphere-elasticjob (full history)...
+  Checking environment (pre-refactoring compile)...
+  Checking environment (pre-refactoring compile)...
+  Environment OK - project compiles
+  Running claude agent in /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/workdirs/shenyu__2ae28b180d66a6118c65...
+  COMPILED
+  Checking environment (pre-refactoring compile)...
+Resuming from checkpoint: 18 tasks already done
+
+============================================================
+SWE-Refactor Full Evaluation
+Tasks: 47 (JDK 11+ only)
+Model: opus
+RALPH config: 5 chains x 10 iterations
+============================================================
+
+============================================================
+PHASE 1: Baseline Evaluation
+============================================================
+[1/47] junit4 - Inline Method (JDK 11): PASS (cached)
+[2/47] checkstyle - Inline Method (JDK 11): PASS (cached)
+[3/47] commons-io - Inline Method (JDK 17): ENV_ISSUE (cached)
+
+[4/47] commons-lang - Inline Method (JDK 11)
+  Task: bddf9a30941a266476ef88903f634c8d26c0a14f...
+  Result: PASSED
+
+[5/47] guava - Inline Method (JDK 21)
+  Task: 12d2b8eab0a0f34068997cf5ca880fe7092f7eb4...
+  Result: ENV_ISSUE - env_issue: Build system error - 
+
+[6/47] hibernate-orm - Inline Method (JDK 11)
+  Task: f8a6106ea20df36dc5c07827948a04b77243c1a6...
+  Result: PASSED
+
+[7/47] hibernate-search - Inline Method (JDK 21)
+  Task: d5122d457575873143ef1afe52a80a4322bc5181...
+  Result: PASSED
+
+[8/47] javaparser - Inline Method (JDK 17)
+  Task: 97240408d5c48e602a5a277a0af8e98137d32800...
+  Result: PASSED
+
+[9/47] pmd - Inline Method (JDK 17)
+  Task: d05148e4bdbd876fd19a6cb6d1b905f667019217...
+  Result: ENV_ISSUE - env_issue: Build system error - .NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:151)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine
+
+[10/47] shenyu - Inline Method (JDK 17)
+  Task: 2ae28b180d66a6118c65aad3440768a7e38d5312...
+  Result: ENV_ISSUE - env_issue: Build system error - Compile timeout (600s)
+[11/47] mockito - Extract And Move Method (JDK 17): PASS (cached)
+[12/47] zxing - Extract And Move Method (JDK 17): PASS (cached)
+[13/47] checkstyle - Extract And Move Method (JDK 11): PASS (cached)
+
+[14/47] commons-io - Extract And Move Method (JDK 17)
+  Task: 7566f557c2fa172d7677fcde06514e8a68356f81...
+  Result: ENV_ISSUE - env_issue: Build system error - /bin/sh: -c: line 0: unexpected EOF while looking for matching `''
+/bin/sh: -c: line 1: syntax error: unexpected end of file
+
+
+[15/47] commons-lang - Extract And Move Method (JDK 11)
+  Task: 479532b83db2d7b228e4128f2db02233f91e6e91...
+  Result: PASSED
+
+[16/47] hibernate-orm - Extract And Move Method (JDK 21)
+  Task: 96cba56591e3e8c6dabaf35d954bd5911b1471ae...
+  Result: PASSED
+
+[17/47] hibernate-search - Extract And Move Method (JDK 21)
+  Task: 0b4c69d582f4c29554d78da38daebbc49d9d40da...
+  Result: PASSED
+
+[18/47] javaparser - Extract And Move Method (JDK 17)
+  Task: c378a677ebcd999d853b3e5867ac7ca7cd8e73cb...
+  Result: PASSED
+
+[19/47] junit5 - Extract And Move Method (JDK 21)
+  Task: 50b28568a20c85473460504f484ac84b0308dc5d...
+  Result: ENV_ISSUE - env_issue: Build system error - 
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Configuration cache state could not be cached: field `javaCompiler` of task `:junit-platform-jfr:compileJava` of type `org.gradle.api.task
+
+[20/47] pmd - Extract And Move Method (JDK 11)
+  Task: 994b8402d59773888977d768d395526acfe5cf16...
+  Result: ENV_ISSUE - env_issue: Build system error - .NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:151)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine
+[21/47] gson - Extract Method (JDK 17): PASS (cached)
+[22/47] jadx - Extract Method (JDK 17): PASS (cached)
+[23/47] junit4 - Extract Method (JDK 11): PASS (cached)
+
+[24/47] mockito - Extract Method (JDK 17)
+  Task: 6f4eb023ac76f2d59020f59a5a8e8c602a094235...
+  Result: PASSED
+
+[25/47] shiro - Extract Method (JDK 17)
+  Task: f42ae2c79ca7268535f4fa907d36572b953a88a6...
+  Result: PASSED
+
+[26/47] zxing - Extract Method (JDK 17)
+  Task: 3b189fc700c9c7c210f4b78fc66b01f4c13ae5d2...
+  Result: PASSED
+
+[27/47] checkstyle - Extract Method (JDK 11)
+  Task: deb11214fd5790ed565fbced0dc1ce67846a0653...
+  Result: PASSED
+
+[28/47] commons-io - Extract Method (JDK 17)
+  Task: f448f97af45a5e4dcbb8937499076c1538f7c81d...
+  Result: ENV_ISSUE - env_issue: Build system error - /bin/sh: -c: line 0: unexpected EOF while looking for matching `''
+/bin/sh: -c: line 1: syntax error: unexpected end of file
+
+
+[29/47] commons-lang - Extract Method (JDK 11)
+  Task: c95ee37dffd44b01d2b816e0d943013bc7bd866c...
+  Result: ENV_ISSUE - env_issue: Build system error - 
+
+[30/47] guava - Extract Method (JDK 21)
+  Task: cdc225474e5b1663f783973bec90ab554c67d20e...
+  Result: ENV_ISSUE - env_issue: Build system error - 
+[31/47] gson - Move Method (JDK 17): PASS (cached)
+[32/47] checkstyle - Move Method (JDK 11): ENV_ISSUE (cached)
+[33/47] commons-io - Move Method (JDK 17): ENV_ISSUE (cached)
+
+[34/47] guava - Move Method (JDK 21)
+  Task: 80d7ed84cd3c78348dc4970144d43b35126a4dcd...
+  Result: ENV_ISSUE - env_issue: Build system error - 
+
+[35/47] hibernate-search - Move Method (JDK 17)
+  Task: 2b1681e3aa7954b7bc13ca4a75761f30d915b03a...
+  Result: ENV_ISSUE - env_issue: Build system error - M Homebrew (build 17.0.18+0, mixed mode, sharing)
+openjdk version "17.0.18" 2026-01-20
+OpenJDK Runtime Environment Homebrew (build 17.0.18+0)
+OpenJDK 64-Bit Server VM Homebrew (build 17.0.18+0, mixed 
+
+[36/47] javaparser - Move Method (JDK 17)
+  Task: 9e55bc54539d393e1948c8d4a89b1511ed379fad...
+  Result: PASSED
+
+[37/47] junit5 - Move Method (JDK 21)
+  Task: 926e03c7ce9b4a88fce274ca24102f913d747108...
+  Result: ENV_ISSUE - env_issue: Build system error - 
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Could not determine the dependencies of task ':junit-platform-console-standalone:compileJava'.
+> Could not resolve all dependencies for co
+
+[38/47] pmd - Move Method (JDK 17)
+  Task: d5b3478c8a5d06ab221c2a8d31d976a508beb0a8...
+  Result: ENV_ISSUE - env_issue: Build system error - .NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:151)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine
+
+[39/47] shardingsphere-elasticjob - Move Method (JDK 17)
+  Task: 1bdc817c6a81cd0e0ffffc51aec25ec8d7e1f212...
+  Result: ENV_ISSUE - env_issue: Build system error - OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot l
+
+[40/47] shenyu - Move Method (JDK 17)
+  Task: 2ae28b180d66a6118c65aad3440768a7e38d5312...
+  Result: PASSED
+[41/47] guava - Move And Rename Method (JDK 11): PASS (cached)
+[42/47] hibernate-search - Move And Rename Method (JDK 17): ENV_ISSUE (cached)
+[43/47] junit5 - Move And Rename Method (JDK 21): ENV_ISSUE (cached)
+
+[44/47] pmd - Move And Rename Method (JDK 11)
+  Task: 868883819020b0780313358e00f6132b3e8dc73f...
+  Result: ENV_ISSUE - env_issue: Build system error - a$executeRecursively$6(NodeTestTask.java:151)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchic
+[45/47] hibernate-orm - Move And Inline Method (JDK 11): PASS (cached)
+[46/47] hibernate-search - Move And Inline Method (JDK 21): FAIL (cached)
+[47/47] pmd - Move And Inline Method (JDK 11): ENV_ISSUE (cached)
+
+============================================================
+Baseline Complete:
+  Passed: 25/26 (96.2% of valid tasks)
+  Failed: 1/26
+  Env Issues (skipped): 21
+============================================================
+
+============================================================
+PHASE 2: RALPH on 1 Failed Tasks
+============================================================
+[1/1] hibernate-search - Move And Inline Method: SOLVED (cached)
+
+============================================================
+RALPH Complete: 1/1 failed tasks solved
+============================================================
+
+============================================================
+FINAL RESULTS
+============================================================
+Valid Tasks: 26/47 (21 had env issues)
+Total Passed: 26/26 (100.0% of valid tasks)
+  Baseline: 25
+  RALPH solved: 1/1
+
+Published SOTA: 41.58% (DeepSeek-V3)
+============================================================
+
+Results saved to: /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/swe-refactor-ralph/results/full_evaluation_results.json
