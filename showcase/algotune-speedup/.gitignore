@@ -1,0 +1,20 @@
+# Cloned AlgoTune repository
+algotune/
+
+# Python virtual environment
+.venv/
+
+# Evolution artifacts
+.evolve-sdk/
+
+# Generated solutions (can be large)
+solutions/*/
+evolved/*/
+
+# Byte-compiled files
+__pycache__/
+*.pyc
+*.pyo
+
+# OS files
+.DS_Store

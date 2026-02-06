@@ -1,0 +1,12 @@
+{
+  "tasks": [
+    "cholesky_factorization",
+    "fft_convolution",
+    "convex_hull"
+  ],
+  "count": 3,
+  "selection_criteria": {
+    "max_existing_speedup": 1.5,
+    "target_count": 3
+  }
+}

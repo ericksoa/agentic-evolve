@@ -1,0 +1,26 @@
+{
+  "tasks": {
+    "cholesky_factorization": {
+      "status": "success",
+      "valid": true,
+      "speedup": 1.08,
+      "fitness": 1.08,
+      "solver_path": "solutions/cholesky_factorization/solver.py"
+    },
+    "fft_convolution": {
+      "status": "success",
+      "valid": true,
+      "speedup": 1.02,
+      "fitness": 1.02,
+      "solver_path": "solutions/fft_convolution/solver.py"
+    },
+    "convex_hull": {
+      "status": "success",
+      "valid": true,
+      "speedup": 1.06,
+      "fitness": 1.06,
+      "solver_path": "solutions/convex_hull/solver.py"
+    }
+  },
+  "model": "claude-opus-4-6"
+}

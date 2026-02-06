@@ -1,0 +1,25 @@
+{
+  "tasks": {
+    "cholesky_factorization": {
+      "status": "success",
+      "valid": true,
+      "speedup": 2.23,
+      "fitness": 2.23,
+      "champion_path": ".evolve-sdk/optimize_cholesky_factorizatio/mutations/gen1c.py"
+    },
+    "fft_convolution": {
+      "status": "success",
+      "valid": true,
+      "speedup": 5.47,
+      "fitness": 5.47,
+      "champion_path": ".evolve-sdk/optimize_fft_convolution_solve/mutations/gen0_a.py"
+    },
+    "convex_hull": {
+      "status": "success",
+      "valid": true,
+      "speedup": 4.47,
+      "fitness": 4.47,
+      "champion_path": ".evolve-sdk/optimize_convex_hull_solver_fo/mutations/gen1a.py"
+    }
+  }
+}

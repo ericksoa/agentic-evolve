@@ -1,0 +1,53 @@
+{
+  "summary": {
+    "harmonic_mean_speedup": 3.5089,
+    "arithmetic_mean_speedup": 4.0567,
+    "total_tasks": 3,
+    "valid_tasks": 3,
+    "tasks_improved": 3,
+    "tasks_improved_pct": 100.0,
+    "best_speedup": 5.47,
+    "worst_speedup": 2.23
+  },
+  "per_task": {
+    "cholesky_factorization": {
+      "phase1_speedup": 1.08,
+      "phase2_speedup": 2.23,
+      "best_speedup": 2.23,
+      "best_phase": "phase2",
+      "valid": true
+    },
+    "convex_hull": {
+      "phase1_speedup": 1.06,
+      "phase2_speedup": 4.47,
+      "best_speedup": 4.47,
+      "best_phase": "phase2",
+      "valid": true
+    },
+    "fft_convolution": {
+      "phase1_speedup": 1.02,
+      "phase2_speedup": 5.47,
+      "best_speedup": 5.47,
+      "best_phase": "phase2",
+      "valid": true
+    }
+  },
+  "baselines": {
+    "o4-mini-high": {
+      "harmonic_mean": 1.72,
+      "tasks_improved_pct": 59.7
+    },
+    "deepseek-r1": {
+      "harmonic_mean": 1.7,
+      "tasks_improved_pct": 61.0
+    },
+    "gemini-2.5-pro": {
+      "harmonic_mean": 1.51,
+      "tasks_improved_pct": 49.4
+    },
+    "claude-opus-4": {
+      "harmonic_mean": 1.33,
+      "tasks_improved_pct": 40.3
+    }
+  }
+}
