@@ -93,8 +93,8 @@ def main():
     )
     parser.add_argument(
         "--model",
-        default="claude-opus-4-5-20251101",
-        help="Model to use for subagents (default: claude-opus-4-5-20251101)",
+        default="claude-opus-4-6",
+        help="Model to use for subagents (default: claude-opus-4-6)",
     )
     parser.add_argument(
         "--config",

@@ -75,7 +75,7 @@ python3 -m evolve_sdk --resume --mode=perf
 | `--population-size=N` | 10 | Population size |
 | `--plateau=N` | 5 | Stop after N gens without improvement |
 | `--no-parallel` | false | Run mutations sequentially |
-| `--model=X` | claude-opus-4-5-20251101 | Model for subagents |
+| `--model=X` | claude-opus-4-6 | Model for subagents |
 
 ### Step 4: Report Results
 

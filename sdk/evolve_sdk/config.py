@@ -175,8 +175,8 @@ class EvolutionConfig:
 
     # Agent settings
     max_turns_per_agent: int = 15
-    model: str = "claude-opus-4-5-20251101"  # Use Opus 4.5 for best quality
-    orchestrator_model: str = "claude-opus-4-5-20251101"  # Main orchestrator
+    model: str = "claude-opus-4-6"  # Use Opus 4.6 for best quality
+    orchestrator_model: str = "claude-opus-4-6"  # Main orchestrator
 
     # Paths
     evolve_dir: Path = field(default_factory=lambda: Path(".evolve-sdk"))
@@ -356,7 +356,7 @@ class EvolutionConfig:
             optimization_strategies=data.get("optimization_strategies", []),
             constraints=data.get("constraints", []),
             references=data.get("references", []),
-            model=overrides.get("model", "claude-opus-4-5-20251101"),
+            model=overrides.get("model", "claude-opus-4-6"),
             trust=trust_config,
             memory=memory_config,
             diversity=diversity_config,
