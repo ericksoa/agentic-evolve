@@ -20,6 +20,974 @@
       "speedup": 4.47,
       "fitness": 4.47,
       "champion_path": ".evolve-sdk/optimize_convex_hull_solver_fo/mutations/gen1a.py"
+    },
+    "linear_system_solver": {
+      "fitness": 1.8103,
+      "valid": true,
+      "speedup": 1.8103,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 17166,
+            "candidate_ns": 5791,
+            "speedup": 2.9643
+          },
+          "input_1": {
+            "ref_ns": 22792,
+            "candidate_ns": 5541,
+            "speedup": 4.1133
+          },
+          "input_2": {
+            "ref_ns": 37875,
+            "candidate_ns": 21625,
+            "speedup": 1.7514
+          },
+          "input_3": {
+            "ref_ns": 36875,
+            "candidate_ns": 20458,
+            "speedup": 1.8025
+          },
+          "input_4": {
+            "ref_ns": 117625,
+            "candidate_ns": 80333,
+            "speedup": 1.4642
+          },
+          "input_5": {
+            "ref_ns": 116459,
+            "candidate_ns": 80042,
+            "speedup": 1.455
+          },
+          "input_6": {
+            "ref_ns": 414083,
+            "candidate_ns": 269250,
+            "speedup": 1.5379
+          },
+          "input_7": {
+            "ref_ns": 388417,
+            "candidate_ns": 268958,
+            "speedup": 1.4442
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 0.4687,
+        "min_speedup": 1.4442,
+        "max_speedup": 4.1133
+      },
+      "evaluation_time_ms": 1417.3,
+      "status": "success",
+      "champion": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/.evolve-sdk/optimize_linear_system_solver/mutations/gen2x.py"
+    },
+    "lu_factorization": {
+      "fitness": 10.4348,
+      "valid": true,
+      "speedup": 10.4348,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 35667,
+            "candidate_ns": 2875,
+            "speedup": 12.4059
+          },
+          "input_1": {
+            "ref_ns": 15750,
+            "candidate_ns": 2250,
+            "speedup": 7.0
+          },
+          "input_2": {
+            "ref_ns": 42458,
+            "candidate_ns": 4000,
+            "speedup": 10.6145
+          },
+          "input_3": {
+            "ref_ns": 41042,
+            "candidate_ns": 3792,
+            "speedup": 10.8233
+          },
+          "input_4": {
+            "ref_ns": 141375,
+            "candidate_ns": 12917,
+            "speedup": 10.9449
+          },
+          "input_5": {
+            "ref_ns": 141583,
+            "candidate_ns": 12750,
+            "speedup": 11.1045
+          },
+          "input_6": {
+            "ref_ns": 1402167,
+            "candidate_ns": 124083,
+            "speedup": 11.3002
+          },
+          "input_7": {
+            "ref_ns": 1297375,
+            "candidate_ns": 112458,
+            "speedup": 11.5365
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 0.1492,
+        "min_speedup": 7.0,
+        "max_speedup": 12.4059
+      },
+      "evaluation_time_ms": 875.5,
+      "status": "success",
+      "champion": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/.evolve-sdk/optimize_lu_factorization_solv/mutations/gen1x.py"
+    },
+    "qr_factorization": {
+      "fitness": 4.8811,
+      "valid": true,
+      "speedup": 4.8811,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 30583,
+            "candidate_ns": 3958,
+            "speedup": 7.7269
+          },
+          "input_1": {
+            "ref_ns": 13208,
+            "candidate_ns": 4208,
+            "speedup": 3.1388
+          },
+          "input_2": {
+            "ref_ns": 36750,
+            "candidate_ns": 6916,
+            "speedup": 5.3138
+          },
+          "input_3": {
+            "ref_ns": 34500,
+            "candidate_ns": 6084,
+            "speedup": 5.6706
+          },
+          "input_4": {
+            "ref_ns": 120125,
+            "candidate_ns": 24709,
+            "speedup": 4.8616
+          },
+          "input_5": {
+            "ref_ns": 114458,
+            "candidate_ns": 20625,
+            "speedup": 5.5495
+          },
+          "input_6": {
+            "ref_ns": 968625,
+            "candidate_ns": 281875,
+            "speedup": 3.4364
+          },
+          "input_7": {
+            "ref_ns": 1765125,
+            "candidate_ns": 263958,
+            "speedup": 6.6871
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 0.2885,
+        "min_speedup": 3.1388,
+        "max_speedup": 7.7269
+      },
+      "evaluation_time_ms": 645.1,
+      "status": "success",
+      "champion": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/.evolve-sdk/optimize_qr_factorization_solv/mutations/gen1x.py"
+    },
+    "svd": {
+      "fitness": 1.2161,
+      "valid": true,
+      "speedup": 1.2161,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 30084,
+            "candidate_ns": 27125,
+            "speedup": 1.1091
+          },
+          "input_1": {
+            "ref_ns": 40917,
+            "candidate_ns": 19834,
+            "speedup": 2.063
+          },
+          "input_2": {
+            "ref_ns": 92833,
+            "candidate_ns": 107833,
+            "speedup": 0.8609
+          },
+          "input_3": {
+            "ref_ns": 75458,
+            "candidate_ns": 86458,
+            "speedup": 0.8728
+          },
+          "input_4": {
+            "ref_ns": 1124417,
+            "candidate_ns": 268500,
+            "speedup": 4.1878
+          },
+          "input_5": {
+            "ref_ns": 453250,
+            "candidate_ns": 714834,
+            "speedup": 0.6341
+          },
+          "input_6": {
+            "ref_ns": 10070834,
+            "candidate_ns": 4217709,
+            "speedup": 2.3877
+          },
+          "input_7": {
+            "ref_ns": 4514917,
+            "candidate_ns": 2933291,
+            "speedup": 1.5392
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 0.6894,
+        "min_speedup": 0.6341,
+        "max_speedup": 4.1878
+      },
+      "evaluation_time_ms": 5674.6,
+      "status": "success",
+      "champion": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/.evolve-sdk/optimize_svd_solver_for_maximu/mutations/gen1x.py"
+    },
+    "matrix_multiplication": {
+      "fitness": 1.1483,
+      "valid": true,
+      "speedup": 1.1483,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 14792,
+            "candidate_ns": 13666,
+            "speedup": 1.0824
+          },
+          "input_1": {
+            "ref_ns": 8667,
+            "candidate_ns": 8458,
+            "speedup": 1.0247
+          },
+          "input_2": {
+            "ref_ns": 61708,
+            "candidate_ns": 67375,
+            "speedup": 0.9159
+          },
+          "input_3": {
+            "ref_ns": 40166,
+            "candidate_ns": 48375,
+            "speedup": 0.8303
+          },
+          "input_4": {
+            "ref_ns": 237166,
+            "candidate_ns": 216250,
+            "speedup": 1.0967
+          },
+          "input_5": {
+            "ref_ns": 155375,
+            "candidate_ns": 144916,
+            "speedup": 1.0722
+          },
+          "input_6": {
+            "ref_ns": 15569125,
+            "candidate_ns": 1037167,
+            "speedup": 15.0112
+          },
+          "input_7": {
+            "ref_ns": 605833,
+            "candidate_ns": 520709,
+            "speedup": 1.1635
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 1.7824,
+        "min_speedup": 0.8303,
+        "max_speedup": 15.0112
+      },
+      "evaluation_time_ms": 2184.1,
+      "status": "success",
+      "champion": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/.evolve-sdk/optimize_matrix_multiplication/mutations/gen2x.py"
+    },
+    "matrix_exponential": {
+      "status": "no_champion",
+      "fitness": 0.0,
+      "valid": false,
+      "speedup": 0.0
+    },
+    "eigenvalues_real": {
+      "fitness": 0.0,
+      "valid": false,
+      "speedup": 0.0,
+      "error": "Solution invalid on input 0",
+      "details": {},
+      "evaluation_time_ms": 0.0,
+      "status": "success",
+      "champion": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/.evolve-sdk/optimize_eigenvalues_real_solv/mutations/gen2c.py"
+    },
+    "eigenvectors_real": {
+      "fitness": 1.4138,
+      "valid": true,
+      "speedup": 1.4138,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 26208,
+            "candidate_ns": 13500,
+            "speedup": 1.9413
+          },
+          "input_1": {
+            "ref_ns": 15833,
+            "candidate_ns": 13333,
+            "speedup": 1.1875
+          },
+          "input_2": {
+            "ref_ns": 68667,
+            "candidate_ns": 69958,
+            "speedup": 0.9815
+          },
+          "input_3": {
+            "ref_ns": 63958,
+            "candidate_ns": 65958,
+            "speedup": 0.9697
+          },
+          "input_4": {
+            "ref_ns": 280250,
+            "candidate_ns": 248334,
+            "speedup": 1.1285
+          },
+          "input_5": {
+            "ref_ns": 253083,
+            "candidate_ns": 238875,
+            "speedup": 1.0595
+          },
+          "input_6": {
+            "ref_ns": 11908125,
+            "candidate_ns": 1829167,
+            "speedup": 6.5101
+          },
+          "input_7": {
+            "ref_ns": 3359000,
+            "candidate_ns": 899667,
+            "speedup": 3.7336
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 0.9049,
+        "min_speedup": 0.9697,
+        "max_speedup": 6.5101
+      },
+      "evaluation_time_ms": 2013.8,
+      "status": "success",
+      "champion": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/.evolve-sdk/optimize_eigenvectors_real_sol/mutations/gen1x.py"
+    },
+    "fft_cmplx_scipy_fftpack": {
+      "status": "no_champion",
+      "fitness": 0.0,
+      "valid": false,
+      "speedup": 0.0
+    },
+    "dct_type_I_scipy_fftpack": {
+      "status": "no_champion",
+      "fitness": 0.0,
+      "valid": false,
+      "speedup": 0.0
+    },
+    "convolve_1d": {
+      "fitness": 4.16,
+      "valid": true,
+      "speedup": 4.16,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 18375,
+            "candidate_ns": 8459,
+            "speedup": 2.1722
+          },
+          "input_1": {
+            "ref_ns": 16959,
+            "candidate_ns": 8500,
+            "speedup": 1.9952
+          },
+          "input_2": {
+            "ref_ns": 62250,
+            "candidate_ns": 27209,
+            "speedup": 2.2878
+          },
+          "input_3": {
+            "ref_ns": 224125,
+            "candidate_ns": 26166,
+            "speedup": 8.5655
+          },
+          "input_4": {
+            "ref_ns": 247209,
+            "candidate_ns": 38500,
+            "speedup": 6.421
+          },
+          "input_5": {
+            "ref_ns": 243375,
+            "candidate_ns": 37333,
+            "speedup": 6.519
+          },
+          "input_6": {
+            "ref_ns": 1114583,
+            "candidate_ns": 58875,
+            "speedup": 18.9313
+          },
+          "input_7": {
+            "ref_ns": 1322958,
+            "candidate_ns": 60500,
+            "speedup": 21.8671
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 0.8976,
+        "min_speedup": 1.9952,
+        "max_speedup": 21.8671
+      },
+      "evaluation_time_ms": 1649.3,
+      "status": "success",
+      "champion": ".evolve-sdk/optimize_convolve_1d_solver_fo/mutations/gen1c.py"
+    },
+    "correlate_1d": {
+      "fitness": 5.5036,
+      "valid": true,
+      "speedup": 5.5036,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 2321000,
+            "candidate_ns": 639084,
+            "speedup": 3.6318
+          },
+          "input_1": {
+            "ref_ns": 2318959,
+            "candidate_ns": 657042,
+            "speedup": 3.5294
+          },
+          "input_2": {
+            "ref_ns": 13485083,
+            "candidate_ns": 1772500,
+            "speedup": 7.6079
+          },
+          "input_3": {
+            "ref_ns": 13390792,
+            "candidate_ns": 1827625,
+            "speedup": 7.3269
+          },
+          "input_4": {
+            "ref_ns": 30604625,
+            "candidate_ns": 3454500,
+            "speedup": 8.8594
+          },
+          "input_5": {
+            "ref_ns": 30719709,
+            "candidate_ns": 3444541,
+            "speedup": 8.9184
+          },
+          "input_6": {
+            "ref_ns": 33425166,
+            "candidate_ns": 6759833,
+            "speedup": 4.9447
+          },
+          "input_7": {
+            "ref_ns": 33294875,
+            "candidate_ns": 6650583,
+            "speedup": 5.0063
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 0.3561,
+        "min_speedup": 3.5294,
+        "max_speedup": 8.9184
+      },
+      "evaluation_time_ms": 1920.9,
+      "status": "success",
+      "champion": ".evolve-sdk/optimize_correlate_1d_solver_f/mutations/gen1a.py"
+    },
+    "dijkstra_from_indices": {
+      "fitness": 0.5316,
+      "valid": true,
+      "speedup": 0.5316,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 90417,
+            "candidate_ns": 89917,
+            "speedup": 1.0056
+          },
+          "input_1": {
+            "ref_ns": 81583,
+            "candidate_ns": 80125,
+            "speedup": 1.0182
+          },
+          "input_2": {
+            "ref_ns": 94667,
+            "candidate_ns": 229250,
+            "speedup": 0.4129
+          },
+          "input_3": {
+            "ref_ns": 107709,
+            "candidate_ns": 219583,
+            "speedup": 0.4905
+          },
+          "input_4": {
+            "ref_ns": 117250,
+            "candidate_ns": 256750,
+            "speedup": 0.4567
+          },
+          "input_5": {
+            "ref_ns": 114750,
+            "candidate_ns": 240125,
+            "speedup": 0.4779
+          },
+          "input_6": {
+            "ref_ns": 183291,
+            "candidate_ns": 387541,
+            "speedup": 0.473
+          },
+          "input_7": {
+            "ref_ns": 172625,
+            "candidate_ns": 382250,
+            "speedup": 0.4516
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 0.4284,
+        "min_speedup": 0.4129,
+        "max_speedup": 1.0182
+      },
+      "evaluation_time_ms": 3221.7,
+      "status": "success",
+      "champion": ".evolve-sdk/optimize_dijkstra_from_indices/mutations/gen1b.py"
+    },
+    "shortest_path_dijkstra": {
+      "status": "no_champion",
+      "fitness": 0.0,
+      "valid": false,
+      "speedup": 0.0
+    },
+    "pagerank": {
+      "fitness": 11.1299,
+      "valid": true,
+      "speedup": 11.1299,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 319667,
+            "candidate_ns": 32416,
+            "speedup": 9.8614
+          },
+          "input_1": {
+            "ref_ns": 324834,
+            "candidate_ns": 31792,
+            "speedup": 10.2175
+          },
+          "input_2": {
+            "ref_ns": 437083,
+            "candidate_ns": 41959,
+            "speedup": 10.4169
+          },
+          "input_3": {
+            "ref_ns": 463208,
+            "candidate_ns": 43792,
+            "speedup": 10.5775
+          },
+          "input_4": {
+            "ref_ns": 614791,
+            "candidate_ns": 52833,
+            "speedup": 11.6365
+          },
+          "input_5": {
+            "ref_ns": 640083,
+            "candidate_ns": 53292,
+            "speedup": 12.0109
+          },
+          "input_6": {
+            "ref_ns": 887167,
+            "candidate_ns": 71209,
+            "speedup": 12.4586
+          },
+          "input_7": {
+            "ref_ns": 918125,
+            "candidate_ns": 73000,
+            "speedup": 12.5771
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 0.0958,
+        "min_speedup": 9.8614,
+        "max_speedup": 12.5771
+      },
+      "evaluation_time_ms": 771.7,
+      "status": "success",
+      "champion": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/.evolve-sdk/optimize_pagerank_solver_for_m/mutations/gen2b.py"
+    },
+    "minimum_spanning_tree": {
+      "fitness": 9.7032,
+      "valid": true,
+      "speedup": 9.7032,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 80416,
+            "candidate_ns": 8625,
+            "speedup": 9.3236
+          },
+          "input_1": {
+            "ref_ns": 60208,
+            "candidate_ns": 6917,
+            "speedup": 8.7044
+          },
+          "input_2": {
+            "ref_ns": 302666,
+            "candidate_ns": 34500,
+            "speedup": 8.7729
+          },
+          "input_3": {
+            "ref_ns": 275125,
+            "candidate_ns": 28292,
+            "speedup": 9.7245
+          },
+          "input_4": {
+            "ref_ns": 1084375,
+            "candidate_ns": 103708,
+            "speedup": 10.456
+          },
+          "input_5": {
+            "ref_ns": 1066583,
+            "candidate_ns": 96458,
+            "speedup": 11.0575
+          },
+          "input_6": {
+            "ref_ns": 4068833,
+            "candidate_ns": 410417,
+            "speedup": 9.9139
+          },
+          "input_7": {
+            "ref_ns": 4166333,
+            "candidate_ns": 410667,
+            "speedup": 10.1453
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 0.0832,
+        "min_speedup": 8.7044,
+        "max_speedup": 11.0575
+      },
+      "evaluation_time_ms": 1661.8,
+      "status": "success",
+      "champion": ".evolve-sdk/optimize_minimum_spanning_tree/mutations/gen1a.py"
+    },
+    "lasso": {
+      "status": "no_champion",
+      "fitness": 0.0,
+      "valid": false,
+      "speedup": 0.0
+    },
+    "pca": {
+      "fitness": 5.2525,
+      "valid": true,
+      "speedup": 5.2525,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 8986917,
+            "candidate_ns": 3311791,
+            "speedup": 2.7136
+          },
+          "input_1": {
+            "ref_ns": 10230916,
+            "candidate_ns": 3521292,
+            "speedup": 2.9054
+          },
+          "input_2": {
+            "ref_ns": 264479708,
+            "candidate_ns": 25371333,
+            "speedup": 10.4244
+          },
+          "input_3": {
+            "ref_ns": 309215583,
+            "candidate_ns": 31300083,
+            "speedup": 9.8791
+          },
+          "input_4": {
+            "ref_ns": 784676584,
+            "candidate_ns": 94636375,
+            "speedup": 8.2915
+          },
+          "input_5": {
+            "ref_ns": 794618417,
+            "candidate_ns": 81238250,
+            "speedup": 9.7813
+          },
+          "input_6": {
+            "ref_ns": 2511496667,
+            "candidate_ns": 377795375,
+            "speedup": 6.6478
+          },
+          "input_7": {
+            "ref_ns": 2822223709,
+            "candidate_ns": 677259500,
+            "speedup": 4.1671
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 0.4698,
+        "min_speedup": 2.7136,
+        "max_speedup": 10.4244
+      },
+      "evaluation_time_ms": 48033.7,
+      "status": "success",
+      "champion": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/.evolve-sdk/optimize_pca_solver_for_maximu/mutations/gen1c.py"
+    },
+    "kmeans": {
+      "fitness": 2.1947,
+      "valid": true,
+      "speedup": 2.1947,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 4578834,
+            "candidate_ns": 3221542,
+            "speedup": 1.4213
+          },
+          "input_1": {
+            "ref_ns": 5067125,
+            "candidate_ns": 5372625,
+            "speedup": 0.9431
+          },
+          "input_2": {
+            "ref_ns": 4402542,
+            "candidate_ns": 2715250,
+            "speedup": 1.6214
+          },
+          "input_3": {
+            "ref_ns": 3459917,
+            "candidate_ns": 3575291,
+            "speedup": 0.9677
+          },
+          "input_4": {
+            "ref_ns": 189790792,
+            "candidate_ns": 5363250,
+            "speedup": 35.3873
+          },
+          "input_5": {
+            "ref_ns": 269998333,
+            "candidate_ns": 4433750,
+            "speedup": 60.8962
+          },
+          "input_6": {
+            "ref_ns": 273308250,
+            "candidate_ns": 8057750,
+            "speedup": 33.9187
+          },
+          "input_7": {
+            "ref_ns": 274083417,
+            "candidate_ns": 43045291,
+            "speedup": 6.3673
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 1.2916,
+        "min_speedup": 0.9431,
+        "max_speedup": 60.8962
+      },
+      "evaluation_time_ms": 12230.4,
+      "status": "success",
+      "champion": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/.evolve-sdk/optimize_kmeans_solver_for_max/mutations/gen1x.py"
+    },
+    "svm": {
+      "fitness": 13.0905,
+      "valid": true,
+      "speedup": 13.0905,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 8187916,
+            "candidate_ns": 561541,
+            "speedup": 14.5812
+          },
+          "input_1": {
+            "ref_ns": 8539167,
+            "candidate_ns": 530083,
+            "speedup": 16.1091
+          },
+          "input_2": {
+            "ref_ns": 8063583,
+            "candidate_ns": 556500,
+            "speedup": 14.4898
+          },
+          "input_3": {
+            "ref_ns": 7884583,
+            "candidate_ns": 666167,
+            "speedup": 11.8357
+          },
+          "input_4": {
+            "ref_ns": 14296708,
+            "candidate_ns": 996708,
+            "speedup": 14.3439
+          },
+          "input_5": {
+            "ref_ns": 10595542,
+            "candidate_ns": 926833,
+            "speedup": 11.432
+          },
+          "input_6": {
+            "ref_ns": 14169125,
+            "candidate_ns": 1697500,
+            "speedup": 8.3471
+          },
+          "input_7": {
+            "ref_ns": 40160417,
+            "candidate_ns": 2007083,
+            "speedup": 20.0093
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 0.2499,
+        "min_speedup": 8.3471,
+        "max_speedup": 20.0093
+      },
+      "evaluation_time_ms": 4964.6,
+      "status": "success",
+      "champion": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/.evolve-sdk/optimize_svm_solver_for_maximu/mutations/gen2b.py"
+    },
+    "ode_brusselator": {
+      "fitness": 506.3433,
+      "valid": true,
+      "speedup": 506.3433,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 3709833,
+            "candidate_ns": 8125,
+            "speedup": 456.5948
+          },
+          "input_1": {
+            "ref_ns": 2644958,
+            "candidate_ns": 5542,
+            "speedup": 477.2569
+          },
+          "input_2": {
+            "ref_ns": 9622792,
+            "candidate_ns": 18708,
+            "speedup": 514.3678
+          },
+          "input_3": {
+            "ref_ns": 7848250,
+            "candidate_ns": 15084,
+            "speedup": 520.303
+          },
+          "input_4": {
+            "ref_ns": 19344291,
+            "candidate_ns": 39375,
+            "speedup": 491.2836
+          },
+          "input_5": {
+            "ref_ns": 16826417,
+            "candidate_ns": 30667,
+            "speedup": 548.6815
+          },
+          "input_6": {
+            "ref_ns": 39861208,
+            "candidate_ns": 76125,
+            "speedup": 523.6283
+          },
+          "input_7": {
+            "ref_ns": 33063209,
+            "candidate_ns": 62167,
+            "speedup": 531.845
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 0.0601,
+        "min_speedup": 456.5948,
+        "max_speedup": 548.6815
+      },
+      "evaluation_time_ms": 2296.8,
+      "status": "success",
+      "champion": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/.evolve-sdk/optimize_ode_brusselator_solve/mutations/gen2b.py"
+    },
+    "ode_lotkavolterra": {
+      "fitness": 1221.6457,
+      "valid": true,
+      "speedup": 1221.6457,
+      "error": null,
+      "details": {
+        "per_input": {
+          "input_0": {
+            "ref_ns": 3995792,
+            "candidate_ns": 4083,
+            "speedup": 978.6412
+          },
+          "input_1": {
+            "ref_ns": 4132875,
+            "candidate_ns": 4084,
+            "speedup": 1011.9674
+          },
+          "input_2": {
+            "ref_ns": 10917000,
+            "candidate_ns": 9500,
+            "speedup": 1149.1579
+          },
+          "input_3": {
+            "ref_ns": 10734750,
+            "candidate_ns": 9041,
+            "speedup": 1187.341
+          },
+          "input_4": {
+            "ref_ns": 28485833,
+            "candidate_ns": 19375,
+            "speedup": 1470.2365
+          },
+          "input_5": {
+            "ref_ns": 20645833,
+            "candidate_ns": 16334,
+            "speedup": 1263.979
+          },
+          "input_6": {
+            "ref_ns": 49638167,
+            "candidate_ns": 33250,
+            "speedup": 1492.8772
+          },
+          "input_7": {
+            "ref_ns": 51827750,
+            "candidate_ns": 35500,
+            "speedup": 1459.9366
+          }
+        },
+        "num_inputs": 8,
+        "num_runs_per_input": 3,
+        "coefficient_of_variation": 0.1643,
+        "min_speedup": 978.6412,
+        "max_speedup": 1492.8772
+      },
+      "evaluation_time_ms": 5528.3,
+      "status": "success",
+      "champion": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/.evolve-sdk/optimize_ode_lotkavolterra_sol/mutations/gen2b.py"
     }
   }
 }

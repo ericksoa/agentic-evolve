@@ -2,11 +2,40 @@
   "tasks": [
     "cholesky_factorization",
     "fft_convolution",
-    "convex_hull"
+    "convex_hull",
+    "linear_system_solver",
+    "lu_factorization",
+    "qr_factorization",
+    "svd",
+    "matrix_multiplication",
+    "matrix_exponential",
+    "eigenvalues_real",
+    "eigenvectors_real",
+    "fft_cmplx_scipy_fftpack",
+    "dct_type_I_scipy_fftpack",
+    "convolve_1d",
+    "correlate_1d",
+    "dijkstra_from_indices",
+    "shortest_path_dijkstra",
+    "pagerank",
+    "minimum_spanning_tree",
+    "lasso",
+    "pca",
+    "kmeans",
+    "svm",
+    "ode_brusselator",
+    "ode_lotkavolterra"
   ],
-  "count": 3,
+  "count": 25,
   "selection_criteria": {
-    "max_existing_speedup": 1.5,
-    "target_count": 3
+    "method": "curated_diverse_subset",
+    "categories": {
+      "linear_algebra": ["cholesky_factorization", "linear_system_solver", "lu_factorization", "qr_factorization", "svd", "matrix_multiplication", "matrix_exponential", "eigenvalues_real", "eigenvectors_real"],
+      "signal_processing": ["fft_convolution", "fft_cmplx_scipy_fftpack", "dct_type_I_scipy_fftpack", "convolve_1d", "correlate_1d"],
+      "graphs": ["dijkstra_from_indices", "shortest_path_dijkstra", "pagerank", "minimum_spanning_tree"],
+      "ml_optimization": ["lasso", "pca", "kmeans", "svm"],
+      "geometry": ["convex_hull"],
+      "ode": ["ode_brusselator", "ode_lotkavolterra"]
+    }
   }
 }

@@ -7,9 +7,8 @@ algotune/
 # Evolution artifacts
 .evolve-sdk/
 
-# Generated solutions (can be large)
+# Phase 1 baseline solutions (regeneratable)
 solutions/*/
-evolved/*/
 
 # Byte-compiled files
 __pycache__/
