@@ -13,7 +13,7 @@ import numpy as np
 import numba as nb
 
 
-@nb.njit(cache=True, fastmath=True)
+@nb.njit(cache=False, fastmath=True)
 def _solve_brusselator_fsal(t0, t1, X0, Y0, A, B, rtol, atol):
     """Adaptive RK45 with FSAL + relaxed tolerance + sqrt-free error norm."""
     Bp1 = B + 1.0
@@ -161,7 +161,7 @@ def _solve_brusselator_fsal(t0, t1, X0, Y0, A, B, rtol, atol):
 class Solver:
     def __init__(self):
         # Warm up JIT
-        _solve_brusselator_fsal(0.0, 1.0, 1.0, 3.0, 1.0, 3.0, 3e-7, 3e-7)
+        _solve_brusselator_fsal(0.0, 1.0, 1.0, 3.0, 1.0, 3.0, 1e-8, 1e-8)
 
     def solve(self, problem):
         y0 = problem["y0"]
@@ -170,5 +170,5 @@ class Solver:
         A = problem["params"]["A"]
         B = problem["params"]["B"]
 
-        X, Y = _solve_brusselator_fsal(t0, t1, float(y0[0]), float(y0[1]), A, B, 3e-7, 3e-7)
+        X, Y = _solve_brusselator_fsal(t0, t1, float(y0[0]), float(y0[1]), A, B, 1e-8, 1e-8)
         return np.array([X, Y])

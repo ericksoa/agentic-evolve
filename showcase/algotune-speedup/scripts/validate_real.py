@@ -358,8 +358,10 @@ def main():
         if prev_path.exists():
             with open(prev_path) as f:
                 prev = json.load(f)
-            print(f"\nPrevious (custom eval): {prev['summary']['harmonic_mean_speedup']:.2f}x")
-            print(f"Validated (rigorous):   {hm:.2f}x")
+            prev_hm = prev['summary'].get('harmonic_mean_speedup') or prev['summary'].get('harmonic_mean_speedup_evolution')
+            if prev_hm:
+                print(f"\nPrevious (evolution eval): {prev_hm:.2f}x")
+                print(f"Validated (rigorous):      {hm:.2f}x")
     else:
         print("No valid results!")
 

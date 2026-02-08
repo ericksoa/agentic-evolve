@@ -1,8 +1,8 @@
 {
   "summary": {
-    "harmonic_mean_speedup": 2.5572,
-    "geometric_mean_speedup": 3.7512,
-    "valid_tasks": 16,
+    "harmonic_mean_speedup": 2.6166,
+    "geometric_mean_speedup": 5.863,
+    "valid_tasks": 19,
     "total_tasks": 19,
     "num_runs": 10,
     "methodology": "single-threaded BLAS, min-of-10 timing, calibrated inputs"
@@ -11,2557 +11,3004 @@
     "cholesky_factorization": {
       "task": "cholesky_factorization",
       "valid": true,
-      "speedup": 4.9025,
+      "speedup": 4.972,
       "error": null,
       "per_input": [
         {
+          "n": 1000,
+          "seed": 42,
+          "ref_ns": 11028500,
+          "cand_ns": 2182208,
+          "ref_ms": 11.028,
+          "cand_ms": 2.182,
+          "speedup": 5.0538
+        },
+        {
+          "n": 1000,
+          "seed": 123,
+          "ref_ns": 11035625,
+          "cand_ns": 2257042,
+          "ref_ms": 11.036,
+          "cand_ms": 2.257,
+          "speedup": 4.8894
+        },
+        {
+          "n": 1000,
+          "seed": 7,
+          "ref_ns": 11071666,
+          "cand_ns": 2143500,
+          "ref_ms": 11.072,
+          "cand_ms": 2.143,
+          "speedup": 5.1652
+        },
+        {
+          "n": 1000,
+          "seed": 256,
+          "ref_ns": 10911917,
+          "cand_ns": 2178166,
+          "ref_ms": 10.912,
+          "cand_ms": 2.178,
+          "speedup": 5.0097
+        },
+        {
+          "n": 1000,
+          "seed": 999,
+          "ref_ns": 11050125,
+          "cand_ns": 2140209,
+          "ref_ms": 11.05,
+          "cand_ms": 2.14,
+          "speedup": 5.1631
+        },
+        {
+          "n": 1000,
+          "seed": 31,
+          "ref_ns": 11069958,
+          "cand_ns": 2195666,
+          "ref_ms": 11.07,
+          "cand_ms": 2.196,
+          "speedup": 5.0417
+        },
+        {
+          "n": 1000,
+          "seed": 77,
+          "ref_ns": 11096667,
+          "cand_ns": 2158959,
+          "ref_ms": 11.097,
+          "cand_ms": 2.159,
+          "speedup": 5.1398
+        },
+        {
+          "n": 1000,
+          "seed": 444,
+          "ref_ns": 11120500,
+          "cand_ns": 2350000,
+          "ref_ms": 11.12,
+          "cand_ms": 2.35,
+          "speedup": 4.7321
+        },
+        {
           "n": 1500,
           "seed": 42,
-          "ref_ns": 27899750,
-          "cand_ns": 6124459,
-          "ref_ms": 27.9,
-          "cand_ms": 6.124,
-          "speedup": 4.5555
+          "ref_ns": 34832625,
+          "cand_ns": 6951541,
+          "ref_ms": 34.833,
+          "cand_ms": 6.952,
+          "speedup": 5.0108
         },
         {
           "n": 1500,
           "seed": 123,
-          "ref_ns": 27854041,
-          "cand_ns": 6242458,
-          "ref_ms": 27.854,
-          "cand_ms": 6.242,
-          "speedup": 4.462
+          "ref_ns": 34292875,
+          "cand_ns": 6893000,
+          "ref_ms": 34.293,
+          "cand_ms": 6.893,
+          "speedup": 4.975
         },
         {
           "n": 1500,
           "seed": 7,
-          "ref_ns": 27790791,
-          "cand_ns": 6247583,
-          "ref_ms": 27.791,
-          "cand_ms": 6.248,
-          "speedup": 4.4482
+          "ref_ns": 34305875,
+          "cand_ns": 7011000,
+          "ref_ms": 34.306,
+          "cand_ms": 7.011,
+          "speedup": 4.8932
         },
         {
           "n": 1500,
           "seed": 256,
-          "ref_ns": 27823916,
-          "cand_ns": 6047666,
-          "ref_ms": 27.824,
-          "cand_ms": 6.048,
-          "speedup": 4.6008
+          "ref_ns": 34362292,
+          "cand_ns": 7082083,
+          "ref_ms": 34.362,
+          "cand_ms": 7.082,
+          "speedup": 4.852
         },
         {
           "n": 1500,
           "seed": 999,
-          "ref_ns": 27948542,
-          "cand_ns": 6255917,
-          "ref_ms": 27.949,
-          "cand_ms": 6.256,
-          "speedup": 4.4675
+          "ref_ns": 34244583,
+          "cand_ns": 6978250,
+          "ref_ms": 34.245,
+          "cand_ms": 6.978,
+          "speedup": 4.9073
         },
         {
           "n": 1500,
           "seed": 31,
-          "ref_ns": 28236250,
-          "cand_ns": 6137292,
-          "ref_ms": 28.236,
-          "cand_ms": 6.137,
-          "speedup": 4.6008
+          "ref_ns": 34348250,
+          "cand_ns": 6935209,
+          "ref_ms": 34.348,
+          "cand_ms": 6.935,
+          "speedup": 4.9527
         },
         {
           "n": 1500,
           "seed": 77,
-          "ref_ns": 27808667,
-          "cand_ns": 6138375,
-          "ref_ms": 27.809,
-          "cand_ms": 6.138,
-          "speedup": 4.5303
+          "ref_ns": 34289125,
+          "cand_ns": 6977125,
+          "ref_ms": 34.289,
+          "cand_ms": 6.977,
+          "speedup": 4.9145
         },
         {
           "n": 1500,
           "seed": 444,
-          "ref_ns": 28166416,
-          "cand_ns": 6070708,
-          "ref_ms": 28.166,
-          "cand_ms": 6.071,
-          "speedup": 4.6397
-        },
-        {
-          "n": 2000,
-          "seed": 42,
-          "ref_ns": 64093208,
-          "cand_ns": 11850959,
-          "ref_ms": 64.093,
-          "cand_ms": 11.851,
-          "speedup": 5.4083
-        },
-        {
-          "n": 2000,
-          "seed": 123,
-          "ref_ns": 64401458,
-          "cand_ns": 12293833,
-          "ref_ms": 64.401,
-          "cand_ms": 12.294,
-          "speedup": 5.2385
-        },
-        {
-          "n": 2000,
-          "seed": 7,
-          "ref_ns": 64537917,
-          "cand_ns": 11866334,
-          "ref_ms": 64.538,
-          "cand_ms": 11.866,
-          "speedup": 5.4387
-        },
-        {
-          "n": 2000,
-          "seed": 256,
-          "ref_ns": 64905208,
-          "cand_ns": 12107125,
-          "ref_ms": 64.905,
-          "cand_ms": 12.107,
-          "speedup": 5.3609
-        },
-        {
-          "n": 2000,
-          "seed": 999,
-          "ref_ns": 64737166,
-          "cand_ns": 12003958,
-          "ref_ms": 64.737,
-          "cand_ms": 12.004,
-          "speedup": 5.393
-        },
-        {
-          "n": 2000,
-          "seed": 31,
-          "ref_ns": 63706667,
-          "cand_ns": 12230791,
-          "ref_ms": 63.707,
-          "cand_ms": 12.231,
-          "speedup": 5.2087
-        },
-        {
-          "n": 2000,
-          "seed": 77,
-          "ref_ns": 64301667,
-          "cand_ns": 12566250,
-          "ref_ms": 64.302,
-          "cand_ms": 12.566,
-          "speedup": 5.117
-        },
-        {
-          "n": 2000,
-          "seed": 444,
-          "ref_ns": 64645250,
-          "cand_ns": 11723500,
-          "ref_ms": 64.645,
-          "cand_ms": 11.723,
-          "speedup": 5.5142
+          "ref_ns": 34318375,
+          "cand_ns": 7012292,
+          "ref_ms": 34.318,
+          "cand_ms": 7.012,
+          "speedup": 4.894
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 4.9194,
-      "min_speedup": 4.4482,
-      "max_speedup": 5.5142,
-      "cv": 0.086
+      "geometric_mean": 4.9733,
+      "min_speedup": 4.7321,
+      "max_speedup": 5.1652,
+      "cv": 0.0241
     },
     "convex_hull": {
       "task": "convex_hull",
       "valid": true,
-      "speedup": 6.319,
+      "speedup": 6.3433,
       "error": null,
       "per_input": [
         {
           "n": 5,
           "seed": 42,
-          "ref_ns": 25833,
-          "cand_ns": 3583,
-          "ref_ms": 0.026,
-          "cand_ms": 0.004,
-          "speedup": 7.2099
-        },
-        {
-          "n": 5,
-          "seed": 123,
-          "ref_ns": 25458,
-          "cand_ns": 3667,
-          "ref_ms": 0.025,
-          "cand_ms": 0.004,
-          "speedup": 6.9425
-        },
-        {
-          "n": 5,
-          "seed": 7,
-          "ref_ns": 25291,
-          "cand_ns": 3667,
-          "ref_ms": 0.025,
-          "cand_ms": 0.004,
-          "speedup": 6.8969
-        },
-        {
-          "n": 5,
-          "seed": 256,
-          "ref_ns": 25583,
-          "cand_ns": 3709,
-          "ref_ms": 0.026,
-          "cand_ms": 0.004,
-          "speedup": 6.8975
-        },
-        {
-          "n": 10,
-          "seed": 42,
-          "ref_ns": 25625,
-          "cand_ns": 3750,
-          "ref_ms": 0.026,
-          "cand_ms": 0.004,
-          "speedup": 6.8333
-        },
-        {
-          "n": 10,
-          "seed": 123,
-          "ref_ns": 25375,
-          "cand_ns": 3709,
-          "ref_ms": 0.025,
-          "cand_ms": 0.004,
-          "speedup": 6.8415
-        },
-        {
-          "n": 10,
-          "seed": 7,
-          "ref_ns": 25333,
-          "cand_ns": 3667,
-          "ref_ms": 0.025,
-          "cand_ms": 0.004,
-          "speedup": 6.9084
-        },
-        {
-          "n": 10,
-          "seed": 256,
-          "ref_ns": 26500,
-          "cand_ns": 3750,
-          "ref_ms": 0.026,
-          "cand_ms": 0.004,
-          "speedup": 7.0667
-        },
-        {
-          "n": 25,
-          "seed": 42,
-          "ref_ns": 26458,
-          "cand_ns": 4125,
-          "ref_ms": 0.026,
-          "cand_ms": 0.004,
-          "speedup": 6.4141
-        },
-        {
-          "n": 25,
-          "seed": 123,
-          "ref_ns": 26291,
-          "cand_ns": 3958,
-          "ref_ms": 0.026,
-          "cand_ms": 0.004,
-          "speedup": 6.6425
-        },
-        {
-          "n": 25,
-          "seed": 7,
-          "ref_ns": 26291,
-          "cand_ns": 4000,
-          "ref_ms": 0.026,
-          "cand_ms": 0.004,
-          "speedup": 6.5728
-        },
-        {
-          "n": 25,
-          "seed": 256,
-          "ref_ns": 26625,
-          "cand_ns": 4125,
-          "ref_ms": 0.027,
-          "cand_ms": 0.004,
-          "speedup": 6.4545
-        },
-        {
-          "n": 50,
-          "seed": 42,
-          "ref_ns": 28791,
-          "cand_ns": 5375,
-          "ref_ms": 0.029,
+          "ref_ns": 32167,
+          "cand_ns": 4583,
+          "ref_ms": 0.032,
           "cand_ms": 0.005,
-          "speedup": 5.3565
+          "speedup": 7.0188
+        },
+        {
+          "n": 5,
+          "seed": 123,
+          "ref_ns": 31750,
+          "cand_ns": 4583,
+          "ref_ms": 0.032,
+          "cand_ms": 0.005,
+          "speedup": 6.9278
+        },
+        {
+          "n": 5,
+          "seed": 7,
+          "ref_ns": 31542,
+          "cand_ns": 4584,
+          "ref_ms": 0.032,
+          "cand_ms": 0.005,
+          "speedup": 6.8809
+        },
+        {
+          "n": 5,
+          "seed": 256,
+          "ref_ns": 31959,
+          "cand_ns": 4667,
+          "ref_ms": 0.032,
+          "cand_ms": 0.005,
+          "speedup": 6.8479
+        },
+        {
+          "n": 10,
+          "seed": 42,
+          "ref_ns": 31958,
+          "cand_ns": 4625,
+          "ref_ms": 0.032,
+          "cand_ms": 0.005,
+          "speedup": 6.9098
+        },
+        {
+          "n": 10,
+          "seed": 123,
+          "ref_ns": 31667,
+          "cand_ns": 4625,
+          "ref_ms": 0.032,
+          "cand_ms": 0.005,
+          "speedup": 6.8469
+        },
+        {
+          "n": 10,
+          "seed": 7,
+          "ref_ns": 31750,
+          "cand_ns": 4542,
+          "ref_ms": 0.032,
+          "cand_ms": 0.005,
+          "speedup": 6.9903
+        },
+        {
+          "n": 10,
+          "seed": 256,
+          "ref_ns": 33000,
+          "cand_ns": 4833,
+          "ref_ms": 0.033,
+          "cand_ms": 0.005,
+          "speedup": 6.8281
+        },
+        {
+          "n": 25,
+          "seed": 42,
+          "ref_ns": 32709,
+          "cand_ns": 5000,
+          "ref_ms": 0.033,
+          "cand_ms": 0.005,
+          "speedup": 6.5418
+        },
+        {
+          "n": 25,
+          "seed": 123,
+          "ref_ns": 32625,
+          "cand_ns": 5041,
+          "ref_ms": 0.033,
+          "cand_ms": 0.005,
+          "speedup": 6.4719
+        },
+        {
+          "n": 25,
+          "seed": 7,
+          "ref_ns": 32667,
+          "cand_ns": 5000,
+          "ref_ms": 0.033,
+          "cand_ms": 0.005,
+          "speedup": 6.5334
+        },
+        {
+          "n": 25,
+          "seed": 256,
+          "ref_ns": 33167,
+          "cand_ns": 5000,
+          "ref_ms": 0.033,
+          "cand_ms": 0.005,
+          "speedup": 6.6334
+        },
+        {
+          "n": 50,
+          "seed": 42,
+          "ref_ns": 36208,
+          "cand_ns": 6708,
+          "ref_ms": 0.036,
+          "cand_ms": 0.007,
+          "speedup": 5.3977
         },
         {
           "n": 50,
           "seed": 123,
-          "ref_ns": 27500,
-          "cand_ns": 5542,
-          "ref_ms": 0.028,
+          "ref_ns": 34417,
+          "cand_ns": 6708,
+          "ref_ms": 0.034,
+          "cand_ms": 0.007,
+          "speedup": 5.1307
+        },
+        {
+          "n": 50,
+          "seed": 7,
+          "ref_ns": 34500,
+          "cand_ns": 6292,
+          "ref_ms": 0.035,
           "cand_ms": 0.006,
-          "speedup": 4.9621
-        },
-        {
-          "n": 50,
-          "seed": 7,
-          "ref_ns": 27750,
-          "cand_ns": 5167,
-          "ref_ms": 0.028,
-          "cand_ms": 0.005,
-          "speedup": 5.3706
+          "speedup": 5.4832
         },
         {
           "n": 50,
           "seed": 256,
-          "ref_ns": 28125,
-          "cand_ns": 5417,
-          "ref_ms": 0.028,
-          "cand_ms": 0.005,
-          "speedup": 5.192
+          "ref_ns": 34625,
+          "cand_ns": 6584,
+          "ref_ms": 0.035,
+          "cand_ms": 0.007,
+          "speedup": 5.259
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 6.3663,
-      "min_speedup": 4.9621,
-      "max_speedup": 7.2099,
-      "cv": 0.116
+      "geometric_mean": 6.3824,
+      "min_speedup": 5.1307,
+      "max_speedup": 7.0188,
+      "cv": 0.1059
     },
     "convolve_1d": {
       "task": "convolve_1d",
       "valid": true,
-      "speedup": 2.8305,
+      "speedup": 2.8286,
       "error": null,
       "per_input": [
         {
           "n": 5,
           "seed": 42,
-          "ref_ns": 7459,
-          "cand_ns": 2208,
-          "ref_ms": 0.007,
-          "cand_ms": 0.002,
-          "speedup": 3.3782
+          "ref_ns": 9375,
+          "cand_ns": 2708,
+          "ref_ms": 0.009,
+          "cand_ms": 0.003,
+          "speedup": 3.462
         },
         {
           "n": 5,
           "seed": 123,
-          "ref_ns": 7416,
-          "cand_ns": 2250,
-          "ref_ms": 0.007,
-          "cand_ms": 0.002,
-          "speedup": 3.296
+          "ref_ns": 9167,
+          "cand_ns": 2708,
+          "ref_ms": 0.009,
+          "cand_ms": 0.003,
+          "speedup": 3.3852
         },
         {
           "n": 5,
           "seed": 7,
-          "ref_ns": 7417,
-          "cand_ns": 2208,
-          "ref_ms": 0.007,
-          "cand_ms": 0.002,
-          "speedup": 3.3591
+          "ref_ns": 9000,
+          "cand_ns": 2709,
+          "ref_ms": 0.009,
+          "cand_ms": 0.003,
+          "speedup": 3.3223
         },
         {
           "n": 5,
           "seed": 256,
-          "ref_ns": 7334,
-          "cand_ns": 2209,
-          "ref_ms": 0.007,
-          "cand_ms": 0.002,
-          "speedup": 3.3201
+          "ref_ns": 9125,
+          "cand_ns": 2750,
+          "ref_ms": 0.009,
+          "cand_ms": 0.003,
+          "speedup": 3.3182
         },
         {
           "n": 10,
           "seed": 42,
-          "ref_ns": 11625,
-          "cand_ns": 6375,
-          "ref_ms": 0.012,
-          "cand_ms": 0.006,
-          "speedup": 1.8235
+          "ref_ns": 14542,
+          "cand_ns": 7834,
+          "ref_ms": 0.015,
+          "cand_ms": 0.008,
+          "speedup": 1.8563
         },
         {
           "n": 10,
           "seed": 123,
-          "ref_ns": 11542,
-          "cand_ns": 6333,
-          "ref_ms": 0.012,
-          "cand_ms": 0.006,
-          "speedup": 1.8225
+          "ref_ns": 14375,
+          "cand_ns": 7833,
+          "ref_ms": 0.014,
+          "cand_ms": 0.008,
+          "speedup": 1.8352
         },
         {
           "n": 10,
           "seed": 7,
-          "ref_ns": 11875,
-          "cand_ns": 6667,
-          "ref_ms": 0.012,
-          "cand_ms": 0.007,
-          "speedup": 1.7812
+          "ref_ns": 14250,
+          "cand_ns": 7833,
+          "ref_ms": 0.014,
+          "cand_ms": 0.008,
+          "speedup": 1.8192
         },
         {
           "n": 10,
           "seed": 256,
-          "ref_ns": 11959,
-          "cand_ns": 6333,
-          "ref_ms": 0.012,
-          "cand_ms": 0.006,
-          "speedup": 1.8884
+          "ref_ns": 14208,
+          "cand_ns": 7833,
+          "ref_ms": 0.014,
+          "cand_ms": 0.008,
+          "speedup": 1.8139
         },
         {
           "n": 25,
           "seed": 42,
-          "ref_ns": 47875,
-          "cand_ns": 19791,
-          "ref_ms": 0.048,
-          "cand_ms": 0.02,
-          "speedup": 2.419
+          "ref_ns": 57958,
+          "cand_ns": 24625,
+          "ref_ms": 0.058,
+          "cand_ms": 0.025,
+          "speedup": 2.3536
         },
         {
           "n": 25,
           "seed": 123,
-          "ref_ns": 47000,
-          "cand_ns": 19750,
-          "ref_ms": 0.047,
-          "cand_ms": 0.02,
-          "speedup": 2.3797
+          "ref_ns": 58083,
+          "cand_ns": 24459,
+          "ref_ms": 0.058,
+          "cand_ms": 0.024,
+          "speedup": 2.3747
         },
         {
           "n": 25,
           "seed": 7,
-          "ref_ns": 47000,
-          "cand_ns": 19625,
-          "ref_ms": 0.047,
-          "cand_ms": 0.02,
-          "speedup": 2.3949
+          "ref_ns": 59208,
+          "cand_ns": 24417,
+          "ref_ms": 0.059,
+          "cand_ms": 0.024,
+          "speedup": 2.4249
         },
         {
           "n": 25,
           "seed": 256,
-          "ref_ns": 46916,
-          "cand_ns": 19583,
-          "ref_ms": 0.047,
-          "cand_ms": 0.02,
-          "speedup": 2.3958
+          "ref_ns": 57875,
+          "cand_ns": 24208,
+          "ref_ms": 0.058,
+          "cand_ms": 0.024,
+          "speedup": 2.3907
         },
         {
           "n": 50,
           "seed": 42,
-          "ref_ns": 191875,
-          "cand_ns": 28916,
-          "ref_ms": 0.192,
-          "cand_ms": 0.029,
-          "speedup": 6.6356
+          "ref_ns": 232000,
+          "cand_ns": 35542,
+          "ref_ms": 0.232,
+          "cand_ms": 0.036,
+          "speedup": 6.5275
         },
         {
           "n": 50,
           "seed": 123,
-          "ref_ns": 191750,
-          "cand_ns": 28833,
-          "ref_ms": 0.192,
-          "cand_ms": 0.029,
-          "speedup": 6.6504
+          "ref_ns": 235916,
+          "cand_ns": 35583,
+          "ref_ms": 0.236,
+          "cand_ms": 0.036,
+          "speedup": 6.63
         },
         {
           "n": 50,
           "seed": 7,
-          "ref_ns": 194875,
-          "cand_ns": 28833,
-          "ref_ms": 0.195,
-          "cand_ms": 0.029,
-          "speedup": 6.7587
+          "ref_ns": 236291,
+          "cand_ns": 35917,
+          "ref_ms": 0.236,
+          "cand_ms": 0.036,
+          "speedup": 6.5788
         },
         {
           "n": 50,
           "seed": 256,
-          "ref_ns": 191833,
-          "cand_ns": 28541,
-          "ref_ms": 0.192,
-          "cand_ms": 0.029,
-          "speedup": 6.7213
+          "ref_ns": 232417,
+          "cand_ns": 35458,
+          "ref_ms": 0.232,
+          "cand_ms": 0.035,
+          "speedup": 6.5547
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 3.1456,
-      "min_speedup": 1.7812,
-      "max_speedup": 6.7587,
-      "cv": 0.5462
+      "geometric_mean": 3.1367,
+      "min_speedup": 1.8139,
+      "max_speedup": 6.63,
+      "cv": 0.5356
     },
     "correlate_1d": {
       "task": "correlate_1d",
       "valid": true,
-      "speedup": 6.6166,
+      "speedup": 8.6056,
       "error": null,
       "per_input": [
         {
           "n": 50,
           "seed": 42,
-          "ref_ns": 24181458,
-          "cand_ns": 2648375,
-          "ref_ms": 24.181,
-          "cand_ms": 2.648,
-          "speedup": 9.1307
+          "ref_ns": 30368833,
+          "cand_ns": 3235958,
+          "ref_ms": 30.369,
+          "cand_ms": 3.236,
+          "speedup": 9.3848
         },
         {
           "n": 50,
           "seed": 123,
-          "ref_ns": 24268750,
-          "cand_ns": 2721833,
-          "ref_ms": 24.269,
-          "cand_ms": 2.722,
-          "speedup": 8.9163
+          "ref_ns": 30242083,
+          "cand_ns": 3224542,
+          "ref_ms": 30.242,
+          "cand_ms": 3.225,
+          "speedup": 9.3787
         },
         {
           "n": 50,
           "seed": 7,
-          "ref_ns": 24300875,
-          "cand_ns": 2617208,
-          "ref_ms": 24.301,
-          "cand_ms": 2.617,
-          "speedup": 9.285
+          "ref_ns": 30336292,
+          "cand_ns": 3286584,
+          "ref_ms": 30.336,
+          "cand_ms": 3.287,
+          "speedup": 9.2303
         },
         {
           "n": 50,
           "seed": 256,
-          "ref_ns": 24087416,
-          "cand_ns": 2674750,
-          "ref_ms": 24.087,
-          "cand_ms": 2.675,
-          "speedup": 9.0055
+          "ref_ns": 38380417,
+          "cand_ns": 3358041,
+          "ref_ms": 38.38,
+          "cand_ms": 3.358,
+          "speedup": 11.4294
         },
         {
           "n": 50,
           "seed": 999,
-          "ref_ns": 24402625,
-          "cand_ns": 2664791,
-          "ref_ms": 24.403,
-          "cand_ms": 2.665,
-          "speedup": 9.1574
+          "ref_ns": 37884291,
+          "cand_ns": 3287958,
+          "ref_ms": 37.884,
+          "cand_ms": 3.288,
+          "speedup": 11.5221
         },
         {
           "n": 50,
           "seed": 31,
-          "ref_ns": 24280375,
-          "cand_ns": 3005084,
-          "ref_ms": 24.28,
-          "cand_ms": 3.005,
-          "speedup": 8.0798
+          "ref_ns": 37945834,
+          "cand_ns": 3254333,
+          "ref_ms": 37.946,
+          "cand_ms": 3.254,
+          "speedup": 11.6601
         },
         {
           "n": 50,
           "seed": 77,
-          "ref_ns": 24706042,
-          "cand_ns": 2648500,
-          "ref_ms": 24.706,
-          "cand_ms": 2.648,
-          "speedup": 9.3283
+          "ref_ns": 38014625,
+          "cand_ns": 3318458,
+          "ref_ms": 38.015,
+          "cand_ms": 3.318,
+          "speedup": 11.4555
         },
         {
           "n": 50,
           "seed": 444,
-          "ref_ns": 25512166,
-          "cand_ns": 2820375,
-          "ref_ms": 25.512,
-          "cand_ms": 2.82,
-          "speedup": 9.0457
+          "ref_ns": 38063458,
+          "cand_ns": 3251500,
+          "ref_ms": 38.063,
+          "cand_ms": 3.252,
+          "speedup": 11.7064
         },
         {
           "n": 100,
           "seed": 42,
-          "ref_ns": 26991833,
-          "cand_ns": 5103750,
-          "ref_ms": 26.992,
-          "cand_ms": 5.104,
-          "speedup": 5.2886
+          "ref_ns": 48638333,
+          "cand_ns": 6355208,
+          "ref_ms": 48.638,
+          "cand_ms": 6.355,
+          "speedup": 7.6533
         },
         {
           "n": 100,
           "seed": 123,
-          "ref_ns": 26982083,
-          "cand_ns": 5178750,
-          "ref_ms": 26.982,
-          "cand_ms": 5.179,
-          "speedup": 5.2102
+          "ref_ns": 48533084,
+          "cand_ns": 6324000,
+          "ref_ms": 48.533,
+          "cand_ms": 6.324,
+          "speedup": 7.6744
         },
         {
           "n": 100,
           "seed": 7,
-          "ref_ns": 26478375,
-          "cand_ns": 5121000,
-          "ref_ms": 26.478,
-          "cand_ms": 5.121,
-          "speedup": 5.1705
+          "ref_ns": 48327083,
+          "cand_ns": 6458125,
+          "ref_ms": 48.327,
+          "cand_ms": 6.458,
+          "speedup": 7.4831
         },
         {
           "n": 100,
           "seed": 256,
-          "ref_ns": 26292959,
-          "cand_ns": 4990042,
-          "ref_ms": 26.293,
-          "cand_ms": 4.99,
-          "speedup": 5.2691
+          "ref_ns": 48596500,
+          "cand_ns": 6391375,
+          "ref_ms": 48.596,
+          "cand_ms": 6.391,
+          "speedup": 7.6034
         },
         {
           "n": 100,
           "seed": 999,
-          "ref_ns": 26895500,
-          "cand_ns": 5122291,
-          "ref_ms": 26.895,
-          "cand_ms": 5.122,
-          "speedup": 5.2507
+          "ref_ns": 48570667,
+          "cand_ns": 6347917,
+          "ref_ms": 48.571,
+          "cand_ms": 6.348,
+          "speedup": 7.6514
         },
         {
           "n": 100,
           "seed": 31,
-          "ref_ns": 26235791,
-          "cand_ns": 5030917,
-          "ref_ms": 26.236,
-          "cand_ms": 5.031,
-          "speedup": 5.2149
+          "ref_ns": 48542500,
+          "cand_ns": 6361833,
+          "ref_ms": 48.542,
+          "cand_ms": 6.362,
+          "speedup": 7.6303
         },
         {
           "n": 100,
           "seed": 77,
-          "ref_ns": 26430750,
-          "cand_ns": 5036750,
-          "ref_ms": 26.431,
-          "cand_ms": 5.037,
-          "speedup": 5.2476
+          "ref_ns": 48322125,
+          "cand_ns": 6309833,
+          "ref_ms": 48.322,
+          "cand_ms": 6.31,
+          "speedup": 7.6582
         },
         {
           "n": 100,
           "seed": 444,
-          "ref_ns": 26294958,
-          "cand_ns": 4996833,
-          "ref_ms": 26.295,
-          "cand_ms": 4.997,
-          "speedup": 5.2623
+          "ref_ns": 33108917,
+          "cand_ns": 6175625,
+          "ref_ms": 33.109,
+          "cand_ms": 6.176,
+          "speedup": 5.3612
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 6.8613,
-      "min_speedup": 5.1705,
-      "max_speedup": 9.3283,
-      "cv": 0.2751
+      "geometric_mean": 8.8196,
+      "min_speedup": 5.3612,
+      "max_speedup": 11.7064,
+      "cv": 0.2207
     },
     "eigenvectors_real": {
       "task": "eigenvectors_real",
       "valid": true,
-      "speedup": 1.6996,
+      "speedup": 1.4792,
       "error": null,
       "per_input": [
         {
+          "n": 300,
+          "seed": 42,
+          "ref_ns": 10475084,
+          "cand_ns": 7499583,
+          "ref_ms": 10.475,
+          "cand_ms": 7.5,
+          "speedup": 1.3968
+        },
+        {
+          "n": 300,
+          "seed": 123,
+          "ref_ns": 10262875,
+          "cand_ns": 7591791,
+          "ref_ms": 10.263,
+          "cand_ms": 7.592,
+          "speedup": 1.3518
+        },
+        {
+          "n": 300,
+          "seed": 7,
+          "ref_ns": 10430750,
+          "cand_ns": 7440667,
+          "ref_ms": 10.431,
+          "cand_ms": 7.441,
+          "speedup": 1.4019
+        },
+        {
+          "n": 300,
+          "seed": 256,
+          "ref_ns": 10331916,
+          "cand_ns": 7577792,
+          "ref_ms": 10.332,
+          "cand_ms": 7.578,
+          "speedup": 1.3634
+        },
+        {
+          "n": 300,
+          "seed": 999,
+          "ref_ns": 10631750,
+          "cand_ns": 7677041,
+          "ref_ms": 10.632,
+          "cand_ms": 7.677,
+          "speedup": 1.3849
+        },
+        {
+          "n": 300,
+          "seed": 31,
+          "ref_ns": 10340375,
+          "cand_ns": 7402709,
+          "ref_ms": 10.34,
+          "cand_ms": 7.403,
+          "speedup": 1.3968
+        },
+        {
+          "n": 300,
+          "seed": 77,
+          "ref_ns": 10431458,
+          "cand_ns": 7746500,
+          "ref_ms": 10.431,
+          "cand_ms": 7.747,
+          "speedup": 1.3466
+        },
+        {
+          "n": 300,
+          "seed": 444,
+          "ref_ns": 10511125,
+          "cand_ns": 7753625,
+          "ref_ms": 10.511,
+          "cand_ms": 7.754,
+          "speedup": 1.3556
+        },
+        {
           "n": 500,
           "seed": 42,
-          "ref_ns": 30125042,
-          "cand_ns": 19024500,
-          "ref_ms": 30.125,
-          "cand_ms": 19.024,
-          "speedup": 1.5835
+          "ref_ns": 36842708,
+          "cand_ns": 22597625,
+          "ref_ms": 36.843,
+          "cand_ms": 22.598,
+          "speedup": 1.6304
         },
         {
           "n": 500,
           "seed": 123,
-          "ref_ns": 29771292,
-          "cand_ns": 19148375,
-          "ref_ms": 29.771,
-          "cand_ms": 19.148,
-          "speedup": 1.5548
+          "ref_ns": 36914333,
+          "cand_ns": 22627625,
+          "ref_ms": 36.914,
+          "cand_ms": 22.628,
+          "speedup": 1.6314
         },
         {
           "n": 500,
           "seed": 7,
-          "ref_ns": 30018916,
-          "cand_ns": 18198916,
-          "ref_ms": 30.019,
-          "cand_ms": 18.199,
-          "speedup": 1.6495
+          "ref_ns": 36677166,
+          "cand_ns": 22928875,
+          "ref_ms": 36.677,
+          "cand_ms": 22.929,
+          "speedup": 1.5996
         },
         {
           "n": 500,
           "seed": 256,
-          "ref_ns": 29078666,
-          "cand_ns": 18780459,
-          "ref_ms": 29.079,
-          "cand_ms": 18.78,
-          "speedup": 1.5483
+          "ref_ns": 37085709,
+          "cand_ns": 23262041,
+          "ref_ms": 37.086,
+          "cand_ms": 23.262,
+          "speedup": 1.5943
         },
         {
           "n": 500,
           "seed": 999,
-          "ref_ns": 28992583,
-          "cand_ns": 18298542,
-          "ref_ms": 28.993,
-          "cand_ms": 18.299,
-          "speedup": 1.5844
+          "ref_ns": 35897792,
+          "cand_ns": 22785792,
+          "ref_ms": 35.898,
+          "cand_ms": 22.786,
+          "speedup": 1.5754
         },
         {
           "n": 500,
           "seed": 31,
-          "ref_ns": 28980375,
-          "cand_ns": 18315125,
-          "ref_ms": 28.98,
-          "cand_ms": 18.315,
-          "speedup": 1.5823
+          "ref_ns": 36754541,
+          "cand_ns": 23004542,
+          "ref_ms": 36.755,
+          "cand_ms": 23.005,
+          "speedup": 1.5977
         },
         {
           "n": 500,
           "seed": 77,
-          "ref_ns": 30029792,
-          "cand_ns": 18519500,
-          "ref_ms": 30.03,
-          "cand_ms": 18.52,
-          "speedup": 1.6215
+          "ref_ns": 37066542,
+          "cand_ns": 22727000,
+          "ref_ms": 37.067,
+          "cand_ms": 22.727,
+          "speedup": 1.6309
         },
         {
           "n": 500,
           "seed": 444,
-          "ref_ns": 29901542,
-          "cand_ns": 18704000,
-          "ref_ms": 29.902,
-          "cand_ms": 18.704,
-          "speedup": 1.5987
-        },
-        {
-          "n": 750,
-          "seed": 42,
-          "ref_ns": 87006000,
-          "cand_ns": 47292917,
-          "ref_ms": 87.006,
-          "cand_ms": 47.293,
-          "speedup": 1.8397
-        },
-        {
-          "n": 750,
-          "seed": 123,
-          "ref_ns": 87208792,
-          "cand_ns": 47367834,
-          "ref_ms": 87.209,
-          "cand_ms": 47.368,
-          "speedup": 1.8411
-        },
-        {
-          "n": 750,
-          "seed": 7,
-          "ref_ns": 86839083,
-          "cand_ns": 48048791,
-          "ref_ms": 86.839,
-          "cand_ms": 48.049,
-          "speedup": 1.8073
-        },
-        {
-          "n": 750,
-          "seed": 256,
-          "ref_ns": 86071333,
-          "cand_ns": 46804667,
-          "ref_ms": 86.071,
-          "cand_ms": 46.805,
-          "speedup": 1.8389
-        },
-        {
-          "n": 750,
-          "seed": 999,
-          "ref_ns": 87522875,
-          "cand_ns": 48954709,
-          "ref_ms": 87.523,
-          "cand_ms": 48.955,
-          "speedup": 1.7878
-        },
-        {
-          "n": 750,
-          "seed": 31,
-          "ref_ns": 87784542,
-          "cand_ns": 47123417,
-          "ref_ms": 87.785,
-          "cand_ms": 47.123,
-          "speedup": 1.8629
-        },
-        {
-          "n": 750,
-          "seed": 77,
-          "ref_ns": 86544291,
-          "cand_ns": 48432750,
-          "ref_ms": 86.544,
-          "cand_ms": 48.433,
-          "speedup": 1.7869
-        },
-        {
-          "n": 750,
-          "seed": 444,
-          "ref_ns": 86124750,
-          "cand_ns": 46710667,
-          "ref_ms": 86.125,
-          "cand_ms": 46.711,
-          "speedup": 1.8438
+          "ref_ns": 36987542,
+          "cand_ns": 23811833,
+          "ref_ms": 36.988,
+          "cand_ms": 23.812,
+          "speedup": 1.5533
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 1.7039,
-      "min_speedup": 1.5483,
-      "max_speedup": 1.8629,
-      "cv": 0.0733
+      "geometric_mean": 1.4837,
+      "min_speedup": 1.3466,
+      "max_speedup": 1.6314,
+      "cv": 0.0805
     },
     "fft_convolution": {
       "task": "fft_convolution",
       "valid": true,
-      "speedup": 8.2462,
+      "speedup": 8.258,
       "error": null,
       "per_input": [
         {
           "n": 5,
           "seed": 42,
-          "ref_ns": 23042,
-          "cand_ns": 1791,
-          "ref_ms": 0.023,
+          "ref_ns": 28625,
+          "cand_ns": 2208,
+          "ref_ms": 0.029,
           "cand_ms": 0.002,
-          "speedup": 12.8654
+          "speedup": 12.9642
         },
         {
           "n": 5,
           "seed": 123,
-          "ref_ns": 22458,
-          "cand_ns": 1625,
-          "ref_ms": 0.022,
+          "ref_ns": 28042,
+          "cand_ns": 2000,
+          "ref_ms": 0.028,
           "cand_ms": 0.002,
-          "speedup": 13.8203
+          "speedup": 14.021
         },
         {
           "n": 5,
           "seed": 7,
-          "ref_ns": 25458,
-          "cand_ns": 2042,
-          "ref_ms": 0.025,
-          "cand_ms": 0.002,
-          "speedup": 12.4672
+          "ref_ns": 32000,
+          "cand_ns": 2583,
+          "ref_ms": 0.032,
+          "cand_ms": 0.003,
+          "speedup": 12.3887
         },
         {
           "n": 5,
           "seed": 256,
-          "ref_ns": 22500,
-          "cand_ns": 1833,
-          "ref_ms": 0.022,
+          "ref_ns": 28208,
+          "cand_ns": 2250,
+          "ref_ms": 0.028,
           "cand_ms": 0.002,
-          "speedup": 12.275
+          "speedup": 12.5369
         },
         {
           "n": 10,
           "seed": 42,
-          "ref_ns": 25417,
-          "cand_ns": 2166,
-          "ref_ms": 0.025,
-          "cand_ms": 0.002,
-          "speedup": 11.7345
+          "ref_ns": 32167,
+          "cand_ns": 2709,
+          "ref_ms": 0.032,
+          "cand_ms": 0.003,
+          "speedup": 11.8741
         },
         {
           "n": 10,
           "seed": 123,
-          "ref_ns": 22959,
-          "cand_ns": 1959,
-          "ref_ms": 0.023,
-          "cand_ms": 0.002,
-          "speedup": 11.7198
-        },
-        {
-          "n": 10,
-          "seed": 7,
-          "ref_ns": 26042,
-          "cand_ns": 2459,
-          "ref_ms": 0.026,
-          "cand_ms": 0.002,
-          "speedup": 10.5905
-        },
-        {
-          "n": 10,
-          "seed": 256,
-          "ref_ns": 25708,
+          "ref_ns": 28417,
           "cand_ns": 2500,
-          "ref_ms": 0.026,
+          "ref_ms": 0.028,
           "cand_ms": 0.003,
-          "speedup": 10.2832
+          "speedup": 11.3668
+        },
+        {
+          "n": 10,
+          "seed": 7,
+          "ref_ns": 32667,
+          "cand_ns": 3042,
+          "ref_ms": 0.033,
+          "cand_ms": 0.003,
+          "speedup": 10.7387
+        },
+        {
+          "n": 10,
+          "seed": 256,
+          "ref_ns": 32125,
+          "cand_ns": 3084,
+          "ref_ms": 0.032,
+          "cand_ms": 0.003,
+          "speedup": 10.4167
         },
         {
           "n": 25,
           "seed": 42,
-          "ref_ns": 23958,
-          "cand_ns": 3083,
-          "ref_ms": 0.024,
-          "cand_ms": 0.003,
-          "speedup": 7.771
+          "ref_ns": 29916,
+          "cand_ns": 3834,
+          "ref_ms": 0.03,
+          "cand_ms": 0.004,
+          "speedup": 7.8028
         },
         {
           "n": 25,
           "seed": 123,
-          "ref_ns": 23750,
-          "cand_ns": 2750,
-          "ref_ms": 0.024,
+          "ref_ns": 29459,
+          "cand_ns": 3416,
+          "ref_ms": 0.029,
           "cand_ms": 0.003,
-          "speedup": 8.6364
+          "speedup": 8.6238
         },
         {
           "n": 25,
           "seed": 7,
-          "ref_ns": 24541,
-          "cand_ns": 3542,
-          "ref_ms": 0.025,
-          "cand_ms": 0.004,
-          "speedup": 6.9286
-        },
-        {
-          "n": 25,
-          "seed": 256,
-          "ref_ns": 26583,
-          "cand_ns": 3292,
-          "ref_ms": 0.027,
-          "cand_ms": 0.003,
-          "speedup": 8.075
-        },
-        {
-          "n": 50,
-          "seed": 42,
-          "ref_ns": 26459,
-          "cand_ns": 5333,
-          "ref_ms": 0.026,
-          "cand_ms": 0.005,
-          "speedup": 4.9614
-        },
-        {
-          "n": 50,
-          "seed": 123,
-          "ref_ns": 25375,
+          "ref_ns": 30625,
           "cand_ns": 4500,
-          "ref_ms": 0.025,
+          "ref_ms": 0.031,
           "cand_ms": 0.004,
-          "speedup": 5.6389
+          "speedup": 6.8056
+        },
+        {
+          "n": 25,
+          "seed": 256,
+          "ref_ns": 32958,
+          "cand_ns": 4042,
+          "ref_ms": 0.033,
+          "cand_ms": 0.004,
+          "speedup": 8.1539
+        },
+        {
+          "n": 50,
+          "seed": 42,
+          "ref_ns": 33000,
+          "cand_ns": 6666,
+          "ref_ms": 0.033,
+          "cand_ms": 0.007,
+          "speedup": 4.9505
+        },
+        {
+          "n": 50,
+          "seed": 123,
+          "ref_ns": 31333,
+          "cand_ns": 5583,
+          "ref_ms": 0.031,
+          "cand_ms": 0.006,
+          "speedup": 5.6122
         },
         {
           "n": 50,
           "seed": 7,
-          "ref_ns": 29041,
-          "cand_ns": 5125,
-          "ref_ms": 0.029,
-          "cand_ms": 0.005,
-          "speedup": 5.6665
+          "ref_ns": 36000,
+          "cand_ns": 6375,
+          "ref_ms": 0.036,
+          "cand_ms": 0.006,
+          "speedup": 5.6471
         },
         {
           "n": 50,
           "seed": 256,
-          "ref_ns": 29209,
-          "cand_ns": 5792,
-          "ref_ms": 0.029,
-          "cand_ms": 0.006,
-          "speedup": 5.043
+          "ref_ns": 36084,
+          "cand_ns": 7083,
+          "ref_ms": 0.036,
+          "cand_ms": 0.007,
+          "speedup": 5.0945
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 8.7694,
-      "min_speedup": 4.9614,
-      "max_speedup": 13.8203,
-      "cv": 0.3291
+      "geometric_mean": 8.7909,
+      "min_speedup": 4.9505,
+      "max_speedup": 14.021,
+      "cv": 0.3324
     },
     "kmeans": {
       "task": "kmeans",
       "valid": true,
-      "speedup": 2.4611,
+      "speedup": 2.5537,
       "error": null,
       "per_input": [
         {
           "n": 100,
           "seed": 42,
-          "ref_ns": 13164417,
-          "cand_ns": 5693625,
-          "ref_ms": 13.164,
-          "cand_ms": 5.694,
-          "speedup": 2.3121
+          "ref_ns": 15592917,
+          "cand_ns": 6842875,
+          "ref_ms": 15.593,
+          "cand_ms": 6.843,
+          "speedup": 2.2787
         },
         {
           "n": 100,
           "seed": 123,
-          "ref_ns": 12541167,
-          "cand_ns": 4860250,
-          "ref_ms": 12.541,
-          "cand_ms": 4.86,
-          "speedup": 2.5804
+          "ref_ns": 15087292,
+          "cand_ns": 6071542,
+          "ref_ms": 15.087,
+          "cand_ms": 6.072,
+          "speedup": 2.4849
         },
         {
           "n": 100,
           "seed": 7,
-          "ref_ns": 13049708,
-          "cand_ns": 5426917,
-          "ref_ms": 13.05,
-          "cand_ms": 5.427,
-          "speedup": 2.4046
+          "ref_ns": 15166667,
+          "cand_ns": 5863041,
+          "ref_ms": 15.167,
+          "cand_ms": 5.863,
+          "speedup": 2.5868
         },
         {
           "n": 100,
           "seed": 256,
-          "ref_ns": 12940125,
-          "cand_ns": 4979709,
-          "ref_ms": 12.94,
-          "cand_ms": 4.98,
-          "speedup": 2.5986
+          "ref_ns": 15492458,
+          "cand_ns": 6264500,
+          "ref_ms": 15.492,
+          "cand_ms": 6.264,
+          "speedup": 2.4731
         },
         {
           "n": 100,
           "seed": 999,
-          "ref_ns": 12165667,
-          "cand_ns": 5358334,
-          "ref_ms": 12.166,
-          "cand_ms": 5.358,
-          "speedup": 2.2704
+          "ref_ns": 14658416,
+          "cand_ns": 6425084,
+          "ref_ms": 14.658,
+          "cand_ms": 6.425,
+          "speedup": 2.2814
         },
         {
           "n": 100,
           "seed": 31,
-          "ref_ns": 11598542,
-          "cand_ns": 5408125,
-          "ref_ms": 11.599,
-          "cand_ms": 5.408,
-          "speedup": 2.1447
+          "ref_ns": 14095208,
+          "cand_ns": 6308791,
+          "ref_ms": 14.095,
+          "cand_ms": 6.309,
+          "speedup": 2.2342
         },
         {
           "n": 100,
           "seed": 77,
-          "ref_ns": 12135292,
-          "cand_ns": 5519333,
-          "ref_ms": 12.135,
-          "cand_ms": 5.519,
-          "speedup": 2.1987
+          "ref_ns": 14237666,
+          "cand_ns": 6089375,
+          "ref_ms": 14.238,
+          "cand_ms": 6.089,
+          "speedup": 2.3381
         },
         {
           "n": 100,
           "seed": 444,
-          "ref_ns": 12271458,
-          "cand_ns": 5598458,
-          "ref_ms": 12.271,
-          "cand_ms": 5.598,
-          "speedup": 2.1919
+          "ref_ns": 14818416,
+          "cand_ns": 6122875,
+          "ref_ms": 14.818,
+          "cand_ms": 6.123,
+          "speedup": 2.4202
         },
         {
           "n": 200,
           "seed": 42,
-          "ref_ns": 43373625,
-          "cand_ns": 17825292,
-          "ref_ms": 43.374,
-          "cand_ms": 17.825,
-          "speedup": 2.4333
+          "ref_ns": 51056792,
+          "cand_ns": 19280750,
+          "ref_ms": 51.057,
+          "cand_ms": 19.281,
+          "speedup": 2.6481
         },
         {
           "n": 200,
           "seed": 123,
-          "ref_ns": 44214583,
-          "cand_ns": 16107000,
-          "ref_ms": 44.215,
-          "cand_ms": 16.107,
-          "speedup": 2.7451
+          "ref_ns": 53021291,
+          "cand_ns": 22097459,
+          "ref_ms": 53.021,
+          "cand_ms": 22.097,
+          "speedup": 2.3994
         },
         {
           "n": 200,
           "seed": 7,
-          "ref_ns": 46171667,
-          "cand_ns": 18772833,
-          "ref_ms": 46.172,
-          "cand_ms": 18.773,
-          "speedup": 2.4595
+          "ref_ns": 55940792,
+          "cand_ns": 18667792,
+          "ref_ms": 55.941,
+          "cand_ms": 18.668,
+          "speedup": 2.9966
         },
         {
           "n": 200,
           "seed": 256,
-          "ref_ns": 45626792,
-          "cand_ns": 16976167,
-          "ref_ms": 45.627,
-          "cand_ms": 16.976,
-          "speedup": 2.6877
+          "ref_ns": 54395584,
+          "cand_ns": 20747417,
+          "ref_ms": 54.396,
+          "cand_ms": 20.747,
+          "speedup": 2.6218
         },
         {
           "n": 200,
           "seed": 999,
-          "ref_ns": 43986958,
-          "cand_ns": 17489417,
-          "ref_ms": 43.987,
-          "cand_ms": 17.489,
-          "speedup": 2.5151
+          "ref_ns": 51768084,
+          "cand_ns": 18492958,
+          "ref_ms": 51.768,
+          "cand_ms": 18.493,
+          "speedup": 2.7993
         },
         {
           "n": 200,
           "seed": 31,
-          "ref_ns": 46550792,
-          "cand_ns": 18354875,
-          "ref_ms": 46.551,
-          "cand_ms": 18.355,
-          "speedup": 2.5362
+          "ref_ns": 55842792,
+          "cand_ns": 19406292,
+          "ref_ms": 55.843,
+          "cand_ms": 19.406,
+          "speedup": 2.8776
         },
         {
           "n": 200,
           "seed": 77,
-          "ref_ns": 50406917,
-          "cand_ns": 18070041,
-          "ref_ms": 50.407,
-          "cand_ms": 18.07,
-          "speedup": 2.7895
+          "ref_ns": 56077375,
+          "cand_ns": 20223667,
+          "ref_ms": 56.077,
+          "cand_ms": 20.224,
+          "speedup": 2.7729
         },
         {
           "n": 200,
           "seed": 444,
-          "ref_ns": 47819792,
-          "cand_ns": 17140000,
-          "ref_ms": 47.82,
-          "cand_ms": 17.14,
-          "speedup": 2.79
+          "ref_ns": 57077375,
+          "cand_ns": 18928000,
+          "ref_ms": 57.077,
+          "cand_ms": 18.928,
+          "speedup": 3.0155
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 2.4699,
-      "min_speedup": 2.1447,
-      "max_speedup": 2.79,
-      "cv": 0.0865
+      "geometric_mean": 2.5651,
+      "min_speedup": 2.2342,
+      "max_speedup": 3.0155,
+      "cv": 0.0992
     },
     "linear_system_solver": {
       "task": "linear_system_solver",
       "valid": true,
-      "speedup": 1.5015,
+      "speedup": 1.4842,
       "error": null,
       "per_input": [
         {
+          "n": 500,
+          "seed": 7,
+          "ref_ns": 9628708,
+          "cand_ns": 7144458,
+          "ref_ms": 9.629,
+          "cand_ms": 7.144,
+          "speedup": 1.3477
+        },
+        {
+          "n": 500,
+          "seed": 999,
+          "ref_ns": 9611666,
+          "cand_ns": 7096458,
+          "ref_ms": 9.612,
+          "cand_ms": 7.096,
+          "speedup": 1.3544
+        },
+        {
           "n": 750,
           "seed": 42,
-          "ref_ns": 19335917,
-          "cand_ns": 13730833,
-          "ref_ms": 19.336,
-          "cand_ms": 13.731,
-          "speedup": 1.4082
+          "ref_ns": 24283750,
+          "cand_ns": 16986584,
+          "ref_ms": 24.284,
+          "cand_ms": 16.987,
+          "speedup": 1.4296
         },
         {
           "n": 750,
           "seed": 123,
-          "ref_ns": 19378083,
-          "cand_ns": 13764667,
-          "ref_ms": 19.378,
-          "cand_ms": 13.765,
-          "speedup": 1.4078
+          "ref_ns": 24404833,
+          "cand_ns": 17003792,
+          "ref_ms": 24.405,
+          "cand_ms": 17.004,
+          "speedup": 1.4353
         },
         {
           "n": 750,
           "seed": 7,
-          "ref_ns": 19683666,
-          "cand_ns": 13557792,
-          "ref_ms": 19.684,
-          "cand_ms": 13.558,
-          "speedup": 1.4518
+          "ref_ns": 24382834,
+          "cand_ns": 16878917,
+          "ref_ms": 24.383,
+          "cand_ms": 16.879,
+          "speedup": 1.4446
         },
         {
           "n": 750,
           "seed": 256,
-          "ref_ns": 19255542,
-          "cand_ns": 13589875,
-          "ref_ms": 19.256,
-          "cand_ms": 13.59,
-          "speedup": 1.4169
+          "ref_ns": 24432334,
+          "cand_ns": 16821500,
+          "ref_ms": 24.432,
+          "cand_ms": 16.822,
+          "speedup": 1.4524
         },
         {
           "n": 750,
           "seed": 999,
-          "ref_ns": 19248708,
-          "cand_ns": 13723500,
-          "ref_ms": 19.249,
-          "cand_ms": 13.723,
-          "speedup": 1.4026
+          "ref_ns": 24278667,
+          "cand_ns": 17194042,
+          "ref_ms": 24.279,
+          "cand_ms": 17.194,
+          "speedup": 1.412
         },
         {
           "n": 750,
           "seed": 31,
-          "ref_ns": 19315208,
-          "cand_ns": 13897500,
-          "ref_ms": 19.315,
-          "cand_ms": 13.898,
-          "speedup": 1.3898
+          "ref_ns": 24284209,
+          "cand_ns": 17037125,
+          "ref_ms": 24.284,
+          "cand_ms": 17.037,
+          "speedup": 1.4254
         },
         {
           "n": 750,
           "seed": 77,
-          "ref_ns": 19670875,
-          "cand_ns": 13784583,
-          "ref_ms": 19.671,
-          "cand_ms": 13.785,
-          "speedup": 1.427
+          "ref_ns": 24400416,
+          "cand_ns": 17004708,
+          "ref_ms": 24.4,
+          "cand_ms": 17.005,
+          "speedup": 1.4349
         },
         {
           "n": 750,
           "seed": 444,
-          "ref_ns": 19960500,
-          "cand_ns": 13946375,
-          "ref_ms": 19.96,
-          "cand_ms": 13.946,
-          "speedup": 1.4312
+          "ref_ns": 24311375,
+          "cand_ns": 16928250,
+          "ref_ms": 24.311,
+          "cand_ms": 16.928,
+          "speedup": 1.4361
         },
         {
           "n": 1000,
           "seed": 42,
-          "ref_ns": 38333375,
-          "cand_ns": 23897333,
-          "ref_ms": 38.333,
-          "cand_ms": 23.897,
+          "ref_ns": 47257458,
+          "cand_ns": 29163375,
+          "ref_ms": 47.257,
+          "cand_ms": 29.163,
+          "speedup": 1.6204
+        },
+        {
+          "n": 1000,
+          "seed": 123,
+          "ref_ns": 47404542,
+          "cand_ns": 29265750,
+          "ref_ms": 47.405,
+          "cand_ms": 29.266,
+          "speedup": 1.6198
+        },
+        {
+          "n": 1000,
+          "seed": 7,
+          "ref_ns": 46990208,
+          "cand_ns": 29293042,
+          "ref_ms": 46.99,
+          "cand_ms": 29.293,
           "speedup": 1.6041
         },
         {
           "n": 1000,
-          "seed": 123,
-          "ref_ns": 38602416,
-          "cand_ns": 24206625,
-          "ref_ms": 38.602,
-          "cand_ms": 24.207,
-          "speedup": 1.5947
-        },
-        {
-          "n": 1000,
-          "seed": 7,
-          "ref_ns": 37843625,
-          "cand_ns": 24138041,
-          "ref_ms": 37.844,
-          "cand_ms": 24.138,
-          "speedup": 1.5678
-        },
-        {
-          "n": 1000,
           "seed": 256,
-          "ref_ns": 38748833,
-          "cand_ns": 24008500,
-          "ref_ms": 38.749,
-          "cand_ms": 24.009,
-          "speedup": 1.614
+          "ref_ns": 47100500,
+          "cand_ns": 29016750,
+          "ref_ms": 47.1,
+          "cand_ms": 29.017,
+          "speedup": 1.6232
         },
         {
           "n": 1000,
           "seed": 999,
-          "ref_ns": 38162208,
-          "cand_ns": 23423708,
-          "ref_ms": 38.162,
-          "cand_ms": 23.424,
-          "speedup": 1.6292
+          "ref_ns": 47307208,
+          "cand_ns": 29311750,
+          "ref_ms": 47.307,
+          "cand_ms": 29.312,
+          "speedup": 1.6139
         },
         {
           "n": 1000,
           "seed": 31,
-          "ref_ns": 37370542,
-          "cand_ns": 23821000,
-          "ref_ms": 37.371,
-          "cand_ms": 23.821,
-          "speedup": 1.5688
-        },
-        {
-          "n": 1000,
-          "seed": 77,
-          "ref_ns": 38156167,
-          "cand_ns": 23807917,
-          "ref_ms": 38.156,
-          "cand_ms": 23.808,
-          "speedup": 1.6027
-        },
-        {
-          "n": 1000,
-          "seed": 444,
-          "ref_ns": 37211167,
-          "cand_ns": 23284334,
-          "ref_ms": 37.211,
-          "cand_ms": 23.284,
-          "speedup": 1.5981
+          "ref_ns": 47146042,
+          "cand_ns": 29548458,
+          "ref_ms": 47.146,
+          "cand_ms": 29.548,
+          "speedup": 1.5955
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 1.5044,
-      "min_speedup": 1.3898,
-      "max_speedup": 1.6292,
-      "cv": 0.0632
+      "geometric_mean": 1.4874,
+      "min_speedup": 1.3477,
+      "max_speedup": 1.6232,
+      "cv": 0.0684
     },
     "lu_factorization": {
       "task": "lu_factorization",
       "valid": true,
-      "speedup": 8.543,
+      "speedup": 8.5717,
       "error": null,
       "per_input": [
         {
           "n": 500,
           "seed": 42,
-          "ref_ns": 10012167,
-          "cand_ns": 1114000,
-          "ref_ms": 10.012,
-          "cand_ms": 1.114,
-          "speedup": 8.9876
+          "ref_ns": 11945292,
+          "cand_ns": 1342125,
+          "ref_ms": 11.945,
+          "cand_ms": 1.342,
+          "speedup": 8.9003
         },
         {
           "n": 500,
           "seed": 123,
-          "ref_ns": 9883750,
-          "cand_ns": 1121625,
-          "ref_ms": 9.884,
-          "cand_ms": 1.122,
-          "speedup": 8.812
+          "ref_ns": 12546916,
+          "cand_ns": 1332125,
+          "ref_ms": 12.547,
+          "cand_ms": 1.332,
+          "speedup": 9.4187
         },
         {
           "n": 500,
           "seed": 7,
-          "ref_ns": 9654291,
-          "cand_ns": 1116750,
-          "ref_ms": 9.654,
-          "cand_ms": 1.117,
-          "speedup": 8.645
+          "ref_ns": 11385416,
+          "cand_ns": 1397375,
+          "ref_ms": 11.385,
+          "cand_ms": 1.397,
+          "speedup": 8.1477
         },
         {
           "n": 500,
           "seed": 256,
-          "ref_ns": 9465875,
-          "cand_ns": 1128208,
-          "ref_ms": 9.466,
-          "cand_ms": 1.128,
-          "speedup": 8.3902
+          "ref_ns": 12513209,
+          "cand_ns": 1331542,
+          "ref_ms": 12.513,
+          "cand_ms": 1.332,
+          "speedup": 9.3975
         },
         {
           "n": 500,
           "seed": 999,
-          "ref_ns": 9658875,
-          "cand_ns": 1114875,
-          "ref_ms": 9.659,
-          "cand_ms": 1.115,
-          "speedup": 8.6636
+          "ref_ns": 11405667,
+          "cand_ns": 1335792,
+          "ref_ms": 11.406,
+          "cand_ms": 1.336,
+          "speedup": 8.5385
         },
         {
           "n": 500,
           "seed": 31,
-          "ref_ns": 9689583,
-          "cand_ns": 1114667,
-          "ref_ms": 9.69,
-          "cand_ms": 1.115,
-          "speedup": 8.6928
+          "ref_ns": 10830917,
+          "cand_ns": 1335708,
+          "ref_ms": 10.831,
+          "cand_ms": 1.336,
+          "speedup": 8.1087
         },
         {
           "n": 500,
           "seed": 77,
-          "ref_ns": 9255792,
-          "cand_ns": 1106208,
-          "ref_ms": 9.256,
-          "cand_ms": 1.106,
-          "speedup": 8.3671
+          "ref_ns": 11059667,
+          "cand_ns": 1337916,
+          "ref_ms": 11.06,
+          "cand_ms": 1.338,
+          "speedup": 8.2663
         },
         {
           "n": 500,
           "seed": 444,
-          "ref_ns": 9153458,
-          "cand_ns": 1120417,
-          "ref_ms": 9.153,
-          "cand_ms": 1.12,
-          "speedup": 8.1697
+          "ref_ns": 10983833,
+          "cand_ns": 1345833,
+          "ref_ms": 10.984,
+          "cand_ms": 1.346,
+          "speedup": 8.1614
         },
         {
           "n": 750,
           "seed": 42,
-          "ref_ns": 24760000,
-          "cand_ns": 3039042,
-          "ref_ms": 24.76,
-          "cand_ms": 3.039,
-          "speedup": 8.1473
+          "ref_ns": 30826750,
+          "cand_ns": 3518000,
+          "ref_ms": 30.827,
+          "cand_ms": 3.518,
+          "speedup": 8.7626
         },
         {
           "n": 750,
           "seed": 123,
-          "ref_ns": 25431708,
-          "cand_ns": 2961667,
-          "ref_ms": 25.432,
-          "cand_ms": 2.962,
-          "speedup": 8.587
+          "ref_ns": 30360292,
+          "cand_ns": 3479250,
+          "ref_ms": 30.36,
+          "cand_ms": 3.479,
+          "speedup": 8.7261
         },
         {
           "n": 750,
           "seed": 7,
-          "ref_ns": 25015291,
-          "cand_ns": 2962500,
-          "ref_ms": 25.015,
-          "cand_ms": 2.962,
-          "speedup": 8.444
+          "ref_ns": 29721500,
+          "cand_ns": 3510750,
+          "ref_ms": 29.721,
+          "cand_ms": 3.511,
+          "speedup": 8.4659
         },
         {
           "n": 750,
           "seed": 256,
-          "ref_ns": 25268666,
-          "cand_ns": 2955791,
-          "ref_ms": 25.269,
-          "cand_ms": 2.956,
-          "speedup": 8.5489
+          "ref_ns": 30266917,
+          "cand_ns": 3595000,
+          "ref_ms": 30.267,
+          "cand_ms": 3.595,
+          "speedup": 8.4192
         },
         {
           "n": 750,
           "seed": 999,
-          "ref_ns": 24586083,
-          "cand_ns": 3250958,
-          "ref_ms": 24.586,
-          "cand_ms": 3.251,
-          "speedup": 7.5627
+          "ref_ns": 30675958,
+          "cand_ns": 3576542,
+          "ref_ms": 30.676,
+          "cand_ms": 3.577,
+          "speedup": 8.577
         },
         {
           "n": 750,
           "seed": 31,
-          "ref_ns": 28571917,
-          "cand_ns": 2953375,
-          "ref_ms": 28.572,
-          "cand_ms": 2.953,
-          "speedup": 9.6743
+          "ref_ns": 29512041,
+          "cand_ns": 3556417,
+          "ref_ms": 29.512,
+          "cand_ms": 3.556,
+          "speedup": 8.2983
         },
         {
           "n": 750,
           "seed": 77,
-          "ref_ns": 24839250,
-          "cand_ns": 2982500,
-          "ref_ms": 24.839,
-          "cand_ms": 2.982,
-          "speedup": 8.3283
+          "ref_ns": 30719667,
+          "cand_ns": 3558917,
+          "ref_ms": 30.72,
+          "cand_ms": 3.559,
+          "speedup": 8.6317
         },
         {
           "n": 750,
           "seed": 444,
-          "ref_ns": 26332833,
-          "cand_ns": 2913333,
-          "ref_ms": 26.333,
-          "cand_ms": 2.913,
-          "speedup": 9.0387
+          "ref_ns": 30282916,
+          "cand_ns": 3525833,
+          "ref_ms": 30.283,
+          "cand_ms": 3.526,
+          "speedup": 8.5889
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 8.5546,
-      "min_speedup": 7.5627,
-      "max_speedup": 9.6743,
-      "cv": 0.0539
+      "geometric_mean": 8.5798,
+      "min_speedup": 8.1087,
+      "max_speedup": 9.4187,
+      "cv": 0.0459
     },
     "matrix_multiplication": {
       "task": "matrix_multiplication",
       "valid": true,
-      "speedup": 1.6613,
+      "speedup": 1.5781,
       "error": null,
       "per_input": [
         {
           "n": 300,
+          "seed": 7,
+          "ref_ns": 11025417,
+          "cand_ns": 7855250,
+          "ref_ms": 11.025,
+          "cand_ms": 7.855,
+          "speedup": 1.4036
+        },
+        {
+          "n": 300,
           "seed": 256,
-          "ref_ns": 12006625,
-          "cand_ns": 8323750,
-          "ref_ms": 12.007,
-          "cand_ms": 8.324,
-          "speedup": 1.4425
+          "ref_ns": 14865708,
+          "cand_ns": 10349666,
+          "ref_ms": 14.866,
+          "cand_ms": 10.35,
+          "speedup": 1.4363
+        },
+        {
+          "n": 300,
+          "seed": 999,
+          "ref_ns": 10926459,
+          "cand_ns": 7478708,
+          "ref_ms": 10.926,
+          "cand_ms": 7.479,
+          "speedup": 1.461
+        },
+        {
+          "n": 300,
+          "seed": 77,
+          "ref_ns": 11651833,
+          "cand_ns": 8105708,
+          "ref_ms": 11.652,
+          "cand_ms": 8.106,
+          "speedup": 1.4375
+        },
+        {
+          "n": 300,
+          "seed": 444,
+          "ref_ns": 12153667,
+          "cand_ns": 8415334,
+          "ref_ms": 12.154,
+          "cand_ms": 8.415,
+          "speedup": 1.4442
         },
         {
           "n": 500,
           "seed": 42,
-          "ref_ns": 27927000,
-          "cand_ns": 17888667,
-          "ref_ms": 27.927,
-          "cand_ms": 17.889,
-          "speedup": 1.5612
+          "ref_ns": 34567583,
+          "cand_ns": 21962416,
+          "ref_ms": 34.568,
+          "cand_ms": 21.962,
+          "speedup": 1.5739
         },
         {
           "n": 500,
           "seed": 123,
-          "ref_ns": 19448083,
-          "cand_ns": 12062459,
-          "ref_ms": 19.448,
-          "cand_ms": 12.062,
-          "speedup": 1.6123
+          "ref_ns": 24369250,
+          "cand_ns": 15168209,
+          "ref_ms": 24.369,
+          "cand_ms": 15.168,
+          "speedup": 1.6066
         },
         {
           "n": 500,
           "seed": 7,
-          "ref_ns": 34225833,
-          "cand_ns": 20229917,
-          "ref_ms": 34.226,
-          "cand_ms": 20.23,
-          "speedup": 1.6918
+          "ref_ns": 42508958,
+          "cand_ns": 25293875,
+          "ref_ms": 42.509,
+          "cand_ms": 25.294,
+          "speedup": 1.6806
         },
         {
           "n": 500,
           "seed": 256,
-          "ref_ns": 28034250,
-          "cand_ns": 17580916,
-          "ref_ms": 28.034,
-          "cand_ms": 17.581,
-          "speedup": 1.5946
+          "ref_ns": 35437083,
+          "cand_ns": 22159875,
+          "ref_ms": 35.437,
+          "cand_ms": 22.16,
+          "speedup": 1.5992
         },
         {
           "n": 500,
           "seed": 999,
-          "ref_ns": 40614542,
-          "cand_ns": 25211166,
-          "ref_ms": 40.615,
-          "cand_ms": 25.211,
-          "speedup": 1.611
+          "ref_ns": 51252250,
+          "cand_ns": 31442792,
+          "ref_ms": 51.252,
+          "cand_ms": 31.443,
+          "speedup": 1.63
         },
         {
           "n": 500,
           "seed": 31,
-          "ref_ns": 21022541,
-          "cand_ns": 12996458,
-          "ref_ms": 21.023,
-          "cand_ms": 12.996,
-          "speedup": 1.6176
+          "ref_ns": 25946000,
+          "cand_ns": 15892500,
+          "ref_ms": 25.946,
+          "cand_ms": 15.893,
+          "speedup": 1.6326
         },
         {
           "n": 500,
           "seed": 77,
-          "ref_ns": 33799500,
-          "cand_ns": 20783375,
-          "ref_ms": 33.8,
-          "cand_ms": 20.783,
-          "speedup": 1.6263
+          "ref_ns": 41553417,
+          "cand_ns": 26125666,
+          "ref_ms": 41.553,
+          "cand_ms": 26.126,
+          "speedup": 1.5905
         },
         {
           "n": 500,
           "seed": 444,
-          "ref_ns": 24434250,
-          "cand_ns": 15313042,
-          "ref_ms": 24.434,
-          "cand_ms": 15.313,
-          "speedup": 1.5956
+          "ref_ns": 30746000,
+          "cand_ns": 19104167,
+          "ref_ms": 30.746,
+          "cand_ms": 19.104,
+          "speedup": 1.6094
         },
         {
           "n": 750,
           "seed": 42,
-          "ref_ns": 83497459,
-          "cand_ns": 48619375,
-          "ref_ms": 83.497,
-          "cand_ms": 48.619,
-          "speedup": 1.7174
+          "ref_ns": 104938834,
+          "cand_ns": 59657125,
+          "ref_ms": 104.939,
+          "cand_ms": 59.657,
+          "speedup": 1.759
         },
         {
           "n": 750,
           "seed": 123,
-          "ref_ns": 55073917,
-          "cand_ns": 31149209,
-          "ref_ms": 55.074,
-          "cand_ms": 31.149,
-          "speedup": 1.7681
+          "ref_ns": 67990833,
+          "cand_ns": 38124416,
+          "ref_ms": 67.991,
+          "cand_ms": 38.124,
+          "speedup": 1.7834
         },
         {
           "n": 750,
           "seed": 7,
-          "ref_ns": 66611875,
-          "cand_ns": 38769625,
-          "ref_ms": 66.612,
-          "cand_ms": 38.77,
-          "speedup": 1.7181
-        },
-        {
-          "n": 750,
-          "seed": 256,
-          "ref_ns": 88462667,
-          "cand_ns": 49229792,
-          "ref_ms": 88.463,
-          "cand_ms": 49.23,
-          "speedup": 1.7969
-        },
-        {
-          "n": 750,
-          "seed": 999,
-          "ref_ns": 83669250,
-          "cand_ns": 48453208,
-          "ref_ms": 83.669,
-          "cand_ms": 48.453,
-          "speedup": 1.7268
-        },
-        {
-          "n": 750,
-          "seed": 31,
-          "ref_ns": 60255583,
-          "cand_ns": 33595958,
-          "ref_ms": 60.256,
-          "cand_ms": 33.596,
-          "speedup": 1.7935
-        },
-        {
-          "n": 750,
-          "seed": 77,
-          "ref_ns": 72211625,
-          "cand_ns": 40106291,
-          "ref_ms": 72.212,
-          "cand_ms": 40.106,
-          "speedup": 1.8005
+          "ref_ns": 83349792,
+          "cand_ns": 47840375,
+          "ref_ms": 83.35,
+          "cand_ms": 47.84,
+          "speedup": 1.7422
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 1.6642,
-      "min_speedup": 1.4425,
-      "max_speedup": 1.8005,
-      "cv": 0.0605
+      "geometric_mean": 1.5825,
+      "min_speedup": 1.4036,
+      "max_speedup": 1.7834,
+      "cv": 0.0765
     },
     "minimum_spanning_tree": {
       "task": "minimum_spanning_tree",
       "valid": true,
-      "speedup": 9.7615,
+      "speedup": 9.8262,
       "error": null,
       "per_input": [
         {
           "n": 200,
-          "seed": 77,
-          "ref_ns": 6399708,
-          "cand_ns": 653500,
-          "ref_ms": 6.4,
-          "cand_ms": 0.653,
-          "speedup": 9.793
+          "seed": 256,
+          "ref_ns": 8080959,
+          "cand_ns": 808833,
+          "ref_ms": 8.081,
+          "cand_ms": 0.809,
+          "speedup": 9.9909
         },
         {
           "n": 300,
           "seed": 42,
-          "ref_ns": 15208208,
-          "cand_ns": 1601375,
-          "ref_ms": 15.208,
-          "cand_ms": 1.601,
-          "speedup": 9.497
+          "ref_ns": 19317458,
+          "cand_ns": 1987334,
+          "ref_ms": 19.317,
+          "cand_ms": 1.987,
+          "speedup": 9.7203
         },
         {
           "n": 300,
           "seed": 123,
-          "ref_ns": 15584208,
-          "cand_ns": 1610667,
-          "ref_ms": 15.584,
-          "cand_ms": 1.611,
-          "speedup": 9.6756
+          "ref_ns": 19087125,
+          "cand_ns": 2028500,
+          "ref_ms": 19.087,
+          "cand_ms": 2.029,
+          "speedup": 9.4095
         },
         {
           "n": 300,
           "seed": 7,
-          "ref_ns": 15876917,
-          "cand_ns": 1601625,
-          "ref_ms": 15.877,
-          "cand_ms": 1.602,
-          "speedup": 9.913
+          "ref_ns": 19600167,
+          "cand_ns": 2030333,
+          "ref_ms": 19.6,
+          "cand_ms": 2.03,
+          "speedup": 9.6537
         },
         {
           "n": 300,
           "seed": 256,
-          "ref_ns": 16365500,
-          "cand_ns": 1634542,
-          "ref_ms": 16.366,
-          "cand_ms": 1.635,
-          "speedup": 10.0123
+          "ref_ns": 18888333,
+          "cand_ns": 2040875,
+          "ref_ms": 18.888,
+          "cand_ms": 2.041,
+          "speedup": 9.255
         },
         {
           "n": 300,
           "seed": 999,
-          "ref_ns": 15747833,
-          "cand_ns": 1590750,
-          "ref_ms": 15.748,
-          "cand_ms": 1.591,
-          "speedup": 9.8996
+          "ref_ns": 19277167,
+          "cand_ns": 1953750,
+          "ref_ms": 19.277,
+          "cand_ms": 1.954,
+          "speedup": 9.8668
         },
         {
           "n": 300,
           "seed": 31,
-          "ref_ns": 15364625,
-          "cand_ns": 1596708,
-          "ref_ms": 15.365,
-          "cand_ms": 1.597,
-          "speedup": 9.6227
+          "ref_ns": 18860417,
+          "cand_ns": 1977709,
+          "ref_ms": 18.86,
+          "cand_ms": 1.978,
+          "speedup": 9.5365
         },
         {
           "n": 300,
           "seed": 77,
-          "ref_ns": 15281459,
-          "cand_ns": 1571625,
-          "ref_ms": 15.281,
-          "cand_ms": 1.572,
-          "speedup": 9.7233
+          "ref_ns": 18933750,
+          "cand_ns": 1958125,
+          "ref_ms": 18.934,
+          "cand_ms": 1.958,
+          "speedup": 9.6693
         },
         {
           "n": 300,
           "seed": 444,
-          "ref_ns": 15633708,
-          "cand_ns": 1645292,
-          "ref_ms": 15.634,
-          "cand_ms": 1.645,
-          "speedup": 9.5021
+          "ref_ns": 19282833,
+          "cand_ns": 1960459,
+          "ref_ms": 19.283,
+          "cand_ms": 1.96,
+          "speedup": 9.8359
         },
         {
           "n": 500,
           "seed": 42,
-          "ref_ns": 45347000,
-          "cand_ns": 4523667,
-          "ref_ms": 45.347,
-          "cand_ms": 4.524,
-          "speedup": 10.0244
+          "ref_ns": 57520000,
+          "cand_ns": 5584625,
+          "ref_ms": 57.52,
+          "cand_ms": 5.585,
+          "speedup": 10.2997
         },
         {
           "n": 500,
           "seed": 123,
-          "ref_ns": 44626375,
-          "cand_ns": 4645125,
-          "ref_ms": 44.626,
-          "cand_ms": 4.645,
-          "speedup": 9.6071
+          "ref_ns": 58881875,
+          "cand_ns": 5880583,
+          "ref_ms": 58.882,
+          "cand_ms": 5.881,
+          "speedup": 10.0129
         },
         {
           "n": 500,
           "seed": 7,
-          "ref_ns": 44653167,
-          "cand_ns": 4491708,
-          "ref_ms": 44.653,
-          "cand_ms": 4.492,
-          "speedup": 9.9412
+          "ref_ns": 57861375,
+          "cand_ns": 5620875,
+          "ref_ms": 57.861,
+          "cand_ms": 5.621,
+          "speedup": 10.294
         },
         {
           "n": 500,
           "seed": 256,
-          "ref_ns": 44643083,
-          "cand_ns": 4543667,
-          "ref_ms": 44.643,
-          "cand_ms": 4.544,
-          "speedup": 9.8253
+          "ref_ns": 57373000,
+          "cand_ns": 5691958,
+          "ref_ms": 57.373,
+          "cand_ms": 5.692,
+          "speedup": 10.0797
         },
         {
           "n": 500,
           "seed": 999,
-          "ref_ns": 44437625,
-          "cand_ns": 4523042,
-          "ref_ms": 44.438,
-          "cand_ms": 4.523,
-          "speedup": 9.8247
+          "ref_ns": 57305834,
+          "cand_ns": 5661167,
+          "ref_ms": 57.306,
+          "cand_ms": 5.661,
+          "speedup": 10.1226
         },
         {
           "n": 500,
           "seed": 31,
-          "ref_ns": 43778458,
-          "cand_ns": 4557417,
-          "ref_ms": 43.778,
-          "cand_ms": 4.557,
-          "speedup": 9.606
+          "ref_ns": 55355750,
+          "cand_ns": 5719084,
+          "ref_ms": 55.356,
+          "cand_ms": 5.719,
+          "speedup": 9.6791
         },
         {
           "n": 500,
           "seed": 77,
-          "ref_ns": 43925000,
-          "cand_ns": 4500625,
-          "ref_ms": 43.925,
-          "cand_ms": 4.501,
-          "speedup": 9.7598
+          "ref_ns": 56495375,
+          "cand_ns": 5689500,
+          "ref_ms": 56.495,
+          "cand_ms": 5.689,
+          "speedup": 9.9298
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 9.7628,
-      "min_speedup": 9.497,
-      "max_speedup": 10.0244,
-      "cv": 0.0173
+      "geometric_mean": 9.8305,
+      "min_speedup": 9.255,
+      "max_speedup": 10.2997,
+      "cv": 0.0304
     },
     "ode_brusselator": {
       "task": "ode_brusselator",
-      "valid": false,
-      "speedup": 0.0,
-      "error": "Solution invalid on input 10 (n=100, seed=7)",
-      "per_input": [],
+      "valid": true,
+      "speedup": 318.9323,
+      "error": null,
+      "per_input": [
+        {
+          "n": 50,
+          "seed": 42,
+          "ref_ns": 23012250,
+          "cand_ns": 71958,
+          "ref_ms": 23.012,
+          "cand_ms": 0.072,
+          "speedup": 319.8011
+        },
+        {
+          "n": 50,
+          "seed": 123,
+          "ref_ns": 19835750,
+          "cand_ns": 62208,
+          "ref_ms": 19.836,
+          "cand_ms": 0.062,
+          "speedup": 318.8617
+        },
+        {
+          "n": 50,
+          "seed": 7,
+          "ref_ns": 21301542,
+          "cand_ns": 67000,
+          "ref_ms": 21.302,
+          "cand_ms": 0.067,
+          "speedup": 317.9335
+        },
+        {
+          "n": 50,
+          "seed": 256,
+          "ref_ns": 19533958,
+          "cand_ns": 62209,
+          "ref_ms": 19.534,
+          "cand_ms": 0.062,
+          "speedup": 314.0053
+        },
+        {
+          "n": 50,
+          "seed": 999,
+          "ref_ns": 22340792,
+          "cand_ns": 70334,
+          "ref_ms": 22.341,
+          "cand_ms": 0.07,
+          "speedup": 317.6386
+        },
+        {
+          "n": 50,
+          "seed": 31,
+          "ref_ns": 23510042,
+          "cand_ns": 73583,
+          "ref_ms": 23.51,
+          "cand_ms": 0.074,
+          "speedup": 319.5037
+        },
+        {
+          "n": 50,
+          "seed": 77,
+          "ref_ns": 23601458,
+          "cand_ns": 74667,
+          "ref_ms": 23.601,
+          "cand_ms": 0.075,
+          "speedup": 316.0895
+        },
+        {
+          "n": 50,
+          "seed": 444,
+          "ref_ns": 24812125,
+          "cand_ns": 77625,
+          "ref_ms": 24.812,
+          "cand_ms": 0.078,
+          "speedup": 319.6409
+        },
+        {
+          "n": 100,
+          "seed": 42,
+          "ref_ns": 47769708,
+          "cand_ns": 148416,
+          "ref_ms": 47.77,
+          "cand_ms": 0.148,
+          "speedup": 321.8636
+        },
+        {
+          "n": 100,
+          "seed": 123,
+          "ref_ns": 39534959,
+          "cand_ns": 124875,
+          "ref_ms": 39.535,
+          "cand_ms": 0.125,
+          "speedup": 316.5963
+        },
+        {
+          "n": 100,
+          "seed": 7,
+          "ref_ns": 43028084,
+          "cand_ns": 133667,
+          "ref_ms": 43.028,
+          "cand_ms": 0.134,
+          "speedup": 321.9051
+        },
+        {
+          "n": 100,
+          "seed": 256,
+          "ref_ns": 40740625,
+          "cand_ns": 128250,
+          "ref_ms": 40.741,
+          "cand_ms": 0.128,
+          "speedup": 317.6657
+        },
+        {
+          "n": 100,
+          "seed": 999,
+          "ref_ns": 44858708,
+          "cand_ns": 140250,
+          "ref_ms": 44.859,
+          "cand_ms": 0.14,
+          "speedup": 319.8482
+        },
+        {
+          "n": 100,
+          "seed": 31,
+          "ref_ns": 48062709,
+          "cand_ns": 149666,
+          "ref_ms": 48.063,
+          "cand_ms": 0.15,
+          "speedup": 321.1331
+        },
+        {
+          "n": 100,
+          "seed": 77,
+          "ref_ns": 47374416,
+          "cand_ns": 147708,
+          "ref_ms": 47.374,
+          "cand_ms": 0.148,
+          "speedup": 320.7302
+        },
+        {
+          "n": 100,
+          "seed": 444,
+          "ref_ns": 50054625,
+          "cand_ns": 156458,
+          "ref_ms": 50.055,
+          "cand_ms": 0.156,
+          "speedup": 319.9237
+        }
+      ],
       "num_inputs": 16,
-      "num_runs": 10
+      "num_runs": 10,
+      "geometric_mean": 318.9393,
+      "min_speedup": 314.0053,
+      "max_speedup": 321.9051,
+      "cv": 0.0068
     },
     "ode_lotkavolterra": {
       "task": "ode_lotkavolterra",
-      "valid": false,
-      "speedup": 0.0,
-      "error": "Solver load failed: No module named '<dynamic>'",
-      "per_input": [],
-      "num_inputs": 0,
-      "num_runs": 10
+      "valid": true,
+      "speedup": 647.7067,
+      "error": null,
+      "per_input": [
+        {
+          "n": 20,
+          "seed": 123,
+          "ref_ns": 9830333,
+          "cand_ns": 15458,
+          "ref_ms": 9.83,
+          "cand_ms": 0.015,
+          "speedup": 635.9382
+        },
+        {
+          "n": 20,
+          "seed": 7,
+          "ref_ns": 10871542,
+          "cand_ns": 17166,
+          "ref_ms": 10.872,
+          "cand_ms": 0.017,
+          "speedup": 633.3183
+        },
+        {
+          "n": 20,
+          "seed": 31,
+          "ref_ns": 10211459,
+          "cand_ns": 15792,
+          "ref_ms": 10.211,
+          "cand_ms": 0.016,
+          "speedup": 646.6223
+        },
+        {
+          "n": 20,
+          "seed": 77,
+          "ref_ns": 10526500,
+          "cand_ns": 16666,
+          "ref_ms": 10.527,
+          "cand_ms": 0.017,
+          "speedup": 631.6153
+        },
+        {
+          "n": 20,
+          "seed": 444,
+          "ref_ns": 10028083,
+          "cand_ns": 15750,
+          "ref_ms": 10.028,
+          "cand_ms": 0.016,
+          "speedup": 636.7037
+        },
+        {
+          "n": 50,
+          "seed": 42,
+          "ref_ns": 24865417,
+          "cand_ns": 38333,
+          "ref_ms": 24.865,
+          "cand_ms": 0.038,
+          "speedup": 648.6687
+        },
+        {
+          "n": 50,
+          "seed": 123,
+          "ref_ns": 24761375,
+          "cand_ns": 38208,
+          "ref_ms": 24.761,
+          "cand_ms": 0.038,
+          "speedup": 648.0678
+        },
+        {
+          "n": 50,
+          "seed": 7,
+          "ref_ns": 28400917,
+          "cand_ns": 43041,
+          "ref_ms": 28.401,
+          "cand_ms": 0.043,
+          "speedup": 659.8573
+        },
+        {
+          "n": 50,
+          "seed": 256,
+          "ref_ns": 22184292,
+          "cand_ns": 34000,
+          "ref_ms": 22.184,
+          "cand_ms": 0.034,
+          "speedup": 652.4792
+        },
+        {
+          "n": 50,
+          "seed": 999,
+          "ref_ns": 23864750,
+          "cand_ns": 36958,
+          "ref_ms": 23.865,
+          "cand_ms": 0.037,
+          "speedup": 645.7262
+        },
+        {
+          "n": 50,
+          "seed": 31,
+          "ref_ns": 25398084,
+          "cand_ns": 38833,
+          "ref_ms": 25.398,
+          "cand_ms": 0.039,
+          "speedup": 654.0335
+        },
+        {
+          "n": 50,
+          "seed": 77,
+          "ref_ns": 27470750,
+          "cand_ns": 42042,
+          "ref_ms": 27.471,
+          "cand_ms": 0.042,
+          "speedup": 653.4121
+        },
+        {
+          "n": 50,
+          "seed": 444,
+          "ref_ns": 24854875,
+          "cand_ns": 38125,
+          "ref_ms": 24.855,
+          "cand_ms": 0.038,
+          "speedup": 651.9311
+        },
+        {
+          "n": 100,
+          "seed": 42,
+          "ref_ns": 50950000,
+          "cand_ns": 77583,
+          "ref_ms": 50.95,
+          "cand_ms": 0.078,
+          "speedup": 656.716
+        },
+        {
+          "n": 100,
+          "seed": 123,
+          "ref_ns": 48950500,
+          "cand_ns": 75542,
+          "ref_ms": 48.95,
+          "cand_ms": 0.076,
+          "speedup": 647.9905
+        },
+        {
+          "n": 100,
+          "seed": 7,
+          "ref_ns": 56481458,
+          "cand_ns": 85291,
+          "ref_ms": 56.481,
+          "cand_ms": 0.085,
+          "speedup": 662.2206
+        }
+      ],
+      "num_inputs": 16,
+      "num_runs": 10,
+      "geometric_mean": 647.7691,
+      "min_speedup": 631.6153,
+      "max_speedup": 662.2206,
+      "cv": 0.0143
     },
     "pagerank": {
       "task": "pagerank",
       "valid": true,
-      "speedup": 18.309,
+      "speedup": 18.6079,
       "error": null,
       "per_input": [
         {
+          "n": 750,
+          "seed": 444,
+          "ref_ns": 6980041,
+          "cand_ns": 415125,
+          "ref_ms": 6.98,
+          "cand_ms": 0.415,
+          "speedup": 16.8143
+        },
+        {
           "n": 1000,
-          "seed": 31,
-          "ref_ns": 7070541,
-          "cand_ns": 400083,
-          "ref_ms": 7.071,
-          "cand_ms": 0.4,
-          "speedup": 17.6727
+          "seed": 42,
+          "ref_ns": 8940084,
+          "cand_ns": 500625,
+          "ref_ms": 8.94,
+          "cand_ms": 0.501,
+          "speedup": 17.8578
         },
         {
           "n": 1500,
           "seed": 42,
-          "ref_ns": 10588875,
-          "cand_ns": 606042,
-          "ref_ms": 10.589,
-          "cand_ms": 0.606,
-          "speedup": 17.4722
+          "ref_ns": 13489084,
+          "cand_ns": 728166,
+          "ref_ms": 13.489,
+          "cand_ms": 0.728,
+          "speedup": 18.5247
         },
         {
           "n": 1500,
           "seed": 123,
-          "ref_ns": 10737375,
-          "cand_ns": 587458,
-          "ref_ms": 10.737,
-          "cand_ms": 0.587,
-          "speedup": 18.2777
+          "ref_ns": 13558250,
+          "cand_ns": 730084,
+          "ref_ms": 13.558,
+          "cand_ms": 0.73,
+          "speedup": 18.5708
         },
         {
           "n": 1500,
           "seed": 7,
-          "ref_ns": 11273583,
-          "cand_ns": 614083,
-          "ref_ms": 11.274,
-          "cand_ms": 0.614,
-          "speedup": 18.3584
+          "ref_ns": 13767542,
+          "cand_ns": 744417,
+          "ref_ms": 13.768,
+          "cand_ms": 0.744,
+          "speedup": 18.4944
         },
         {
           "n": 1500,
           "seed": 256,
-          "ref_ns": 10784625,
-          "cand_ns": 583167,
-          "ref_ms": 10.785,
-          "cand_ms": 0.583,
-          "speedup": 18.4932
+          "ref_ns": 13643500,
+          "cand_ns": 724333,
+          "ref_ms": 13.643,
+          "cand_ms": 0.724,
+          "speedup": 18.8359
         },
         {
           "n": 1500,
           "seed": 999,
-          "ref_ns": 11245542,
-          "cand_ns": 610083,
-          "ref_ms": 11.246,
-          "cand_ms": 0.61,
-          "speedup": 18.4328
+          "ref_ns": 13558375,
+          "cand_ns": 735875,
+          "ref_ms": 13.558,
+          "cand_ms": 0.736,
+          "speedup": 18.4248
         },
         {
           "n": 1500,
           "seed": 31,
-          "ref_ns": 10818583,
-          "cand_ns": 599292,
-          "ref_ms": 10.819,
-          "cand_ms": 0.599,
-          "speedup": 18.0523
+          "ref_ns": 13648792,
+          "cand_ns": 734792,
+          "ref_ms": 13.649,
+          "cand_ms": 0.735,
+          "speedup": 18.575
         },
         {
           "n": 1500,
           "seed": 77,
-          "ref_ns": 10805959,
-          "cand_ns": 592250,
-          "ref_ms": 10.806,
-          "cand_ms": 0.592,
-          "speedup": 18.2456
+          "ref_ns": 13790250,
+          "cand_ns": 733500,
+          "ref_ms": 13.79,
+          "cand_ms": 0.734,
+          "speedup": 18.8006
         },
         {
           "n": 1500,
           "seed": 444,
-          "ref_ns": 10414000,
-          "cand_ns": 585750,
-          "ref_ms": 10.414,
-          "cand_ms": 0.586,
-          "speedup": 17.7789
+          "ref_ns": 13567250,
+          "cand_ns": 727917,
+          "ref_ms": 13.567,
+          "cand_ms": 0.728,
+          "speedup": 18.6385
         },
         {
           "n": 2000,
           "seed": 42,
-          "ref_ns": 13959125,
-          "cand_ns": 758583,
-          "ref_ms": 13.959,
-          "cand_ms": 0.759,
-          "speedup": 18.4016
+          "ref_ns": 18125417,
+          "cand_ns": 943959,
+          "ref_ms": 18.125,
+          "cand_ms": 0.944,
+          "speedup": 19.2015
         },
         {
           "n": 2000,
           "seed": 123,
-          "ref_ns": 14190125,
-          "cand_ns": 775042,
-          "ref_ms": 14.19,
-          "cand_ms": 0.775,
-          "speedup": 18.3088
+          "ref_ns": 17938041,
+          "cand_ns": 951125,
+          "ref_ms": 17.938,
+          "cand_ms": 0.951,
+          "speedup": 18.8598
         },
         {
           "n": 2000,
           "seed": 7,
-          "ref_ns": 14696084,
-          "cand_ns": 778250,
-          "ref_ms": 14.696,
-          "cand_ms": 0.778,
-          "speedup": 18.8835
+          "ref_ns": 18229875,
+          "cand_ns": 954375,
+          "ref_ms": 18.23,
+          "cand_ms": 0.954,
+          "speedup": 19.1014
         },
         {
           "n": 2000,
           "seed": 256,
-          "ref_ns": 14199375,
-          "cand_ns": 770208,
-          "ref_ms": 14.199,
-          "cand_ms": 0.77,
-          "speedup": 18.4358
+          "ref_ns": 17803500,
+          "cand_ns": 937916,
+          "ref_ms": 17.803,
+          "cand_ms": 0.938,
+          "speedup": 18.982
         },
         {
           "n": 2000,
           "seed": 999,
-          "ref_ns": 14516167,
-          "cand_ns": 772416,
-          "ref_ms": 14.516,
-          "cand_ms": 0.772,
-          "speedup": 18.7932
+          "ref_ns": 18456916,
+          "cand_ns": 958500,
+          "ref_ms": 18.457,
+          "cand_ms": 0.959,
+          "speedup": 19.256
         },
         {
           "n": 2000,
           "seed": 31,
-          "ref_ns": 14413292,
-          "cand_ns": 761917,
-          "ref_ms": 14.413,
-          "cand_ms": 0.762,
-          "speedup": 18.9171
-        },
-        {
-          "n": 2000,
-          "seed": 77,
-          "ref_ns": 14276209,
-          "cand_ns": 769167,
-          "ref_ms": 14.276,
-          "cand_ms": 0.769,
-          "speedup": 18.5606
+          "ref_ns": 18219209,
+          "cand_ns": 954125,
+          "ref_ms": 18.219,
+          "cand_ms": 0.954,
+          "speedup": 19.0952
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 18.3134,
-      "min_speedup": 17.4722,
-      "max_speedup": 18.9171,
-      "cv": 0.0224
+      "geometric_mean": 18.6177,
+      "min_speedup": 16.8143,
+      "max_speedup": 19.256,
+      "cv": 0.0321
     },
     "pca": {
       "task": "pca",
       "valid": true,
-      "speedup": 4.5682,
+      "speedup": 4.6236,
       "error": null,
       "per_input": [
         {
           "n": 20,
           "seed": 42,
-          "ref_ns": 22794917,
-          "cand_ns": 5837250,
-          "ref_ms": 22.795,
-          "cand_ms": 5.837,
-          "speedup": 3.9051
+          "ref_ns": 27746625,
+          "cand_ns": 7057917,
+          "ref_ms": 27.747,
+          "cand_ms": 7.058,
+          "speedup": 3.9313
         },
         {
           "n": 20,
           "seed": 123,
-          "ref_ns": 22222708,
-          "cand_ns": 5747959,
-          "ref_ms": 22.223,
-          "cand_ms": 5.748,
-          "speedup": 3.8662
+          "ref_ns": 27713667,
+          "cand_ns": 7010792,
+          "ref_ms": 27.714,
+          "cand_ms": 7.011,
+          "speedup": 3.953
         },
         {
           "n": 20,
           "seed": 7,
-          "ref_ns": 22118209,
-          "cand_ns": 5584833,
-          "ref_ms": 22.118,
-          "cand_ms": 5.585,
-          "speedup": 3.9604
+          "ref_ns": 27661791,
+          "cand_ns": 6996916,
+          "ref_ms": 27.662,
+          "cand_ms": 6.997,
+          "speedup": 3.9534
         },
         {
           "n": 20,
           "seed": 256,
-          "ref_ns": 21959042,
-          "cand_ns": 5690209,
-          "ref_ms": 21.959,
-          "cand_ms": 5.69,
-          "speedup": 3.8591
+          "ref_ns": 27571625,
+          "cand_ns": 6959334,
+          "ref_ms": 27.572,
+          "cand_ms": 6.959,
+          "speedup": 3.9618
         },
         {
           "n": 20,
           "seed": 999,
-          "ref_ns": 22644125,
-          "cand_ns": 5624125,
-          "ref_ms": 22.644,
-          "cand_ms": 5.624,
-          "speedup": 4.0262
+          "ref_ns": 27574625,
+          "cand_ns": 6957375,
+          "ref_ms": 27.575,
+          "cand_ms": 6.957,
+          "speedup": 3.9634
         },
         {
           "n": 20,
           "seed": 31,
-          "ref_ns": 22139292,
-          "cand_ns": 5633541,
-          "ref_ms": 22.139,
-          "cand_ms": 5.634,
-          "speedup": 3.9299
+          "ref_ns": 27938834,
+          "cand_ns": 6944875,
+          "ref_ms": 27.939,
+          "cand_ms": 6.945,
+          "speedup": 4.0229
         },
         {
           "n": 20,
           "seed": 77,
-          "ref_ns": 22330625,
-          "cand_ns": 5708834,
-          "ref_ms": 22.331,
-          "cand_ms": 5.709,
-          "speedup": 3.9116
+          "ref_ns": 28340500,
+          "cand_ns": 6983750,
+          "ref_ms": 28.34,
+          "cand_ms": 6.984,
+          "speedup": 4.0581
         },
         {
           "n": 20,
           "seed": 444,
-          "ref_ns": 22530042,
-          "cand_ns": 5727000,
-          "ref_ms": 22.53,
-          "cand_ms": 5.727,
-          "speedup": 3.934
+          "ref_ns": 27328625,
+          "cand_ns": 7008250,
+          "ref_ms": 27.329,
+          "cand_ms": 7.008,
+          "speedup": 3.8995
         },
         {
           "n": 50,
           "seed": 42,
-          "ref_ns": 220452792,
-          "cand_ns": 39974167,
-          "ref_ms": 220.453,
-          "cand_ms": 39.974,
-          "speedup": 5.5149
+          "ref_ns": 271791916,
+          "cand_ns": 49625917,
+          "ref_ms": 271.792,
+          "cand_ms": 49.626,
+          "speedup": 5.4768
         },
         {
           "n": 50,
           "seed": 123,
-          "ref_ns": 220682166,
-          "cand_ns": 39979542,
-          "ref_ms": 220.682,
-          "cand_ms": 39.98,
-          "speedup": 5.5199
+          "ref_ns": 272396833,
+          "cand_ns": 49413583,
+          "ref_ms": 272.397,
+          "cand_ms": 49.414,
+          "speedup": 5.5126
         },
         {
           "n": 50,
           "seed": 7,
-          "ref_ns": 219321000,
-          "cand_ns": 40156875,
-          "ref_ms": 219.321,
-          "cand_ms": 40.157,
-          "speedup": 5.4616
+          "ref_ns": 274240709,
+          "cand_ns": 49247959,
+          "ref_ms": 274.241,
+          "cand_ms": 49.248,
+          "speedup": 5.5686
         },
         {
           "n": 50,
           "seed": 256,
-          "ref_ns": 218410334,
-          "cand_ns": 39725500,
-          "ref_ms": 218.41,
-          "cand_ms": 39.725,
-          "speedup": 5.498
+          "ref_ns": 274149958,
+          "cand_ns": 49246417,
+          "ref_ms": 274.15,
+          "cand_ms": 49.246,
+          "speedup": 5.5669
         },
         {
           "n": 50,
           "seed": 999,
-          "ref_ns": 220797542,
-          "cand_ns": 40558500,
-          "ref_ms": 220.798,
-          "cand_ms": 40.559,
-          "speedup": 5.4439
+          "ref_ns": 274215750,
+          "cand_ns": 49310500,
+          "ref_ms": 274.216,
+          "cand_ms": 49.31,
+          "speedup": 5.561
         },
         {
           "n": 50,
           "seed": 31,
-          "ref_ns": 216345917,
-          "cand_ns": 39548459,
-          "ref_ms": 216.346,
-          "cand_ms": 39.548,
-          "speedup": 5.4704
+          "ref_ns": 274353500,
+          "cand_ns": 49651208,
+          "ref_ms": 274.353,
+          "cand_ms": 49.651,
+          "speedup": 5.5256
         },
         {
           "n": 50,
           "seed": 77,
-          "ref_ns": 214308334,
-          "cand_ns": 39622417,
-          "ref_ms": 214.308,
-          "cand_ms": 39.622,
-          "speedup": 5.4088
+          "ref_ns": 273671709,
+          "cand_ns": 49260416,
+          "ref_ms": 273.672,
+          "cand_ms": 49.26,
+          "speedup": 5.5556
         },
         {
           "n": 50,
           "seed": 444,
-          "ref_ns": 215999458,
-          "cand_ns": 39876000,
-          "ref_ms": 215.999,
-          "cand_ms": 39.876,
-          "speedup": 5.4168
+          "ref_ns": 274020667,
+          "cand_ns": 49334583,
+          "ref_ms": 274.021,
+          "cand_ms": 49.335,
+          "speedup": 5.5543
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 4.6314,
-      "min_speedup": 3.8591,
-      "max_speedup": 5.5199,
-      "cv": 0.17
+      "geometric_mean": 4.6884,
+      "min_speedup": 3.8995,
+      "max_speedup": 5.5686,
+      "cv": 0.171
     },
     "qr_factorization": {
       "task": "qr_factorization",
       "valid": true,
-      "speedup": 3.4964,
+      "speedup": 3.6544,
       "error": null,
       "per_input": [
         {
           "n": 500,
           "seed": 42,
-          "ref_ns": 15565416,
-          "cand_ns": 4397958,
-          "ref_ms": 15.565,
-          "cand_ms": 4.398,
-          "speedup": 3.5392
+          "ref_ns": 20276917,
+          "cand_ns": 5412667,
+          "ref_ms": 20.277,
+          "cand_ms": 5.413,
+          "speedup": 3.7462
         },
         {
           "n": 500,
           "seed": 123,
-          "ref_ns": 15755333,
-          "cand_ns": 4394958,
-          "ref_ms": 15.755,
-          "cand_ms": 4.395,
-          "speedup": 3.5849
+          "ref_ns": 21178833,
+          "cand_ns": 5491875,
+          "ref_ms": 21.179,
+          "cand_ms": 5.492,
+          "speedup": 3.8564
         },
         {
           "n": 500,
           "seed": 7,
-          "ref_ns": 15937750,
-          "cand_ns": 4403959,
-          "ref_ms": 15.938,
-          "cand_ms": 4.404,
-          "speedup": 3.619
+          "ref_ns": 19857209,
+          "cand_ns": 5463000,
+          "ref_ms": 19.857,
+          "cand_ms": 5.463,
+          "speedup": 3.6349
         },
         {
           "n": 500,
           "seed": 256,
-          "ref_ns": 16378375,
-          "cand_ns": 4381125,
-          "ref_ms": 16.378,
-          "cand_ms": 4.381,
-          "speedup": 3.7384
+          "ref_ns": 20811875,
+          "cand_ns": 5397416,
+          "ref_ms": 20.812,
+          "cand_ms": 5.397,
+          "speedup": 3.8559
         },
         {
           "n": 500,
           "seed": 999,
-          "ref_ns": 15579417,
-          "cand_ns": 4386792,
-          "ref_ms": 15.579,
-          "cand_ms": 4.387,
-          "speedup": 3.5514
+          "ref_ns": 20965792,
+          "cand_ns": 5380333,
+          "ref_ms": 20.966,
+          "cand_ms": 5.38,
+          "speedup": 3.8967
         },
         {
           "n": 500,
           "seed": 31,
-          "ref_ns": 15576333,
-          "cand_ns": 4389708,
-          "ref_ms": 15.576,
-          "cand_ms": 4.39,
-          "speedup": 3.5484
+          "ref_ns": 20644291,
+          "cand_ns": 5338959,
+          "ref_ms": 20.644,
+          "cand_ms": 5.339,
+          "speedup": 3.8667
         },
         {
           "n": 500,
           "seed": 77,
-          "ref_ns": 15821334,
-          "cand_ns": 4394166,
-          "ref_ms": 15.821,
-          "cand_ms": 4.394,
-          "speedup": 3.6005
+          "ref_ns": 21165416,
+          "cand_ns": 5410708,
+          "ref_ms": 21.165,
+          "cand_ms": 5.411,
+          "speedup": 3.9118
         },
         {
           "n": 500,
           "seed": 444,
-          "ref_ns": 15591708,
-          "cand_ns": 4387834,
-          "ref_ms": 15.592,
-          "cand_ms": 4.388,
-          "speedup": 3.5534
+          "ref_ns": 20208916,
+          "cand_ns": 5379292,
+          "ref_ms": 20.209,
+          "cand_ms": 5.379,
+          "speedup": 3.7568
         },
         {
           "n": 750,
           "seed": 42,
-          "ref_ns": 44169875,
-          "cand_ns": 13110916,
-          "ref_ms": 44.17,
-          "cand_ms": 13.111,
-          "speedup": 3.3689
+          "ref_ns": 56299958,
+          "cand_ns": 16251083,
+          "ref_ms": 56.3,
+          "cand_ms": 16.251,
+          "speedup": 3.4644
         },
         {
           "n": 750,
           "seed": 123,
-          "ref_ns": 44267083,
-          "cand_ns": 13143291,
-          "ref_ms": 44.267,
-          "cand_ms": 13.143,
-          "speedup": 3.368
+          "ref_ns": 56605250,
+          "cand_ns": 16346375,
+          "ref_ms": 56.605,
+          "cand_ms": 16.346,
+          "speedup": 3.4629
         },
         {
           "n": 750,
           "seed": 7,
-          "ref_ns": 44892458,
-          "cand_ns": 13136959,
-          "ref_ms": 44.892,
-          "cand_ms": 13.137,
-          "speedup": 3.4173
+          "ref_ns": 58393041,
+          "cand_ns": 15821083,
+          "ref_ms": 58.393,
+          "cand_ms": 15.821,
+          "speedup": 3.6908
         },
         {
           "n": 750,
           "seed": 256,
-          "ref_ns": 44677125,
-          "cand_ns": 13171042,
-          "ref_ms": 44.677,
-          "cand_ms": 13.171,
-          "speedup": 3.3921
+          "ref_ns": 55410166,
+          "cand_ns": 16216333,
+          "ref_ms": 55.41,
+          "cand_ms": 16.216,
+          "speedup": 3.4169
         },
         {
           "n": 750,
           "seed": 999,
-          "ref_ns": 46021583,
-          "cand_ns": 13304708,
-          "ref_ms": 46.022,
-          "cand_ms": 13.305,
-          "speedup": 3.459
+          "ref_ns": 56930833,
+          "cand_ns": 16203958,
+          "ref_ms": 56.931,
+          "cand_ms": 16.204,
+          "speedup": 3.5134
         },
         {
           "n": 750,
           "seed": 31,
-          "ref_ns": 44867417,
-          "cand_ns": 13208708,
-          "ref_ms": 44.867,
-          "cand_ms": 13.209,
-          "speedup": 3.3968
+          "ref_ns": 59023667,
+          "cand_ns": 16397958,
+          "ref_ms": 59.024,
+          "cand_ms": 16.398,
+          "speedup": 3.5995
         },
         {
           "n": 750,
           "seed": 77,
-          "ref_ns": 45540292,
-          "cand_ns": 13276625,
-          "ref_ms": 45.54,
-          "cand_ms": 13.277,
-          "speedup": 3.4301
+          "ref_ns": 57550125,
+          "cand_ns": 16339750,
+          "ref_ms": 57.55,
+          "cand_ms": 16.34,
+          "speedup": 3.5221
         },
         {
           "n": 750,
           "seed": 444,
-          "ref_ns": 45510666,
-          "cand_ns": 13294375,
-          "ref_ms": 45.511,
-          "cand_ms": 13.294,
-          "speedup": 3.4233
+          "ref_ns": 56095041,
+          "cand_ns": 16441250,
+          "ref_ms": 56.095,
+          "cand_ms": 16.441,
+          "speedup": 3.4118
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 3.4979,
-      "min_speedup": 3.368,
-      "max_speedup": 3.7384,
-      "cv": 0.0308
+      "geometric_mean": 3.6587,
+      "min_speedup": 3.4118,
+      "max_speedup": 3.9118,
+      "cv": 0.0498
     },
     "svd": {
       "task": "svd",
       "valid": true,
-      "speedup": 2.252,
+      "speedup": 2.1957,
       "error": null,
       "per_input": [
         {
           "n": 200,
           "seed": 42,
-          "ref_ns": 10787125,
-          "cand_ns": 4988000,
-          "ref_ms": 10.787,
-          "cand_ms": 4.988,
-          "speedup": 2.1626
+          "ref_ns": 13450833,
+          "cand_ns": 6348583,
+          "ref_ms": 13.451,
+          "cand_ms": 6.349,
+          "speedup": 2.1187
+        },
+        {
+          "n": 200,
+          "seed": 123,
+          "ref_ns": 10282292,
+          "cand_ns": 5537334,
+          "ref_ms": 10.282,
+          "cand_ms": 5.537,
+          "speedup": 1.8569
+        },
+        {
+          "n": 200,
+          "seed": 7,
+          "ref_ns": 12449417,
+          "cand_ns": 6560459,
+          "ref_ms": 12.449,
+          "cand_ms": 6.56,
+          "speedup": 1.8976
         },
         {
           "n": 200,
           "seed": 256,
-          "ref_ns": 14240667,
-          "cand_ns": 7686459,
-          "ref_ms": 14.241,
-          "cand_ms": 7.686,
-          "speedup": 1.8527
+          "ref_ns": 18154167,
+          "cand_ns": 9543208,
+          "ref_ms": 18.154,
+          "cand_ms": 9.543,
+          "speedup": 1.9023
         },
         {
           "n": 200,
           "seed": 999,
-          "ref_ns": 28328875,
-          "cand_ns": 12351750,
-          "ref_ms": 28.329,
-          "cand_ms": 12.352,
-          "speedup": 2.2935
+          "ref_ns": 36141042,
+          "cand_ns": 15361958,
+          "ref_ms": 36.141,
+          "cand_ms": 15.362,
+          "speedup": 2.3526
+        },
+        {
+          "n": 200,
+          "seed": 31,
+          "ref_ns": 11532791,
+          "cand_ns": 4815459,
+          "ref_ms": 11.533,
+          "cand_ms": 4.815,
+          "speedup": 2.395
         },
         {
           "n": 200,
           "seed": 77,
-          "ref_ns": 12243209,
-          "cand_ns": 6205000,
-          "ref_ms": 12.243,
-          "cand_ms": 6.205,
-          "speedup": 1.9731
+          "ref_ns": 15509208,
+          "cand_ns": 7608541,
+          "ref_ms": 15.509,
+          "cand_ms": 7.609,
+          "speedup": 2.0384
         },
         {
           "n": 200,
           "seed": 444,
-          "ref_ns": 12490416,
-          "cand_ns": 6683334,
-          "ref_ms": 12.49,
-          "cand_ms": 6.683,
-          "speedup": 1.8689
+          "ref_ns": 15776667,
+          "cand_ns": 8126042,
+          "ref_ms": 15.777,
+          "cand_ms": 8.126,
+          "speedup": 1.9415
         },
         {
           "n": 300,
           "seed": 42,
-          "ref_ns": 18919166,
-          "cand_ns": 9186625,
-          "ref_ms": 18.919,
-          "cand_ms": 9.187,
-          "speedup": 2.0594
+          "ref_ns": 23974959,
+          "cand_ns": 11218791,
+          "ref_ms": 23.975,
+          "cand_ms": 11.219,
+          "speedup": 2.137
         },
         {
           "n": 300,
           "seed": 123,
-          "ref_ns": 25880666,
-          "cand_ns": 11700500,
-          "ref_ms": 25.881,
-          "cand_ms": 11.7,
-          "speedup": 2.2119
+          "ref_ns": 32766834,
+          "cand_ns": 14481209,
+          "ref_ms": 32.767,
+          "cand_ms": 14.481,
+          "speedup": 2.2627
         },
         {
           "n": 300,
           "seed": 7,
-          "ref_ns": 32067542,
-          "cand_ns": 15251750,
-          "ref_ms": 32.068,
-          "cand_ms": 15.252,
-          "speedup": 2.1025
+          "ref_ns": 40619167,
+          "cand_ns": 18870584,
+          "ref_ms": 40.619,
+          "cand_ms": 18.871,
+          "speedup": 2.1525
         },
         {
           "n": 300,
           "seed": 256,
-          "ref_ns": 52044541,
-          "cand_ns": 21930208,
-          "ref_ms": 52.045,
-          "cand_ms": 21.93,
-          "speedup": 2.3732
+          "ref_ns": 66486208,
+          "cand_ns": 26862083,
+          "ref_ms": 66.486,
+          "cand_ms": 26.862,
+          "speedup": 2.4751
         },
         {
           "n": 300,
           "seed": 999,
-          "ref_ns": 37089000,
-          "cand_ns": 14203333,
-          "ref_ms": 37.089,
-          "cand_ms": 14.203,
-          "speedup": 2.6113
+          "ref_ns": 46795334,
+          "cand_ns": 18052666,
+          "ref_ms": 46.795,
+          "cand_ms": 18.053,
+          "speedup": 2.5922
         },
         {
           "n": 300,
           "seed": 31,
-          "ref_ns": 29220916,
-          "cand_ns": 10874250,
-          "ref_ms": 29.221,
-          "cand_ms": 10.874,
-          "speedup": 2.6872
+          "ref_ns": 36617875,
+          "cand_ns": 13842417,
+          "ref_ms": 36.618,
+          "cand_ms": 13.842,
+          "speedup": 2.6453
         },
         {
           "n": 300,
           "seed": 77,
-          "ref_ns": 41579875,
-          "cand_ns": 18322000,
-          "ref_ms": 41.58,
-          "cand_ms": 18.322,
-          "speedup": 2.2694
+          "ref_ns": 52876333,
+          "cand_ns": 22509958,
+          "ref_ms": 52.876,
+          "cand_ms": 22.51,
+          "speedup": 2.349
         },
         {
           "n": 300,
           "seed": 444,
-          "ref_ns": 43532125,
-          "cand_ns": 18544167,
-          "ref_ms": 43.532,
-          "cand_ms": 18.544,
-          "speedup": 2.3475
-        },
-        {
-          "n": 500,
-          "seed": 42,
-          "ref_ns": 104508083,
-          "cand_ns": 43091584,
-          "ref_ms": 104.508,
-          "cand_ms": 43.092,
-          "speedup": 2.4253
-        },
-        {
-          "n": 500,
-          "seed": 123,
-          "ref_ns": 80942959,
-          "cand_ns": 31462875,
-          "ref_ms": 80.943,
-          "cand_ms": 31.463,
-          "speedup": 2.5726
-        },
-        {
-          "n": 500,
-          "seed": 7,
-          "ref_ns": 186652875,
-          "cand_ns": 68547292,
-          "ref_ms": 186.653,
-          "cand_ms": 68.547,
-          "speedup": 2.723
+          "ref_ns": 55659334,
+          "cand_ns": 22686792,
+          "ref_ms": 55.659,
+          "cand_ms": 22.687,
+          "speedup": 2.4534
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 2.2677,
-      "min_speedup": 1.8527,
-      "max_speedup": 2.723,
-      "cv": 0.1205
+      "geometric_mean": 2.2094,
+      "min_speedup": 1.8569,
+      "max_speedup": 2.6453,
+      "cv": 0.1146
     },
     "svm": {
       "task": "svm",
-      "valid": false,
-      "speedup": 0.0,
-      "error": "Solution invalid on input 6 (n=200, seed=77)",
-      "per_input": [],
+      "valid": true,
+      "speedup": 0.9997,
+      "error": null,
+      "per_input": [
+        {
+          "n": 100,
+          "seed": 123,
+          "ref_ns": 16404041,
+          "cand_ns": 16481334,
+          "ref_ms": 16.404,
+          "cand_ms": 16.481,
+          "speedup": 0.9953
+        },
+        {
+          "n": 200,
+          "seed": 42,
+          "ref_ns": 9979041,
+          "cand_ns": 9990833,
+          "ref_ms": 9.979,
+          "cand_ms": 9.991,
+          "speedup": 0.9988
+        },
+        {
+          "n": 200,
+          "seed": 123,
+          "ref_ns": 12431000,
+          "cand_ns": 12324708,
+          "ref_ms": 12.431,
+          "cand_ms": 12.325,
+          "speedup": 1.0086
+        },
+        {
+          "n": 200,
+          "seed": 7,
+          "ref_ns": 17169958,
+          "cand_ns": 17170083,
+          "ref_ms": 17.17,
+          "cand_ms": 17.17,
+          "speedup": 1.0
+        },
+        {
+          "n": 200,
+          "seed": 256,
+          "ref_ns": 21360000,
+          "cand_ns": 21365792,
+          "ref_ms": 21.36,
+          "cand_ms": 21.366,
+          "speedup": 0.9997
+        },
+        {
+          "n": 200,
+          "seed": 999,
+          "ref_ns": 13821458,
+          "cand_ns": 13804166,
+          "ref_ms": 13.821,
+          "cand_ms": 13.804,
+          "speedup": 1.0013
+        },
+        {
+          "n": 200,
+          "seed": 31,
+          "ref_ns": 11166625,
+          "cand_ns": 11298583,
+          "ref_ms": 11.167,
+          "cand_ms": 11.299,
+          "speedup": 0.9883
+        },
+        {
+          "n": 200,
+          "seed": 77,
+          "ref_ns": 20413875,
+          "cand_ns": 20202292,
+          "ref_ms": 20.414,
+          "cand_ms": 20.202,
+          "speedup": 1.0105
+        },
+        {
+          "n": 300,
+          "seed": 42,
+          "ref_ns": 32556708,
+          "cand_ns": 32490541,
+          "ref_ms": 32.557,
+          "cand_ms": 32.491,
+          "speedup": 1.002
+        },
+        {
+          "n": 300,
+          "seed": 123,
+          "ref_ns": 29220167,
+          "cand_ns": 29308292,
+          "ref_ms": 29.22,
+          "cand_ms": 29.308,
+          "speedup": 0.997
+        },
+        {
+          "n": 300,
+          "seed": 7,
+          "ref_ns": 17214250,
+          "cand_ns": 17375417,
+          "ref_ms": 17.214,
+          "cand_ms": 17.375,
+          "speedup": 0.9907
+        },
+        {
+          "n": 300,
+          "seed": 256,
+          "ref_ns": 52763334,
+          "cand_ns": 52649667,
+          "ref_ms": 52.763,
+          "cand_ms": 52.65,
+          "speedup": 1.0022
+        },
+        {
+          "n": 300,
+          "seed": 999,
+          "ref_ns": 23301666,
+          "cand_ns": 23527292,
+          "ref_ms": 23.302,
+          "cand_ms": 23.527,
+          "speedup": 0.9904
+        },
+        {
+          "n": 300,
+          "seed": 31,
+          "ref_ns": 16294625,
+          "cand_ns": 16139375,
+          "ref_ms": 16.295,
+          "cand_ms": 16.139,
+          "speedup": 1.0096
+        },
+        {
+          "n": 300,
+          "seed": 77,
+          "ref_ns": 40863917,
+          "cand_ns": 41027125,
+          "ref_ms": 40.864,
+          "cand_ms": 41.027,
+          "speedup": 0.996
+        },
+        {
+          "n": 300,
+          "seed": 444,
+          "ref_ns": 24227750,
+          "cand_ns": 24084875,
+          "ref_ms": 24.228,
+          "cand_ms": 24.085,
+          "speedup": 1.0059
+        }
+      ],
       "num_inputs": 16,
-      "num_runs": 10
+      "num_runs": 10,
+      "geometric_mean": 0.9998,
+      "min_speedup": 0.9883,
+      "max_speedup": 1.0105,
+      "cv": 0.0068
     },
     "dijkstra_from_indices": {
       "task": "dijkstra_from_indices",
       "valid": true,
-      "speedup": 0.5608,
+      "speedup": 0.5834,
       "error": null,
       "per_input": [
         {
           "n": 2000,
           "seed": 42,
-          "ref_ns": 12719542,
-          "cand_ns": 20703750,
-          "ref_ms": 12.72,
-          "cand_ms": 20.704,
-          "speedup": 0.6144
+          "ref_ns": 15726375,
+          "cand_ns": 23299916,
+          "ref_ms": 15.726,
+          "cand_ms": 23.3,
+          "speedup": 0.675
         },
         {
           "n": 2000,
           "seed": 123,
-          "ref_ns": 12613000,
-          "cand_ns": 20897125,
-          "ref_ms": 12.613,
-          "cand_ms": 20.897,
-          "speedup": 0.6036
+          "ref_ns": 15310666,
+          "cand_ns": 24559166,
+          "ref_ms": 15.311,
+          "cand_ms": 24.559,
+          "speedup": 0.6234
         },
         {
           "n": 2000,
           "seed": 7,
-          "ref_ns": 12573500,
-          "cand_ns": 21138417,
-          "ref_ms": 12.573,
-          "cand_ms": 21.138,
-          "speedup": 0.5948
+          "ref_ns": 15453750,
+          "cand_ns": 25099167,
+          "ref_ms": 15.454,
+          "cand_ms": 25.099,
+          "speedup": 0.6157
         },
         {
           "n": 2000,
           "seed": 256,
-          "ref_ns": 12453375,
-          "cand_ns": 20424209,
-          "ref_ms": 12.453,
-          "cand_ms": 20.424,
-          "speedup": 0.6097
+          "ref_ns": 15494125,
+          "cand_ns": 24540417,
+          "ref_ms": 15.494,
+          "cand_ms": 24.54,
+          "speedup": 0.6314
         },
         {
           "n": 2000,
           "seed": 999,
-          "ref_ns": 12486333,
-          "cand_ns": 20828667,
-          "ref_ms": 12.486,
-          "cand_ms": 20.829,
-          "speedup": 0.5995
+          "ref_ns": 15291666,
+          "cand_ns": 25041125,
+          "ref_ms": 15.292,
+          "cand_ms": 25.041,
+          "speedup": 0.6107
         },
         {
           "n": 2000,
           "seed": 31,
-          "ref_ns": 12498917,
-          "cand_ns": 20151584,
-          "ref_ms": 12.499,
-          "cand_ms": 20.152,
-          "speedup": 0.6202
+          "ref_ns": 15338917,
+          "cand_ns": 24855833,
+          "ref_ms": 15.339,
+          "cand_ms": 24.856,
+          "speedup": 0.6171
         },
         {
           "n": 2000,
           "seed": 77,
-          "ref_ns": 12366375,
-          "cand_ns": 20485166,
-          "ref_ms": 12.366,
-          "cand_ms": 20.485,
-          "speedup": 0.6037
+          "ref_ns": 15405542,
+          "cand_ns": 24789000,
+          "ref_ms": 15.406,
+          "cand_ms": 24.789,
+          "speedup": 0.6215
         },
         {
           "n": 2000,
           "seed": 444,
-          "ref_ns": 12251042,
-          "cand_ns": 20846750,
-          "ref_ms": 12.251,
-          "cand_ms": 20.847,
-          "speedup": 0.5877
+          "ref_ns": 15347292,
+          "cand_ns": 24912333,
+          "ref_ms": 15.347,
+          "cand_ms": 24.912,
+          "speedup": 0.6161
         },
         {
           "n": 3000,
           "seed": 42,
-          "ref_ns": 26946834,
-          "cand_ns": 50434666,
-          "ref_ms": 26.947,
-          "cand_ms": 50.435,
-          "speedup": 0.5343
+          "ref_ns": 33111500,
+          "cand_ns": 64533500,
+          "ref_ms": 33.111,
+          "cand_ms": 64.534,
+          "speedup": 0.5131
         },
         {
           "n": 3000,
           "seed": 123,
-          "ref_ns": 27114625,
-          "cand_ns": 52805375,
-          "ref_ms": 27.115,
-          "cand_ms": 52.805,
-          "speedup": 0.5135
+          "ref_ns": 33095916,
+          "cand_ns": 59386459,
+          "ref_ms": 33.096,
+          "cand_ms": 59.386,
+          "speedup": 0.5573
         },
         {
           "n": 3000,
           "seed": 7,
-          "ref_ns": 26759292,
-          "cand_ns": 51683333,
-          "ref_ms": 26.759,
-          "cand_ms": 51.683,
-          "speedup": 0.5178
+          "ref_ns": 33180875,
+          "cand_ns": 55277500,
+          "ref_ms": 33.181,
+          "cand_ms": 55.278,
+          "speedup": 0.6003
         },
         {
           "n": 3000,
           "seed": 256,
-          "ref_ns": 26810125,
-          "cand_ns": 48832458,
-          "ref_ms": 26.81,
-          "cand_ms": 48.832,
-          "speedup": 0.549
+          "ref_ns": 33267917,
+          "cand_ns": 62946334,
+          "ref_ms": 33.268,
+          "cand_ms": 62.946,
+          "speedup": 0.5285
         },
         {
           "n": 3000,
           "seed": 999,
-          "ref_ns": 27001542,
-          "cand_ns": 51689084,
-          "ref_ms": 27.002,
-          "cand_ms": 51.689,
-          "speedup": 0.5224
+          "ref_ns": 33184333,
+          "cand_ns": 61205667,
+          "ref_ms": 33.184,
+          "cand_ms": 61.206,
+          "speedup": 0.5422
         },
         {
           "n": 3000,
           "seed": 31,
-          "ref_ns": 26543166,
-          "cand_ns": 51723709,
-          "ref_ms": 26.543,
-          "cand_ms": 51.724,
-          "speedup": 0.5132
+          "ref_ns": 33175541,
+          "cand_ns": 61115833,
+          "ref_ms": 33.176,
+          "cand_ms": 61.116,
+          "speedup": 0.5428
         },
         {
           "n": 3000,
           "seed": 77,
-          "ref_ns": 26490000,
-          "cand_ns": 51258875,
-          "ref_ms": 26.49,
-          "cand_ms": 51.259,
-          "speedup": 0.5168
+          "ref_ns": 33132000,
+          "cand_ns": 58826917,
+          "ref_ms": 33.132,
+          "cand_ms": 58.827,
+          "speedup": 0.5632
         },
         {
           "n": 3000,
           "seed": 444,
-          "ref_ns": 26411417,
-          "cand_ns": 50549000,
-          "ref_ms": 26.411,
-          "cand_ms": 50.549,
-          "speedup": 0.5225
+          "ref_ns": 33143083,
+          "cand_ns": 62216750,
+          "ref_ms": 33.143,
+          "cand_ms": 62.217,
+          "speedup": 0.5327
         }
       ],
       "num_inputs": 16,
       "num_runs": 10,
-      "geometric_mean": 0.5624,
-      "min_speedup": 0.5132,
-      "max_speedup": 0.6202,
-      "cv": 0.0763
+      "geometric_mean": 0.5852,
+      "min_speedup": 0.5131,
+      "max_speedup": 0.675,
+      "cv": 0.0796
     }
   }
 }

@@ -1,6 +1,6 @@
 # AlgoTune Speedup: Evolutionary Code Optimization
 
-**2.56x validated harmonic mean speedup** on 25 AlgoTune tasks — 49% faster than o4-mini-high (1.72x) and 92% faster than Claude Opus 4 (1.33x).
+**2.62x validated harmonic mean speedup** on 25 AlgoTune tasks — 52% faster than o4-mini-high (1.72x) and 97% faster than Claude Opus 4 (1.33x).
 
 ## Architecture
 
@@ -12,36 +12,39 @@ Two-phase approach: evolve-sdk generates baseline solutions from AlgoTune refere
 
 | Model | Harmonic Mean Speedup | Tasks Improved |
 |-------|----------------------|----------------|
-| **Opus 4.6 + evolve-sdk (validated)** | **2.56x** | **94%** |
+| **Opus 4.6 + evolve-sdk (validated)** | **2.62x** | **89%** |
 | o4-mini-high | 1.72x | 60% |
 | deepseek-r1 | 1.70x | 61% |
 | gemini-2.5-pro | 1.51x | 49% |
 | claude-opus-4 | 1.33x | 40% |
 
-*Our results are on a curated 25-task subset (16 valid after rigorous validation). Published baselines are on the full 154-task benchmark. See Methodology for details.*
+*Our results are on a curated 25-task subset (19 valid after rigorous validation). Published baselines are on the full 154-task benchmark. See Methodology for details.*
 
 ### Per-Task Breakdown (Validated)
 
 | Task | Validated Speedup | Category |
 |------|------------------|----------|
-| pagerank | 18.31x | Graph Algorithms |
-| minimum_spanning_tree | 9.76x | Graph Algorithms |
-| lu_factorization | 8.54x | Linear Algebra |
-| fft_convolution | 8.25x | Signal Processing |
-| correlate_1d | 6.62x | Signal Processing |
-| convex_hull | 6.32x | Computational Geometry |
-| cholesky_factorization | 4.90x | Linear Algebra |
-| pca | 4.57x | Machine Learning |
-| qr_factorization | 3.50x | Linear Algebra |
+| ode_lotkavolterra | 647.71x | Differential Equations |
+| ode_brusselator | 318.93x | Differential Equations |
+| pagerank | 18.61x | Graph Algorithms |
+| minimum_spanning_tree | 9.83x | Graph Algorithms |
+| correlate_1d | 8.61x | Signal Processing |
+| lu_factorization | 8.57x | Linear Algebra |
+| fft_convolution | 8.26x | Signal Processing |
+| convex_hull | 6.34x | Computational Geometry |
+| cholesky_factorization | 4.97x | Linear Algebra |
+| pca | 4.62x | Machine Learning |
+| qr_factorization | 3.65x | Linear Algebra |
 | convolve_1d | 2.83x | Signal Processing |
-| kmeans | 2.46x | Machine Learning |
-| svd | 2.25x | Linear Algebra |
-| eigenvectors_real | 1.70x | Linear Algebra |
-| matrix_multiplication | 1.66x | Linear Algebra |
-| linear_system_solver | 1.50x | Linear Algebra |
-| dijkstra_from_indices | 0.56x | Graph Algorithms |
+| kmeans | 2.55x | Machine Learning |
+| svd | 2.20x | Linear Algebra |
+| matrix_multiplication | 1.58x | Linear Algebra |
+| linear_system_solver | 1.48x | Linear Algebra |
+| eigenvectors_real | 1.48x | Linear Algebra |
+| svm | 1.00x | Machine Learning |
+| dijkstra_from_indices | 0.58x | Graph Algorithms |
 
-9 tasks failed to produce valid solutions: 6 during evolution (matrix_exponential, eigenvalues_real, fft_cmplx_scipy_fftpack, dct_type_I_scipy_fftpack, shortest_path_dijkstra, lasso), 3 during rigorous validation (ode_brusselator, ode_lotkavolterra, svm).
+6 tasks failed to produce valid solutions during evolution (matrix_exponential, eigenvalues_real, fft_cmplx_scipy_fftpack, dct_type_I_scipy_fftpack, shortest_path_dijkstra, lasso).
 
 ## Why This Problem Matters
 
@@ -49,7 +52,7 @@ Two-phase approach: evolve-sdk generates baseline solutions from AlgoTune refere
 
 The benchmark uses **harmonic mean speedup** — a single slow task drags down the overall score significantly, making consistent improvement across diverse problem types essential.
 
-Current best single-shot results on the full benchmark range from 1.33x (Claude Opus 4) to 1.72x (o4-mini-high). By layering evolutionary optimization on top of strong single-shot baselines, we achieve 2.56x (validated) on our task subset.
+Current best single-shot results on the full benchmark range from 1.33x (Claude Opus 4) to 1.72x (o4-mini-high). By layering evolutionary optimization on top of strong single-shot baselines, we achieve 2.62x (validated) on our task subset.
 
 ## Methodology
 
@@ -73,26 +76,27 @@ Current best single-shot results on the full benchmark range from 1.33x (Claude 
 - Harmonic mean: `H = n / sum(1/s_i)` — heavily penalizes low outliers
 
 ### Key Optimizations Discovered
-- **Graph algorithms (10-18x):** Sparse matrix / CSR representations instead of NetworkX DiGraph objects; power iteration for PageRank
-- **Linear algebra (1.5-8.5x):** Direct LAPACK calls bypassing scipy wrappers, Numba JIT for small matrices, Fortran-ordered memory layout
-- **Signal processing (3-8x):** FFT-based convolution with optimal zero-padding, direct BLAS calls
-- **ML tasks (2.5-4.6x):** Specialized algorithms (e.g., mini-batch k-means, LAPACK-based PCA)
+- **Differential equations (319-648x):** Numba JIT-compiled Dormand-Prince RK45 with FSAL, PI step-size control, conservation law correction (Lotka-Volterra), sqrt-free error norms
+- **Graph algorithms (10-19x):** Sparse matrix / CSR representations instead of NetworkX DiGraph objects; power iteration for PageRank
+- **Linear algebra (1.5-8.6x):** Direct LAPACK calls bypassing scipy wrappers, Numba JIT for small matrices, Fortran-ordered memory layout
+- **Signal processing (3-8.6x):** FFT-based convolution with optimal zero-padding, direct BLAS calls
+- **ML tasks (2.6-4.6x):** Specialized algorithms (e.g., mini-batch k-means, LAPACK-based PCA)
 - **Computational geometry (6.3x):** Optimized convex hull algorithm
 
 ### Transparency
-- Results are on a curated 25-task subset (16 produced valid solutions after rigorous validation)
+- Results are on a curated 25-task subset (19 produced valid solutions after rigorous validation)
 - Published baselines are on the full 154-task benchmark — direct comparison is not apples-to-apples
 - All solutions, configs, and evolution logs are committed for reproducibility
-- 3 tasks that passed evolution evaluation (ode_brusselator, ode_lotkavolterra, svm) failed rigorous validation on larger inputs — these are excluded from the validated score
-- Initial evolution evaluation reported 2.95x; rigorous validation brought this to 2.56x
+- 3 tasks initially failed rigorous validation but were fixed (see Validation Findings below)
+- Initial evolution evaluation reported 2.95x; rigorous validation with fixed solvers gives 2.62x
 
 ### Validation Findings
-Three tasks that passed the evolution evaluator failed rigorous validation:
-- **ode_brusselator** (506x → invalid): Relaxed ODE tolerances produce incorrect results on harder integration intervals
-- **ode_lotkavolterra** (1222x → invalid): Numba JIT caching prevents module loading in validation context
-- **svm** (13x → invalid): Optimized solver produces suboptimal solutions on larger problem instances
+Three tasks initially failed rigorous validation but were fixed:
+- **ode_brusselator** (506x evolution → 318.93x validated): Tightened ODE tolerances from 3e-7 to 1e-8, disabled Numba cache
+- **ode_lotkavolterra** (1222x evolution → 647.71x validated): Disabled Numba cache (importlib incompatibility), tightened tolerances
+- **svm** (13x evolution → 1.00x validated): Rewrote to use CVXPY directly — validation requires exact beta match, so no speedup is possible with a different solver backend
 
-Interestingly, many tasks showed *higher* validated speedups than evolution speedups (e.g., cholesky 2.2x→4.9x, pagerank 11x→18x) because single-threaded BLAS enforcement removes the reference solver's multithreading advantage.
+Many tasks show *higher* validated speedups than evolution speedups (e.g., cholesky 2.2x→5.0x, pagerank 11x→18.6x) because single-threaded BLAS enforcement removes the reference solver's multithreading advantage.
 
 ## Quick Start
 

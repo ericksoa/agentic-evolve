@@ -18,7 +18,7 @@ import numba as nb
 import math
 
 
-@nb.njit(cache=True, fastmath=True)
+@nb.njit(cache=False, fastmath=True)
 def _compute_hamiltonian(x, y, alpha, beta, delta, gamma):
     """Compute the conserved quantity H = delta*x - gamma*ln(x) + beta*y - alpha*ln(y)."""
     if x <= 0.0 or y <= 0.0:
@@ -26,7 +26,7 @@ def _compute_hamiltonian(x, y, alpha, beta, delta, gamma):
     return delta * x - gamma * math.log(x) + beta * y - alpha * math.log(y)
 
 
-@nb.njit(cache=True, fastmath=True)
+@nb.njit(cache=False, fastmath=True)
 def _correct_conservation(x, y, H0, alpha, beta, delta, gamma):
     """Newton's method to project (x,y) onto the level set H(x,y) = H0.
     Lightweight: just 3 iterations for periodic correction (enough to maintain drift < 1e-12)."""
@@ -52,7 +52,7 @@ def _correct_conservation(x, y, H0, alpha, beta, delta, gamma):
     return x, y
 
 
-@nb.njit(cache=True, fastmath=True)
+@nb.njit(cache=False, fastmath=True)
 def _solve_lv_periodic_correction(t0, t1, x0, y0, alpha, beta, delta, gamma, rtol, atol):
     """DOPRI5 with PI step-size controller + periodic conservation law correction."""
 
@@ -225,7 +225,7 @@ def _solve_lv_periodic_correction(t0, t1, x0, y0, alpha, beta, delta, gamma, rto
 
 class Solver:
     def __init__(self):
-        _solve_lv_periodic_correction(0.0, 1.0, 10.0, 5.0, 1.1, 0.4, 0.1, 0.4, 3e-7, 3e-7)
+        _solve_lv_periodic_correction(0.0, 1.0, 10.0, 5.0, 1.1, 0.4, 0.1, 0.4, 1e-8, 1e-8)
 
     def solve(self, problem):
         y0 = problem["y0"]
@@ -239,6 +239,6 @@ class Solver:
 
         x, y = _solve_lv_periodic_correction(
             t0, t1, float(y0[0]), float(y0[1]),
-            alpha, beta, delta, gamma, 3e-7, 3e-7
+            alpha, beta, delta, gamma, 1e-8, 1e-8
         )
         return [x, y]
