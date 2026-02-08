@@ -2,40 +2,49 @@
 
 | Model | Harmonic Mean Speedup | Tasks Improved |
 |-------|----------------------|----------------|
-| **Opus 4.6 + evolve-sdk** | **2.95x** | **95%** |
+| **Opus 4.6 + evolve-sdk (validated)** | **2.56x** | **94%** |
 | o4-mini-high | 1.72x | 60% |
 | deepseek-r1 | 1.70x | 61% |
 | gemini-2.5-pro | 1.51x | 49% |
 | claude-opus-4 | 1.33x | 40% |
 
-*Results on curated 19-task subset. See methodology section for full-benchmark extrapolation.*
+*Validated with rigorous methodology: single-threaded BLAS, min-of-10 timing, calibrated inputs. 16 valid tasks out of 25 attempted.*
 
-## Per-Task Results
+## Per-Task Results (Validated)
 
-| Task | Phase 1 | Phase 2 | Best | Source |
-|------|---------|---------|------|--------|
-| cholesky_factorization | 1.08x | 2.23x | **2.23x** | phase2 |
-| convex_hull | 1.06x | 4.47x | **4.47x** | phase2 |
-| convolve_1d | - | 4.16x | **4.16x** | phase2 |
-| correlate_1d | - | 5.50x | **5.50x** | phase2 |
-| dct_type_I_scipy_fftpack | - | - | **invalid** | phase1 |
-| dijkstra_from_indices | - | 0.53x | **1.00x** | phase2 |
-| eigenvalues_real | - | - | **invalid** | phase1 |
-| eigenvectors_real | - | 1.41x | **1.41x** | phase2 |
-| fft_cmplx_scipy_fftpack | - | - | **invalid** | phase1 |
-| fft_convolution | 1.02x | 5.47x | **5.47x** | phase2 |
-| kmeans | - | 2.19x | **2.19x** | phase2 |
-| lasso | - | - | **invalid** | phase1 |
-| linear_system_solver | - | 1.81x | **1.81x** | phase2 |
-| lu_factorization | - | 10.43x | **10.43x** | phase2 |
-| matrix_exponential | - | - | **invalid** | phase1 |
-| matrix_multiplication | - | 1.15x | **1.15x** | phase2 |
-| minimum_spanning_tree | - | 9.70x | **9.70x** | phase2 |
-| ode_brusselator | - | 506.34x | **506.34x** | phase2 |
-| ode_lotkavolterra | - | 1221.65x | **1221.65x** | phase2 |
-| pagerank | - | 11.13x | **11.13x** | phase2 |
-| pca | - | 5.25x | **5.25x** | phase2 |
-| qr_factorization | - | 4.88x | **4.88x** | phase2 |
-| shortest_path_dijkstra | - | - | **invalid** | phase1 |
-| svd | - | 1.22x | **1.22x** | phase2 |
-| svm | - | 13.09x | **13.09x** | phase2 |
+| Task | Evolution Speedup | Validated Speedup | Status |
+|------|------------------|------------------|--------|
+| pagerank | 11.13x | **18.31x** | validated |
+| minimum_spanning_tree | 9.70x | **9.76x** | validated |
+| lu_factorization | 10.43x | **8.54x** | validated |
+| fft_convolution | 5.47x | **8.25x** | validated |
+| correlate_1d | 5.50x | **6.62x** | validated |
+| convex_hull | 4.47x | **6.32x** | validated |
+| cholesky_factorization | 2.23x | **4.90x** | validated |
+| pca | 5.25x | **4.57x** | validated |
+| qr_factorization | 4.88x | **3.50x** | validated |
+| convolve_1d | 4.16x | **2.83x** | validated |
+| kmeans | 2.19x | **2.46x** | validated |
+| svd | 1.22x | **2.25x** | validated |
+| eigenvectors_real | 1.41x | **1.70x** | validated |
+| matrix_multiplication | 1.15x | **1.66x** | validated |
+| linear_system_solver | 1.81x | **1.50x** | validated |
+| dijkstra_from_indices | 0.53x | **0.56x** | validated (slower) |
+| ode_brusselator | 506.34x | - | **invalid on larger inputs** |
+| ode_lotkavolterra | 1221.65x | - | **module load failure** |
+| svm | 13.09x | - | **invalid on larger inputs** |
+| dct_type_I_scipy_fftpack | - | - | no solution |
+| eigenvalues_real | - | - | no solution |
+| fft_cmplx_scipy_fftpack | - | - | no solution |
+| lasso | - | - | no solution |
+| matrix_exponential | - | - | no solution |
+| shortest_path_dijkstra | - | - | no solution |
+
+## Validation Notes
+
+Three tasks that passed custom evaluation failed rigorous validation:
+- **ode_brusselator**: Relaxed ODE tolerances (3e-7) produce incorrect results for harder integration intervals (n=100+)
+- **ode_lotkavolterra**: Numba JIT caching issue prevents module loading in validation context
+- **svm**: Optimized solver produces suboptimal beta vectors on larger problem instances (n=200+)
+
+Many tasks show *higher* speedups under validated conditions because single-threaded BLAS removes the reference solver's multithreading advantage.

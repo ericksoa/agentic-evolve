@@ -1,207 +1,40 @@
 {
   "summary": {
-    "harmonic_mean_speedup": 2.9463,
-    "arithmetic_mean_speedup": 95.4262,
+    "harmonic_mean_speedup_validated": 2.5572,
+    "geometric_mean_speedup_validated": 3.7512,
+    "harmonic_mean_speedup_evolution": 2.9463,
     "total_tasks": 25,
-    "valid_tasks": 19,
-    "tasks_improved": 18,
-    "tasks_improved_pct": 94.7,
-    "best_speedup": 1221.6457,
-    "worst_speedup": 1.0
+    "valid_tasks_validated": 16,
+    "valid_tasks_evolution": 19,
+    "tasks_improved_validated": 15,
+    "tasks_improved_pct_validated": 93.8,
+    "validation_methodology": "single-threaded BLAS, min-of-10 timing, calibrated inputs"
   },
-  "per_task": {
-    "cholesky_factorization": {
-      "phase1_speedup": 1.08,
-      "phase2_speedup": 2.23,
-      "best_speedup": 2.23,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "convex_hull": {
-      "phase1_speedup": 1.06,
-      "phase2_speedup": 4.47,
-      "best_speedup": 4.47,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "convolve_1d": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 4.16,
-      "best_speedup": 4.16,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "correlate_1d": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 5.5036,
-      "best_speedup": 5.5036,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "dct_type_I_scipy_fftpack": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 0.0,
-      "best_speedup": 0.0,
-      "best_phase": "phase1",
-      "valid": false
-    },
-    "dijkstra_from_indices": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 0.5316,
-      "best_speedup": 1.0,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "eigenvalues_real": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 0.0,
-      "best_speedup": 0.0,
-      "best_phase": "phase1",
-      "valid": false
-    },
-    "eigenvectors_real": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 1.4138,
-      "best_speedup": 1.4138,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "fft_cmplx_scipy_fftpack": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 0.0,
-      "best_speedup": 0.0,
-      "best_phase": "phase1",
-      "valid": false
-    },
-    "fft_convolution": {
-      "phase1_speedup": 1.02,
-      "phase2_speedup": 5.47,
-      "best_speedup": 5.47,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "kmeans": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 2.1947,
-      "best_speedup": 2.1947,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "lasso": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 0.0,
-      "best_speedup": 0.0,
-      "best_phase": "phase1",
-      "valid": false
-    },
-    "linear_system_solver": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 1.8103,
-      "best_speedup": 1.8103,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "lu_factorization": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 10.4348,
-      "best_speedup": 10.4348,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "matrix_exponential": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 0.0,
-      "best_speedup": 0.0,
-      "best_phase": "phase1",
-      "valid": false
-    },
-    "matrix_multiplication": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 1.1483,
-      "best_speedup": 1.1483,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "minimum_spanning_tree": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 9.7032,
-      "best_speedup": 9.7032,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "ode_brusselator": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 506.3433,
-      "best_speedup": 506.3433,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "ode_lotkavolterra": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 1221.6457,
-      "best_speedup": 1221.6457,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "pagerank": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 11.1299,
-      "best_speedup": 11.1299,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "pca": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 5.2525,
-      "best_speedup": 5.2525,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "qr_factorization": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 4.8811,
-      "best_speedup": 4.8811,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "shortest_path_dijkstra": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 0.0,
-      "best_speedup": 0.0,
-      "best_phase": "phase1",
-      "valid": false
-    },
-    "svd": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 1.2161,
-      "best_speedup": 1.2161,
-      "best_phase": "phase2",
-      "valid": true
-    },
-    "svm": {
-      "phase1_speedup": 0.0,
-      "phase2_speedup": 13.0905,
-      "best_speedup": 13.0905,
-      "best_phase": "phase2",
-      "valid": true
-    }
+  "validated_per_task": {
+    "pagerank": {"validated_speedup": 18.31, "evolution_speedup": 11.13, "valid": true},
+    "minimum_spanning_tree": {"validated_speedup": 9.76, "evolution_speedup": 9.70, "valid": true},
+    "lu_factorization": {"validated_speedup": 8.54, "evolution_speedup": 10.43, "valid": true},
+    "fft_convolution": {"validated_speedup": 8.25, "evolution_speedup": 5.47, "valid": true},
+    "correlate_1d": {"validated_speedup": 6.62, "evolution_speedup": 5.50, "valid": true},
+    "convex_hull": {"validated_speedup": 6.32, "evolution_speedup": 4.47, "valid": true},
+    "cholesky_factorization": {"validated_speedup": 4.90, "evolution_speedup": 2.23, "valid": true},
+    "pca": {"validated_speedup": 4.57, "evolution_speedup": 5.25, "valid": true},
+    "qr_factorization": {"validated_speedup": 3.50, "evolution_speedup": 4.88, "valid": true},
+    "convolve_1d": {"validated_speedup": 2.83, "evolution_speedup": 4.16, "valid": true},
+    "kmeans": {"validated_speedup": 2.46, "evolution_speedup": 2.19, "valid": true},
+    "svd": {"validated_speedup": 2.25, "evolution_speedup": 1.22, "valid": true},
+    "eigenvectors_real": {"validated_speedup": 1.70, "evolution_speedup": 1.41, "valid": true},
+    "matrix_multiplication": {"validated_speedup": 1.66, "evolution_speedup": 1.15, "valid": true},
+    "linear_system_solver": {"validated_speedup": 1.50, "evolution_speedup": 1.81, "valid": true},
+    "dijkstra_from_indices": {"validated_speedup": 0.56, "evolution_speedup": 0.53, "valid": true},
+    "ode_brusselator": {"validated_speedup": null, "evolution_speedup": 506.34, "valid": false, "error": "invalid on larger inputs"},
+    "ode_lotkavolterra": {"validated_speedup": null, "evolution_speedup": 1221.65, "valid": false, "error": "module load failure"},
+    "svm": {"validated_speedup": null, "evolution_speedup": 13.09, "valid": false, "error": "invalid on larger inputs"}
   },
   "baselines": {
-    "o4-mini-high": {
-      "harmonic_mean": 1.72,
-      "tasks_improved_pct": 59.7
-    },
-    "deepseek-r1": {
-      "harmonic_mean": 1.7,
-      "tasks_improved_pct": 61.0
-    },
-    "gemini-2.5-pro": {
-      "harmonic_mean": 1.51,
-      "tasks_improved_pct": 49.4
-    },
-    "claude-opus-4": {
-      "harmonic_mean": 1.33,
-      "tasks_improved_pct": 40.3
-    }
+    "o4-mini-high": {"harmonic_mean": 1.72, "tasks_improved_pct": 59.7},
+    "deepseek-r1": {"harmonic_mean": 1.70, "tasks_improved_pct": 61.0},
+    "gemini-2.5-pro": {"harmonic_mean": 1.51, "tasks_improved_pct": 49.4},
+    "claude-opus-4": {"harmonic_mean": 1.33, "tasks_improved_pct": 40.3}
   }
 }

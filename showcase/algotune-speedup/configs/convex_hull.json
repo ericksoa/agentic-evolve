@@ -1,0 +1,88 @@
+{
+  "description": "Optimize convex_hull solver for maximum speedup over AlgoTune reference implementation",
+  "mode": "perf",
+  "minimize": false,
+  "evaluation": {
+    "test_command": "bash /Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/eval_wrapper.sh {solution} --task convex_hull --json --runs 3",
+    "fitness_key": "fitness",
+    "valid_key": "valid"
+  },
+  "starter_solutions": [
+    "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/solutions/convex_hull/solver.py"
+  ],
+  "solution_format": {
+    "description": "Python file defining a Solver class with a solve(self, problem) method",
+    "example_structure": {
+      "class": "Solver",
+      "method": "solve(self, problem: dict) -> solution",
+      "requirements": "Must return a valid solution that passes task.is_solution()"
+    }
+  },
+  "optimization_strategies": [
+    {
+      "name": "algorithm_replacement",
+      "description": "Replace naive algorithms with faster alternatives (e.g., Strassen for matrix multiply, iterative vs recursive)",
+      "hint": "Look for O(n^3) operations that could be O(n^2.37) or better"
+    },
+    {
+      "name": "vectorization",
+      "description": "Use NumPy/SciPy vectorized operations instead of Python loops",
+      "hint": "Replace for-loops with np.einsum, broadcasting, or scipy.linalg calls"
+    },
+    {
+      "name": "jit_compilation",
+      "description": "Use Numba @jit or Cython for hot loops",
+      "hint": "Numba nopython mode for numerical kernels; cache=True for persistence"
+    },
+    {
+      "name": "library_backends",
+      "description": "Use optimized library backends (LAPACK, FFTW, etc.) via SciPy",
+      "hint": "scipy.linalg often faster than numpy.linalg; check for specialized solvers"
+    },
+    {
+      "name": "caching_precomputation",
+      "description": "Cache repeated computations, precompute constants in __init__",
+      "hint": "Move problem-independent setup to Solver.__init__(); use functools.lru_cache"
+    },
+    {
+      "name": "mathematical_shortcuts",
+      "description": "Exploit mathematical properties to skip computation",
+      "hint": "Symmetry, sparsity, low-rank structure, analytical solutions for special cases"
+    }
+  ],
+  "constraints": [
+    "Solution MUST define 'class Solver' with a 'solve(self, problem)' method",
+    "Solution MUST pass task.is_solution() for ALL test inputs",
+    "Solution MUST be a single Python file (solver.py)",
+    "Available libraries: numpy, scipy, numba, cython, networkx, cvxpy, pulp, or-tools, sympy, jax, torch",
+    "No subprocess calls, no file I/O, no network access",
+    "No modifying the evaluation harness or timing infrastructure",
+    "Solution must terminate within 5 minutes per problem instance"
+  ],
+  "references": [
+    "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/algotune/AlgoTuneTasks/convex_hull/description.txt",
+    "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup/algotune/AlgoTuneTasks/convex_hull/convex_hull.py"
+  ],
+  "trust": {
+    "enabled": true,
+    "suspicious_jump_pct": 100.0,
+    "n_evaluations": 3,
+    "variance_threshold": 0.15,
+    "require_variance_gate": true,
+    "check_timing_anomaly": true,
+    "timing_anomaly_threshold_ms": 5.0,
+    "check_output_integrity": true,
+    "check_eval_determinism": true,
+    "generate_dossier": true
+  },
+  "memory": {
+    "enabled": true,
+    "checkpoint_on_mutation": true,
+    "inject_mutation_context": true,
+    "max_similar_mutations": 3,
+    "max_failed_mutations": 5,
+    "store_champions": true,
+    "store_exploits": true
+  },
+  "cwd": "/Users/aerickson/Documents/Claude Code Projects/agentic-evolve/showcase/algotune-speedup"
+}
