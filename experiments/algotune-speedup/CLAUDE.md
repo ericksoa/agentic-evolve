@@ -1,10 +1,12 @@
-# AlgoTune Speedup Showcase
+# AlgoTune Speedup Experiment (WIP)
+
+**Status: Custom validation was flawed. Official eval shows ~1.01x. Needs re-work.**
 
 ## Workflow
 
 ### First-Time Setup
 ```bash
-cd showcase/algotune-speedup
+cd experiments/algotune-speedup
 bash setup.sh
 source .venv/bin/activate
 export PYTHONPATH=$(pwd)/algotune:$PYTHONPATH

@@ -1,0 +1,38 @@
+{
+  "summary": {
+    "harmonic_mean_speedup": 1.0124,
+    "geometric_mean_speedup": 1.0124,
+    "valid_tasks": 3,
+    "total_tasks": 3,
+    "methodology": "AlgoTune official AgentCompatibleEvaluator (AGENT_MODE=1, ISOLATED_EVAL=1, subprocess isolation)"
+  },
+  "tasks": {
+    "pagerank": {
+      "task": "pagerank",
+      "valid": true,
+      "speedup": 1.0155,
+      "error": null,
+      "methodology": "AlgoTune official (AgentCompatibleEvaluator)",
+      "baseline_time_ms": 38.554,
+      "optimized_time_ms": 37.985
+    },
+    "cholesky_factorization": {
+      "task": "cholesky_factorization",
+      "valid": true,
+      "speedup": 1.0228,
+      "error": null,
+      "methodology": "AlgoTune official (AgentCompatibleEvaluator)",
+      "baseline_time_ms": 42.897,
+      "optimized_time_ms": 41.976
+    },
+    "ode_brusselator": {
+      "task": "ode_brusselator",
+      "valid": true,
+      "speedup": 0.9991,
+      "error": null,
+      "methodology": "AlgoTune official (AgentCompatibleEvaluator)",
+      "baseline_time_ms": 69.341,
+      "optimized_time_ms": 69.456
+    }
+  }
+}
