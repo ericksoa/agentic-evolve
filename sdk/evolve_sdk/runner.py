@@ -1130,7 +1130,12 @@ class EvolutionRunner:
         )
 
         parsed = self._parse_json_from_result(result)
-        return parsed if isinstance(parsed, dict) else {"file": None, "error": "Failed to parse"}
+        if isinstance(parsed, dict) and parsed.get("file"):
+            return parsed
+        # Fallback: check if output file was created on disk even if JSON parsing failed
+        if Path(output_file).exists():
+            return {"file": output_file, "mutation_type": "unknown", "description": "file discovered on disk (JSON parse fallback)"}
+        return {"file": None, "error": "Failed to parse and output file not found"}
 
     async def _spawn_crossover(
         self, parents: list[dict], output_file: str
@@ -1158,7 +1163,12 @@ class EvolutionRunner:
         )
 
         parsed = self._parse_json_from_result(result)
-        return parsed if isinstance(parsed, dict) else {"file": None, "error": "Failed to parse"}
+        if isinstance(parsed, dict) and parsed.get("file"):
+            return parsed
+        # Fallback: check if output file was created on disk even if JSON parsing failed
+        if Path(output_file).exists():
+            return {"file": output_file, "mutation_type": "crossover", "description": "file discovered on disk (JSON parse fallback)"}
+        return {"file": None, "error": "Failed to parse and output file not found"}
 
     async def _spawn_evaluator(self, files: list[str]) -> list[dict[str, Any]]:
         """Spawn a dedicated evaluator agent (clean context)."""
